@@ -244,6 +244,7 @@ whenever a skill is added or removed.
 | `write-prd`                             | planning a feature or decomposing a spec |
 | `write-ticket`                          | creating or refining issues              |
 | `bootstrap`                             | initializing a brand-new project         |
+| `react-router-practices`                | writing or reviewing any file under src/ |
 | <!-- add project skills here, e.g.: --> |                                          |
 | <!-- `go-practices` -->                 | <!-- touching any .go file -->           |
 
