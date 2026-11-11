@@ -25,7 +25,7 @@
 
 set -uo pipefail
 
-DEFAULT_FACTORY_EPIC='{{FACTORY_EPIC}}'
+DEFAULT_FACTORY_EPIC='19'
 
 # En una sola expansión no funciona: con un placeholder por defecto, bash
 # cierra en la primera llave de `{{...}}` y deja `}}` pegado al valor.
