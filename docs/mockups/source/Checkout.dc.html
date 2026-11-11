@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Checkout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#D9E6E8}
+a{color:#221761}a:hover{color:#140A35}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+.h3{margin:0 0 16px;font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.num{width:28px;height:28px;border-radius:999px;background:#140A35;color:#D9E6E8;display:inline-flex;align-items:center;justify-content:center;letter-spacing:0}
+</style>
+</helmet>
+<div style="background: #D9E6E8; color: #140A35; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <div style="background: #140A35;">
+    <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+      <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+      <div style="display: flex; align-items: center; gap: 8px; color: #D9E6E8; font-weight: 600; font-size: 14px;">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#CDF980" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+        Pago seguro con Wompi
+      </div>
+      <a href="Producto.dc.html" style="color: #D9E6E8; font-weight: 600; font-size: 14px;">← Seguir comprando</a>
+    </header>
+  </div>
+
+  <sc-if value="{{showForm}}" hint-placeholder-val="{{true}}">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 40px 24px 96px; display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start;">
+
+    <form style="flex: 999 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 40px;">
+      <h1 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 64px; line-height: 1; text-transform: uppercase;">Finalizar compra</h1>
+
+      <section>
+        <h2 class="h3"><span class="num">1</span>Contacto</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px;">
+          <div><label class="lb" for="c-mail">Correo</label><input class="in" id="c-mail" type="email" placeholder="tu@correo.com"></div>
+          <div><label class="lb" for="c-wa">WhatsApp</label><input class="in" id="c-wa" type="tel" placeholder="+57"></div>
+        </div>
+        <p style="margin: 10px 0 0; font-size: 14px; color: #5B5680;">Te enviamos la confirmación y el número de guía a estos datos. No necesitas crear una cuenta.</p>
+      </section>
+
+      <section>
+        <h2 class="h3"><span class="num">2</span>Envío</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px;">
+          <div><label class="lb" for="c-nom">Nombre de quien recibe</label><input class="in" id="c-nom" type="text"></div>
+          <div><label class="lb" for="c-doc">Cédula / documento</label><input class="in" id="c-doc" type="text"></div>
+          <div>
+            <label class="lb" for="c-pais">País</label>
+            <select class="in" id="c-pais" onChange="{{setPais}}">
+              <option value="CO">Colombia</option><option value="EC">Ecuador</option><option value="PE">Perú</option><option value="CL">Chile</option><option value="AR">Argentina</option><option value="OT">Otro país</option>
+            </select>
+          </div>
+          <div><label class="lb" for="c-dep">Departamento / estado</label><input class="in" id="c-dep" type="text"></div>
+          <div><label class="lb" for="c-ciu">Ciudad</label><input class="in" id="c-ciu" type="text"></div>
+          <div><label class="lb" for="c-dir">Dirección</label><input class="in" id="c-dir" type="text" placeholder="Calle, número, apto"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 20px;">
+          <sc-for list="{{envios}}" as="e" hint-placeholder-count="2">
+            <button type="button" aria-pressed="{{e.pressed}}" onClick="{{e.pick}}" style="{{e.style}}">
+              <span style="width: 20px; height: 20px; border-radius: 999px; border: 2px solid #140A35; display: flex; align-items: center; justify-content: center; flex: none;"><span style="width: 10px; height: 10px; border-radius: 999px; background: {{e.dot}};"></span></span>
+              <span style="flex: 1; text-align: left;"><span style="display: block; font-weight: 700;">{{e.name}}</span><span style="display: block; font-size: 14px; color: #5B5680; margin-top: 2px;">{{e.time}}</span></span>
+              <span style="font-weight: 700;">{{e.price}}</span>
+            </button>
+          </sc-for>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="h3"><span class="num">3</span>Pago</h2>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 24px; display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap;">
+          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex: none;"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+          <div style="flex: 1 1 320px; min-width: 0;">
+            <div style="font-weight: 700; font-size: 18px;">Pagas en la ventana segura de Wompi</div>
+            <p style="margin: 6px 0 0; color: #5B5680; line-height: 1.5;">Al darle "Pagar" se abre Wompi encima de esta página. Ahí eliges el método y apruebas el pago. VolleyTip nunca ve ni guarda los datos de tu tarjeta.</p>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px;">
+              <sc-for list="{{metodos}}" as="m" hint-placeholder-count="5">
+                <span style="padding: 7px 12px; border-radius: 8px; border: 1.5px solid #B3C3C6; font-weight: 700; font-size: 14px;">{{m}}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <sc-if value="{{internacional}}" hint-placeholder-val="{{false}}">
+          <p style="margin: 12px 0 0; font-size: 14px; background: #FFFFFF; border-left: 4px solid #FC0035; padding: 12px 16px; border-radius: 8px;">Fuera de Colombia solo aplica tarjeta. El cobro es en COP y tu banco lo convierte a tu moneda.</p>
+        </sc-if>
+      </section>
+
+      <label style="display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Acepto los <a href="#">términos y condiciones</a>, la <a href="#">política de cambios</a> y el <a href="#">tratamiento de datos</a>.</label>
+    </form>
+
+    <aside aria-label="Resumen del pedido" style="flex: 1 1 360px; min-width: 0; background: #140A35; color: #D9E6E8; border-radius: 24px; padding: 28px; position: sticky; top: 24px;">
+      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">Tu pedido</div>
+      <ul style="list-style: none; margin: 16px 0 0; padding: 0; display: flex; flex-direction: column; gap: 16px;">
+        <li style="display: flex; gap: 14px; align-items: center;">
+          <div style="position: relative; width: 64px; height: 80px; border-radius: 10px; background: #221761; flex: none;"><span style="position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 999px; background: #CDF980; color: #140A35; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">1</span></div>
+          <div style="flex: 1; min-width: 0;"><div style="font-weight: 700;">[Camiseta VolleyTip]</div><div style="color: #B3B0D4; font-size: 14px;">[Color] · Talla M</div></div>
+          <div style="font-weight: 700;">[PRECIO]</div>
+        </li>
+        <li style="display: flex; gap: 14px; align-items: center;">
+          <div style="position: relative; width: 64px; height: 80px; border-radius: 10px; background: #221761; flex: none;"><span style="position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 999px; background: #CDF980; color: #140A35; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">2</span></div>
+          <div style="flex: 1; min-width: 0;"><div style="font-weight: 700;">[Llavero VolleyTip]</div><div style="color: #B3B0D4; font-size: 14px;">Accesorio</div></div>
+          <div style="font-weight: 700;">[PRECIO]</div>
+        </li>
+      </ul>
+      <div style="display: flex; gap: 8px; margin-top: 24px;">
+        <label for="cupon" style="position: absolute; left: -9999px;">Cupón</label>
+        <input id="cupon" type="text" placeholder="Código de descuento" style="flex: 1; min-width: 0; height: 48px; padding: 0 14px; border-radius: 12px; border: 2px solid #221761; background: #140A35; color: #D9E6E8; font: 15px Archivo, sans-serif;">
+        <button type="button" style="height: 48px; padding: 0 18px; border-radius: 12px; border: 2px solid #D9E6E8; background: transparent; color: #D9E6E8; font: 700 15px Archivo, sans-serif; cursor: pointer;">Aplicar</button>
+      </div>
+      <dl style="margin: 24px 0 0; display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between;"><dt style="color: #B3B0D4;">Subtotal</dt><dd style="margin: 0;">[SUBTOTAL]</dd></div>
+        <div style="display: flex; justify-content: space-between;"><dt style="color: #B3B0D4;">Envío</dt><dd style="margin: 0;">{{envioPrice}}</dd></div>
+        <div style="display: flex; justify-content: space-between; padding-top: 14px; border-top: 1px solid #221761; font-weight: 700; font-size: 22px;"><dt>Total</dt><dd style="margin: 0;">[TOTAL] COP</dd></div>
+      </dl>
+      <p style="margin: 10px 0 0; font-size: 14px; color: #B3B0D4;">Te faltan [$200.000 − subtotal] para el envío gratis en Colombia.</p>
+      <button type="button" onClick="{{pagar}}" style="width: 100%; margin-top: 20px; background: #FC0035; color: #140A35; border: 0; font: 700 17px Archivo, sans-serif; padding: 18px; border-radius: 999px; cursor: pointer;">{{cta}}</button>
+      <p style="margin: 12px 0 0; font-size: 13px; color: #B3B0D4; text-align: center;">Cambios de talla gratis hasta [N] días después de recibir.</p>
+    </aside>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{showOk}}" hint-placeholder-val="{{false}}">
+  <div style="max-width: 1280px; margin: 0 auto; padding: 56px 24px 96px; display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start;">
+    <div style="flex: 999 1 560px; min-width: 0;">
+      <span style="display: inline-flex; width: 64px; height: 64px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 style="margin: 20px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 72px; line-height: 0.95; text-transform: uppercase;">¡Pedido<br>confirmado!</h1>
+      <p style="margin: 16px 0 0; font-size: 20px; line-height: 1.5; max-width: 560px;">Pedido <strong>#VT-[0000]</strong>. Te enviamos el detalle a [correo] y por WhatsApp.</p>
+
+      <ol style="list-style: none; margin: 40px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+        <li style="background: #140A35; color: #D9E6E8; border-radius: 16px; padding: 20px;"><div style="font-weight: 700; color: #CDF980;">✓ Pagado</div><div style="font-size: 14px; color: #B3B0D4; margin-top: 4px;">[Fecha y hora]</div></li>
+        <li style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-weight: 700;">Preparando</div><div style="font-size: 14px; color: #5B5680; margin-top: 4px;">1–2 días hábiles</div></li>
+        <li style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-weight: 700;">Enviado</div><div style="font-size: 14px; color: #5B5680; margin-top: 4px;">Te llega la guía</div></li>
+        <li style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-weight: 700;">Entregado</div><div style="font-size: 14px; color: #5B5680; margin-top: 4px;">[Tiempo estimado]</div></li>
+      </ol>
+
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 40px;">
+        <a href="Tienda.dc.html" style="background: #140A35; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 16px 28px; border-radius: 999px;">Volver a la tienda</a>
+        <a href="Tips.dc.html" style="border: 2px solid #140A35; color: #140A35; font-weight: 700; text-decoration: none; padding: 14px 26px; border-radius: 999px;">Mientras tanto, mira los tips</a>
+      </div>
+    </div>
+    <aside style="flex: 1 1 360px; min-width: 0; background: #FFFFFF; border-radius: 24px; padding: 28px;">
+      <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Resumen</div>
+      <div style="display: flex; justify-content: space-between; margin-top: 16px;"><span>[Camiseta VolleyTip] × 1</span><span>[PRECIO]</span></div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px;"><span>[Llavero] × 2</span><span>[PRECIO]</span></div>
+      <div style="display: flex; justify-content: space-between; margin-top: 8px; color: #5B5680;"><span>Envío</span><span>[PRECIO]</span></div>
+      <div style="display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid #D9E6E8; font-weight: 700; font-size: 20px;"><span>Total</span><span>[TOTAL] COP</span></div>
+      <div style="margin-top: 20px; font-size: 14px; color: #5B5680; line-height: 1.6;">Envío a: [Nombre] · [Dirección], [Ciudad], [País]<br>Pago: {{metodoName}}</div>
+    </aside>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{widget}}" hint-placeholder-val="{{false}}">
+    <div role="dialog" aria-modal="true" aria-label="Pago con Wompi" style="position: fixed; inset: 0; background: rgba(20,10,53,0.72); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 10;">
+      <div style="width: 420px; max-width: 100%; background: #FFFFFF; border-radius: 20px; padding: 28px; color: #140A35;">
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-weight: 700; color: #5B5680; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase;">Widget de Wompi</span><button onClick="{{cerrarWidget}}" aria-label="Cerrar" style="border: 0; background: transparent; font-size: 22px; cursor: pointer;">×</button></div>
+        <div style="margin-top: 12px; font-size: 14px; color: #5B5680;">Pedido #VT-[0000] · VolleyTip</div>
+        <div style="font-family: Anton, Impact, sans-serif; font-size: 40px; margin-top: 4px;">[TOTAL] COP</div>
+        <div style="margin-top: 16px; height: 220px; border: 2px dashed #B3C3C6; border-radius: 14px; display: flex; align-items: center; justify-content: center; text-align: center; color: #8A86A8; font-weight: 600; padding: 16px;">[Interfaz de Wompi: el cliente elige tarjeta, PSE, Nequi, Bancolombia… y aprueba]</div>
+        <div style="display: flex; gap: 10px; margin-top: 16px;">
+          <button onClick="{{aprobar}}" style="flex: 1; height: 48px; border-radius: 999px; border: 0; background: #CDF980; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">Simular aprobado</button>
+          <a href="Errores.dc.html" style="flex: 1; height: 48px; border-radius: 999px; border: 2px solid #140A35; color: #140A35; font: 700 15px Archivo, sans-serif; display: flex; align-items: center; justify-content: center; text-decoration: none;">Simular rechazado</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <footer style="background: #140A35; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: #B3B0D4; font-size: 14px;">
+      <span>© VolleyTip · <a href="#" style="color: #B3B0D4;">Términos</a> · <a href="#" style="color: #B3B0D4;">Privacidad</a> · <a href="#" style="color: #B3B0D4;">Cambios y devoluciones</a></span>
+      <span>¿Dudas? <a href="Contacto.dc.html" style="color: #FFFFFF;">Escríbenos</a></span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["formulario","confirmado"],"default":"formulario"},"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { envio: 0, pais: 'CO', paid: false, widget: false }; }
+  renderVals() {
+    const intl = this.state.pais !== 'CO';
+    const envDefs = intl
+      ? [{ name: 'Envío internacional', time: '[N–N] días hábiles · con seguimiento', price: '[PRECIO]' }]
+      : [{ name: 'Envío estándar', time: '[N–N] días hábiles', price: '[PRECIO]' }, { name: 'Express', time: 'Bogotá y Medellín · [N] día hábil', price: '[PRECIO]' }];
+    const envSel = Math.min(this.state.envio, envDefs.length - 1);
+    const envios = envDefs.map((d, i) => {
+      const on = envSel === i;
+      return { name: d.name, time: d.time, price: d.price, pressed: on ? 'true' : 'false', dot: on ? '#140A35' : 'transparent',
+        pick: () => this.setState({ envio: i }),
+        style: 'display: flex; gap: 14px; align-items: center; width: 100%; padding: 16px 18px; border-radius: 14px; cursor: pointer; font: 16px Archivo, sans-serif; color: #140A35; border: 2px solid ' + (on ? '#140A35' : '#B3C3C6') + '; background: ' + (on ? '#FFFFFF' : 'transparent') + ';' };
+    });
+    const ok = this.state.paid || this.props.estado === 'confirmado';
+    return {
+      envios,
+      metodos: intl ? ['Tarjeta de crédito o débito'] : ['Tarjeta', 'PSE', 'Nequi', 'Botón Bancolombia'],
+      metodoName: '[Método elegido en Wompi]',
+      internacional: intl, envioPrice: envDefs[envSel].price,
+      cta: 'Pagar [TOTAL]',
+      setPais: (e) => this.setState({ pais: e.target.value, envio: 0 }),
+      pagar: () => this.setState({ widget: true }),
+      cerrarWidget: () => this.setState({ widget: false }),
+      aprobar: () => this.setState({ widget: false, paid: true }),
+      widget: this.state.widget && !ok,
+      showForm: !ok, showOk: ok
+    };
+  }
+}
+</script>
+</body>
+</html>

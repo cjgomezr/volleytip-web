@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Check-in</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column;">
+
+  <sc-if value="{{bloqueado}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 1; display: flex; flex-direction: column; padding: 32px 24px 24px; gap: 24px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 26px; align-self: flex-start;">
+      <div>
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">Check-in · Staff</div>
+        <h1 style="margin: 6px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 40px; line-height: 1; text-transform: uppercase;">Volleyball Camp [Ciudad]</h1>
+        <p style="margin: 10px 0 0; color: #B3B0D4; line-height: 1.5;">Ingresa el PIN que te dio el organizador.</p>
+      </div>
+      <div aria-label="PIN" style="display: flex; gap: 14px; justify-content: center;">
+        <sc-for list="{{dots}}" as="d" hint-placeholder-count="4">
+          <span style="width: 54px; height: 64px; border-radius: 14px; border: 2px solid {{d.border}}; display: flex; align-items: center; justify-content: center;"><span style="width: 14px; height: 14px; border-radius: 999px; background: {{d.fill}};"></span></span>
+        </sc-for>
+      </div>
+      <sc-if value="{{pinError}}" hint-placeholder-val="{{false}}">
+        <p style="margin: -8px 0 0; text-align: center; color: #FC0035; font-weight: 700;">PIN incorrecto. Te quedan [N] intentos.</p>
+      </sc-if>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: auto;">
+        <sc-for list="{{teclas}}" as="k" hint-placeholder-count="12">
+          <button onClick="{{k.press}}" aria-label="{{k.aria}}" style="{{k.style}}">{{k.t}}</button>
+        </sc-for>
+      </div>
+      <p style="margin: 0; text-align: center; font-size: 13px; color: #5B5680;">Enlace válido solo para este evento · [DD–DD MES]</p>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{dentro}}" hint-placeholder-val="{{false}}">
+
+  <header style="padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #221761;">
+    <div>
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">Check-in · Día {{dia}}</div>
+      <div style="font-weight: 700; font-size: 17px; margin-top: 2px;">Volleyball Camp [Ciudad] <span style="font-size: 12px; font-weight: 700; background: #221761; padding: 3px 8px; border-radius: 6px; margin-left: 4px;">Staff 2</span></div>
+    </div>
+    <button onClick="{{toggleDia}}" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 2px solid #D9E6E8; background: transparent; color: #D9E6E8; font: 700 14px Archivo, sans-serif; cursor: pointer;">Día {{otroDia}}</button>
+  </header>
+
+  <div style="padding: 16px 20px 0;">
+    <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 15px;"><span>{{ingresaron}} ingresaron</span><span style="color: #B3B0D4;">de 150</span></div>
+    <div style="height: 8px; border-radius: 8px; background: #221761; margin-top: 8px;"><div style="height: 8px; border-radius: 8px; background: #CDF980; width: {{pct}};"></div></div>
+  </div>
+
+  <sc-if value="{{escaneando}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="position: relative; flex: 1; min-height: 360px; border-radius: 24px; background: #0B0620; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+        <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #5B5680; font-weight: 600;">[CÁMARA]</div>
+        <div style="position: relative; width: 230px; height: 230px;">
+          <span style="position: absolute; left: 0; top: 0; width: 44px; height: 44px; border-left: 5px solid #CDF980; border-top: 5px solid #CDF980; border-radius: 12px 0 0 0;"></span>
+          <span style="position: absolute; right: 0; top: 0; width: 44px; height: 44px; border-right: 5px solid #CDF980; border-top: 5px solid #CDF980; border-radius: 0 12px 0 0;"></span>
+          <span style="position: absolute; left: 0; bottom: 0; width: 44px; height: 44px; border-left: 5px solid #CDF980; border-bottom: 5px solid #CDF980; border-radius: 0 0 0 12px;"></span>
+          <span style="position: absolute; right: 0; bottom: 0; width: 44px; height: 44px; border-right: 5px solid #CDF980; border-bottom: 5px solid #CDF980; border-radius: 0 0 12px 0;"></span>
+          <span style="position: absolute; left: 12px; right: 12px; top: 50%; height: 3px; background: #FC0035; border-radius: 3px;"></span>
+        </div>
+      </div>
+      <p style="margin: 0; text-align: center; color: #B3B0D4;">Apunta al código QR del tiquete</p>
+      <div style="display: flex; gap: 10px;">
+        <button onClick="{{simular}}" style="flex: 1; height: 52px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 16px Archivo, sans-serif; cursor: pointer;">Simular escaneo</button>
+        <button style="flex: 1; height: 52px; border-radius: 999px; border: 2px solid #D9E6E8; background: transparent; color: #D9E6E8; font: 700 16px Archivo, sans-serif; cursor: pointer;">Buscar por nombre</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{hayResultado}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="flex: 1; border-radius: 24px; background: {{bg}}; color: {{fg}}; padding: 28px 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 12px;">
+        <span style="width: 88px; height: 88px; border-radius: 999px; background: {{fg}}; color: {{bg}}; display: flex; align-items: center; justify-content: center; font-family: Anton, Impact, sans-serif; font-size: 52px; line-height: 1;">{{icono}}</span>
+        <div style="font-family: Anton, Impact, sans-serif; font-size: 48px; line-height: 1; text-transform: uppercase;">{{titulo}}</div>
+        <div style="font-size: 17px; line-height: 1.5; max-width: 300px;">{{detalle}}</div>
+        <sc-if value="{{conPersona}}" hint-placeholder-val="{{true}}">
+          <div style="margin-top: 8px; width: 100%; border-top: 2px solid {{fg}}; padding-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left;">
+            <div style="grid-column: 1 / -1;"><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7;">Participante</div><div style="font-weight: 700; font-size: 20px;">[Nombre completo]</div></div>
+            <div><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7;">Plan</div><div style="font-weight: 700;">Ingreso + camiseta</div></div>
+            <div><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7;">Talla</div><div style="font-weight: 700;">M</div></div>
+            <div style="grid-column: 1 / -1;"><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7;">Menor de edad</div><div style="font-weight: 700;">Sí · autorización firmada</div></div>
+          </div>
+        </sc-if>
+      </div>
+      <sc-if value="{{entregaCamiseta}}" hint-placeholder-val="{{true}}">
+        <label style="display: flex; align-items: center; gap: 12px; background: #221761; border-radius: 16px; padding: 16px; font-weight: 600;"><input type="checkbox" style="width: 24px; height: 24px; accent-color: #CDF980;"> Camiseta talla M entregada</label>
+      </sc-if>
+      <button onClick="{{siguiente}}" style="height: 56px; border-radius: 999px; border: 0; background: #D9E6E8; color: #140A35; font: 700 17px Archivo, sans-serif; cursor: pointer;">Escanear siguiente</button>
+    </div>
+  </sc-if>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"acceso":{"editor":"enum","options":["pin","dentro"],"default":"pin"},"resultado":{"editor":"enum","options":["escaneando","valido","ya usado","invalido"],"default":"escaneando"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sim: null, n: 0, dia: 1, pin: '', unlocked: false }; }
+  renderVals() {
+    const order = ['valido', 'ya usado', 'invalido'];
+    const r = this.state.sim !== null ? this.state.sim : this.props.resultado;
+    const map = {
+      'valido': { bg: '#CDF980', fg: '#140A35', icono: '✓', titulo: 'Bienvenido', detalle: 'Tiquete válido. Ingreso registrado a las [HH:MM].', persona: true },
+      'ya usado': { bg: '#D9E6E8', fg: '#140A35', icono: '!', titulo: 'Ya ingresó', detalle: 'Este tiquete se escaneó hoy a las [HH:MM] por [staff].', persona: true },
+      'invalido': { bg: '#FC0035', fg: '#140A35', icono: '×', titulo: 'No válido', detalle: 'El código no existe, es de otro evento o el pago no se aprobó. Busca a la persona por nombre.', persona: false }
+    };
+    const m = map[r];
+    const ing = 87 + this.state.n;
+    const dentro = this.state.unlocked || this.props.acceso === 'dentro';
+    const pin = this.state.pin;
+    const dots = [0, 1, 2, 3].map((i) => ({ fill: i < pin.length ? '#CDF980' : 'transparent', border: i === pin.length ? '#CDF980' : '#221761' }));
+    const press = (d) => () => {
+      if (d === 'del') return this.setState({ pin: pin.slice(0, -1) });
+      const np = pin + d;
+      if (np.length >= 4) this.setState({ pin: '', unlocked: true }); else this.setState({ pin: np });
+    };
+    const key = 'height: 64px; border-radius: 16px; border: 0; font: 700 26px Archivo, sans-serif; cursor: pointer; ';
+    const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del'].map((d) => ({
+      t: d === 'del' ? '⌫' : d, aria: d === 'del' ? 'Borrar' : (d || 'vacío'),
+      press: d ? press(d) : () => {},
+      style: key + (d === '' ? 'background: transparent; visibility: hidden;' : 'background: #221761; color: #D9E6E8;') }));
+    return {
+      bloqueado: !dentro, dentro, dots, teclas, pinError: false,
+      dia: this.state.dia, otroDia: this.state.dia === 1 ? 2 : 1,
+      toggleDia: () => this.setState({ dia: this.state.dia === 1 ? 2 : 1 }),
+      ingresaron: ing, pct: Math.round(ing / 150 * 100) + '%',
+      escaneando: !m, hayResultado: !!m,
+      bg: m ? m.bg : '#221761', fg: m ? m.fg : '#140A35', icono: m ? m.icono : '', titulo: m ? m.titulo : '', detalle: m ? m.detalle : '',
+      conPersona: !!(m && m.persona), entregaCamiseta: r === 'valido',
+      simular: () => { const k = this.state.k || 0; const i = k % 3; this.setState({ sim: order[i], k: k + 1, n: this.state.n + (order[i] === 'valido' ? 1 : 0) }); },
+      siguiente: () => this.setState({ sim: 'escaneando' })
+    };
+  }
+}
+</script>
+</body>
+</html>

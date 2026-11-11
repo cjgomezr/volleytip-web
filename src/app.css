@@ -1,0 +1,41 @@
+@import "tailwindcss";
+@import "@fontsource/anton/400.css";
+@import "@fontsource-variable/archivo/wght.css";
+
+/* Tokens de marca. La fuente de verdad es design-system.md: un valor nuevo se
+   agrega allí primero y después aquí. Los valores salen de los mockups de
+   docs/mockups/source. */
+@theme {
+  --color-brand-red: #fc0035;
+  --color-brand-indigo: #221761;
+  --color-brand-night: #140a35;
+  --color-brand-lime: #cdf980;
+  --color-brand-mist: #d9e6e8;
+
+  --color-ink-muted: #b3b0d4;
+  --color-ink-subtle: #5b5680;
+  --color-surface-light: #ffffff;
+  --color-line-light: #eef4f5;
+  --color-brand-red-deep: #b0002a;
+
+  --font-display: "Anton", Impact, sans-serif;
+  --font-sans: "Archivo Variable", system-ui, sans-serif;
+
+  --radius-control: 12px;
+  --radius-card: 16px;
+  --radius-panel: 24px;
+  --radius-pill: 999px;
+}
+
+html,
+body {
+  background-color: var(--color-brand-night);
+  color: var(--color-brand-mist);
+  font-family: var(--font-sans);
+  color-scheme: dark;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-brand-lime);
+  outline-offset: 3px;
+}

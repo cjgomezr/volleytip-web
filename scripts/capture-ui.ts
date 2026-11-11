@@ -2,7 +2,7 @@ import { mkdir, readdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium, type Browser } from "@playwright/test";
-import { decodePng, isUniformImage } from "./mockups/png.ts";
+import { decodePng, isUniformImage } from "./ui-review/png.ts";
 import {
   THEMES,
   VIEWPORTS,

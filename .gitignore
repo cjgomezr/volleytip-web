@@ -20,3 +20,6 @@ playwright-report/
 # alguien trabaje en un Mac.
 tests/ui.spec.ts-snapshots/*
 !tests/ui.spec.ts-snapshots/*-linux.png
+
+# React Router: tipos generados
+.react-router/

@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Tu tiquete</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}a:hover{color:#CDF980}
+.k{color:#5B5680;font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase}
+.v{font-weight:700;font-size:17px;margin-top:4px}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+    <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+    <a href="Camps.dc.html" style="font-weight: 600; font-size: 15px;">Ver todos los camps</a>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 32px 24px 96px; display: flex; flex-wrap: wrap; gap: 56px; align-items: center;">
+
+    <div style="flex: 999 1 480px; min-width: 0;">
+      <sc-if value="{{aprobado}}" hint-placeholder-val="{{true}}">
+        <span style="background: #CDF980; color: #140A35; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px;">Pago aprobado</span>
+        <h1 style="margin: 16px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(64px, 8vw, 112px); line-height: 0.92; text-transform: uppercase;">¡Estás<br><span style="color: #FC0035;">dentro!</span></h1>
+        <p style="margin: 20px 0 0; font-size: 20px; line-height: 1.5; max-width: 520px; color: #B3B0D4;">Te enviamos este tiquete a <strong style="color: #FFFFFF;">[correo]</strong> y por WhatsApp. Muéstralo en la entrada del camp: desde el celular o impreso.</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px;">
+          <a href="#" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 16px 26px; border-radius: 999px;">Descargar PDF</a>
+          <a href="#" style="border: 2px solid #D9E6E8; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 14px 24px; border-radius: 999px;">Agregar al calendario</a>
+          <a href="#" style="border: 2px solid #D9E6E8; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 14px 24px; border-radius: 999px;">Inscribir a otra persona</a>
+        </div>
+        <div style="margin-top: 40px; background: #221761; border-radius: 20px; padding: 24px; max-width: 560px;">
+          <div style="font-weight: 700; font-size: 18px;">Antes del camp</div>
+          <ul style="margin: 12px 0 0; padding-left: 20px; line-height: 1.8; color: #B3B0D4;">
+            <li>Llega 30 minutos antes para el check-in.</li>
+            <li>Lleva ropa deportiva, rodilleras e hidratación.</li>
+            <li>Tu camiseta se entrega en el check-in (plan con camiseta).</li>
+            <li>¿No puedes ir? Escríbenos antes del [fecha límite].</li>
+          </ul>
+        </div>
+      </sc-if>
+      <sc-if value="{{pendiente}}" hint-placeholder-val="{{false}}">
+        <span style="background: #D9E6E8; color: #140A35; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px;">Pago en proceso</span>
+        <h1 style="margin: 16px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(56px, 7vw, 96px); line-height: 0.92; text-transform: uppercase;">Estamos<br>confirmando<br>tu pago</h1>
+        <p style="margin: 20px 0 0; font-size: 20px; line-height: 1.5; max-width: 520px; color: #B3B0D4;">Algunos pagos por PSE tardan unos minutos. Tu cupo queda reservado por 30 minutos y te enviamos el tiquete apenas se apruebe.</p>
+        <div style="display: flex; align-items: center; gap: 12px; margin-top: 28px; font-weight: 600;">
+          <span style="width: 12px; height: 12px; border-radius: 999px; background: #CDF980;"></span> Revisando automáticamente…
+        </div>
+      </sc-if>
+    </div>
+
+    <article aria-label="Tiquete" style="flex: 1 1 380px; min-width: 0; max-width: 440px; margin: 0 auto; background: #D9E6E8; color: #140A35; border-radius: 28px; overflow: hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.4);">
+      <div style="background: #FC0035; padding: 24px 28px; display: flex; justify-content: space-between; align-items: center;">
+        <div>
+          <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Volleyball Camp</div>
+          <div style="font-family: Anton, Impact, sans-serif; font-size: 36px; line-height: 1; text-transform: uppercase; margin-top: 6px;">[Ciudad] [Año]</div>
+        </div>
+        <span style="font-family: Anton, Impact, sans-serif; font-size: 28px;">Nº [000]</span>
+      </div>
+      <div style="padding: 24px 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+        <div style="grid-column: 1 / -1;"><div class="k">Participante</div><div class="v" style="font-size: 22px;">[Nombre completo]</div></div>
+        <div><div class="k">Fechas</div><div class="v">[DD–DD MES]</div></div>
+        <div><div class="k">Hora</div><div class="v">[HH:MM]</div></div>
+        <div><div class="k">Lugar</div><div class="v">[Coliseo / club]</div></div>
+        <div><div class="k">Plan</div><div class="v">Ingreso + camiseta · M</div></div>
+      </div>
+      <div style="position: relative; border-top: 2px dashed #8A86A8; margin: 0 20px;">
+        <span style="position: absolute; left: -36px; top: -16px; width: 32px; height: 32px; border-radius: 999px; background: #140A35;"></span>
+        <span style="position: absolute; right: -36px; top: -16px; width: 32px; height: 32px; border-radius: 999px; background: #140A35;"></span>
+      </div>
+      <div style="padding: 28px; display: flex; flex-direction: column; align-items: center; gap: 12px;">
+        <div style="width: 200px; padding: 12px; background: #FFFFFF; border-radius: 12px; opacity: {{qrOpacity}};"><svg aria-hidden="true" viewBox="0 0 200 200" style="width: 100%; height: auto; display: block;"><path fill="#140A35" d="M0 0h8v8h-8zM0 8h8v8h-8zM0 16h8v8h-8zM0 24h8v8h-8zM0 32h8v8h-8zM0 40h8v8h-8zM0 48h8v8h-8zM0 64h8v8h-8zM0 72h8v8h-8zM0 88h8v8h-8zM0 104h8v8h-8zM0 112h8v8h-8zM0 128h8v8h-8zM0 144h8v8h-8zM0 152h8v8h-8zM0 160h8v8h-8zM0 168h8v8h-8zM0 176h8v8h-8zM0 184h8v8h-8zM0 192h8v8h-8zM8 0h8v8h-8zM8 48h8v8h-8zM8 64h8v8h-8zM8 72h8v8h-8zM8 80h8v8h-8zM8 88h8v8h-8zM8 104h8v8h-8zM8 112h8v8h-8zM8 144h8v8h-8zM8 192h8v8h-8zM16 0h8v8h-8zM16 16h8v8h-8zM16 24h8v8h-8zM16 32h8v8h-8zM16 48h8v8h-8zM16 72h8v8h-8zM16 88h8v8h-8zM16 104h8v8h-8zM16 112h8v8h-8zM16 120h8v8h-8zM16 128h8v8h-8zM16 144h8v8h-8zM16 160h8v8h-8zM16 168h8v8h-8zM16 176h8v8h-8zM16 192h8v8h-8zM24 0h8v8h-8zM24 16h8v8h-8zM24 24h8v8h-8zM24 32h8v8h-8zM24 48h8v8h-8zM24 72h8v8h-8zM24 96h8v8h-8zM24 112h8v8h-8zM24 120h8v8h-8zM24 128h8v8h-8zM24 144h8v8h-8zM24 160h8v8h-8zM24 168h8v8h-8zM24 176h8v8h-8zM24 192h8v8h-8zM32 0h8v8h-8zM32 16h8v8h-8zM32 24h8v8h-8zM32 32h8v8h-8zM32 48h8v8h-8zM32 72h8v8h-8zM32 80h8v8h-8zM32 96h8v8h-8zM32 104h8v8h-8zM32 128h8v8h-8zM32 144h8v8h-8zM32 160h8v8h-8zM32 168h8v8h-8zM32 176h8v8h-8zM32 192h8v8h-8zM40 0h8v8h-8zM40 48h8v8h-8zM40 96h8v8h-8zM40 112h8v8h-8zM40 120h8v8h-8zM40 144h8v8h-8zM40 192h8v8h-8zM48 0h8v8h-8zM48 8h8v8h-8zM48 16h8v8h-8zM48 24h8v8h-8zM48 32h8v8h-8zM48 40h8v8h-8zM48 48h8v8h-8zM48 64h8v8h-8zM48 72h8v8h-8zM48 80h8v8h-8zM48 120h8v8h-8zM48 144h8v8h-8zM48 152h8v8h-8zM48 160h8v8h-8zM48 168h8v8h-8zM48 176h8v8h-8zM48 184h8v8h-8zM48 192h8v8h-8zM56 80h8v8h-8zM56 104h8v8h-8zM56 120h8v8h-8zM64 24h8v8h-8zM64 32h8v8h-8zM64 48h8v8h-8zM64 56h8v8h-8zM64 64h8v8h-8zM64 72h8v8h-8zM64 80h8v8h-8zM64 96h8v8h-8zM64 104h8v8h-8zM64 112h8v8h-8zM64 128h8v8h-8zM64 136h8v8h-8zM64 176h8v8h-8zM64 184h8v8h-8zM64 192h8v8h-8zM72 16h8v8h-8zM72 24h8v8h-8zM72 32h8v8h-8zM72 40h8v8h-8zM72 48h8v8h-8zM72 64h8v8h-8zM72 72h8v8h-8zM72 80h8v8h-8zM72 88h8v8h-8zM72 144h8v8h-8zM72 184h8v8h-8zM72 192h8v8h-8zM80 0h8v8h-8zM80 16h8v8h-8zM80 24h8v8h-8zM80 32h8v8h-8zM80 40h8v8h-8zM80 48h8v8h-8zM80 56h8v8h-8zM80 64h8v8h-8zM80 72h8v8h-8zM80 80h8v8h-8zM80 88h8v8h-8zM80 96h8v8h-8zM80 120h8v8h-8zM80 128h8v8h-8zM80 136h8v8h-8zM80 144h8v8h-8zM80 152h8v8h-8zM80 176h8v8h-8zM80 184h8v8h-8zM80 192h8v8h-8zM88 0h8v8h-8zM88 8h8v8h-8zM88 16h8v8h-8zM88 32h8v8h-8zM88 40h8v8h-8zM88 64h8v8h-8zM88 80h8v8h-8zM88 120h8v8h-8zM88 128h8v8h-8zM88 136h8v8h-8zM88 168h8v8h-8zM88 176h8v8h-8zM96 32h8v8h-8zM96 48h8v8h-8zM96 56h8v8h-8zM96 64h8v8h-8zM96 72h8v8h-8zM96 80h8v8h-8zM96 104h8v8h-8zM96 136h8v8h-8zM96 144h8v8h-8zM96 152h8v8h-8zM96 160h8v8h-8zM96 168h8v8h-8zM104 0h8v8h-8zM104 24h8v8h-8zM104 64h8v8h-8zM104 72h8v8h-8zM104 88h8v8h-8zM104 112h8v8h-8zM104 120h8v8h-8zM104 144h8v8h-8zM104 152h8v8h-8zM104 160h8v8h-8zM104 184h8v8h-8zM112 16h8v8h-8zM112 32h8v8h-8zM112 40h8v8h-8zM112 80h8v8h-8zM112 104h8v8h-8zM112 112h8v8h-8zM112 120h8v8h-8zM112 128h8v8h-8zM112 144h8v8h-8zM112 152h8v8h-8zM112 160h8v8h-8zM112 176h8v8h-8zM112 184h8v8h-8zM120 8h8v8h-8zM120 48h8v8h-8zM120 56h8v8h-8zM120 64h8v8h-8zM120 72h8v8h-8zM120 88h8v8h-8zM120 96h8v8h-8zM120 120h8v8h-8zM120 152h8v8h-8zM120 168h8v8h-8zM120 176h8v8h-8zM128 24h8v8h-8zM128 64h8v8h-8zM128 80h8v8h-8zM128 120h8v8h-8zM128 152h8v8h-8zM128 160h8v8h-8zM128 168h8v8h-8zM128 176h8v8h-8zM128 184h8v8h-8zM128 192h8v8h-8zM136 88h8v8h-8zM136 112h8v8h-8zM136 136h8v8h-8zM136 152h8v8h-8zM136 160h8v8h-8zM136 184h8v8h-8zM136 192h8v8h-8zM144 0h8v8h-8zM144 8h8v8h-8zM144 16h8v8h-8zM144 24h8v8h-8zM144 32h8v8h-8zM144 40h8v8h-8zM144 48h8v8h-8zM144 72h8v8h-8zM144 80h8v8h-8zM144 88h8v8h-8zM144 104h8v8h-8zM144 120h8v8h-8zM144 128h8v8h-8zM144 136h8v8h-8zM144 160h8v8h-8zM144 192h8v8h-8zM152 0h8v8h-8zM152 48h8v8h-8zM152 64h8v8h-8zM152 72h8v8h-8zM152 88h8v8h-8zM152 96h8v8h-8zM152 104h8v8h-8zM152 128h8v8h-8zM152 136h8v8h-8zM152 168h8v8h-8zM152 176h8v8h-8zM152 192h8v8h-8zM160 0h8v8h-8zM160 16h8v8h-8zM160 24h8v8h-8zM160 32h8v8h-8zM160 48h8v8h-8zM160 64h8v8h-8zM160 96h8v8h-8zM160 112h8v8h-8zM160 128h8v8h-8zM160 136h8v8h-8zM160 160h8v8h-8zM160 168h8v8h-8zM160 184h8v8h-8zM160 192h8v8h-8zM168 0h8v8h-8zM168 16h8v8h-8zM168 24h8v8h-8zM168 32h8v8h-8zM168 48h8v8h-8zM168 64h8v8h-8zM168 72h8v8h-8zM168 80h8v8h-8zM168 88h8v8h-8zM168 96h8v8h-8zM168 112h8v8h-8zM168 128h8v8h-8zM168 136h8v8h-8zM168 144h8v8h-8zM168 152h8v8h-8zM168 160h8v8h-8zM168 184h8v8h-8zM168 192h8v8h-8zM176 0h8v8h-8zM176 16h8v8h-8zM176 24h8v8h-8zM176 32h8v8h-8zM176 48h8v8h-8zM176 72h8v8h-8zM176 88h8v8h-8zM176 96h8v8h-8zM176 112h8v8h-8zM176 144h8v8h-8zM176 176h8v8h-8zM176 184h8v8h-8zM176 192h8v8h-8zM184 0h8v8h-8zM184 48h8v8h-8zM184 64h8v8h-8zM184 72h8v8h-8zM184 88h8v8h-8zM184 96h8v8h-8zM184 104h8v8h-8zM184 136h8v8h-8zM184 144h8v8h-8zM184 152h8v8h-8zM184 160h8v8h-8zM184 168h8v8h-8zM184 176h8v8h-8zM184 184h8v8h-8zM192 0h8v8h-8zM192 8h8v8h-8zM192 16h8v8h-8zM192 24h8v8h-8zM192 32h8v8h-8zM192 40h8v8h-8zM192 48h8v8h-8zM192 80h8v8h-8zM192 96h8v8h-8zM192 104h8v8h-8zM192 112h8v8h-8zM192 120h8v8h-8zM192 128h8v8h-8zM192 144h8v8h-8zM192 160h8v8h-8zM192 168h8v8h-8zM192 176h8v8h-8zM192 184h8v8h-8zM192 192h8v8h-8z"></path></svg></div>
+        <div style="font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: 0.12em;">VT-CAMP-[XXXX]</div>
+        <div style="font-size: 13px; color: #5B5680;">{{qrNote}}</div>
+      </div>
+    </article>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"pago":{"editor":"enum","options":["aprobado","pendiente"],"default":"aprobado"},"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const ok = this.props.pago !== 'pendiente';
+    return {
+      aprobado: ok, pendiente: !ok,
+      qrOpacity: ok ? '1' : '0.15',
+      qrNote: ok ? 'Válido los 2 días · se escanea al entrar cada día' : 'El código se activa cuando se apruebe el pago'
+    };
+  }
+}
+</script>
+</body>
+</html>

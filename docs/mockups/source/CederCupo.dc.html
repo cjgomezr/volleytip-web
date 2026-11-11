@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Ceder cupo (celular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+  <header style="background: #140A35; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #221761;">
+    <a href="HomeMovil.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 22px; display: block;"></a>
+    <span class="eb" style="color: #B3B0D4;">Mi tiquete</span>
+  </header>
+  <sc-if value="{{vForm}}" hint-placeholder-val="{{true}}">
+    <section style="padding: 28px 16px 36px;">
+      <a href="MiTiquete.dc.html" style="font-weight: 700; font-size: 14px; text-decoration: none; color: #B3B0D4;">‹ Volver al tiquete</a>
+      <h1 class="an" style="font-size: 48px; margin-top: 14px;">Ceder mi cupo</h1>
+      <div style="margin-top: 16px; background: #221761; border-radius: 14px; padding: 16px; line-height: 1.6;"><strong>Volleyball Camp [Ciudad]</strong><br>[DD–DD MES] · Ingreso + camiseta<br>Hoy a nombre de: [Nombre del jugador]</div>
+      <p style="margin: 16px 0 0; line-height: 1.6; color: #B3B0D4;">¿No puedes ir? Pásale tu cupo a otro jugador, sin costo. Puedes hacerlo hasta el <strong style="color: #FFFFFF;">[DD MES]</strong>, un día antes del camp.</p>
+      <form style="display: flex; flex-direction: column; gap: 14px; margin-top: 24px;">
+        <h2 class="eb" style="margin: 0; color: #CDF980;">Nuevo jugador</h2>
+        <div><label class="lb" for="n-nom">Nombre completo</label><input id="n-nom" type="text" style="width: 100%; box-sizing: border-box; height: 54px; padding: 0 16px; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;"></div>
+        <div><label class="lb" for="n-nac">Fecha de nacimiento</label><input id="n-nac" type="date" style="width: 100%; box-sizing: border-box; height: 54px; padding: 0 16px; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;"></div>
+        <div><label class="lb" for="n-mail">Correo donde llega el tiquete</label><input id="n-mail" type="email" inputmode="email" placeholder="correo@ejemplo.com" style="width: 100%; box-sizing: border-box; height: 54px; padding: 0 16px; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;"></div>
+        <div><label class="lb" for="n-acu">Acudiente y teléfono (si es menor)</label><input id="n-acu" type="text" style="width: 100%; box-sizing: border-box; height: 54px; padding: 0 16px; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;"></div>
+        <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #CDF980; flex: none;"> El nuevo jugador o su acudiente acepta el <a href="#">deslinde de responsabilidad</a>.</label>
+      </form>
+      <div style="margin-top: 20px; border: 2px solid #FC0035; border-radius: 14px; padding: 14px; line-height: 1.5;"><strong>Ten en cuenta:</strong> tu QR actual deja de servir y no se puede deshacer. La talla de camiseta ya pedida se mantiene: [M].</div>
+      <button onClick="{{ceder}}" class="btn" style="width: 100%; margin-top: 18px;">Ceder cupo</button>
+    </section>
+  </sc-if>
+  <sc-if value="{{vListo}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 48px 16px; text-align: center;">
+      <span style="display: inline-flex; width: 64px; height: 64px; border-radius: 999px; background: #CDF980; color: #140A35; align-items: center; justify-content: center;"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 44px; margin-top: 18px;">Cupo cedido</h1>
+      <p style="margin: 12px auto 0; line-height: 1.6; color: #B3B0D4; max-width: 320px;">Le enviamos el tiquete nuevo a [correo del nuevo jugador]. Tu QR anterior ya no es válido. Te mandamos una copia de este cambio a tu correo.</p>
+      <a href="HomeMovil.dc.html" class="btn2" style="margin-top: 24px;">Ir al inicio</a>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vista":{"editor":"enum","options":["formulario","cedido"],"default":"formulario"},"$preview":{"width":390,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { v: null }; }
+  renderVals() {
+    const v = this.state.v || this.props.vista;
+    return { vForm: v === 'formulario', vListo: v === 'cedido', ceder: () => this.setState({ v: 'cedido' }) };
+  }
+}
+</script>
+</body>
+</html>

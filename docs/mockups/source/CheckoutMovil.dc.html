@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Checkout (celular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#D9E6E8}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="position: relative; background: #D9E6E8; color: #140A35; font-family: Archivo, system-ui, sans-serif; min-height: 100vh; padding-bottom: 96px;">
+  <header style="background: #140A35; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+    <a href="HomeMovil.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 22px; display: block;"></a>
+    <span style="display: flex; align-items: center; gap: 6px; color: #D9E6E8; font-size: 13px; font-weight: 600;"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#CDF980" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Pago seguro</span>
+  </header>
+
+  <sc-if value="{{showForm}}" hint-placeholder-val="{{true}}">
+    <button onClick="{{toggleResumen}}" aria-expanded="{{resumenOpen}}" style="width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 16px; border: 0; border-bottom: 1.5px solid #B3C3C6; background: #FFFFFF; font: 700 15px Archivo, sans-serif; color: #140A35; cursor: pointer;"><span>{{resumenLabel}}</span><span>[TOTAL]</span></button>
+    <sc-if value="{{resumen}}" hint-placeholder-val="{{false}}">
+      <div style="background: #FFFFFF; padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 12px; border-bottom: 1.5px solid #B3C3C6;">
+        <div style="display: flex; gap: 12px; align-items: center;"><div style="width: 48px; height: 60px; border-radius: 8px; background: #221761; flex: none;"></div><div style="flex: 1;"><div style="font-weight: 700;">Camiseta VolleyTip</div><div style="font-size: 13px; color: #5B5680;">Negro · M · ×1</div></div><span style="font-weight: 700;">[PRECIO]</span></div>
+        <div style="display: flex; gap: 12px; align-items: center;"><div style="width: 48px; height: 60px; border-radius: 8px; background: #221761; flex: none;"></div><div style="flex: 1;"><div style="font-weight: 700;">Llavero balón</div><div style="font-size: 13px; color: #5B5680;">×2</div></div><span style="font-weight: 700;">[PRECIO]</span></div>
+        <div style="display: flex; gap: 8px;"><input aria-label="Código de descuento" placeholder="Código de descuento" class="in" style="height: 46px; border-width: 1.5px;"><button style="height: 46px; padding: 0 16px; border-radius: 12px; border: 1.5px solid #140A35; background: transparent; font: 700 14px Archivo, sans-serif;">Aplicar</button></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #5B5680;"><span>Subtotal</span><span>[SUBTOTAL]</span></div>
+        <div style="display: flex; justify-content: space-between; font-size: 14px; color: #5B5680;"><span>Envío</span><span>[PRECIO]</span></div>
+      </div>
+    </sc-if>
+
+    <form style="padding: 24px 16px 0; display: flex; flex-direction: column; gap: 28px;">
+      <h1 class="an" style="font-size: 44px;">Finalizar compra</h1>
+      <section style="display: flex; flex-direction: column; gap: 14px;">
+        <h2 class="eb" style="margin: 0;">1 · Contacto</h2>
+        <div><label class="lb" for="m-mail">Correo</label><input class="in" id="m-mail" type="email" inputmode="email" placeholder="tu@correo.com"></div>
+        <div><label class="lb" for="m-wa">WhatsApp</label><input class="in" id="m-wa" type="tel" inputmode="tel" placeholder="+57"></div>
+      </section>
+      <section style="display: flex; flex-direction: column; gap: 14px;">
+        <h2 class="eb" style="margin: 0;">2 · Envío</h2>
+        <div><label class="lb" for="m-nom">Nombre de quien recibe</label><input class="in" id="m-nom" type="text" autocomplete="name"></div>
+        <div><label class="lb" for="m-doc">Cédula / documento</label><input class="in" id="m-doc" type="text" inputmode="numeric"></div>
+        <div><label class="lb" for="m-pais">País</label><select class="in" id="m-pais"><option>Colombia</option><option>Ecuador</option><option>Perú</option><option>Otro país</option></select></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><div><label class="lb" for="m-dep">Departamento</label><input class="in" id="m-dep" type="text"></div><div><label class="lb" for="m-ciu">Ciudad</label><input class="in" id="m-ciu" type="text"></div></div>
+        <div><label class="lb" for="m-dir">Dirección</label><input class="in" id="m-dir" type="text" autocomplete="street-address" placeholder="Calle, número, apto"></div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 14px; border: 2px solid #140A35; background: #FFFFFF;"><input type="radio" name="env" checked style="width: 20px; height: 20px; accent-color: #140A35;"><span style="flex: 1;"><span style="display: block; font-weight: 700;">Estándar</span><span style="font-size: 13px; color: #5B5680;">[N–N] días hábiles</span></span><span style="font-weight: 700;">[PRECIO]</span></label>
+          <label style="display: flex; gap: 12px; align-items: center; padding: 14px; border-radius: 14px; border: 2px solid #B3C3C6;"><input type="radio" name="env" style="width: 20px; height: 20px; accent-color: #140A35;"><span style="flex: 1;"><span style="display: block; font-weight: 700;">Express</span><span style="font-size: 13px; color: #5B5680;">Bogotá y Medellín</span></span><span style="font-weight: 700;">[PRECIO]</span></label>
+        </div>
+        <p style="margin: 0; background: #CDF980; border-radius: 12px; padding: 12px 14px; font-size: 14px; font-weight: 600;">Te faltan [$200.000 − subtotal] para el envío gratis.</p>
+      </section>
+      <section style="display: flex; flex-direction: column; gap: 10px;">
+        <h2 class="eb" style="margin: 0;">3 · Pago</h2>
+        <div style="background: #FFFFFF; border-radius: 14px; padding: 16px;">
+          <div style="font-weight: 700;">Pagas en la ventana segura de Wompi</div>
+          <p style="margin: 6px 0 10px; font-size: 14px; color: #5B5680; line-height: 1.5;">Ahí eliges el método. Con Nequi o Bancolombia apruebas desde la app de tu banco.</p>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap;"><span style="padding: 6px 10px; border-radius: 8px; border: 1.5px solid #B3C3C6; font-weight: 700; font-size: 13px;">Tarjeta</span><span style="padding: 6px 10px; border-radius: 8px; border: 1.5px solid #B3C3C6; font-weight: 700; font-size: 13px;">PSE</span><span style="padding: 6px 10px; border-radius: 8px; border: 1.5px solid #B3C3C6; font-weight: 700; font-size: 13px;">Nequi</span><span style="padding: 6px 10px; border-radius: 8px; border: 1.5px solid #B3C3C6; font-weight: 700; font-size: 13px;">Botón Bancolombia</span></div>
+        </div>
+        <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Acepto <a href="#" style="color: #221761;">términos</a>, <a href="#" style="color: #221761;">cambios</a> y <a href="#" style="color: #221761;">tratamiento de datos</a>.</label>
+      </section>
+    </form>
+
+    <div style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 6; background: #140A35; padding: 12px 16px; display: flex; gap: 12px; align-items: center;">
+      <div style="color: #D9E6E8;"><div style="font-size: 12px; color: #B3B0D4;">Total</div><div style="font-weight: 700; font-size: 18px;">[TOTAL]</div></div>
+      <button onClick="{{pagar}}" class="btn" style="flex: 1;">Pagar</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{widget}}" hint-placeholder-val="{{false}}">
+    <div style="position: fixed; inset: 0; z-index: 20; background: rgba(20,10,53,0.72); display: flex; align-items: flex-end;">
+      <div role="dialog" aria-modal="true" aria-label="Pago con Wompi" style="width: 100%; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 20px 16px 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span class="eb" style="color: #5B5680;">Widget de Wompi</span><button onClick="{{cerrarWidget}}" aria-label="Cerrar" style="border: 0; background: transparent; font-size: 24px; cursor: pointer;">×</button></div>
+        <div class="an" style="font-size: 34px; margin-top: 8px;">[TOTAL] COP</div>
+        <div style="margin-top: 14px; height: 300px; border: 2px dashed #B3C3C6; border-radius: 14px; display: flex; align-items: center; justify-content: center; text-align: center; color: #8A86A8; font-weight: 600; padding: 16px;">[Interfaz de Wompi a pantalla completa en celular]</div>
+        <div style="display: flex; gap: 10px; margin-top: 14px;">
+          <button onClick="{{aprobar}}" style="flex: 1; height: 48px; border-radius: 999px; border: 0; background: #CDF980; font: 700 15px Archivo, sans-serif; cursor: pointer;">Simular aprobado</button>
+          <a href="Errores.dc.html" style="flex: 1; height: 48px; border-radius: 999px; border: 2px solid #140A35; color: #140A35; font: 700 15px Archivo, sans-serif; display: flex; align-items: center; justify-content: center; text-decoration: none;">Rechazado</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{showOk}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 36px 16px;">
+      <span style="display: inline-flex; width: 56px; height: 56px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 52px; margin-top: 16px;">¡Pedido confirmado!</h1>
+      <p style="margin: 12px 0 0; line-height: 1.5;">Pedido <strong>#VT-[0000]</strong>. Te enviamos el detalle a [correo].</p>
+      <ol style="list-style: none; margin: 24px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px;">
+        <li style="background: #140A35; color: #CDF980; border-radius: 12px; padding: 14px; font-weight: 700;">✓ Pagado · [fecha]</li>
+        <li style="background: #FFFFFF; border-radius: 12px; padding: 14px; font-weight: 700;">Preparando · 1–2 días hábiles</li>
+        <li style="background: #FFFFFF; border-radius: 12px; padding: 14px; font-weight: 700;">Enviado · te llega la guía</li>
+        <li style="background: #FFFFFF; border-radius: 12px; padding: 14px; font-weight: 700;">Entregado</li>
+      </ol>
+      <a href="TiendaMovil.dc.html" class="btn" style="margin-top: 24px; background: #140A35; color: #D9E6E8;">Volver a la tienda</a>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["formulario","confirmado"],"default":"formulario"},"$preview":{"width":390,"height":1900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { resumen: false, widget: false, paid: false }; }
+  renderVals() {
+    const ok = this.state.paid || this.props.estado === 'confirmado';
+    return {
+      resumen: this.state.resumen, resumenOpen: this.state.resumen ? 'true' : 'false',
+      resumenLabel: (this.state.resumen ? 'Ocultar' : 'Ver') + ' resumen (3 productos) ' + (this.state.resumen ? '▴' : '▾'),
+      toggleResumen: () => this.setState({ resumen: !this.state.resumen }),
+      pagar: () => this.setState({ widget: true }), cerrarWidget: () => this.setState({ widget: false }),
+      aprobar: () => this.setState({ widget: false, paid: true }),
+      widget: this.state.widget && !ok, showForm: !ok, showOk: ok
+    };
+  }
+}
+</script>
+</body>
+</html>

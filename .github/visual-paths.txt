@@ -11,6 +11,9 @@ tests/**/*.spec.ts
 tests/ui.spec.ts-snapshots/**
 tests/support/**
 playwright.config.ts
+vite.config.ts
+react-router.config.ts
+public/**
 .nvmrc
 package.json
 package-lock.json

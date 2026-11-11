@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Tips</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}a:hover{color:#CDF980}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+    <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+    <nav aria-label="Principal" style="display: flex; gap: 28px; flex-wrap: wrap; font-weight: 600; font-size: 15px;">
+      <a href="Tips.dc.html" aria-current="page" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #FC0035; text-decoration-thickness: 3px; text-underline-offset: 8px;">Tips</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">Camps</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">Tienda</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">App</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">Nosotros</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div role="group" aria-label="Idioma" style="display: flex; border: 2px solid #221761; border-radius: 999px; padding: 3px; font: 700 13px Archivo, sans-serif;"><a href="#" aria-current="true" style="background: #D9E6E8; color: #140A35; padding: 7px 11px; border-radius: 999px; text-decoration: none;">ES</a><a href="#" lang="en" aria-label="English" style="color: #D9E6E8; padding: 7px 11px; border-radius: 999px; text-decoration: none;">EN</a></div>
+      <a href="#" aria-label="Carrito" style="width: 44px; height: 44px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9E6E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+      </a>
+      <a href="#" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-size: 15px;">Síguenos</a>
+    </div>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 40px 24px 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; flex-wrap: wrap;">
+    <div>
+      <h1 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(80px, 10vw, 144px); line-height: 0.9; text-transform: uppercase;">Tips</h1>
+      <p style="margin: 12px 0 0; font-size: 20px; color: #B3B0D4;">[N] videos cortos para mejorar tu juego. Un concepto por video.</p>
+    </div>
+    <div style="flex: 0 1 380px; min-width: 260px;">
+      <label for="buscar" style="display: block; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4; margin-bottom: 8px;">Buscar</label>
+      <div style="display: flex; align-items: center; gap: 10px; background: #221761; border-radius: 999px; padding: 0 18px; height: 52px;">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B3B0D4" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input id="buscar" type="search" placeholder="Ej: cómo recibir un saque flotado" style="flex: 1; min-width: 0; background: transparent; border: 0; outline: none; color: #D9E6E8; font: 16px Archivo, sans-serif;">
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Filtros" style="position: sticky; top: 0; z-index: 2; background: #140A35; border-bottom: 1px solid #221761;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 16px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center;">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+        <sc-for list="{{fundamentos}}" as="f" hint-placeholder-count="7">
+          <sc-if value="{{f.on}}" hint-placeholder-val="{{false}}">
+            <button aria-pressed="true" onClick="{{f.pick}}" style="background: #CDF980; color: #140A35; border: 0; padding: 12px 18px; border-radius: 999px; font: 700 15px Archivo, sans-serif; cursor: pointer;">{{f.name}}</button>
+          </sc-if>
+          <sc-if value="{{f.off}}" hint-placeholder-val="{{true}}">
+            <button aria-pressed="false" onClick="{{f.pick}}" style="background: #221761; color: #D9E6E8; border: 0; padding: 12px 18px; border-radius: 999px; font: 600 15px Archivo, sans-serif; cursor: pointer;">{{f.name}}</button>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div role="group" aria-label="Nivel" style="display: flex; background: #221761; border-radius: 999px; padding: 4px;">
+        <button style="background: #D9E6E8; color: #140A35; border: 0; padding: 9px 16px; border-radius: 999px; font: 700 14px Archivo, sans-serif;">Todos</button>
+        <button style="background: transparent; color: #D9E6E8; border: 0; padding: 9px 16px; border-radius: 999px; font: 600 14px Archivo, sans-serif;">Básico</button>
+        <button style="background: transparent; color: #D9E6E8; border: 0; padding: 9px 16px; border-radius: 999px; font: 600 14px Archivo, sans-serif;">Intermedio</button>
+        <button style="background: transparent; color: #D9E6E8; border: 0; padding: 9px 16px; border-radius: 999px; font: 600 14px Archivo, sans-serif;">Avanzado</button>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 32px 24px; display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch;">
+    <a href="Tip.dc.html" style="flex: 999 1 640px; min-width: 0; display: flex; flex-wrap: wrap; gap: 32px; align-items: center; background: #221761; border-radius: 24px; padding: 24px; text-decoration: none; color: #D9E6E8;">
+      <div style="position: relative; flex: 0 0 220px; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #140A35;">
+        <img src="../assets/personajes.jpg" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        <span style="position: absolute; bottom: 10px; right: 10px; background: #140A35; color: #D9E6E8; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px;">0:52</span>
+      </div>
+      <div style="flex: 1 1 360px; min-width: 0;">
+        <span style="background: #FC0035; color: #140A35; font-weight: 700; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px;">Último video</span>
+        <h2 style="margin: 16px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 56px; line-height: 1; text-transform: uppercase;">[Título del último tip]</h2>
+        <p style="margin: 14px 0 0; color: #B3B0D4; font-size: 18px; line-height: 1.5; max-width: 560px;">[Una línea: qué vas a aprender en este video.]</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; font-size: 14px; font-weight: 600;">
+          <span style="border: 1px solid #B3B0D4; padding: 6px 12px; border-radius: 999px;">Recepción</span>
+          <span style="border: 1px solid #B3B0D4; padding: 6px 12px; border-radius: 999px;">Básico</span>
+        </div>
+      </div>
+    </a>
+    <aside aria-label="Lo más visto" style="flex: 1 1 340px; min-width: 0; border: 2px solid #221761; border-radius: 24px; padding: 24px; display: flex; flex-direction: column;">
+      <h2 style="margin: 0 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">Lo más visto esta semana</h2>
+      <div style="display: flex; flex-direction: column; gap: 16px; flex: 1;">
+        <sc-for list="{{top}}" as="t" hint-placeholder-count="3">
+          <a href="Tip.dc.html" style="display: flex; gap: 16px; align-items: center; text-decoration: none; color: #D9E6E8;">
+            <span style="font-family: Anton, Impact, sans-serif; font-size: 44px; line-height: 1; color: #FC0035; width: 28px;">{{t.n}}</span>
+            <div style="flex: 0 0 64px; aspect-ratio: 9 / 16; border-radius: 10px; background: #221761;"></div>
+            <div style="min-width: 0;">
+              <div style="font-weight: 700; line-height: 1.3;">[Título del tip]</div>
+              <div style="color: #B3B0D4; font-size: 14px; margin-top: 4px;">{{t.cat}} · [N] vistas</div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </aside>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 8px 24px 64px;">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+      <h2 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 40px; text-transform: uppercase;">Todos los tips</h2>
+      <span style="color: #B3B0D4;">Más recientes primero</span>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 24px 16px;">
+      <sc-for list="{{tips}}" as="t" hint-placeholder-count="10">
+        <a href="Tip.dc.html" style="text-decoration: none; color: #D9E6E8;">
+          <div style="position: relative; aspect-ratio: 9 / 16; border-radius: 16px; background: #221761; display: flex; align-items: center; justify-content: center; color: #B3B0D4; font-weight: 600; font-size: 14px;">
+            [MINIATURA]
+            <span style="position: absolute; top: 10px; left: 10px; background: #140A35; color: #FFFFFF; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 8px; border-radius: 6px;">{{t.cat}}</span>
+            <span style="position: absolute; bottom: 10px; right: 10px; background: #140A35; color: #D9E6E8; font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 6px;">{{t.dur}}</span>
+          </div>
+          <div style="margin-top: 10px; font-weight: 700; font-size: 16px; line-height: 1.3;">[Título del tip]</div>
+          <div style="color: #B3B0D4; font-size: 14px; margin-top: 4px;">{{t.level}}</div>
+        </a>
+      </sc-for>
+    </div>
+    <div style="display: flex; justify-content: center; margin-top: 40px;">
+      <button style="border: 2px solid #D9E6E8; background: transparent; color: #D9E6E8; font: 700 16px Archivo, sans-serif; padding: 14px 28px; border-radius: 999px; cursor: pointer;">Cargar más tips</button>
+    </div>
+  </section>
+
+  <footer style="background: #221761; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 32px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: #B3B0D4; font-size: 14px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;">
+      <span>Pie de página completo: ver Home A</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2400}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { picked: 'Todos' }; }
+  renderVals() {
+    const names = ['Todos', 'Saque', 'Recepción', 'Colocación', 'Ataque', 'Bloqueo', 'Defensa'];
+    const fundamentos = names.map((name) => ({
+      name, on: this.state.picked === name, off: this.state.picked !== name,
+      pick: () => this.setState({ picked: name })
+    }));
+    const cats = ['Saque', 'Recepción', 'Colocación', 'Ataque', 'Bloqueo', 'Defensa'];
+    const levels = ['Básico', 'Intermedio', 'Avanzado'];
+    const durs = ['0:38', '0:52', '0:45', '1:02', '0:31'];
+    const all = Array.from({ length: 10 }, (_, i) => ({ cat: cats[i % 6], level: levels[i % 3], dur: durs[i % 5] }));
+    const tips = this.state.picked === 'Todos' ? all : all.filter((t) => t.cat === this.state.picked);
+    const top = [{ n: '1', cat: 'Ataque' }, { n: '2', cat: 'Saque' }, { n: '3', cat: 'Defensa' }];
+    return { fundamentos, tips, top };
+  }
+}
+</script>
+</body>
+</html>

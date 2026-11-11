@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Páginas de error</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}a:hover{color:#CDF980}
+.pg{min-height:820px;display:flex;flex-direction:column;border-bottom:8px solid #0B0620}
+.tag{position:absolute;left:24px;top:-1px;background:#0B0620;color:#B3B0D4;font:700 12px Archivo,sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:6px 10px;border-radius:0 0 8px 8px}
+.hd{max-width:1280px;width:100%;box-sizing:border-box;margin:0 auto;padding:28px 24px;display:flex;justify-content:space-between;align-items:center}
+.body{flex:1;max-width:1280px;width:100%;box-sizing:border-box;margin:0 auto;padding:24px 24px 72px;display:flex;flex-wrap:wrap;gap:48px;align-items:center}
+.big{font-family:Anton,Impact,sans-serif;font-weight:400;line-height:.85;text-transform:uppercase;margin:0}
+.btn{background:#FC0035;color:#140A35;font-weight:700;text-decoration:none;padding:16px 28px;border-radius:999px}
+.btn2{border:2px solid #D9E6E8;color:#D9E6E8;font-weight:700;text-decoration:none;padding:14px 26px;border-radius:999px}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif;">
+
+  <!-- 404 -->
+  <section class="pg" style="position: relative;">
+    <span class="tag">404 · No encontrada</span>
+    <div class="hd"><a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a><a href="Tips.dc.html" style="font-weight: 600;">Ver tips</a></div>
+    <div class="body">
+      <div style="flex: 999 1 520px; min-width: 0;">
+        <p class="big" style="font-size: clamp(140px, 18vw, 260px); color: #FC0035;">404</p>
+        <h1 style="margin: 8px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 56px; line-height: 1; text-transform: uppercase;">Balón fuera</h1>
+        <p style="margin: 16px 0 0; font-size: 20px; line-height: 1.5; color: #B3B0D4; max-width: 520px;">Esta página no existe o se movió. Pero tenemos más de [N] tips esperándote.</p>
+        <form role="search" style="display: flex; gap: 10px; margin-top: 28px; max-width: 520px;">
+          <label for="q404" style="position: absolute; left: -9999px;">Buscar un tip</label>
+          <input id="q404" type="search" placeholder="Busca un tip: saque, recepción…" style="flex: 1; min-width: 0; height: 54px; padding: 0 18px; border-radius: 999px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;">
+          <button type="button" style="height: 54px; padding: 0 24px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 16px Archivo, sans-serif;">Buscar</button>
+        </form>
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; margin-top: 24px; font-weight: 700;"><a href="Main.dc.html">Inicio</a><a href="Tips.dc.html">Tips</a><a href="Camps.dc.html">Camps</a><a href="Tienda.dc.html">Tienda</a></div>
+      </div>
+      <div style="flex: 1 1 320px; min-width: 0; display: flex; justify-content: center;">
+        <div style="width: 300px; height: 300px; border-radius: 999px; border: 3px dashed #221761; display: flex; align-items: center; justify-content: center; color: #5B5680; font-weight: 600; text-align: center; padding: 24px; box-sizing: border-box;">[Personaje persiguiendo el balón]</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 500 -->
+  <section class="pg" style="position: relative;">
+    <span class="tag">500 · Error del servidor</span>
+    <div class="hd"><a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a></div>
+    <div class="body">
+      <div style="flex: 999 1 520px; min-width: 0;">
+        <p class="big" style="font-size: clamp(140px, 18vw, 260px); color: #221761; -webkit-text-stroke: 3px #FC0035;">500</p>
+        <h1 style="margin: 8px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 56px; line-height: 1; text-transform: uppercase;">Pedimos tiempo</h1>
+        <p style="margin: 16px 0 0; font-size: 20px; line-height: 1.5; color: #B3B0D4; max-width: 520px;">Algo falló de nuestro lado. Ya nos llegó el aviso. Intenta de nuevo en un momento.</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px;"><a href="#" class="btn">Reintentar</a><a href="Main.dc.html" class="btn2">Ir al inicio</a></div>
+        <p style="margin: 24px 0 0; font-size: 14px; color: #5B5680;">Código de referencia: [req-id] · Si estabas pagando, no se hizo ningún cobro duplicado.</p>
+      </div>
+      <div style="flex: 1 1 320px; min-width: 0;"></div>
+    </div>
+  </section>
+
+  <!-- Mantenimiento -->
+  <section class="pg" style="position: relative; background: #221761;">
+    <span class="tag">Mantenimiento</span>
+    <div class="hd" style="justify-content: center;"><img src="../assets/wordmark.png" alt="volleytip" style="height: 34px; display: block;"></div>
+    <div class="body" style="justify-content: center; text-align: center;">
+      <div style="max-width: 640px;">
+        <span style="background: #CDF980; color: #140A35; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-radius: 6px;">Volvemos pronto</span>
+        <h1 style="margin: 20px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(64px, 8vw, 112px); line-height: 0.92; text-transform: uppercase;">Estamos<br><span style="color: #FC0035;">calentando</span></h1>
+        <p style="margin: 20px auto 0; font-size: 20px; line-height: 1.5; color: #B3B0D4;">Estamos mejorando la página. Volvemos a las <strong style="color: #FFFFFF;">[HH:MM]</strong>. Mientras tanto, los tips siguen en redes.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px;"><a href="#" class="btn">Instagram</a><a href="#" class="btn2">TikTok</a><a href="#" class="btn2">YouTube</a></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pago rechazado (zona clara, como tienda/checkout) -->
+  <section class="pg" style="position: relative; background: #D9E6E8; color: #140A35; border-bottom: 0;">
+    <span class="tag">Pago rechazado</span>
+    <div style="background: #140A35;"><div class="hd"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"><span style="color: #D9E6E8; font-weight: 600; font-size: 14px;">Pago seguro con Wompi</span></div></div>
+    <div class="body">
+      <div style="flex: 999 1 520px; min-width: 0;">
+        <span style="display: inline-flex; width: 64px; height: 64px; border-radius: 999px; background: #FC0035; align-items: center; justify-content: center; font-family: Anton, Impact, sans-serif; font-size: 40px; color: #140A35;">×</span>
+        <h1 style="margin: 20px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 72px; line-height: 0.95; text-transform: uppercase;">El pago no<br>se aprobó</h1>
+        <p style="margin: 16px 0 0; font-size: 20px; line-height: 1.5; max-width: 560px;">Tu banco rechazó la transacción y <strong>no se hizo ningún cobro</strong>. Tu carrito y tus datos siguen guardados.</p>
+        <div style="margin-top: 24px; background: #FFFFFF; border-radius: 16px; padding: 20px 24px; max-width: 560px;">
+          <div style="font-weight: 700;">Motivo: [Fondos insuficientes / tarjeta bloqueada / rechazada por el banco]</div>
+          <ul style="margin: 10px 0 0; padding-left: 20px; line-height: 1.7; color: #5B5680;"><li>Prueba con otra tarjeta, PSE o Nequi.</li><li>Si es tarjeta internacional, confirma con tu banco que permite compras en COP.</li></ul>
+        </div>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px;">
+          <a href="Checkout.dc.html" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 16px 28px; border-radius: 999px;">Intentar con otro método</a>
+          <a href="Contacto.dc.html" style="border: 2px solid #140A35; color: #140A35; font-weight: 700; text-decoration: none; padding: 14px 26px; border-radius: 999px;">Necesito ayuda</a>
+        </div>
+      </div>
+      <div style="flex: 1 1 340px; min-width: 0; background: #140A35; color: #D9E6E8; border-radius: 24px; padding: 28px;">
+        <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">Pedido sin pagar</div>
+        <div style="display: flex; justify-content: space-between; margin-top: 16px;"><span>[Camiseta VolleyTip] × 1</span><span>[PRECIO]</span></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px;"><span>[Llavero] × 2</span><span>[PRECIO]</span></div>
+        <div style="display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid #221761; font-weight: 700; font-size: 20px;"><span>Total</span><span>[TOTAL] COP</span></div>
+        <p style="margin: 14px 0 0; font-size: 14px; color: #B3B0D4;">En inscripciones a camps, el cupo se libera si no se paga en 30 minutos.</p>
+      </div>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":3300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

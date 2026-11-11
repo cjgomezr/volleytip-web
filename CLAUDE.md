@@ -1,23 +1,34 @@
-# CLAUDE.md: {{PROJECT_NAME}}
-
-<!-- Reemplaza los placeholders {{...}} al copiar esta plantilla a un repo.
-     Replace the {{...}} placeholders when copying this template into a repo. -->
+# CLAUDE.md: VolleyTip Web
 
 ## Project
 
-{{PROJECT_DESCRIPTION}}
+volleytip.com: sitio público bilingüe (tips, nosotros, contacto, VBall Tour),
+tienda de productos físicos y digitales con un solo carrito y pago por Wompi,
+inscripción y check-in de Volleyball Camps, y un admin propio. Los requisitos
+están en `docs/SRD-volleytip-web-v1.4.md`, el orden de construcción en
+`docs/plan-maestro.md`, las tablas en `docs/modelo-de-datos.md` y la
+referencia visual en `docs/mockups/` y `design-system.md`.
 
-Stack: {{STACK}} (default: Node.js + TypeScript)
+Stack: React Router 8 en modo framework (SSR) + TypeScript estricto +
+Tailwind 4 + Vite. Vitest para unitarias, Playwright para visual y
+accesibilidad. El código de la app vive en `src/` (no en `app/`). Supabase
+será el único backend; todavía no está en el repo, llega con el epic W1.
 
 ## Commands
 
-- Install: `{{INSTALL_CMD}}` (default: `npm install`)
-- Dev server: `{{DEV_SERVER_CMD}}` (default: `npm run dev`, serves `{{APP_URL}}`;
-  bootstrap assigns this project its own port, never the shared 3000)
-- Tests: `{{TEST_CMD}}` (default: `npm test`)
-- E2E / visual: `{{E2E_TEST_CMD}}` (default: `npx playwright test`)
-- Lint: `{{LINT_CMD}}` (default: `npx eslint . --max-warnings 0`)
-- Types: `{{TYPECHECK_CMD}}` (default: `npx tsc --noEmit`)
+- Install: `npm install` (también genera los tipos de rutas en
+  `.react-router/`)
+- Dev server: `npm run dev` (serves `http://localhost:3740`, con puerto
+  estricto: si está ocupado falla en vez de moverse a otro; este proyecto
+  tiene su propio puerto, nunca el 3000 compartido)
+- Tests: `npm test` (Vitest, `src/**/*.test.{ts,tsx}`; los tests del kit de
+  la fábrica van aparte con `npm run test:kit`)
+- E2E / visual: `npx playwright test`
+- Lint: `npm run lint`
+- Types: `npm run typecheck` (regenera los tipos de rutas y corre `tsc`. Si
+  `npx tsc --noEmit` falla con un `./+types/...` que no encuentra, es que
+  agregaste una ruta: corre este comando)
+- Build: `npm run build`
 
 ## Definition of Done
 
@@ -27,11 +38,11 @@ whose only changes are text (the paths in `.github/text-only-paths.txt`:
 docs, Markdown, skills) has nothing for it to check, and it says so in one
 line and lets you stop.
 
-1. All tests pass (`{{TEST_CMD}}`), including new tests for the new behavior.
-2. Lint passes with zero warnings (`{{LINT_CMD}}`).
-3. Type check passes (`{{TYPECHECK_CMD}}`).
+1. All tests pass (`npm test`), including new tests for the new behavior.
+2. Lint passes with zero warnings (`npm run lint`).
+3. Type check passes (`npm run typecheck`).
 4. If UI changed: visual regression + accessibility tests pass
-   (`{{E2E_TEST_CMD}}`) whenever the project has a Playwright config. They
+   (`npx playwright test`) whenever the project has a Playwright config. They
    cost no tokens, so they are never skipped to save budget. If Playwright or
    `scripts/ui-preflight.sh` reports that something else already answers on
    the app's URL, that is a blocker, not a nuisance: a server you did not
@@ -43,13 +54,13 @@ line and lets you stop.
    `FABRICA_LOCAL_PLAYWRIGHT=1` the gate does run it, and only when the
    branch changed a path listed in `.github/visual-paths.txt` (the same list
    `visual-baselines.yml` filters on). To run it by hand:
-   `{{E2E_TEST_CMD}}`.
+   `npx playwright test`.
    The `ui-reviewer` subagent (APPROVED) is additionally required according
    to the UI-review policy in `factory-models.json` → `review.uiReview`:
    `"always"` = every UI change; `"label"` (default) = only when this issue
    carries the `ui-review` label; `"off"` = never.
 5. The `code-reviewer` subagent has replied `APPROVED`.
-6. Budget: {{MAX_ATTEMPTS}} (default: 5) correction cycles TOTAL across all
+6. Budget: 5 correction cycles TOTAL across all
    checks (the Stop gate enforces the same number). If still failing, stop,
    label the issue `needs-human`, move its board card to `Blocked`
    (`bash scripts/task-status.sh N Blocked`), and comment exactly what was
@@ -207,8 +218,8 @@ body -q .body` → edit → `gh issue edit N --body-file`). A box you cannot bac
    NOT assume it worked. Never add the `auto-merge` label yourself.
 
 8. **Blockers.** Retries are ONLY for problems you can fix yourself (failing
-   tests, lint, types, your own bugs) and the budget is {{MAX_ATTEMPTS}}
-   (default 5) correction cycles TOTAL across all checks; the Stop gate
+   tests, lint, types, your own bugs) and the budget is 5
+   correction cycles TOTAL across all checks; the Stop gate
    enforces the same number. If the blocker is something only a human can
    provide (missing credentials or env vars, an external service not
    configured, a permission not granted, a dependency that cannot be
@@ -313,7 +324,7 @@ dueño.
 ## Documents & tickets
 
 Issues, PRDs and PR descriptions are written with the `write-ticket` /
-`write-prd` skills. Default language: {{DOC_LANG}} (es | en). When in doubt,
+`write-prd` skills. Default language: es. When in doubt,
 match the language of the request.
 
 ### House style (applies to everything the factory writes)

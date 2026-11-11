@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — App</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}a:hover{color:#CDF980}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+    <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+    <nav aria-label="Principal" style="display: flex; gap: 28px; flex-wrap: wrap; font-weight: 600; font-size: 15px;">
+      <a href="Tips.dc.html" style="color: #D9E6E8; text-decoration: none;">Tips</a>
+      <a href="Camps.dc.html" style="color: #D9E6E8; text-decoration: none;">Camps</a>
+      <a href="Tienda.dc.html" style="color: #D9E6E8; text-decoration: none;">Tienda</a>
+      <a href="App.dc.html" aria-current="page" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #FC0035; text-decoration-thickness: 3px; text-underline-offset: 8px;">App</a>
+      <a href="Nosotros.dc.html" style="color: #D9E6E8; text-decoration: none;">Nosotros</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div role="group" aria-label="Idioma" style="display: flex; border: 2px solid #221761; border-radius: 999px; padding: 3px; font: 700 13px Archivo, sans-serif;"><a href="#" aria-current="true" style="background: #D9E6E8; color: #140A35; padding: 7px 11px; border-radius: 999px; text-decoration: none;">ES</a><a href="#" lang="en" aria-label="English" style="color: #D9E6E8; padding: 7px 11px; border-radius: 999px; text-decoration: none;">EN</a></div>
+      <a href="Producto.dc.html" aria-label="Carrito" style="width: 44px; height: 44px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9E6E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+      </a>
+      <a href="#" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-size: 15px;">Síguenos</a>
+    </div>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 40px 24px 80px; display: flex; flex-wrap: wrap; gap: 56px; align-items: center;">
+    <div style="flex: 999 1 520px; min-width: 0;">
+      <sc-if value="{{espera}}" hint-placeholder-val="{{true}}">
+        <span style="background: #CDF980; color: #140A35; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 12px; border-radius: 6px;">Próximamente</span>
+      </sc-if>
+      <h1 style="margin: 20px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(64px, 8vw, 128px); line-height: 0.92; text-transform: uppercase;">Tu entrenador<br>de voley en<br>el <span style="color: #FC0035;">bolsillo</span></h1>
+      <p style="margin: 24px 0 0; font-size: 20px; line-height: 1.5; max-width: 520px; color: #B3B0D4;">Ejercicios, rutinas y herramientas para la cancha. Sin likes, sin rachas, sin distracciones: solo entrenar.</p>
+
+      <sc-if value="{{espera}}" hint-placeholder-val="{{true}}">
+        <sc-if value="{{noUnido}}" hint-placeholder-val="{{true}}">
+          <form style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px; max-width: 560px; align-items: flex-end;">
+            <div style="flex: 1 1 260px;">
+              <label for="wl" style="display: block; font-size: 13px; font-weight: 700; margin-bottom: 6px;">Avísame cuando salga</label>
+              <input id="wl" type="email" placeholder="tu@correo.com" style="width: 100%; box-sizing: border-box; height: 56px; padding: 0 18px; border-radius: 999px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;">
+            </div>
+            <button type="button" onClick="{{unirse}}" style="height: 56px; padding: 0 28px; background: #FC0035; color: #140A35; border: 0; border-radius: 999px; font: 700 17px Archivo, sans-serif; cursor: pointer;">Unirme a la lista</button>
+          </form>
+          <p style="margin: 12px 0 0; color: #B3B0D4; font-size: 14px;">[N] personas ya están en la lista de espera.</p>
+        </sc-if>
+        <sc-if value="{{unido}}" hint-placeholder-val="{{false}}">
+          <div style="margin-top: 32px; display: inline-flex; gap: 14px; align-items: center; background: #221761; border-radius: 999px; padding: 14px 24px 14px 14px;">
+            <span style="width: 40px; height: 40px; border-radius: 999px; background: #CDF980; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+            <span style="font-weight: 700;">¡Listo! Te avisamos el día del lanzamiento.</span>
+          </div>
+        </sc-if>
+      </sc-if>
+
+      <sc-if value="{{disponible}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center; margin-top: 32px;">
+          <a href="#" aria-label="Descargar en App Store" style="display: inline-flex; gap: 12px; align-items: center; background: #D9E6E8; color: #140A35; text-decoration: none; padding: 12px 22px; border-radius: 14px;">
+            <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24"><path fill="#140A35" d="{{apple}}"></path></svg>
+            <span><span style="display: block; font-size: 12px;">Descárgala en</span><span style="display: block; font-weight: 700; font-size: 18px;">App Store</span></span>
+          </a>
+          <a href="#" aria-label="Disponible en Google Play" style="display: inline-flex; gap: 12px; align-items: center; background: #D9E6E8; color: #140A35; text-decoration: none; padding: 12px 22px; border-radius: 14px;">
+            <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24"><path fill="#140A35" d="{{play}}"></path></svg>
+            <span><span style="display: block; font-size: 12px;">Disponible en</span><span style="display: block; font-weight: 700; font-size: 18px;">Google Play</span></span>
+          </a>
+          <div style="display: flex; gap: 12px; align-items: center; margin-left: 8px;">
+            <div aria-label="Código QR para descargar la app" style="width: 88px; height: 88px; border-radius: 12px; background: #D9E6E8; display: flex; align-items: center; justify-content: center; color: #140A35; font-size: 12px; font-weight: 700;">[QR]</div>
+            <span style="color: #B3B0D4; font-size: 14px; max-width: 120px; line-height: 1.4;">Escanéalo con tu celular</span>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="flex: 1 1 400px; min-width: 0; display: flex; justify-content: center; gap: 20px; align-items: flex-end;">
+      <div style="width: 220px; height: 450px; border-radius: 36px; border: 6px solid #221761; background: #140A35; overflow: hidden; position: relative; margin-bottom: 48px;">
+        <img src="../assets/personajes.jpg" alt="" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        <div style="position: absolute; left: 14px; right: 14px; bottom: 18px;">
+          <div style="font-weight: 700; font-size: 14px; color: #FFFFFF;">[Título del tip]</div>
+          <div style="height: 3px; border-radius: 3px; background: #221761; margin-top: 10px;"><div style="width: 40%; height: 3px; background: #FC0035;"></div></div>
+        </div>
+      </div>
+      <div style="width: 240px; height: 490px; border-radius: 38px; border: 6px solid #221761; background: #140A35; overflow: hidden; padding: 24px 18px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">Mi rutina</div>
+        <div style="font-family: Anton, Impact, sans-serif; font-size: 28px; line-height: 1; text-transform: uppercase; color: #FFFFFF;">Recepción + salto</div>
+        <div style="font-size: 12px; color: #B3B0D4;">4 ejercicios · 35 min</div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 8px;">
+          <div style="background: #221761; border-radius: 12px; padding: 12px; font-size: 13px; display: flex; justify-content: space-between;"><span>Recepción en pareja</span><span style="color: #B3B0D4;">3×10</span></div>
+          <div style="background: #221761; border-radius: 12px; padding: 12px; font-size: 13px; display: flex; justify-content: space-between;"><span>Salto al cajón</span><span style="color: #B3B0D4;">5×3</span></div>
+          <div style="background: #221761; border-radius: 12px; padding: 12px; font-size: 13px; display: flex; justify-content: space-between;"><span>Desplazamiento lateral</span><span style="color: #B3B0D4;">4×30s</span></div>
+          <div style="border: 2px dashed #221761; border-radius: 12px; padding: 10px; font-size: 13px; text-align: center; color: #B3B0D4;">+ Agregar ejercicio</div>
+        </div>
+        <div style="margin-top: auto; display: flex; gap: 8px;">
+          <div style="flex: 1; background: #FC0035; color: #140A35; border-radius: 999px; padding: 12px; text-align: center; font-weight: 700; font-size: 14px;">Empezar</div>
+          <div style="border: 2px solid #D9E6E8; border-radius: 999px; padding: 10px 14px; font-weight: 700; font-size: 14px;">Compartir</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: #221761;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 96px 24px;">
+      <h2 style="margin: 0 0 40px; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 64px; line-height: 1; text-transform: uppercase;">Qué puedes hacer</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px;">
+        <sc-for list="{{features}}" as="f" hint-placeholder-count="6">
+          <div style="background: #140A35; border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FC0035;">{{f.n}}</span>
+              <sc-if value="{{f.pronto}}" hint-placeholder-val="{{false}}">
+                <span style="border: 1px solid #B3B0D4; color: #B3B0D4; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 8px; border-radius: 6px;">Pronto</span>
+              </sc-if>
+            </div>
+            <h3 style="margin: 0; font-size: 22px; color: #FFFFFF;">{{f.title}}</h3>
+            <p style="margin: 0; color: #B3B0D4; line-height: 1.6;">{{f.desc}}</p>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 96px 24px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 48px; align-items: center;">
+      <div style="flex: 1 1 420px; min-width: 0;">
+        <h2 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 56px; line-height: 1; text-transform: uppercase;">Una sola cuenta</h2>
+        <p style="margin: 16px 0 0; color: #B3B0D4; font-size: 18px; line-height: 1.6;">La misma cuenta funciona en la app y en la web. Lo que compres aquí, como un minicurso, lo ves también en tu celular.</p>
+      </div>
+      <div style="flex: 1 1 420px; min-width: 0; background: #FC0035; color: #140A35; border-radius: 24px; padding: 32px;">
+        <div style="font-family: Anton, Impact, sans-serif; font-size: 56px; line-height: 1; text-transform: uppercase;">100% gratis</div>
+        <p style="margin: 12px 0 0; font-size: 18px; line-height: 1.5; font-weight: 600;">Sin suscripciones ni pagos dentro de la app. Descárgala y entrena.</p>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 0 24px 96px;">
+    <h2 style="margin: 0 0 24px; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 48px; line-height: 1; text-transform: uppercase;">Preguntas frecuentes</h2>
+    <div style="border-top: 2px solid #221761;">
+      <details style="border-bottom: 1px solid #221761; padding: 18px 0;"><summary style="font-weight: 700; font-size: 18px; cursor: pointer;">¿Cuándo sale la app?</summary><p style="margin: 10px 0 0; color: #B3B0D4;">[Fecha o "pronto". Únete a la lista y te avisamos.]</p></details>
+      <details style="border-bottom: 1px solid #221761; padding: 18px 0;"><summary style="font-weight: 700; font-size: 18px; cursor: pointer;">¿Es gratis?</summary><p style="margin: 10px 0 0; color: #B3B0D4;">Sí, la app es completamente gratis.</p></details>
+      <details style="border-bottom: 1px solid #221761; padding: 18px 0;"><summary style="font-weight: 700; font-size: 18px; cursor: pointer;">¿Funciona en iPhone y Android?</summary></details>
+      <details style="border-bottom: 1px solid #221761; padding: 18px 0;"><summary style="font-weight: 700; font-size: 18px; cursor: pointer;">¿Quién puede ver mis rutinas?</summary><p style="margin: 10px 0 0; color: #B3B0D4;">Solo tú, a menos que decidas compartirlas con un enlace.</p></details>
+    </div>
+  </section>
+
+  <footer style="background: #221761; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 32px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: #B3B0D4; font-size: 14px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;">
+      <span>Pie de página completo: ver Home A</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["lista de espera","disponible"],"default":"lista de espera"},"$preview":{"width":1440,"height":3000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { unido: false }; }
+  renderVals() {
+    const espera = (this.props.estado ?? 'lista de espera') === 'lista de espera';
+    return {
+      espera, disponible: !espera,
+      unido: this.state.unido, noUnido: !this.state.unido,
+      unirse: () => this.setState({ unido: true }),
+      apple: 'M12.152 6.896c-.948 0-2.415-1.078-3.96-1.04-2.04.027-3.91 1.183-4.961 3.014-2.117 3.675-.546 9.103 1.519 12.09 1.013 1.454 2.208 3.09 3.792 3.039 1.52-.065 2.09-.987 3.935-.987 1.831 0 2.35.987 3.96.948 1.637-.026 2.676-1.48 3.676-2.948 1.156-1.688 1.636-3.325 1.662-3.415-.039-.013-3.182-1.221-3.22-4.857-.026-3.04 2.48-4.494 2.597-4.559-1.429-2.09-3.623-2.324-4.39-2.376-2-.156-3.675 1.09-4.61 1.09zM15.53 3.83c.843-1.012 1.4-2.427 1.245-3.83-1.207.052-2.662.805-3.532 1.818-.78.896-1.454 2.338-1.273 3.714 1.338.104 2.715-.688 3.559-1.701',
+      play: 'M22.018 13.298l-3.919 2.218-3.515-3.493 3.543-3.521 3.891 2.202a1.49 1.49 0 0 1 0 2.594zM1.337.924a1.486 1.486 0 0 0-.112.568v21.017c0 .217.045.419.124.6l11.155-11.087L1.337.924zm12.207 10.065l3.258-3.238L3.45.195a1.466 1.466 0 0 0-.946-.179l11.04 10.973zm0 2.067l-11 10.933c.298.036.612-.016.906-.183l13.324-7.54-3.23-3.21z',
+      features: [
+        { n: '01', title: 'Biblioteca de ejercicios', desc: 'Todos los ejercicios de VolleyTip en video, organizados por fundamento.', pronto: false },
+        { n: '02', title: 'Arma tu rutina', desc: 'Elige ejercicios de la biblioteca, ajusta series y tiempos, y guárdala.', pronto: false },
+        { n: '03', title: 'Compártela', desc: 'Envía tu rutina con un enlace a tu equipo o a tu entrenador, si quieres.', pronto: false },
+        { n: '04', title: 'Rutina automática', desc: 'Dinos qué quieres trabajar y cuánto tiempo tienes, y la app arma la rutina por ti.', pronto: false },
+        { n: '05', title: 'Cronómetros', desc: 'Cuenta regresiva, intervalos y series para tus entrenamientos.', pronto: false },
+        { n: '06', title: 'Marcador de partidos', desc: 'Lleva el puntaje y los sets de tus partidos desde el celular.', pronto: false },
+        { n: '07', title: 'Programas de entrenamiento', desc: 'Planes de varias semanas para objetivos como salto vertical o fuerza.', pronto: true },
+        { n: '08', title: 'Fixtures de torneos', desc: 'Genera los cruces y el calendario de tu torneo en segundos.', pronto: true }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

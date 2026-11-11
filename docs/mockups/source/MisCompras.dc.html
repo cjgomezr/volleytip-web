@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Mis compras (celular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+  <header style="background: #140A35; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #221761;">
+    <a href="HomeMovil.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 22px; display: block;"></a>
+    <span class="eb" style="color: #B3B0D4;">Mis compras</span>
+  </header>
+  <sc-if value="{{vEntrar}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 32px 16px;">
+      <h1 class="an" style="font-size: 48px;">Mis compras</h1>
+      <p style="margin: 12px 0 0; line-height: 1.6; color: #B3B0D4;">Escribe el correo con el que compraste. Te enviamos un código para entrar. Sin contraseñas.</p>
+      <label class="lb" for="mc-mail" style="margin-top: 24px;">Correo</label>
+      <input id="mc-mail" type="email" inputmode="email" placeholder="tu@correo.com" style="width: 100%; box-sizing: border-box; height: 54px; padding: 0 16px; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 16px Archivo, sans-serif;">
+      <button onClick="{{pedir}}" class="btn" style="width: 100%; margin-top: 16px;">Enviarme el código</button>
+      <p style="margin: 16px 0 0; font-size: 14px; color: #B3B0D4; line-height: 1.6;">¿Compraste con otro correo o lo escribiste mal? <a href="https://wa.me/573146486275" style="font-weight: 700;">Escríbenos por WhatsApp</a> con tu comprobante de pago.</p>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vCodigo}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 32px 16px;">
+      <h1 class="an" style="font-size: 44px;">Revisa tu correo</h1>
+      <p style="margin: 12px 0 0; line-height: 1.6; color: #B3B0D4;">Si ese correo tiene compras, te llegó un código de 6 dígitos. Vence en 15 minutos.</p>
+      <div role="group" aria-label="Código de 6 dígitos" style="display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-top: 24px;"><input aria-label="Dígito 1" inputmode="numeric" maxlength="1" style="width: 100%; box-sizing: border-box; height: 60px; text-align: center; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 700 24px Archivo, sans-serif;"><input aria-label="Dígito 2" inputmode="numeric" maxlength="1" style="width: 100%; box-sizing: border-box; height: 60px; text-align: center; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 700 24px Archivo, sans-serif;"><input aria-label="Dígito 3" inputmode="numeric" maxlength="1" style="width: 100%; box-sizing: border-box; height: 60px; text-align: center; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 700 24px Archivo, sans-serif;"><input aria-label="Dígito 4" inputmode="numeric" maxlength="1" style="width: 100%; box-sizing: border-box; height: 60px; text-align: center; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 700 24px Archivo, sans-serif;"><input aria-label="Dígito 5" inputmode="numeric" maxlength="1" style="width: 100%; box-sizing: border-box; height: 60px; text-align: center; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 700 24px Archivo, sans-serif;"><input aria-label="Dígito 6" inputmode="numeric" maxlength="1" style="width: 100%; box-sizing: border-box; height: 60px; text-align: center; border-radius: 12px; border: 2px solid #B3B0D4; background: #140A35; color: #D9E6E8; font: 700 24px Archivo, sans-serif;"></div>
+      <button onClick="{{entrar}}" class="btn" style="width: 100%; margin-top: 16px;">Entrar</button>
+      <p style="margin: 16px 0 0; font-size: 14px; color: #B3B0D4; line-height: 1.6;">También puedes tocar el botón "Entrar a Mis compras" del correo. ¿No llegó? Revisa spam o <button onClick="{{volver}}" style="border: 0; background: transparent; color: #FFFFFF; font: 700 14px Archivo, sans-serif; text-decoration: underline; cursor: pointer; padding: 0;">pide otro código</button>.</p>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vLista}}" hint-placeholder-val="{{true}}">
+    <section style="padding: 24px 16px 8px;">
+      <h1 class="an" style="font-size: 44px;">Mis compras</h1>
+      <p style="margin: 8px 0 0; font-size: 14px; color: #B3B0D4;">[tu@correo.com]</p>
+    </section>
+    <section style="background: #D9E6E8; color: #140A35; padding: 24px 16px 32px; display: flex; flex-direction: column; gap: 24px;">
+      <div>
+        <h2 class="eb" style="margin: 0 0 10px; color: #5B5680;">Paquetes digitales</h2>
+        <article style="background: #FFFFFF; border-radius: 16px; padding: 16px;">
+          <div style="display: flex; gap: 12px; align-items: center;"><div style="width: 72px; height: 72px; border-radius: 12px; background: #221761; flex: none;"></div><div style="flex: 1;"><div style="font-weight: 700; font-size: 17px;">Recepción desde cero</div><div style="font-size: 13px; color: #5B5680;">2 de [N] lecciones vistas</div></div></div>
+          <div style="margin-top: 12px; height: 8px; border-radius: 999px; background: #D9E6E8;"><div style="width: 25%; height: 8px; border-radius: 999px; background: #221761;"></div></div>
+          <a href="LeccionMovil.dc.html" class="btn" style="margin-top: 14px; height: 48px;">Continuar · lección 3</a>
+        </article>
+      </div>
+      <div>
+        <h2 class="eb" style="margin: 0 0 10px; color: #5B5680;">Tiquetes de camp</h2>
+        <article style="background: #FFFFFF; border-radius: 16px; padding: 16px;">
+          <div style="font-weight: 700; font-size: 17px;">Volleyball Camp [Ciudad]</div>
+          <div style="font-size: 14px; color: #5B5680; margin-top: 2px;">[Nombre del jugador] · [DD–DD MES]</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px;"><a href="MiTiquete.dc.html" style="height: 46px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none;">Ver tiquete</a><a href="CederCupo.dc.html" style="height: 46px; border-radius: 999px; border: 2px solid #140A35; box-sizing: border-box; color: #140A35; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none;">Ceder cupo</a></div>
+        </article>
+      </div>
+      <div>
+        <h2 class="eb" style="margin: 0 0 10px; color: #5B5680;">Pedidos</h2>
+        <article style="background: #FFFFFF; border-radius: 16px; padding: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;"><span style="font-weight: 700; font-size: 17px;">Pedido #VT-[0000]</span><span style="padding: 4px 10px; border-radius: 999px; background: #CDF980; font-size: 12px; font-weight: 700;">Enviado</span></div>
+          <div style="font-size: 14px; color: #5B5680; margin-top: 4px;">Camiseta VolleyTip · Negro · M</div>
+          <div style="font-size: 14px; margin-top: 8px;">[Transportadora] · guía <strong style="font-family: ui-monospace, Menlo, monospace;">[123456789]</strong></div>
+          <a href="#" style="display: inline-block; margin-top: 10px; color: #221761; font-weight: 700;">Rastrear envío</a>
+        </article>
+      </div>
+    </section>
+    <section style="padding: 20px 16px 36px; display: flex; flex-direction: column; gap: 10px;">
+      <button onClick="{{salir}}" class="btn2" style="width: 100%;">Cerrar sesión</button>
+      <button onClick="{{salir}}" style="height: 44px; border: 0; background: transparent; color: #B3B0D4; font: 700 14px Archivo, sans-serif; text-decoration: underline; cursor: pointer;">Cerrar sesión en todos los dispositivos</button>
+    </section>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vista":{"editor":"enum","options":["mis compras","entrar","código"],"default":"mis compras"},"$preview":{"width":390,"height":1300}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { v: null }; }
+  renderVals() {
+    const v = this.state.v || this.props.vista;
+    return {
+      vEntrar: v === 'entrar', vCodigo: v === 'código', vLista: v === 'mis compras',
+      pedir: () => this.setState({ v: 'código' }), entrar: () => this.setState({ v: 'mis compras' }),
+      volver: () => this.setState({ v: 'entrar' }), salir: () => this.setState({ v: 'entrar' })
+    };
+  }
+}
+</script>
+</body>
+</html>

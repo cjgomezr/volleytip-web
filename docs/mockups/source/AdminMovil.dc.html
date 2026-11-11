@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Admin (celular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#EEF4F5}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="position: relative; background: #EEF4F5; color: #140A35; font-family: Archivo, system-ui, sans-serif; min-height: 100vh; padding-bottom: 84px;">
+  <header style="position: sticky; top: 0; z-index: 5; background: #140A35; color: #D9E6E8; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between;">
+    <div style="display: flex; align-items: center; gap: 8px;"><img src="../assets/wordmark.png" alt="volleytip" style="height: 20px;"><span style="background: #CDF980; color: #140A35; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 6px; border-radius: 4px;">Admin</span></div>
+    <span style="width: 34px; height: 34px; border-radius: 999px; background: #FC0035; color: #140A35; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center;">AP</span>
+  </header>
+
+  <sc-if value="{{vInicio}}" hint-placeholder-val="{{true}}">
+    <section style="padding: 20px 16px; display: flex; flex-direction: column; gap: 12px;">
+      <h1 class="an" style="font-size: 36px;">Hola, Andrés</h1>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Ventas del mes</div><div class="an" style="font-size: 26px; margin-top: 6px;">[$0.000.000]</div></div>
+        <button onClick="{{goPedidos}}" style="background: #FFFFFF; border-radius: 16px; padding: 16px; border: 0; text-align: left; cursor: pointer; font-family: Archivo, sans-serif;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Por enviar</div><div class="an" style="font-size: 26px; margin-top: 6px; color: #FC0035;">4 →</div></button>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Próximo camp</div><div class="an" style="font-size: 26px; margin-top: 6px;">112/150</div></div>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Mensajes</div><div class="an" style="font-size: 26px; margin-top: 6px;">3 nuevos</div></div>
+      </div>
+      <div style="background: #FFFFFF; border-left: 5px solid #FC0035; border-radius: 12px; padding: 12px 14px; font-size: 14px;"><strong>Stock bajo:</strong> Camiseta Negro M (0) · Blanco L (2)</div>
+      <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5B5680; margin-top: 8px;">Actividad reciente</div>
+      <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; padding: 0;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #EEF4F5;"><span><strong>#VT-1042</strong><br><span style="font-size: 13px; color: #5B5680;">Pedido · Medellín · [$000.000]</span></span><span style="padding: 4px 9px; border-radius: 999px; background: #FFE3E9; color: #B0002A; font-size: 12px; font-weight: 700;">Por enviar</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #EEF4F5;"><span><strong>[Nombre]</strong><br><span style="font-size: 13px; color: #5B5680;">Camp [Ciudad] · Ingreso + camiseta</span></span><span style="padding: 4px 9px; border-radius: 999px; background: #CDF980; font-size: 12px; font-weight: 700;">Pagado</span></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px;"><span><strong>[Club]</strong><br><span style="font-size: 13px; color: #5B5680;">Mensaje · Organizar un camp</span></span><span style="padding: 4px 9px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-size: 12px; font-weight: 700;">Nuevo</span></div>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vPedidos}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 20px 16px; display: flex; flex-direction: column; gap: 10px;">
+      <h1 class="an" style="font-size: 36px;">Pedidos</h1>
+      <div style="display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;"><span style="flex: none; padding: 8px 12px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-weight: 700; font-size: 13px;">Por enviar (4)</span><span style="flex: none; padding: 8px 12px; border-radius: 999px; background: #FFFFFF; font-weight: 700; font-size: 13px;">Enviados</span><span style="flex: none; padding: 8px 12px; border-radius: 999px; background: #FFFFFF; font-weight: 700; font-size: 13px;">Entregados</span></div>
+      <sc-for list="{{pedidos}}" as="p" hint-placeholder-count="4">
+        <button onClick="{{p.open}}" style="background: #FFFFFF; border-radius: 16px; padding: 16px; border: 0; width: 100%; text-align: left; cursor: pointer; font-family: Archivo, sans-serif; color: #140A35; display: flex; justify-content: space-between; align-items: center;">
+          <span><strong>{{p.id}}</strong> · {{p.cliente}}<br><span style="font-size: 13px; color: #5B5680;">{{p.destino}} · {{p.items}} · [$000.000]</span></span>
+          <span style="font-size: 20px; color: #5B5680;">›</span>
+        </button>
+      </sc-for>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vSubir}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 20px 16px; display: flex; flex-direction: column; gap: 14px;">
+      <h1 class="an" style="font-size: 36px;">Nuevo tip</h1>
+      <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; display: flex; gap: 14px; align-items: center;">
+        <div style="width: 64px; height: 112px; border-radius: 10px; background: #221761; flex: none;"></div>
+        <div style="flex: 1; min-width: 0;"><div style="font-weight: 700;">IMG_4821.MOV</div><div style="font-size: 13px; color: #5B5680;">0:52 · vertical · desde tu galería</div><div style="height: 6px; border-radius: 6px; background: #EEF4F5; margin-top: 10px;"><div style="width: 68%; height: 6px; border-radius: 6px; background: #CDF980;"></div></div><div style="font-size: 12px; color: #5B5680; margin-top: 4px;">Subiendo a Bunny… 68% · puedes seguir llenando</div></div>
+      </div>
+      <div><label class="lb" for="am-t">Título</label><input class="in" id="am-t" value="Cómo recibir un saque flotado" style="border-width: 1.5px; border-color: #B3C3C6;"></div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><div><label class="lb" for="am-f">Fundamento</label><select class="in" id="am-f" style="border-width: 1.5px; border-color: #B3C3C6;"><option>Recepción</option><option>Saque</option></select></div><div><label class="lb" for="am-n">Nivel</label><select class="in" id="am-n" style="border-width: 1.5px; border-color: #B3C3C6;"><option>Básico</option><option selected>Intermedio</option></select></div></div>
+      <div><label class="lb" for="am-c">3 claves</label><textarea class="in" id="am-c" rows="3" style="height: auto; padding: 12px; border-width: 1.5px; border-color: #B3C3C6;">Piernas flexionadas
+Plataforma quieta
+Dirige con los hombros</textarea></div>
+      <p style="margin: 0; font-size: 13px; color: #5B5680;">Error común, Practícalo, promo y traducción al inglés se pueden completar después desde el computador.</p>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;"><button style="height: 50px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 15px Archivo, sans-serif;">Guardar borrador</button><button class="btn" style="height: 50px; font-size: 15px;">Publicar</button></div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vCamps}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 20px 16px; display: flex; flex-direction: column; gap: 12px;">
+      <h1 class="an" style="font-size: 36px;">Camps</h1>
+      <div style="background: #140A35; color: #D9E6E8; border-radius: 16px; padding: 18px;">
+        <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">[DD–DD MES] · Venta directa</div>
+        <div class="an" style="font-size: 28px; margin-top: 6px;">Volleyball Camp [Ciudad]</div>
+        <div style="display: flex; justify-content: space-between; margin-top: 14px; font-weight: 700;"><span>112 inscritos</span><span style="color: #B3B0D4;">de 150</span></div>
+        <div style="height: 8px; border-radius: 8px; background: #221761; margin-top: 6px;"><div style="width: 75%; height: 8px; border-radius: 8px; background: #FC0035;"></div></div>
+        <a href="CheckIn.dc.html" class="btn" style="margin-top: 16px; height: 50px; font-size: 16px;">Abrir escáner</a>
+      </div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px;"><div style="font-size: 13px; color: #5B5680;">Con camiseta</div><div class="an" style="font-size: 26px;">74</div></div>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 16px;"><div style="font-size: 13px; color: #5B5680;">Menores</div><div class="an" style="font-size: 26px;">18</div></div>
+      </div>
+      <div style="background: #FFFFFF; border-radius: 16px; padding: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5B5680;">Enlaces de staff</span><button style="border: 0; background: transparent; font: 700 14px Archivo, sans-serif; color: #221761; text-decoration: underline;">+ Crear</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px;"><span><strong>Staff 1</strong> · PIN 4821</span><button style="height: 34px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 13px Archivo, sans-serif;">Compartir</button></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;"><span><strong>Staff 2</strong> · PIN 7305</span><button style="height: 34px; padding: 0 12px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 13px Archivo, sans-serif;">Compartir</button></div>
+        <p style="margin: 10px 0 0; font-size: 12px; color: #5B5680;">"Compartir" abre WhatsApp con el enlace listo.</p>
+      </div>
+      <a href="#" style="display: block; text-align: center; font-weight: 700; color: #221761;">Ver lista de inscritos →</a>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vMas}}" hint-placeholder-val="{{false}}">
+    <section style="padding: 20px 16px; display: flex; flex-direction: column; gap: 12px;">
+      <h1 class="an" style="font-size: 36px;">Más</h1>
+      <div style="background: #FFFFFF; border-radius: 16px; padding: 16px; padding: 0;">
+        <sc-for list="{{mas}}" as="m" hint-placeholder-count="7">
+          <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 16px; border-bottom: 1px solid #EEF4F5; color: #140A35; text-decoration: none; font-weight: 700;"><span>{{m.t}}</span><span style="font-size: 13px; color: #5B5680; font-weight: 600;">{{m.d}} ›</span></a>
+        </sc-for>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #5B5680; line-height: 1.5;">Editar productos con fotos, galerías completas e idiomas es más cómodo desde el computador; aquí se puede, pero en versión simplificada.</p>
+      <button style="height: 48px; border-radius: 999px; border: 1.5px solid #B0002A; background: transparent; color: #B0002A; font: 700 15px Archivo, sans-serif;">Cerrar sesión</button>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{sheet}}" hint-placeholder-val="{{false}}">
+    <div style="position: fixed; inset: 0; z-index: 20; background: rgba(20,10,53,0.6); display: flex; align-items: flex-end;">
+      <div role="dialog" aria-modal="true" aria-label="Pedido" style="width: 100%; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 18px 16px 24px; max-height: 90%; overflow: auto;">
+        <div style="width: 44px; height: 5px; border-radius: 5px; background: #B3C3C6; margin: 0 auto 14px;"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center;"><span class="an" style="font-size: 30px;">#VT-1042</span><button onClick="{{closeSheet}}" aria-label="Cerrar" style="border: 0; background: transparent; font-size: 24px;">×</button></div>
+        <div style="font-size: 14px; color: #5B5680; margin-top: 4px;">Pagado con Nequi · [DD/MM HH:MM]</div>
+        <div style="margin-top: 14px; background: #EEF4F5; border-radius: 12px; padding: 12px; font-size: 14px; line-height: 1.6;"><strong>Camiseta VolleyTip</strong> · Negro M × 1<br><strong>Llavero balón</strong> × 2</div>
+        <div style="margin-top: 10px; font-size: 14px; line-height: 1.6;"><strong>[Nombre]</strong> · +57 [WhatsApp]<br>[Dirección], Medellín</div>
+        <div style="display: flex; gap: 8px; margin-top: 10px;"><button style="flex: 1; height: 40px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 13px Archivo, sans-serif;">Copiar dirección</button><button style="flex: 1; height: 40px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 13px Archivo, sans-serif;">WhatsApp</button></div>
+        <sc-if value="{{porEnviar}}" hint-placeholder-val="{{true}}">
+          <div style="margin-top: 16px; display: flex; flex-direction: column; gap: 10px;">
+            <div><label class="lb" for="g-t">Transportadora</label><select class="in" id="g-t" style="border-width: 1.5px;"><option>Servientrega</option><option>Coordinadora</option><option>Interrapidísimo</option></select></div>
+            <div><label class="lb" for="g-n">Número de guía</label><div style="display: flex; gap: 8px;"><input class="in" id="g-n" inputmode="numeric" placeholder="123456789" style="border-width: 1.5px;"><button aria-label="Escanear código de barras de la guía" style="flex: none; width: 52px; height: 52px; border-radius: 12px; border: 1.5px solid #140A35; background: transparent; font: 700 12px Archivo, sans-serif;">Escanear</button></div></div>
+            <button onClick="{{enviar}}" class="btn">Marcar enviado y avisar</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{enviado}}" hint-placeholder-val="{{false}}">
+          <p style="margin: 16px 0 0; background: #CDF980; border-radius: 12px; padding: 12px; font-weight: 600;">✓ Enviado · al cliente le llegó el correo con la guía.</p>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <nav aria-label="Secciones" style="position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; background: #140A35; display: grid; grid-template-columns: repeat(5, 1fr); padding: 8px 6px 12px;">
+    <sc-for list="{{tabs}}" as="t" hint-placeholder-count="5">
+      <button onClick="{{t.pick}}" aria-current="{{t.cur}}" style="{{t.style}}"><span style="{{t.iconStyle}}">{{t.icon}}</span><span>{{t.label}}</span></button>
+    </sc-for>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vista":{"editor":"enum","options":["inicio","pedidos","subir","camps","mas"],"default":"inicio"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: null, sheet: false, sent: false }; }
+  renderVals() {
+    const tab = this.state.tab || this.props.vista || 'inicio';
+    const defs = [['inicio', 'Inicio', '⌂'], ['pedidos', 'Pedidos', '▤'], ['subir', 'Subir tip', '+'], ['camps', 'Camps', '◎'], ['mas', 'Más', '⋯']];
+    const tabs = defs.map(([k, label, icon]) => { const on = tab === k, plus = k === 'subir';
+      return { label, icon, cur: on ? 'page' : 'false', pick: () => this.setState({ tab: k, sheet: false }),
+        style: 'display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; background: transparent; cursor: pointer; font: 700 11px Archivo, sans-serif; color: ' + (on ? '#FFFFFF' : '#8A86A8') + ';',
+        iconStyle: plus ? 'width: 40px; height: 40px; margin-top: -14px; border-radius: 999px; background: #FC0035; color: #140A35; font-size: 26px; line-height: 40px; text-align: center;' : 'font-size: 20px; line-height: 24px; color: ' + (on ? '#FC0035' : '#8A86A8') + ';' }; });
+    const pedidos = [['#VT-1042', '[Nombre]', 'Medellín', '2 productos'], ['#VT-1040', '[Nombre]', 'Quito, EC', '1 producto'], ['#VT-1038', '[Nombre]', 'Cali', '3 productos'], ['#VT-1037', '[Nombre]', 'Bogotá', '1 producto']]
+      .map(([id, cliente, destino, items]) => ({ id, cliente, destino, items, open: () => this.setState({ sheet: true, sent: false }) }));
+    const mas = [['Productos e inventario', '12'], ['Galerías', '2'], ['Mensajes', '3 nuevos'], ['Tips publicados', '48'], ['Textos del sitio', ''], ['Idiomas y mercados', ''], ['Equipo', '']].map(([t, d]) => ({ t, d }));
+    return { tabs, pedidos, mas,
+      vInicio: tab === 'inicio', vPedidos: tab === 'pedidos', vSubir: tab === 'subir', vCamps: tab === 'camps', vMas: tab === 'mas',
+      goPedidos: () => this.setState({ tab: 'pedidos' }),
+      sheet: this.state.sheet, closeSheet: () => this.setState({ sheet: false }),
+      porEnviar: !this.state.sent, enviado: this.state.sent, enviar: () => this.setState({ sent: true }) };
+  }
+}
+</script>
+</body>
+</html>

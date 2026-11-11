@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Tienda</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#D9E6E8}
+a{color:#221761}a:hover{color:#140A35}
+</style>
+</helmet>
+<div style="background: #D9E6E8; color: #140A35; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <div style="background: #140A35;">
+    <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+      <nav aria-label="Principal" style="display: flex; gap: 28px; flex-wrap: wrap; font-weight: 600; font-size: 15px;">
+        <a href="Tips.dc.html" style="color: #D9E6E8; text-decoration: none;">Tips</a>
+        <a href="#" style="color: #D9E6E8; text-decoration: none;">Camps</a>
+        <a href="Tienda.dc.html" aria-current="page" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #FC0035; text-decoration-thickness: 3px; text-underline-offset: 8px;">Tienda</a>
+        <a href="#" style="color: #D9E6E8; text-decoration: none;">App</a>
+        <a href="#" style="color: #D9E6E8; text-decoration: none;">Nosotros</a>
+      </nav>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div role="group" aria-label="Idioma" style="display: flex; border: 2px solid #221761; border-radius: 999px; padding: 3px; font: 700 13px Archivo, sans-serif;"><a href="#" aria-current="true" style="background: #D9E6E8; color: #140A35; padding: 7px 11px; border-radius: 999px; text-decoration: none;">ES</a><a href="#" lang="en" aria-label="English" style="color: #D9E6E8; padding: 7px 11px; border-radius: 999px; text-decoration: none;">EN</a></div>
+        <a href="Producto.dc.html" aria-label="Carrito, 2 productos" style="position: relative; width: 44px; height: 44px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9E6E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+          <span style="position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; border-radius: 999px; background: #CDF980; color: #140A35; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;">2</span>
+        </a>
+        <a href="#" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-size: 15px;">Síguenos</a>
+      </div>
+    </header>
+  </div>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 48px 24px 24px; display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap;">
+    <div>
+      <h1 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(80px, 10vw, 144px); line-height: 0.9; text-transform: uppercase;">Tienda</h1>
+      <p style="margin: 12px 0 0; font-size: 20px; color: #5B5680;">Ropa y equipo para entrenar como juegas.</p>
+    </div>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+      <div>
+        <label for="pais" style="display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5B5680; margin-bottom: 6px;">Envío a</label>
+        <select id="pais" style="height: 48px; padding: 0 16px; border-radius: 12px; border: 2px solid #140A35; background: #D9E6E8; color: #140A35; font: 600 15px Archivo, sans-serif;">
+          <option>Colombia</option><option>Ecuador</option><option>Perú</option><option>Chile</option><option>Argentina</option><option>Otro país</option>
+        </select>
+      </div>
+      <div>
+        <label for="moneda" style="display: block; font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5B5680; margin-bottom: 6px;">Moneda</label>
+        <select id="moneda" style="height: 48px; padding: 0 16px; border-radius: 12px; border: 2px solid #140A35; background: #D9E6E8; color: #140A35; font: 600 15px Archivo, sans-serif;">
+          <option>COP</option><option>USD</option><option>PEN</option><option>CLP</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 8px 24px 24px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: center; justify-content: space-between; background: #FC0035; color: #140A35; border-radius: 20px; padding: 24px 32px;">
+      <div>
+        <p style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Espacio de campaña (opcional)</p>
+        <p style="margin: 6px 0 0; font-family: Anton, Impact, sans-serif; font-size: 36px; line-height: 1; text-transform: uppercase;">[Lanzamiento o descuento]</p>
+      </div>
+      <a href="#" style="background: #140A35; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 14px 24px; border-radius: 999px;">Ver colección</a>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 16px 24px 64px; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+    <aside aria-label="Filtros" style="flex: 1 1 220px; max-width: 260px; display: flex; flex-direction: column; gap: 28px;">
+      <div>
+        <h2 style="margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Para</h2>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <sc-for list="{{generos}}" as="g" hint-placeholder-count="4">
+            <sc-if value="{{g.on}}" hint-placeholder-val="{{false}}">
+              <button aria-pressed="true" onClick="{{g.pick}}" style="background: #140A35; color: #D9E6E8; border: 2px solid #140A35; padding: 10px 16px; border-radius: 999px; font: 700 14px Archivo, sans-serif; cursor: pointer;">{{g.name}}</button>
+            </sc-if>
+            <sc-if value="{{g.off}}" hint-placeholder-val="{{true}}">
+              <button aria-pressed="false" onClick="{{g.pick}}" style="background: transparent; color: #140A35; border: 2px solid #140A35; padding: 10px 16px; border-radius: 999px; font: 600 14px Archivo, sans-serif; cursor: pointer;">{{g.name}}</button>
+            </sc-if>
+          </sc-for>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Categoría</h2>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <label style="display: flex; gap: 10px; align-items: center;"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #140A35;"> Camisetas</label>
+          <label style="display: flex; gap: 10px; align-items: center;"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #140A35;"> Shorts</label>
+          <label style="display: flex; gap: 10px; align-items: center;"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #140A35;"> [Categoría]</label>
+          <label style="display: flex; gap: 10px; align-items: center;"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #140A35;"> Accesorios</label>
+        </div>
+      </div>
+      <div>
+        <h2 style="margin: 0 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Talla</h2>
+        <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;">
+          <button style="height: 44px; border: 2px solid #140A35; background: transparent; border-radius: 10px; font: 600 14px Archivo, sans-serif;">XS</button>
+          <button style="height: 44px; border: 2px solid #140A35; background: transparent; border-radius: 10px; font: 600 14px Archivo, sans-serif;">S</button>
+          <button style="height: 44px; border: 2px solid #140A35; background: #140A35; color: #D9E6E8; border-radius: 10px; font: 700 14px Archivo, sans-serif;">M</button>
+          <button style="height: 44px; border: 2px solid #140A35; background: transparent; border-radius: 10px; font: 600 14px Archivo, sans-serif;">L</button>
+          <button style="height: 44px; border: 2px solid #140A35; background: transparent; border-radius: 10px; font: 600 14px Archivo, sans-serif;">XL</button>
+        </div>
+      </div>
+    </aside>
+
+    <div style="flex: 999 1 640px; min-width: 0;">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 20px;">
+        <span style="color: #5B5680; font-weight: 600;">{{count}} productos</span>
+        <label style="display: flex; align-items: center; gap: 10px; font-weight: 600;">Ordenar
+          <select style="height: 44px; padding: 0 14px; border-radius: 12px; border: 2px solid #140A35; background: #D9E6E8; color: #140A35; font: 600 14px Archivo, sans-serif;"><option>Más nuevos</option><option>Precio: menor a mayor</option><option>Precio: mayor a menor</option></select>
+        </label>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 32px 20px;">
+        <sc-for list="{{productos}}" as="p" hint-placeholder-count="6">
+          <a href="Producto.dc.html" style="text-decoration: none; color: #140A35;">
+            <div style="position: relative; aspect-ratio: 4 / 5; border-radius: 20px; background: #221761; display: flex; align-items: center; justify-content: center; color: #B3B0D4; font-weight: 600;">
+              [FOTO PRODUCTO]
+              <sc-if value="{{p.nuevo}}" hint-placeholder-val="{{false}}">
+                <span style="position: absolute; top: 14px; left: 14px; background: #CDF980; color: #140A35; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 9px; border-radius: 6px;">Nuevo</span>
+              </sc-if>
+            </div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; margin-top: 14px;">
+              <div>
+                <div style="font-weight: 700; font-size: 17px;">[Nombre del producto]</div>
+                <div style="color: #5B5680; font-size: 14px; margin-top: 2px;">{{p.genero}}</div>
+              </div>
+              <div style="font-weight: 700; white-space: nowrap;">[PRECIO]</div>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 10px;" aria-label="Colores disponibles">
+              <span style="width: 16px; height: 16px; border-radius: 999px; background: #140A35;"></span>
+              <span style="width: 16px; height: 16px; border-radius: 999px; background: #FC0035;"></span>
+              <span style="width: 16px; height: 16px; border-radius: 999px; background: #D9E6E8; box-shadow: inset 0 0 0 2px #140A35;"></span>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="background: #140A35; color: #D9E6E8;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 40px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 24px;">
+      <div><div style="color: #FFFFFF; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;">Envío gratis</div><p style="margin: 8px 0 0; line-height: 1.5;">En Colombia por compras desde $200.000.</p></div>
+      <div><div style="color: #FFFFFF; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;">Envíos a Suramérica</div><p style="margin: 8px 0 0; line-height: 1.5;">El costo se calcula según tu país al pagar.</p></div>
+      <div><div style="color: #FFFFFF; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;">Pago seguro</div><p style="margin: 8px 0 0; line-height: 1.5;">Tarjeta, PSE, Nequi y Bancolombia con Wompi.</p></div>
+      <div><div style="color: #FFFFFF; font-weight: 700; font-size: 13px; letter-spacing: 0.12em; text-transform: uppercase;">Cambios</div><p style="margin: 8px 0 0; line-height: 1.5;">[N] días para cambios de talla.</p></div>
+    </div>
+  </section>
+
+  <footer style="background: #221761; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 32px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: #B3B0D4; font-size: 14px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;">
+      <span>Pie de página completo: ver Home A</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2600}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { genero: 'Todo' }; }
+  renderVals() {
+    const names = ['Todo', 'Hombre', 'Mujer', 'Unisex'];
+    const generos = names.map((name) => ({
+      name, on: this.state.genero === name, off: this.state.genero !== name,
+      pick: () => this.setState({ genero: name })
+    }));
+    const base = ['Hombre', 'Mujer', 'Unisex', 'Mujer', 'Hombre', 'Unisex', 'Mujer', 'Hombre', 'Unisex'];
+    const all = base.map((g, i) => ({ genero: g, nuevo: i < 2 }));
+    const productos = this.state.genero === 'Todo' ? all : all.filter((p) => p.genero === this.state.genero);
+    return { generos, productos, count: productos.length };
+  }
+}
+</script>
+</body>
+</html>

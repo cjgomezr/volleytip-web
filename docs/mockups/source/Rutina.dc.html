@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Rutina compartida</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}a:hover{color:#CDF980}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+    <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+    <a href="App.dc.html" style="border: 2px solid #D9E6E8; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 10px 20px; border-radius: 999px; font-size: 15px;">Conoce la app</a>
+  </header>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 24px 96px; display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-start;">
+
+    <div style="flex: 999 1 560px; min-width: 0;">
+      <div style="display: flex; gap: 12px; align-items: center;">
+        <span style="width: 40px; height: 40px; border-radius: 999px; background: #221761; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #FFFFFF;">[A]</span>
+        <span style="color: #B3B0D4;"><strong style="color: #FFFFFF;">[Nombre]</strong> compartió esta rutina contigo</span>
+      </div>
+      <h1 style="margin: 16px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(44px, 5vw, 72px); line-height: 1; text-transform: uppercase;">Recepción + salto</h1>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; font-size: 14px; font-weight: 600;">
+        <span style="border: 1px solid #B3B0D4; padding: 6px 12px; border-radius: 999px;">4 ejercicios</span>
+        <span style="border: 1px solid #B3B0D4; padding: 6px 12px; border-radius: 999px;">~35 min</span>
+        <span style="border: 1px solid #B3B0D4; padding: 6px 12px; border-radius: 999px;">Intermedio</span>
+        <span style="border: 1px solid #B3B0D4; padding: 6px 12px; border-radius: 999px;">Sin gimnasio</span>
+      </div>
+
+      <ol style="list-style: none; margin: 28px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+        <sc-for list="{{ejercicios}}" as="e" hint-placeholder-count="4">
+          <li style="background: #221761; border-radius: 20px; overflow: hidden;">
+            <button onClick="{{e.toggle}}" aria-expanded="{{e.expanded}}" style="width: 100%; display: flex; gap: 18px; align-items: center; padding: 16px 20px; background: transparent; border: 0; color: #D9E6E8; text-align: left; cursor: pointer; font-family: Archivo, sans-serif;">
+              <span style="font-family: Anton, Impact, sans-serif; font-size: 32px; color: #FC0035; width: 36px;">{{e.n}}</span>
+              <span style="flex: 0 0 56px; aspect-ratio: 9 / 16; border-radius: 8px; background: #140A35;"></span>
+              <span style="flex: 1; min-width: 0;">
+                <span style="display: block; font-weight: 700; font-size: 18px; color: #FFFFFF;">{{e.name}}</span>
+                <span style="display: block; color: #B3B0D4; margin-top: 4px;">{{e.cat}}</span>
+              </span>
+              <span style="font-weight: 700; font-size: 18px; white-space: nowrap;">{{e.dose}}</span>
+              <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9E6E8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{e.chev}}"></path></svg>
+            </button>
+            <sc-if value="{{e.open}}" hint-placeholder-val="{{false}}">
+              <div style="display: flex; flex-wrap: wrap; gap: 16px; padding: 0 20px 20px; align-items: stretch;">
+                <div style="position: relative; flex: 0 0 150px; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: #140A35;">
+                  <img src="../assets/personajes.jpg" alt="Video del ejercicio" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+                  <span style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 56px; height: 56px; border-radius: 999px; background: #CDF980; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="#140A35"></path></svg></span>
+                </div>
+                <div style="flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 12px;">
+                  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px;">
+                    <div style="background: #140A35; border-radius: 14px; padding: 16px;"><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">Series</div><div style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FFFFFF; margin-top: 8px;">{{e.series}}</div></div>
+                    <div style="background: #140A35; border-radius: 14px; padding: 16px;"><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">{{e.unitLabel}}</div><div style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FFFFFF; margin-top: 8px;">{{e.reps}}</div></div>
+                    <div style="background: #140A35; border-radius: 14px; padding: 16px;"><div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">Descanso</div><div style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FFFFFF; margin-top: 8px;">{{e.rest}}</div></div>
+                  </div>
+                  <div style="flex: 1; background: #140A35; border-radius: 14px; padding: 16px; border-left: 0;">
+                    <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #B3B0D4;">Nota de [Nombre]</div>
+                    <p style="margin: 8px 0 0; line-height: 1.5;">[Comentario opcional que dejó quien creó la rutina, por ejemplo: “baja bien la cadera antes de recibir”.]</p>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+          </li>
+        </sc-for>
+      </ol>
+    </div>
+
+    <aside style="flex: 1 1 360px; min-width: 0; position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px;">
+      <div style="background: #FC0035; color: #140A35; border-radius: 28px; padding: 32px;">
+        <div style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; text-transform: uppercase;">Entrénala en la app</div>
+        <p style="margin: 12px 0 0; line-height: 1.5; font-weight: 500;">Con cronómetro, descansos y el video de cada ejercicio, paso a paso.</p>
+        <a href="#" style="display: block; text-align: center; margin-top: 20px; background: #140A35; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 16px; border-radius: 999px;">Abrir en VolleyTip</a>
+        <div style="display: flex; gap: 14px; align-items: center; margin-top: 20px;">
+          <div aria-label="Código QR para abrir la rutina en el celular" style="flex: none; width: 84px; height: 84px; border-radius: 12px; background: #D9E6E8; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700;">[QR]</div>
+          <span style="font-size: 14px; line-height: 1.4; font-weight: 600;">¿Estás en el computador? Escanéalo con tu celular.</span>
+        </div>
+      </div>
+      <div style="border: 2px solid #221761; border-radius: 24px; padding: 24px;">
+        <div style="font-weight: 700; font-size: 18px; color: #FFFFFF;">¿No tienes la app?</div>
+        <p style="margin: 8px 0 16px; color: #B3B0D4; line-height: 1.5;">Descárgala gratis y arma tus propias rutinas con la biblioteca de VolleyTip.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+          <a href="App.dc.html" style="background: #D9E6E8; color: #140A35; font-weight: 700; text-decoration: none; padding: 12px 18px; border-radius: 12px; font-size: 14px;">App Store</a>
+          <a href="App.dc.html" style="background: #D9E6E8; color: #140A35; font-weight: 700; text-decoration: none; padding: 12px 18px; border-radius: 12px; font-size: 14px;">Google Play</a>
+        </div>
+      </div>
+      <button onClick="{{copiar}}" style="border: 0; background: transparent; color: #D9E6E8; font: 700 15px Archivo, sans-serif; padding: 10px; cursor: pointer; text-decoration: underline;">{{copyLabel}}</button>
+    </aside>
+  </section>
+
+  <footer style="background: #221761; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 32px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: #B3B0D4; font-size: 14px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;">
+      <span>Pie de página completo: ver Home A</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2000}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { open: 0, copiado: false }; }
+  renderVals() {
+    const defs = [
+      { name: 'Recepción en pareja', cat: 'Recepción', dose: '3×10', series: '3', reps: '10', unitLabel: 'Repeticiones', rest: '45s' },
+      { name: 'Salto al cajón', cat: 'Salto', dose: '5×3', series: '5', reps: '3', unitLabel: 'Repeticiones', rest: '90s' },
+      { name: 'Desplazamiento lateral', cat: 'Defensa', dose: '4×30 s', series: '4', reps: '30s', unitLabel: 'Tiempo', rest: '30s' },
+      { name: 'Recepción de saque flotado', cat: 'Recepción', dose: '3×12', series: '3', reps: '12', unitLabel: 'Repeticiones', rest: '60s' }
+    ];
+    const ejercicios = defs.map((d, i) => {
+      const open = this.state.open === i;
+      return Object.assign({}, d, {
+        n: String(i + 1).padStart(2, '0'), open, expanded: open ? 'true' : 'false',
+        chev: open ? 'M6 15l6-6 6 6' : 'M6 9l6 6 6-6',
+        toggle: () => this.setState({ open: open ? -1 : i })
+      });
+    });
+    return {
+      ejercicios,
+      copyLabel: this.state.copiado ? '¡Enlace copiado!' : 'Copiar enlace de la rutina',
+      copiar: () => this.setState({ copiado: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

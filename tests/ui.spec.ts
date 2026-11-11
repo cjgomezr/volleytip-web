@@ -93,7 +93,7 @@ async function createMissingLocalBaseline(
 
 // Filled by /bootstrap with this project's own port. Never hardcode 3000:
 // every factory on the machine would fight over it and test each other's app.
-const APP_URL = process.env.APP_URL ?? "{{APP_URL}}";
+const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 
 // Presupuesto ABSOLUTO, no un ratio. Un `maxDiffPixelRatio` crece con el alto
 // de la página, así que en una página larga un componente pequeño puede
@@ -109,7 +109,8 @@ const APP_URL = process.env.APP_URL ?? "{{APP_URL}}";
 const PAGE_MAX_DIFF_PIXELS = 20;
 
 const viewports = [
-  { name: "mobile", width: 375, height: 812 },
+  { name: "small", width: 360, height: 800 },
+  { name: "mobile", width: 390, height: 844 },
   { name: "tablet", width: 768, height: 1024 },
   { name: "desktop", width: 1440, height: 900 },
 ] as const;

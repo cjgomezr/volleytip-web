@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — VBall Tour</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+  <div style="background: #140A35; border-bottom: 1px solid #221761;">
+    <header style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 20px; padding-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+      <nav aria-label="Principal" style="display: flex; gap: 28px; flex-wrap: wrap; font-weight: 600; font-size: 15px;"><a href="Tips.dc.html" style="color: #D9E6E8; text-decoration: none;">Tips</a><a href="Camps.dc.html" style="color: #D9E6E8; text-decoration: none;">Camps</a><a href="VBallTour.dc.html" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #FC0035; text-decoration-thickness: 3px; text-underline-offset: 8px;">VBall Tour</a><a href="Tienda.dc.html" style="color: #D9E6E8; text-decoration: none;">Tienda</a><a href="App.dc.html" style="color: #D9E6E8; text-decoration: none;">App</a><a href="Nosotros.dc.html" style="color: #D9E6E8; text-decoration: none;">Nosotros</a></nav>
+      <a href="Carrito.dc.html" style="color: #D9E6E8; font-weight: 600; font-size: 15px; text-decoration: none;">Carrito (0)</a>
+    </header>
+  </div>
+  <sc-if value="{{vPagina}}" hint-placeholder-val="{{true}}">
+    <section style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 48px; padding-bottom: 48px;">
+      <div class="eb" style="color: #CDF980;">Evento social · entrada libre</div>
+      <h1 class="an" style="font-size: 120px; margin-top: 10px;">VBall Tour</h1>
+      <p style="margin: 16px 0 0; font-size: 19px; line-height: 1.6; max-width: 640px;">Llevamos voleibol, juegos y premios a comunidades que lo necesitan, junto a fundaciones y empresas aliadas. No es un entrenamiento: es un día para jugar y compartir.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px;"><a href="#asistir" class="btn" style="padding: 0 32px;">Voy a asistir</a><a href="#aliados" class="btn2" style="height: 54px; padding: 0 28px;">Quiero sumarme como aliado</a></div>
+      <div style="margin-top: 32px; aspect-ratio: 21 / 9; border-radius: 20px; background: #221761; display: flex; align-items: center; justify-content: center; color: #B3B0D4; font-weight: 600;">[Foto o video de una parada del Tour]</div>
+    </section>
+
+    <section style="background: #CDF980; color: #140A35;">
+      <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 36px; padding-bottom: 36px; display: flex; gap: 24px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div><div class="eb">Próxima parada</div><div class="an" style="font-size: 52px; margin-top: 6px;">[Municipio, Región]</div><div style="margin-top: 8px; font-weight: 600; font-size: 17px;">[DD de MES] · [HH:MM] · [Cancha o parque]</div><div style="margin-top: 4px;">Con: [Fundación aliada] y [Empresa aliada]</div></div>
+        <div style="background: #140A35; color: #D9E6E8; border-radius: 20px; padding: 20px 28px; text-align: center;"><div class="an" style="font-size: 56px; color: #CDF980;">[N]</div><div style="font-weight: 600;">personas ya dijeron que van</div></div>
+      </div>
+    </section>
+
+    <section style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 56px;">
+      <h2 class="an" style="font-size: 52px;">Qué pasa en una parada</h2>
+      <ul style="list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+        <li style="background: #221761; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 28px; color: #CDF980;">Juegos y retos</div><div style="margin-top: 10px; line-height: 1.6;">Actividades de voleibol para todas las edades. No hace falta saber jugar.</div></li>
+        <li style="background: #221761; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 28px; color: #CDF980;">Premios</div><div style="margin-top: 10px; line-height: 1.6;">Balones y otros premios de voleibol para quienes participan.</div></li>
+        <li style="background: #221761; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 28px; color: #CDF980;">Recursos para la comunidad</div><div style="margin-top: 10px; line-height: 1.6;">Las fundaciones y empresas aliadas entregan lo que reunieron para la región.</div></li>
+      </ul>
+      <p style="margin: 20px 0 0; color: #B3B0D4;">¿Buscas entrenamiento? Eso es el <a href="Camps.dc.html" style="font-weight: 700;">Volleyball Camp</a>: 10 horas de práctica con entrenadores.</p>
+    </section>
+
+    <section id="asistir" style="background: #D9E6E8; color: #140A35;">
+      <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 56px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; align-items: start;">
+        <div>
+          <h2 class="an" style="font-size: 52px;">Voy a asistir</h2>
+          <p style="margin: 14px 0 0; font-size: 18px; line-height: 1.6;">Es gratis y no necesitas tiquete. Cuéntanos cuántos vienen para preparar bien el evento: premios, hidratación y actividades.</p>
+          <ul style="margin: 16px 0 0; padding-left: 20px; line-height: 1.8;"><li>No se cobra nada.</li><li>Puedes llegar aunque no te hayas anotado.</li><li>Te recordamos el día antes por WhatsApp o correo.</li></ul>
+        </div>
+        <form style="background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div><label class="lb" for="d-par">Parada</label><select class="in" id="d-par"><option>[Municipio] · [DD MES]</option><option>[Municipio] · [DD MES]</option></select></div>
+          <fieldset style="border: 0; padding: 0; margin: 0;"><legend class="lb" style="padding: 0;">¿Cómo vienes?</legend>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600;"><input type="radio" name="d-modo" onClick="{{modoSolo}}" checked style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Solo o en familia</label>
+              <label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600;"><input type="radio" name="d-modo" onClick="{{modoGrupo}}" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Con un grupo</label>
+            </div>
+          </fieldset>
+          <sc-if value="{{esGrupo}}" hint-placeholder-val="{{false}}">
+            <div><label class="lb" for="d-inst">Colegio, club o fundación</label><input class="in" id="d-inst" type="text"><p style="margin: 8px 0 0; font-size: 13px; color: #5B5680; line-height: 1.5;">Anota a todo el grupo de una vez. Si son más de 50, te escribimos para confirmar.</p></div>
+          </sc-if>
+          <div><label class="lb" for="d-nom">Tu nombre</label><input class="in" id="d-nom" type="text" placeholder=""></div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="d-wa">WhatsApp</label><input class="in" id="d-wa" type="tel" placeholder="+57"></div><div><label class="lb" for="d-mail">Correo (opcional)</label><input class="in" id="d-mail" type="email" placeholder=""></div></div>
+          <fieldset style="border: 0; padding: 0; margin: 0;"><legend class="lb" style="padding: 0;">¿Cuántos vienen, contándote a ti?</legend>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;"><div><label for="d-ad" style="display: block; font-size: 13px; color: #5B5680; margin-bottom: 6px;">Adultos</label><input class="in" id="d-ad" type="number" min="0" inputmode="numeric" value="1"></div><div><label for="d-ni" style="display: block; font-size: 13px; color: #5B5680; margin-bottom: 6px;">Niños y jóvenes</label><input class="in" id="d-ni" type="number" min="0" inputmode="numeric" value="0"></div></div>
+          </fieldset>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> <span>Acepto el <a href="#" style="color: #221761;">tratamiento de datos</a>. Solo se usan para organizar este evento.</span></label>
+          <button type="button" onClick="{{asistir}}" class="btn">Confirmar que voy</button>
+          <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5; font-size: 13px;">No pedimos nombres ni datos de los niños, solo cuántos son.</p>
+        </form>
+      </div>
+    </section>
+
+    <section id="aliados" style="background: #FFFFFF; color: #140A35;">
+      <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 64px;">
+        <div class="eb" style="color: #5B5680;">Empresas y fundaciones</div>
+        <h2 class="an" style="font-size: 52px; margin-top: 8px;">Súmate al VBall Tour</h2>
+        <ul style="list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          <li style="background: #D9E6E8; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 26px;">Dona en especie</div><div style="margin-top: 8px; line-height: 1.5; color: #5B5680;">Balones, uniformes, refrigerios, transporte o lo que tu organización pueda aportar.</div></li>
+          <li style="background: #D9E6E8; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 26px;">Patrocina una parada</div><div style="margin-top: 8px; line-height: 1.5; color: #5B5680;">Tu marca presente en el evento y en las redes de VolleyTip.</div></li>
+          <li style="background: #D9E6E8; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 26px;">Participa</div><div style="margin-top: 8px; line-height: 1.5; color: #5B5680;">Trae voluntarios o una actividad propia para la comunidad.</div></li>
+        </ul>
+        <p style="margin: 20px 0 0; background: #140A35; color: #D9E6E8; border-radius: 16px; padding: 18px 20px; line-height: 1.6;"><strong>¿Quieres donar dinero?</strong> Las donaciones en dinero las reciben directamente las fundaciones aliadas, que entregan el certificado de donación: [Fundación 1] · [Fundación 2]. VolleyTip no recibe donaciones en dinero.</p>
+
+        <form style="margin-top: 28px; background: #D9E6E8; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px;">
+          <h3 class="an" style="font-size: 30px;">Cuéntanos cómo quieres sumarte</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="d-org">Empresa o fundación</label><input class="in" id="d-org" type="text" placeholder=""></div><div><label class="lb" for="d-tipo">Tipo</label><select class="in" id="d-tipo"><option>Empresa</option><option>Fundación</option><option>Entidad pública</option><option>Otro</option></select></div><div><label class="lb" for="d-con">Nombre de contacto</label><input class="in" id="d-con" type="text" placeholder=""></div><div><label class="lb" for="d-cmail">Correo</label><input class="in" id="d-cmail" type="email" placeholder=""></div><div><label class="lb" for="d-cwa">WhatsApp</label><input class="in" id="d-cwa" type="tel" placeholder="+57"></div><div><label class="lb" for="d-reg">Ciudad o región de interés</label><input class="in" id="d-reg" type="text" placeholder=""></div></div>
+          <fieldset style="border: 0; padding: 0; margin: 0;"><legend class="lb" style="padding: 0;">¿Cómo quieres participar? Puedes marcar varias</legend>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;"><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Donar en especie</label><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Patrocinar una parada</label><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Voluntarios o actividad</label><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Llevar el Tour a mi región</label></div>
+          </fieldset>
+          <div><label class="lb" for="d-msg">Cuéntanos más</label><textarea id="d-msg" rows="4" class="in" style="height: auto; padding: 14px 16px; resize: vertical;" placeholder="Qué pueden aportar, fechas, dudas"></textarea></div>
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;"><button type="button" onClick="{{aliado}}" class="btn" style="padding: 0 32px;">Enviar</button><span style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5;">Te respondemos en 24 horas. También por <a href="https://wa.me/573146486275" style="color: #221761; font-weight: 700;">WhatsApp</a>.</span></div>
+        </form>
+
+        <h3 class="eb" style="margin: 36px 0 12px; color: #5B5680;">Aliados del Tour</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;"><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div></div>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vAsistir}}" hint-placeholder-val="{{false}}">
+    <section style="max-width: 560px; margin: 0 auto; padding: 88px 24px; text-align: center;">
+      <span style="display: inline-flex; width: 72px; height: 72px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 72px; margin-top: 20px;">¡Te esperamos!</h1>
+      <p style="margin: 14px 0 0; line-height: 1.6; font-size: 18px; color: #B3B0D4;">Anotamos [N] personas para la parada de [Municipio] el [DD de MES]. Te recordamos el día antes. No necesitas tiquete: solo llega.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;"><a href="#" class="btn">Agregar al calendario</a><button onClick="{{volver}}" class="btn2" style="width: 100%;">Volver al VBall Tour</button></div>
+      <p style="margin: 18px 0 0; font-size: 14px; color: #B3B0D4;">¿Ya no puedes ir o cambió el número? Usa el enlace del mensaje de confirmación.</p>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vAliado}}" hint-placeholder-val="{{false}}">
+    <section style="max-width: 560px; margin: 0 auto; padding: 88px 24px; text-align: center;">
+      <span style="display: inline-flex; width: 72px; height: 72px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 72px; margin-top: 20px;">¡Gracias por sumarte!</h1>
+      <p style="margin: 14px 0 0; line-height: 1.6; font-size: 18px; color: #B3B0D4;">Recibimos tu mensaje. Andrés te escribe en las próximas 24 horas para contarte cómo seguimos.</p>
+      <button onClick="{{volver}}" class="btn2" style="width: 100%; margin-top: 24px;">Volver al VBall Tour</button>
+    </section>
+  </sc-if>
+  <footer style="background: #221761; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 32px; padding-bottom: 32px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: #B3B0D4; font-size: 14px;"><img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;"><span>Pie de página completo: ver Home A</span></div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vista":{"editor":"enum","options":["página","asistencia confirmada","aliado enviado"],"default":"página"},"registro":{"editor":"enum","options":["individual","grupo"],"default":"individual"},"$preview":{"width":1440,"height":3700}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { v: null, g: undefined }; }
+  renderVals() {
+    const v = this.state.v || this.props.vista;
+    const g = this.state.g === undefined ? this.props.registro === 'grupo' : this.state.g;
+    return { esGrupo: g, noGrupo: !g, modoGrupo: () => this.setState({ g: true }), modoSolo: () => this.setState({ g: false }), vPagina: v === 'página', vAsistir: v === 'asistencia confirmada', vAliado: v === 'aliado enviado',
+      asistir: () => this.setState({ v: 'asistencia confirmada' }), aliado: () => this.setState({ v: 'aliado enviado' }), volver: () => this.setState({ v: 'página' }) };
+  }
+}
+</script>
+</body>
+</html>

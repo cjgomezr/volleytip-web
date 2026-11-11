@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Tip</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}a:hover{color:#CDF980}
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+
+  <header style="max-width: 1280px; margin: 0 auto; padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+    <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+    <nav aria-label="Principal" style="display: flex; gap: 28px; flex-wrap: wrap; font-weight: 600; font-size: 15px;">
+      <a href="Tips.dc.html" aria-current="page" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #FC0035; text-decoration-thickness: 3px; text-underline-offset: 8px;">Tips</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">Camps</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">Tienda</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">App</a>
+      <a href="#" style="color: #D9E6E8; text-decoration: none;">Nosotros</a>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 12px;">
+      <div role="group" aria-label="Idioma" style="display: flex; border: 2px solid #221761; border-radius: 999px; padding: 3px; font: 700 13px Archivo, sans-serif;"><a href="#" aria-current="true" style="background: #D9E6E8; color: #140A35; padding: 7px 11px; border-radius: 999px; text-decoration: none;">ES</a><a href="#" lang="en" aria-label="English" style="color: #D9E6E8; padding: 7px 11px; border-radius: 999px; text-decoration: none;">EN</a></div>
+      <a href="#" aria-label="Carrito" style="width: 44px; height: 44px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#D9E6E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+      </a>
+      <a href="#" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px; font-size: 15px;">Síguenos</a>
+    </div>
+  </header>
+
+  <nav aria-label="Ruta" style="max-width: 1280px; margin: 0 auto; padding: 8px 24px; font-size: 14px; color: #B3B0D4; display: flex; gap: 8px; flex-wrap: wrap;">
+    <a href="Tips.dc.html" style="color: #B3B0D4;">Tips</a><span aria-hidden="true">/</span><a href="Tips.dc.html" style="color: #B3B0D4;">Recepción</a><span aria-hidden="true">/</span><span style="color: #D9E6E8;">[Título del tip]</span>
+  </nav>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 24px 24px 72px; display: flex; flex-wrap: wrap; gap: 56px; align-items: flex-start;">
+    <sc-if value="{{vertical}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 0 0 300px; margin: 0 auto;">
+      <div style="position: relative; aspect-ratio: 9 / 16; border-radius: 24px; overflow: hidden; background: #221761;">
+        <img src="../assets/personajes.jpg" alt="Video del tip (reproductor de Bunny Stream)" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        <button aria-label="Reproducir video" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 72px; height: 72px; border-radius: 999px; border: 0; background: #CDF980; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="#140A35"></path></svg>
+        </button>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600;">
+          <span>0:00</span>
+          <div style="flex: 1; height: 4px; border-radius: 4px; background: #221761;"><div style="width: 0%; height: 4px; background: #FC0035; border-radius: 4px;"></div></div>
+          <span>0:52</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; font-weight: 700; font-size: 15px;">
+        <a href="#" style="color: #B3B0D4; text-decoration: none;">← Anterior</a>
+        <span style="color: #B3B0D4; font-weight: 600; font-size: 13px;">Tip 3 de [N]</span>
+        <a href="#" style="text-decoration: none;">Siguiente →</a>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{horizontal}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1 1 100%; display: flex; flex-wrap: wrap; gap: 40px; align-items: flex-start;">
+    <div style="flex: 3 1 600px; min-width: 0;">
+      <div style="position: relative; aspect-ratio: 16 / 9; border-radius: 24px; overflow: hidden; background: #221761;">
+        <img src="../assets/personajes.jpg" alt="Video del tip (reproductor de Bunny Stream)" style="width: 100%; height: 100%; object-fit: cover; display: block;">
+        <button aria-label="Reproducir video" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 72px; height: 72px; border-radius: 999px; border: 0; background: #CDF980; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+          <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="#140A35"></path></svg>
+        </button>
+        <div style="position: absolute; left: 16px; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: 600;">
+          <span>0:00</span>
+          <div style="flex: 1; height: 4px; border-radius: 4px; background: #221761;"><div style="width: 0%; height: 4px; background: #FC0035; border-radius: 4px;"></div></div>
+          <span>0:52</span>
+        </div>
+      </div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; font-weight: 700; font-size: 15px;">
+        <a href="#" style="color: #B3B0D4; text-decoration: none;">← Anterior</a>
+        <span style="color: #B3B0D4; font-weight: 600; font-size: 13px;">Tip 3 de [N]</span>
+        <a href="#" style="text-decoration: none;">Siguiente →</a>
+      </div>
+      <sc-if value="{{extra}}" hint-placeholder-val="{{false}}">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 24px;">
+        <div style="background: #221761; border-radius: 16px; padding: 20px;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FC0035;">✕ Error común</div>
+          <p style="margin: 10px 0 0; line-height: 1.5;">[Una línea con el error que más se ve.]</p>
+        </div>
+        <div style="background: #221761; border-radius: 16px; padding: 20px;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">Practícalo</div>
+          <p style="margin: 10px 0 0; line-height: 1.5;">[Un ejercicio: qué hacer, cuántas veces.]</p>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+    <div style="flex: 1 1 340px; min-width: 0;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 14px; font-weight: 600;">
+        <span style="background: #CDF980; color: #140A35; padding: 6px 12px; border-radius: 999px;">Recepción</span>
+        <span style="border: 1px solid #B3B0D4; padding: 5px 12px; border-radius: 999px;">Básico</span>
+        <span style="color: #B3B0D4; padding: 6px 0;">0:52</span>
+      </div>
+      <h1 style="margin: 16px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 52px; line-height: 0.95; text-transform: uppercase;">[Título del tip]</h1>
+      <p style="margin: 12px 0 0; font-size: 18px; line-height: 1.5; color: #B3B0D4;">[Una frase: qué vas a lograr con este tip.]</p>
+      <sc-if value="{{claves}}" hint-placeholder-val="{{true}}">
+      <h2 style="margin: 28px 0 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">3 claves</h2>
+      <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+        <li style="display: flex; gap: 16px; align-items: baseline;"><span style="font-family: Anton, Impact, sans-serif; font-size: 34px; line-height: 1; color: #FC0035; width: 24px;">1</span><span style="font-size: 18px; line-height: 1.4;">[Clave corta, máximo 10 palabras]</span></li>
+        <li style="display: flex; gap: 16px; align-items: baseline;"><span style="font-family: Anton, Impact, sans-serif; font-size: 34px; line-height: 1; color: #FC0035; width: 24px;">2</span><span style="font-size: 18px; line-height: 1.4;">[Clave corta, máximo 10 palabras]</span></li>
+        <li style="display: flex; gap: 16px; align-items: baseline;"><span style="font-family: Anton, Impact, sans-serif; font-size: 34px; line-height: 1; color: #FC0035; width: 24px;">3</span><span style="font-size: 18px; line-height: 1.4;">[Clave corta, máximo 10 palabras]</span></li>
+      </ol>
+      </sc-if>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px;">
+        <button style="background: #FC0035; color: #140A35; border: 0; font: 700 16px Archivo, sans-serif; padding: 14px 24px; border-radius: 999px; cursor: pointer;">Compartir tip</button>
+        <a href="#" style="border: 2px solid #D9E6E8; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px;">Ver en TikTok</a>
+      </div>
+    </div>
+    </div>
+    </sc-if>
+
+    <sc-if value="{{vertical}}" hint-placeholder-val="{{true}}">
+    <article style="flex: 999 1 480px; min-width: 0;">
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; font-size: 14px; font-weight: 600;">
+        <span style="background: #CDF980; color: #140A35; padding: 6px 12px; border-radius: 999px;">Recepción</span>
+        <span style="border: 1px solid #B3B0D4; padding: 5px 12px; border-radius: 999px;">Básico</span>
+        <span style="color: #B3B0D4; padding: 6px 0;">0:52</span>
+      </div>
+      <h1 style="margin: 20px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: clamp(48px, 5.5vw, 80px); line-height: 0.95; text-transform: uppercase;">[Título del tip]</h1>
+      <p style="margin: 16px 0 0; font-size: 20px; line-height: 1.5; color: #B3B0D4; max-width: 560px;">[Una frase: qué vas a lograr con este tip.]</p>
+
+      <sc-if value="{{claves}}" hint-placeholder-val="{{true}}">
+      <h2 style="margin: 40px 0 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">3 claves</h2>
+      <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px;">
+        <li style="display: flex; gap: 18px; align-items: baseline;"><span style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FC0035; width: 28px;">1</span><span style="font-size: 19px; line-height: 1.4;">[Clave corta, máximo 10 palabras]</span></li>
+        <li style="display: flex; gap: 18px; align-items: baseline;"><span style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FC0035; width: 28px;">2</span><span style="font-size: 19px; line-height: 1.4;">[Clave corta, máximo 10 palabras]</span></li>
+        <li style="display: flex; gap: 18px; align-items: baseline;"><span style="font-family: Anton, Impact, sans-serif; font-size: 40px; line-height: 1; color: #FC0035; width: 28px;">3</span><span style="font-size: 19px; line-height: 1.4;">[Clave corta, máximo 10 palabras]</span></li>
+      </ol>
+      </sc-if>
+
+      <sc-if value="{{extra}}" hint-placeholder-val="{{false}}">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; margin-top: 32px;">
+        <div style="background: #221761; border-radius: 16px; padding: 20px;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FC0035;">✕ Error común</div>
+          <p style="margin: 10px 0 0; line-height: 1.5;">[Una línea con el error que más se ve.]</p>
+        </div>
+        <div style="background: #221761; border-radius: 16px; padding: 20px;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">Practícalo</div>
+          <p style="margin: 10px 0 0; line-height: 1.5;">[Un ejercicio: qué hacer, cuántas veces.]</p>
+        </div>
+      </div>
+      </sc-if>
+
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 32px;">
+        <button style="background: #FC0035; color: #140A35; border: 0; font: 700 16px Archivo, sans-serif; padding: 14px 24px; border-radius: 999px; cursor: pointer;">Compartir tip</button>
+        <a href="#" style="border: 2px solid #D9E6E8; color: #D9E6E8; font-weight: 700; text-decoration: none; padding: 12px 22px; border-radius: 999px;">Ver en TikTok</a>
+      </div>
+    </article>
+    </sc-if>
+  </section>
+
+  <section style="background: #221761;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 64px 24px;">
+      <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 16px; flex-wrap: wrap; margin-bottom: 24px;">
+        <h2 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 48px; line-height: 1; text-transform: uppercase;">Sigue con recepción</h2>
+        <a href="Tips.dc.html" style="font-weight: 700;">Ver los [N] tips de recepción →</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+        <sc-for list="{{next}}" as="t" hint-placeholder-count="5">
+          <a href="Tip.dc.html" style="text-decoration: none; color: #D9E6E8;">
+            <div style="position: relative; aspect-ratio: 9 / 16; border-radius: 16px; background: #140A35; display: flex; align-items: center; justify-content: center; color: #B3B0D4; font-weight: 600; font-size: 14px;">
+              [MINIATURA]
+              <span style="position: absolute; top: 10px; left: 10px; font-family: Anton, Impact, sans-serif; font-size: 32px; color: #FC0035;">{{t.n}}</span>
+            </div>
+            <div style="margin-top: 10px; font-weight: 700;">[Título del tip]</div>
+          </a>
+        </sc-for>
+      </div>
+    </div>
+  </section>
+
+  <section style="max-width: 1280px; margin: 0 auto; padding: 64px 24px;">
+    <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center; justify-content: space-between; border: 2px solid #FC0035; border-radius: 24px; padding: 32px;">
+      <div style="flex: 1 1 400px; min-width: 0;">
+        <p style="margin: 0 0 8px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">{{promo.tag}}</p>
+        <h2 style="margin: 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 40px; line-height: 1; text-transform: uppercase;">{{promo.title}}</h2>
+        <p style="margin: 10px 0 0; color: #B3B0D4;">{{promo.sub}}</p>
+      </div>
+      <a href="#" style="background: #FC0035; color: #140A35; font-weight: 700; text-decoration: none; padding: 16px 28px; border-radius: 999px;">{{promo.cta}}</a>
+    </div>
+  </section>
+
+  <footer style="background: #221761; border-top: 4px solid #FC0035;">
+    <div style="max-width: 1280px; margin: 0 auto; padding: 32px 24px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; align-items: center; color: #B3B0D4; font-size: 14px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;">
+      <span>Pie de página completo: ver Home A</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;formato&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;vertical&quot;,&quot;horizontal&quot;],&quot;default&quot;:&quot;vertical&quot;},&quot;texto&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;solo video&quot;,&quot;con claves&quot;,&quot;completo&quot;],&quot;default&quot;:&quot;con claves&quot;},&quot;promo&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;camp&quot;,&quot;tienda&quot;,&quot;app&quot;,&quot;redes&quot;],&quot;default&quot;:&quot;camp&quot;},&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:2200}}">
+class Component extends DCLogic {
+  renderVals() {
+    const f = this.props.formato ?? 'vertical';
+    const promos = {
+      camp: { tag: 'Volleyball Camp', title: '¿Quieres practicarlo en persona?', sub: '[FECHA] · [CIUDAD] · Cupos limitados', cta: 'Ver el camp' },
+      tienda: { tag: 'Tienda VolleyTip', title: 'Entrena con el equipo correcto', sub: '[Producto relacionado con recepción] · [PRECIO]', cta: 'Ver producto' },
+      app: { tag: 'App VolleyTip', title: 'Lleva tus entrenamientos en el bolsillo', sub: '[Qué hace la app en una línea]', cta: 'Descargar la app' },
+      redes: { tag: '530K en TikTok', title: 'Un tip nuevo cada semana', sub: 'Síguenos para no perderte ninguno.', cta: 'Seguir en TikTok' }
+    };
+    const promo = promos[this.props.promo ?? 'camp'] ?? promos.camp;
+    const t = this.props.texto ?? 'solo video';
+    return { promo, claves: t !== 'solo video', extra: t === 'completo', vertical: f === 'vertical', horizontal: f === 'horizontal', next: [{ n: '04' }, { n: '05' }, { n: '06' }, { n: '07' }, { n: '08' }] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,568 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Admin</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#EEF4F5}
+a{color:#221761}
+.in{width:100%;box-sizing:border-box;height:46px;padding:0 14px;border-radius:10px;border:1.5px solid #B3C3C6;background:#FFFFFF;color:#140A35;font:15px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:13px;margin-bottom:6px}
+th{font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#5B5680;text-align:left;padding:12px 16px;border-bottom:1.5px solid #D9E6E8}
+td{padding:14px 16px;border-bottom:1px solid #EEF4F5;font-size:15px}
+</style>
+</helmet>
+<div style="display: flex; min-height: 100vh; font-family: Archivo, system-ui, sans-serif; color: #140A35; background: #EEF4F5;">
+
+  <aside style="flex: 0 0 248px; background: #140A35; color: #D9E6E8; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px;">
+    <div style="display: flex; align-items: center; gap: 10px; padding: 0 8px;">
+      <img src="../assets/wordmark.png" alt="volleytip" style="height: 24px;">
+      <span style="background: #CDF980; color: #140A35; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; padding: 3px 7px; border-radius: 5px;">Admin</span>
+    </div>
+    <nav aria-label="Secciones" style="display: flex; flex-direction: column; gap: 4px;">
+      <sc-for list="{{nav}}" as="n" hint-placeholder-count="9">
+        <button onClick="{{n.pick}}" aria-current="{{n.current}}" style="{{n.style}}"><span>{{n.label}}</span><span style="{{n.badgeStyle}}">{{n.badge}}</span></button>
+      </sc-for>
+    </nav>
+    <div style="margin-top: auto; display: flex; align-items: center; gap: 10px; padding: 12px 8px; border-top: 1px solid #221761;">
+      <span style="width: 36px; height: 36px; border-radius: 999px; background: #FC0035; color: #140A35; font-weight: 700; display: flex; align-items: center; justify-content: center;">AP</span>
+      <div style="min-width: 0;"><div style="font-weight: 700; font-size: 14px;">Andrés Piza</div><div style="font-size: 12px; color: #B3B0D4;">Administrador</div></div>
+    </div>
+  </aside>
+
+  <main style="flex: 1; min-width: 0; padding: 28px 36px 48px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+      <div>
+        <div style="font-size: 13px; color: #5B5680; font-weight: 600;">{{crumb}}</div>
+        <h1 style="margin: 4px 0 0; font-family: Anton, Impact, sans-serif; font-weight: 400; font-size: 44px; line-height: 1; text-transform: uppercase;">{{title}}</h1>
+      </div>
+      <div style="display: flex; gap: 10px; align-items: center;">
+        <sc-if value="{{showTable}}" hint-placeholder-val="{{true}}">
+          <input class="in" type="search" placeholder="Buscar…" aria-label="Buscar" style="width: 240px;">
+        </sc-if>
+        <sc-if value="{{hasCta}}" hint-placeholder-val="{{true}}">
+          <button onClick="{{ctaClick}}" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">{{cta}}</button>
+        </sc-if>
+      </div>
+    </div>
+
+    <sc-if value="{{showKpis}}" hint-placeholder-val="{{false}}">
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-top: 24px;">
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Ventas del mes</div><div style="font-family: Anton, Impact, sans-serif; font-size: 36px; margin-top: 6px;">[$0.000.000]</div></div>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Pedidos por enviar</div><div style="font-family: Anton, Impact, sans-serif; font-size: 36px; margin-top: 6px; color: #FC0035;">4</div></div>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Inscritos próximo camp</div><div style="font-family: Anton, Impact, sans-serif; font-size: 36px; margin-top: 6px;">112 <span style="font-size: 20px; color: #5B5680;">/ 150</span></div></div>
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;"><div style="font-size: 13px; color: #5B5680; font-weight: 600;">Mensajes sin responder</div><div style="font-family: Anton, Impact, sans-serif; font-size: 36px; margin-top: 6px;">3</div></div>
+      </div>
+      <div style="margin-top: 16px; background: #FFFFFF; border-left: 5px solid #FC0035; border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;">
+        <span><strong>Stock bajo:</strong> Camiseta VolleyTip · Negro M (0) · Blanco L (2) · Toalla deportiva (1)</span>
+        <button onClick="{{irProductos}}" style="border: 0; background: transparent; color: #221761; font: 700 15px Archivo, sans-serif; text-decoration: underline; cursor: pointer;">Reponer</button>
+      </div>
+      <h2 style="margin: 32px 0 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Últimos pedidos e inscripciones</h2>
+    </sc-if>
+
+    <sc-if value="{{showCampCfg}}" hint-placeholder-val="{{false}}">
+      <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 16px; margin-top: 24px;">
+        <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Venta del evento</div>
+          <div role="tablist" aria-label="Modo de venta" style="display: inline-flex; background: #EEF4F5; border-radius: 999px; padding: 4px; margin-top: 14px;">
+            <sc-for list="{{modos}}" as="m" hint-placeholder-count="2">
+              <button role="tab" aria-selected="{{m.sel}}" onClick="{{m.pick}}" style="{{m.style}}">{{m.t}}</button>
+            </sc-for>
+          </div>
+          <p style="margin: 12px 0 0; color: #5B5680; font-size: 14px; line-height: 1.5;">{{modoDesc}}</p>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 16px;">
+            <div><label class="lb" for="c-club">Club organizador</label><input class="in" id="c-club" type="text" value="[Club]"></div>
+            <sc-if value="{{modoDirecta}}" hint-placeholder-val="{{true}}">
+              <div><label class="lb" for="c-pp">Precio al público</label><input class="in" id="c-pp" type="text" value="[$90.000]"></div>
+            </sc-if>
+            <sc-if value="{{modoCupos}}" hint-placeholder-val="{{false}}">
+              <div><label class="lb" for="c-cod">Código del club</label><input class="in" id="c-cod" type="text" value="CLUB-[XXXX]"></div>
+            </sc-if>
+            <div><label class="lb" for="c-vt">Valor VolleyTip por niño</label><input class="in" id="c-vt" type="text" value="$70.000"></div>
+          </div>
+        </div>
+        <div style="background: #140A35; color: #D9E6E8; border-radius: 16px; padding: 24px;">
+          <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #FFFFFF;">Liquidación con el club</div>
+          <sc-for list="{{liq}}" as="l" hint-placeholder-count="3">
+            <div style="display: flex; justify-content: space-between; margin-top: 12px;"><span style="color: #B3B0D4;">{{l.k}}</span><span style="font-weight: 700;">{{l.v}}</span></div>
+          </sc-for>
+          <div style="display: flex; justify-content: space-between; margin-top: 14px; padding-top: 14px; border-top: 1px solid #221761; font-weight: 700; font-size: 20px;"><span>{{liqTotalK}}</span><span style="color: #CDF980;">{{liqTotalV}}</span></div>
+          <button style="width: 100%; margin-top: 16px; height: 44px; border-radius: 999px; border: 2px solid #D9E6E8; background: transparent; color: #D9E6E8; font: 700 14px Archivo, sans-serif; cursor: pointer;">{{liqBtn}}</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showCampCfg}}" hint-placeholder-val="{{false}}">
+      <div style="margin-top: 16px; background: #FFFFFF; border-radius: 16px; padding: 24px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Equipo de check-in</div>
+            <p style="margin: 6px 0 0; color: #5B5680; font-size: 14px;">Enlaces para voluntarios o personal del club. Solo abren el escáner de este evento, con PIN, durante las fechas del camp.</p>
+          </div>
+          <button onClick="{{addStaff}}" style="height: 42px; padding: 0 18px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 14px Archivo, sans-serif; cursor: pointer;">+ Crear enlace de staff</button>
+        </div>
+        <div style="margin-top: 16px; border: 1.5px solid #D9E6E8; border-radius: 12px; overflow: hidden;">
+          <div style="display: grid; grid-template-columns: 1.2fr 0.8fr 1.6fr 1fr 0.8fr 0.9fr; gap: 12px; align-items: center; padding: 10px 16px; background: #EEF4F5; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5B5680;">
+            <span>Nombre</span><span>PIN</span><span>Enlace</span><span>Válido</span><span>Escaneos</span><span style="text-align: right;">Estado</span>
+          </div>
+          <sc-for list="{{staff}}" as="s" hint-placeholder-count="3">
+            <div style="display: grid; grid-template-columns: 1.2fr 0.8fr 1.6fr 1fr 0.8fr 0.9fr; gap: 12px; align-items: center; padding: 12px 16px; border-top: 1px solid #D9E6E8; font-size: 15px;">
+              <span style="font-weight: 700;">{{s.nombre}}</span>
+              <span style="font-family: ui-monospace, Menlo, monospace; font-weight: 700; letter-spacing: 0.15em;">{{s.pin}}</span>
+              <span style="display: flex; gap: 8px; align-items: center; min-width: 0;"><span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #5B5680;">volleytip.com/staff/{{s.code}}</span><button style="flex: none; border: 0; background: transparent; color: #221761; font: 700 14px Archivo, sans-serif; text-decoration: underline; cursor: pointer;">Copiar</button></span>
+              <span style="color: #5B5680;">[DD–DD MES]</span>
+              <span>{{s.scans}}</span>
+              <span style="text-align: right;"><button onClick="{{s.toggle}}" style="{{s.btn}}">{{s.estado}}</button></span>
+            </div>
+          </sc-for>
+        </div>
+        <p style="margin: 10px 0 0; font-size: 13px; color: #5B5680;">Andrés y Camilo entran al escáner con su cuenta, sin PIN. Cada escaneo queda registrado con el nombre del staff.</p>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showSub}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px;">
+        <sc-for list="{{chips}}" as="c" hint-placeholder-count="3">
+          <span style="{{c.style}}">{{c.t}}</span>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showTable}}" hint-placeholder-val="{{true}}">
+      <div style="margin-top: 20px; background: #FFFFFF; border-radius: 16px; overflow: hidden;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead><tr><sc-for list="{{cols}}" as="h" hint-placeholder-count="5"><th>{{h}}</th></sc-for></tr></thead>
+          <tbody>
+            <sc-for list="{{rows}}" as="r" hint-placeholder-count="6">
+              <tr onClick="{{r.click}}" style="{{r.st}}"><sc-for list="{{r.cells}}" as="c" hint-placeholder-count="5"><td><span style="{{c.s}}">{{c.t}}</span></td></sc-for></tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <div style="display: flex; justify-content: space-between; padding: 14px 16px; font-size: 14px; color: #5B5680;"><span>{{foot}}</span><span>← 1 2 3 →</span></div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showEditor}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 24px; margin-top: 24px; align-items: flex-start;">
+        <form style="flex: 2; min-width: 0; background: #FFFFFF; border-radius: 16px; padding: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+          <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1.5px solid #EEF4F5;">
+            <div role="tablist" aria-label="Idioma del contenido" style="display: flex; gap: 6px;">
+              <sc-for list="{{langTabs}}" as="l" hint-placeholder-count="3">
+                <button type="button" role="tab" aria-selected="{{l.sel}}" onClick="{{l.pick}}" style="{{l.style}}">{{l.t}} <span style="{{l.badge}}">{{l.status}}</span></button>
+              </sc-for>
+            </div>
+            <span style="font-size: 13px; color: #5B5680;">{{langNote}}</span>
+          </div>
+          <div style="grid-column: 1 / -1;"><label class="lb" for="a-tit">Título</label><input class="in" id="a-tit" type="text" value="{{tTitulo}}"></div>
+          <div><label class="lb" for="a-fun">Fundamento</label><select class="in" id="a-fun"><option>Recepción</option><option>Saque</option><option>Ataque</option><option>Bloqueo</option><option>Defensa</option><option>Colocación</option></select></div>
+          <div><label class="lb" for="a-niv">Nivel</label><select class="in" id="a-niv"><option>Básico</option><option selected>Intermedio</option><option>Avanzado</option></select></div>
+          <div style="grid-column: 1 / -1;">
+            <span class="lb">Video</span>
+            <div style="border: 2px dashed #B3C3C6; border-radius: 12px; padding: 24px; display: flex; gap: 16px; align-items: center;">
+              <div style="width: 72px; height: 128px; border-radius: 10px; background: #221761; flex: none;"></div>
+              <div style="flex: 1;"><div style="font-weight: 700;">recepcion-flotado.mp4</div><div style="font-size: 14px; color: #5B5680; margin-top: 4px;">Subido a Bunny Stream · 0:52 · vertical 9:16</div><div style="height: 6px; border-radius: 6px; background: #CDF980; margin-top: 10px;"></div></div>
+              <button type="button" style="height: 40px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 14px Archivo, sans-serif; cursor: pointer;">Reemplazar</button>
+            </div>
+          </div>
+          <div style="grid-column: 1 / -1;"><label class="lb" for="a-cla">Claves (una por línea)</label><textarea id="a-cla" rows="3" class="in" style="height: auto; padding: 12px 14px; resize: vertical;">Piernas flexionadas antes del contacto
+Plataforma quieta, sin balancear
+Dirige el balón con los hombros</textarea></div>
+          <div><label class="lb" for="a-err">Error común</label><textarea id="a-err" rows="2" class="in" style="height: auto; padding: 12px 14px;">Golpear con los brazos en vez de dirigir.</textarea></div>
+          <div><label class="lb" for="a-pra">Practícalo</label><textarea id="a-pra" rows="2" class="in" style="height: auto; padding: 12px 14px;">3 series de 10 recepciones contra la pared.</textarea></div>
+          <div><label class="lb" for="a-pro">Promo al final del tip</label><select class="in" id="a-pro"><option>Próximo camp</option><option>Producto de la tienda</option><option>App</option><option>Redes</option></select></div>
+          <div><label class="lb" for="a-ig">Enlace a Instagram / TikTok (opcional)</label><input class="in" id="a-ig" type="url" placeholder="https://"></div>
+        </form>
+        <div style="flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;">
+            <div class="lb">Estado</div>
+            <div style="display: flex; gap: 8px;"><span style="flex: 1; text-align: center; padding: 10px; border-radius: 10px; background: #140A35; color: #D9E6E8; font-weight: 700;">Borrador</span><span style="flex: 1; text-align: center; padding: 10px; border-radius: 10px; border: 1.5px solid #B3C3C6; font-weight: 700;">Publicado</span></div>
+            <label class="lb" for="a-fec" style="margin-top: 16px;">Programar publicación</label><input class="in" id="a-fec" type="text" value="[DD/MM/AAAA HH:MM]">
+            <label style="display: flex; gap: 10px; align-items: center; margin-top: 16px; font-size: 14px; font-weight: 600;"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #140A35;"> Destacar en "Último video" del home</label>
+          </div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;">
+            <div class="lb">Vista previa del enlace</div>
+            <div style="font-size: 14px; color: #5B5680;">volleytip.com/tips/<strong style="color: #140A35;">recibir-saque-flotado</strong></div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button onClick="{{cerrar}}" style="flex: 1; height: 48px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 15px Archivo, sans-serif; cursor: pointer;">Cancelar</button>
+            <button onClick="{{cerrar}}" style="flex: 1; height: 48px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{showProd}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 24px; margin-top: 24px; align-items: flex-start;">
+        <div style="flex: 2; min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <h2 style="grid-column: 1 / -1; margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">1 · Datos básicos</h2>
+            <div style="grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding-bottom: 14px; border-bottom: 1.5px solid #EEF4F5;">
+              <div role="tablist" aria-label="Idioma del contenido" style="display: flex; gap: 6px;">
+                <sc-for list="{{langTabs}}" as="l" hint-placeholder-count="3">
+                  <button type="button" role="tab" aria-selected="{{l.sel}}" onClick="{{l.pick}}" style="{{l.style}}">{{l.t}} <span style="{{l.badge}}">{{l.status}}</span></button>
+                </sc-for>
+              </div>
+              <span style="font-size: 13px; color: #5B5680;">{{langNote}}</span>
+            </div>
+            <div style="grid-column: 1 / -1;"><label class="lb" for="p-nom">Nombre</label><input class="in" id="p-nom" type="text" value="{{pNombre}}"></div>
+            <div style="grid-column: 1 / -1;"><label class="lb" for="p-des">Descripción</label><textarea id="p-des" rows="3" class="in" style="height: auto; padding: 12px 14px; resize: vertical;">Camiseta de entrenamiento en tela deportiva liviana. [Material, cuidados, cómo queda la talla.]</textarea></div>
+            <div><label class="lb" for="p-cat">Categoría</label><select class="in" id="p-cat"><option>Ropa</option><option>Accesorios</option></select></div>
+            <div><label class="lb" for="p-pre">Precio base · Colombia (COP)</label><input class="in" id="p-pre" type="text" value="[$00.000]"></div>
+          </section>
+
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px;"><h2 style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Precios por mercado</h2><span style="font-size: 13px; color: #5B5680;">Solo se venden en los mercados activos (Admin → Idiomas y mercados)</span></div>
+            <div style="margin-top: 14px; border: 1.5px solid #D9E6E8; border-radius: 12px; overflow: hidden;">
+              <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; background: #EEF4F5; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5B5680;"><span>Mercado</span><span>Moneda</span><span>Precio</span><span>Modo</span><span style="text-align: right;">Estado</span></div>
+              <div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #EEF4F5;"><span style="font-weight: 700;">Colombia</span><span>COP</span><input class="in" aria-label="Precio Colombia" value="[$00.000]" style="height: 40px; "><span style="font-weight: 700;">Base</span><span style="padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #CDF980; color: #140A35; justify-self: end;">Activo</span></div><div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #EEF4F5;"><span style="font-weight: 700;">Ecuador</span><span>USD</span><input class="in" aria-label="Precio Ecuador" value="[US$ 00]" style="height: 40px; "><select class="in" aria-label="Modo Ecuador" style="height: 40px;"><option selected>Manual</option><option>Automático</option></select><span style="padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #EEF4F5; color: #140A35; justify-self: end;">Inactivo</span></div><div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #EEF4F5;"><span style="font-weight: 700;">Perú</span><span>PEN</span><input class="in" aria-label="Precio Perú" value="[S/ 00]" style="height: 40px; background: #EEF4F5;"><select class="in" aria-label="Modo Perú" style="height: 40px;"><option>Manual</option><option selected>Automático</option></select><span style="padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #EEF4F5; color: #140A35; justify-self: end;">Inactivo</span></div><div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #EEF4F5;"><span style="font-weight: 700;">Chile</span><span>CLP</span><input class="in" aria-label="Precio Chile" value="[$00.000]" style="height: 40px; background: #EEF4F5;"><select class="in" aria-label="Modo Chile" style="height: 40px;"><option>Manual</option><option selected>Automático</option></select><span style="padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #EEF4F5; color: #140A35; justify-self: end;">Inactivo</span></div><div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #EEF4F5;"><span style="font-weight: 700;">Brasil</span><span>BRL</span><input class="in" aria-label="Precio Brasil" value="[R$ 00]" style="height: 40px; "><select class="in" aria-label="Modo Brasil" style="height: 40px;"><option selected>Manual</option><option>Automático</option></select><span style="padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #EEF4F5; color: #140A35; justify-self: end;">Inactivo</span></div><div style="display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr 1.2fr 0.8fr; gap: 12px; align-items: center; padding: 10px 16px; border-top: 1px solid #EEF4F5;"><span style="font-weight: 700;">Estados Unidos</span><span>USD</span><input class="in" aria-label="Precio Estados Unidos" value="[US$ 00]" style="height: 40px; "><select class="in" aria-label="Modo Estados Unidos" style="height: 40px;"><option selected>Manual</option><option>Automático</option></select><span style="padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: #EEF4F5; color: #140A35; justify-self: end;">Inactivo</span></div>
+            </div>
+            <p style="margin: 10px 0 0; font-size: 13px; color: #5B5680;"><strong style="color: #140A35;">Manual</strong>: pones un precio redondo para ese país. <strong style="color: #140A35;">Automático</strong>: se convierte desde COP con la tasa del día y se redondea.</p>
+          </section>
+
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <h2 style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">2 · Colores y fotos</h2>
+              <button onClick="{{addColor}}" style="height: 36px; padding: 0 14px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 14px Archivo, sans-serif; cursor: pointer;">+ Agregar color</button>
+            </div>
+            <div role="tablist" aria-label="Colores" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;">
+              <sc-for list="{{pColores}}" as="k" hint-placeholder-count="2">
+                <button role="tab" aria-selected="{{k.sel}}" onClick="{{k.pick}}" style="{{k.style}}"><span style="width: 18px; height: 18px; border-radius: 999px; background: {{k.hex}}; border: 1.5px solid #B3C3C6;"></span>{{k.name}} <span style="font-weight: 500; opacity: 0.7;">· {{k.n}} fotos</span></button>
+              </sc-for>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; margin-top: 16px;">
+              <sc-for list="{{pFotos}}" as="f" hint-placeholder-count="3">
+                <div style="position: relative; aspect-ratio: 4 / 5; border-radius: 12px; background: #221761; color: #B3B0D4; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; text-align: center; padding: 8px; box-sizing: border-box;">
+                  {{f.t}}
+                  <span style="{{f.badge}}">Portada</span>
+                  <span aria-hidden="true" style="position: absolute; right: 8px; top: 6px; color: #D9E6E8; cursor: grab;">⋮⋮</span>
+                </div>
+              </sc-for>
+              <div style="aspect-ratio: 4 / 5; border-radius: 12px; border: 2px dashed #B3C3C6; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; color: #5B5680; font-size: 13px; font-weight: 700; text-align: center; padding: 8px;"><span style="font-size: 28px; line-height: 1;">+</span>Arrastra fotos</div>
+            </div>
+            <p style="margin: 12px 0 0; font-size: 13px; color: #5B5680;">Arrastra para ordenar. La primera es la portada. Se suben a Bunny Storage y se generan tamaños para celular y computador.</p>
+          </section>
+
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <h2 style="margin: 0; font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">3 · Tallas e inventario</h2>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;">
+              <sc-for list="{{pTallas}}" as="s" hint-placeholder-count="5">
+                <button aria-pressed="{{s.on}}" onClick="{{s.toggle}}" style="{{s.style}}">{{s.t}}</button>
+              </sc-for>
+              <label style="display: flex; align-items: center; gap: 8px; margin-left: 12px; font-size: 14px; font-weight: 600;"><input type="checkbox" style="width: 18px; height: 18px; accent-color: #140A35;"> Sin tallas (talla única)</label>
+            </div>
+            <div style="margin-top: 16px; border: 1.5px solid #D9E6E8; border-radius: 12px; overflow: hidden;">
+              <div style="{{gridRow}} background: #EEF4F5;">
+                <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5B5680;">Color</span>
+                <sc-for list="{{pCols}}" as="h" hint-placeholder-count="4"><span style="text-align: center; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; color: #5B5680;">{{h}}</span></sc-for>
+                <span style="text-align: right; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5B5680;">Total</span>
+              </div>
+              <sc-for list="{{pGrid}}" as="r" hint-placeholder-count="2">
+                <div style="{{gridRow}} border-top: 1px solid #D9E6E8;">
+                  <span style="display: flex; align-items: center; gap: 10px; font-weight: 700;"><span style="width: 16px; height: 16px; border-radius: 999px; background: {{r.hex}}; border: 1.5px solid #B3C3C6; flex: none;"></span>{{r.name}}</span>
+                  <sc-for list="{{r.cells}}" as="c" hint-placeholder-count="4">
+                    <input type="number" value="{{c.v}}" aria-label="{{c.label}}" style="{{c.style}}">
+                  </sc-for>
+                  <span style="text-align: right; font-weight: 700; font-size: 16px;">{{r.total}}</span>
+                </div>
+              </sc-for>
+            </div>
+            <p style="margin: 12px 0 0; font-size: 13px; color: #5B5680;"><span style="color: #B0002A; font-weight: 700;">Rojo</span> = agotado (en la tienda sale tachada) · <span style="color: #9A6B00; font-weight: 700;">Amarillo</span> = stock bajo. El stock se descuenta cuando Wompi confirma el pago.</p>
+          </section>
+        </div>
+
+        <div style="flex: 1; min-width: 260px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;">
+            <div class="lb">Estado</div>
+            <div style="display: flex; gap: 8px;"><span style="flex: 1; text-align: center; padding: 10px; border-radius: 10px; border: 1.5px solid #B3C3C6; font-weight: 700;">Borrador</span><span style="flex: 1; text-align: center; padding: 10px; border-radius: 10px; background: #140A35; color: #D9E6E8; font-weight: 700;">Publicado</span></div>
+            <label style="display: flex; gap: 10px; align-items: center; margin-top: 16px; font-size: 14px; font-weight: 600;"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #140A35;"> Etiqueta "Nuevo"</label>
+            <label style="display: flex; gap: 10px; align-items: center; margin-top: 10px; font-size: 14px; font-weight: 600;"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #140A35;"> Mostrar en el home</label>
+            <label class="lb" for="p-alerta" style="margin-top: 16px;">Avisarme cuando quede menos de</label><input class="in" id="p-alerta" type="number" value="3">
+          </div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 20px;">
+            <div class="lb">Avísame cuando vuelva</div>
+            <div style="font-size: 14px; color: #5B5680; line-height: 1.5;"><strong style="color: #140A35;">7 personas</strong> esperan Negro M. Al subir el stock les llega un correo.</div>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button onClick="{{cerrar}}" style="flex: 1; height: 48px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 15px Archivo, sans-serif; cursor: pointer;">Cancelar</button>
+            <button onClick="{{cerrar}}" style="flex: 1; height: 48px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">Guardar</button>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+    <sc-if value="{{showPedido}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 24px; margin-top: 24px; align-items: flex-start;">
+        <div style="flex: 2; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Estado</div>
+            <ol style="list-style: none; margin: 14px 0 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;">
+              <li style="background: #140A35; color: #CDF980; border-radius: 12px; padding: 12px; font-weight: 700;">✓ Pagado<div style="font-size: 13px; color: #B3B0D4; font-weight: 500; margin-top: 2px;">[DD/MM HH:MM]</div></li>
+              <li style="background: #140A35; color: #CDF980; border-radius: 12px; padding: 12px; font-weight: 700;">✓ Preparando</li>
+              <li style="{{stEnviado}}">{{lblEnviado}}</li>
+              <li style="background: #EEF4F5; border-radius: 12px; padding: 12px; font-weight: 700; color: #5B5680;">Entregado</li>
+            </ol>
+            <sc-if value="{{pedidoPorEnviar}}" hint-placeholder-val="{{true}}">
+              <div style="margin-top: 18px; border: 2px solid #140A35; border-radius: 14px; padding: 18px; display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end;">
+                <div><label class="lb" for="g-tr">Transportadora</label><select class="in" id="g-tr"><option>Servientrega</option><option>Coordinadora</option><option>Interrapidísimo</option><option>Envía</option><option>Otra</option></select></div>
+                <div><label class="lb" for="g-num">Número de guía</label><input class="in" id="g-num" type="text" placeholder="Ej: 123456789"></div>
+                <button onClick="{{marcarEnviado}}" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">Marcar enviado y avisar</button>
+              </div>
+              <p style="margin: 8px 0 0; font-size: 13px; color: #5B5680;">El cliente recibe un correo con la guía y el enlace de rastreo.</p>
+            </sc-if>
+            <sc-if value="{{pedidoEnviado}}" hint-placeholder-val="{{false}}">
+              <p style="margin: 16px 0 0; background: #CDF980; border-radius: 12px; padding: 12px 14px; font-weight: 600;">✓ Enviado por Servientrega · guía [123456789] · correo enviado a [correo]</p>
+            </sc-if>
+          </div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Productos</div>
+            <div style="display: flex; gap: 14px; align-items: center; margin-top: 14px; padding-bottom: 14px; border-bottom: 1px solid #EEF4F5;"><div style="width: 52px; height: 64px; border-radius: 8px; background: #221761;"></div><div style="flex: 1;"><div style="font-weight: 700;">Camiseta VolleyTip</div><div style="font-size: 14px; color: #5B5680;">Negro · M · SKU CAM-NEG-M</div></div><span>× 1</span><span style="font-weight: 700; width: 110px; text-align: right;">[$00.000]</span></div>
+            <div style="display: flex; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px solid #EEF4F5;"><div style="width: 52px; height: 64px; border-radius: 8px; background: #221761;"></div><div style="flex: 1;"><div style="font-weight: 700;">Llavero balón</div><div style="font-size: 14px; color: #5B5680;">SKU LLA-BAL</div></div><span>× 2</span><span style="font-weight: 700; width: 110px; text-align: right;">[$00.000]</span></div>
+            <div style="display: flex; justify-content: space-between; padding-top: 12px; color: #5B5680;"><span>Envío estándar</span><span>[$00.000]</span></div>
+            <div style="display: flex; justify-content: space-between; padding-top: 8px; font-weight: 700; font-size: 20px;"><span>Total</span><span>[$000.000] COP</span></div>
+          </div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Historial</div>
+            <ul style="margin: 12px 0 0; padding-left: 18px; line-height: 1.9; color: #5B5680; font-size: 14px;"><li>[DD/MM HH:MM] · Pedido creado</li><li>[DD/MM HH:MM] · Wompi: pago aprobado (Nequi)</li><li>[DD/MM HH:MM] · Correo de confirmación enviado</li><li>[DD/MM HH:MM] · Stock descontado: Negro M (1 → 0)</li></ul>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Cliente</div><div style="font-weight: 700; margin-top: 10px;">[Nombre]</div><div style="font-size: 14px; color: #5B5680; line-height: 1.7;">[correo]<br>+57 [WhatsApp] · CC [documento]</div><a href="#" style="display: inline-block; margin-top: 8px; font-weight: 700;">Escribir por WhatsApp</a></div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Envío</div><div style="font-size: 14px; line-height: 1.7; margin-top: 10px;">[Dirección]<br>Medellín, Antioquia, Colombia</div><a href="#" style="display: inline-block; margin-top: 8px; font-weight: 700;">Copiar dirección</a></div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Pago (Wompi)</div><div style="font-size: 14px; line-height: 1.8; margin-top: 10px; color: #5B5680;">Método: <strong style="color: #140A35;">Nequi</strong><br>Referencia: VT-1042<br>ID Wompi: [12345-1700000000-00000]<br>Estado: <strong style="color: #140A35;">APPROVED</strong></div><a href="#" style="display: inline-block; margin-top: 8px; font-weight: 700;">Ver en Wompi ↗</a></div>
+          <button style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">Reenviar confirmación</button>
+          <button style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer; color: #B0002A; border-color: #B0002A;">Anular pedido y devolver stock</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showGaleria}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 24px; margin-top: 24px; align-items: flex-start;">
+        <div style="flex: 2; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+            <div><label class="lb" for="gl-t">Nombre</label><input class="in" id="gl-t" type="text" value="Camp [Ciudad] 2026"></div>
+            <div><label class="lb" for="gl-e">Evento</label><select class="in" id="gl-e"><option>Volleyball Camp [Ciudad] · [DD–DD MES]</option></select></div>
+          </div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Archivos · 214 fotos · 12 videos</div><span style="font-size: 14px; color: #5B5680;">Seleccionadas: {{nSel}}</span></div>
+            <div style="margin-top: 14px; border: 2px dashed #B3C3C6; border-radius: 14px; padding: 22px; text-align: center; color: #5B5680;"><strong style="color: #140A35;">Arrastra fotos y videos aquí</strong> · o selecciona una carpeta completa<div style="margin-top: 12px; display: flex; align-items: center; gap: 12px; text-align: left;"><span style="flex: none; font-size: 13px; font-weight: 700; color: #140A35;">Subiendo 38 de 60</span><span style="flex: 1; height: 8px; border-radius: 8px; background: #EEF4F5;"><span style="display: block; width: 63%; height: 8px; border-radius: 8px; background: #CDF980;"></span></span></div></div>
+            <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-top: 16px;">
+              <sc-for list="{{gFotos}}" as="f" hint-placeholder-count="12">
+                <button onClick="{{f.toggle}}" aria-pressed="{{f.on}}" style="{{f.style}}"><span style="{{f.check}}">✓</span><span style="{{f.badge}}">{{f.label}}</span></button>
+              </sc-for>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 14px;"><button style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer; height: 40px; font-size: 14px;">Usar como portada</button><button style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer; height: 40px; font-size: 14px; color: #B0002A; border-color: #B0002A;">Eliminar seleccionadas</button></div>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Descarga</div><div style="margin-top: 12px; font-weight: 700;">{{zipEstado}}</div><div style="font-size: 14px; color: #5B5680; margin-top: 4px;">Las fotos se guardan en Bunny Storage. El ZIP se genera una vez y se descarga desde la galería.</div><button onClick="{{genZip}}" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer; width: 100%; margin-top: 14px;">{{zipBtn}}</button></div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Publicar</div><label style="display: flex; gap: 10px; align-items: center; margin-top: 12px; font-size: 14px; font-weight: 600;"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #140A35;"> Avisar por correo a los 112 inscritos</label><button style="height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer; width: 100%; margin-top: 14px;">Publicar galería</button></div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{showMensaje}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; gap: 24px; margin-top: 24px; align-items: flex-start;">
+        <div style="flex: 2; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; gap: 12px;"><div><div style="font-weight: 700; font-size: 18px;">[Nombre] · [Club]</div><div style="font-size: 14px; color: #5B5680;">[correo] · Colombia · hace 2 h</div></div><span style="align-self: flex-start; padding: 4px 10px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-size: 13px; font-weight: 700;">Organizar un camp</span></div>
+            <p style="margin: 16px 0 0; line-height: 1.7;">Hola, somos un club en [ciudad] con unos 80 jugadores entre 12 y 18 años. Queremos organizar un Volleyball Camp en [mes]. ¿Qué necesitamos y cuánto cuesta?</p>
+          </div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Respuesta</div><select class="in" aria-label="Plantilla" style="width: 260px; height: 40px;"><option>Plantilla: propuesta de camp</option><option>Plantilla: estado del pedido</option><option>Plantilla: marcas</option></select></div>
+            <textarea class="in" rows="7" style="height: auto; padding: 14px; margin-top: 12px; line-height: 1.6;">Hola [Nombre], ¡gracias por escribirnos! Te comparto la propuesta del Volleyball Camp: 2 días, 10 horas de entrenamiento, hasta 150 participantes. El valor por participante para el organizador es de $70.000 [...]</textarea>
+            <div style="display: flex; gap: 10px; margin-top: 12px; align-items: center;"><label style="display: flex; gap: 8px; align-items: center; font-size: 14px; font-weight: 600; flex: 1;"><input type="checkbox" checked style="width: 18px; height: 18px; accent-color: #140A35;"> Adjuntar PDF del camp</label><button onClick="{{responder}}" style="height: 46px; padding: 0 20px; border-radius: 999px; border: 0; background: #FC0035; color: #140A35; font: 700 15px Archivo, sans-serif; cursor: pointer;">{{respBtn}}</button></div>
+          </div>
+        </div>
+        <div style="flex: 1; min-width: 280px; display: flex; flex-direction: column; gap: 16px;">
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Acciones</div><a href="https://wa.me/57" style="display: block; margin-top: 12px; font-weight: 700;">Escribir por WhatsApp</a><a href="#" style="display: block; margin-top: 8px; font-weight: 700;">Crear camp con este club →</a><a href="#" style="display: block; margin-top: 8px; font-weight: 700; color: #5B5680;">Marcar como spam</a></div>
+          <div style="background: #FFFFFF; border-radius: 16px; padding: 24px;"><div style="font-size: 13px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Estado</div><div style="margin-top: 10px; font-weight: 700;">{{msgEstado}}</div><div style="font-size: 13px; color: #5B5680; margin-top: 4px;">La respuesta sale desde team@volleytip.com y queda guardada aquí.</div></div>
+        </div>
+      </div>
+    </sc-if>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2100}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sec: 'resumen', editing: false, modo: 0, staffN: 2, staffOff: {}, color: 0, extra: false, tallas: { XS: false, S: true, M: true, L: true, XL: true } }; }
+  renderVals() {
+    const P = (bg, fg) => 'display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 13px; font-weight: 700; background: ' + bg + '; color: ' + (fg || '#140A35') + ';';
+    const ok = P('#CDF980'), warn = P('#FFE3E9', '#B0002A'), neu = P('#D9E6E8'), dark = P('#140A35', '#D9E6E8');
+    const B = 'font-weight: 700;', M = 'color: #5B5680;', L = 'color: #221761; font-weight: 700; text-decoration: underline;';
+    const c = (t, s) => ({ t, s: s || '' });
+    const secs = {
+      resumen: { label: 'Resumen', title: 'Hola, Andrés', cta: '',
+        cols: ['Tipo', 'Detalle', 'Cliente', 'Total', 'Estado'],
+        rows: [
+          [c('Pedido', B), c('#VT-1042 · 2 productos'), c('[Nombre]'), c('[$000.000]'), c('Por enviar', warn)],
+          [c('Camp', B), c('Volleyball Camp [Ciudad] · Ingreso + camiseta'), c('[Nombre]'), c('$70.000'), c('Pagado', ok)],
+          [c('Pedido', B), c('#VT-1041 · 1 producto'), c('[Nombre]'), c('[$000.000]'), c('Enviado', neu)],
+          [c('Camp', B), c('Volleyball Camp [Ciudad] · Ingreso'), c('[Nombre]'), c('$50.000'), c('Pendiente PSE', P('#FFF4CC'))]
+        ], foot: 'Mostrando lo más reciente' },
+      tips: { label: 'Tips', badge: '48', title: 'Tips', cta: 'Nuevo tip',
+        cols: ['Tip', 'Fundamento', 'Nivel', 'Vistas web', 'Estado'],
+        rows: [
+          [c('Cómo recibir un saque flotado', B), c('Recepción'), c('Intermedio'), c('[0.000]'), c('Borrador', neu)],
+          [c('Salto de ataque en 3 pasos', B), c('Ataque'), c('Básico'), c('[0.000]'), c('Publicado', ok)],
+          [c('Bloqueo: lee al atacante', B), c('Bloqueo'), c('Avanzado'), c('[0.000]'), c('Programado [DD/MM]', P('#FFF4CC'))],
+          [c('Saque en suspensión', B), c('Saque'), c('Avanzado'), c('[0.000]'), c('Publicado', ok)]
+        ], foot: '48 tips · videos en Bunny Stream' },
+      productos: { label: 'Productos', title: 'Productos', cta: 'Nuevo producto',
+        cols: ['Producto', 'Categoría', 'Precio', 'Inventario', 'Estado'],
+        rows: [
+          [c('Camiseta VolleyTip', B), c('Ropa'), c('[$00.000]'), c('Negro 16 · Blanco 18', M), c('Agotado: Negro M', warn)],
+          [c('Llavero balón', B), c('Accesorios'), c('[$00.000]'), c('32'), c('Activo', ok)],
+          [c('Toalla deportiva', B), c('Accesorios'), c('[$00.000]'), c('15'), c('Activo', ok)],
+          [c('Pantaloneta', B), c('Ropa'), c('[$00.000]'), c('—'), c('Oculto', neu)]
+        ], foot: 'Precios en COP · los demás países ven conversión aproximada' },
+      pedidos: { label: 'Pedidos', badge: '4', title: 'Pedidos', cta: 'Exportar CSV', chips: ['Por enviar (4)', 'Enviados', 'Entregados', 'Cambios'],
+        cols: ['Pedido', 'Cliente', 'Destino', 'Total', 'Pago (Wompi)', 'Estado'],
+        rows: [
+          [c('#VT-1042', B), c('[Nombre]'), c('Medellín, CO'), c('[$000.000]'), c('Nequi · aprobado', M), c('Por enviar', warn)],
+          [c('#VT-1040', B), c('[Nombre]'), c('Quito, EC'), c('[$000.000]'), c('Tarjeta · aprobado', M), c('Por enviar', warn)],
+          [c('#VT-1039', B), c('[Nombre]'), c('Bogotá, CO'), c('[$000.000]'), c('PSE · aprobado', M), c('Enviado · guía [000]', neu)],
+          [c('#VT-1036', B), c('[Nombre]'), c('Lima, PE'), c('[$000.000]'), c('Tarjeta · aprobado', M), c('Entregado', ok)]
+        ], foot: 'El estado del pago llega solo desde Wompi (webhook). Al marcar "Enviado" se pide el número de guía y se avisa al cliente por correo y WhatsApp' },
+      camps: { label: 'Camps', title: 'Volleyball Camp [Ciudad]', crumb: 'Camps / Próximos', cta: 'Abrir escáner', chips: ['112 de 150 inscritos', '74 con camiseta', '18 menores', 'Día 1: 0 ingresos'],
+        cols: ['Participante', 'Plan', 'Talla', 'Pago', 'Tiquete', 'Check-in'],
+        rows: [
+          [c('[Nombre]', B), c('Ingreso + camiseta'), c('M'), c('Wompi · aprobado', ok), c('Reenviar', L), c('—', M)],
+          [c('[Nombre] · menor', B), c('Ingreso + camiseta'), c('S'), c('Código del club', dark), c('Reenviar', L), c('—', M)],
+          [c('[Nombre]', B), c('Ingreso'), c('—', M), c('Pendiente PSE', P('#FFF4CC')), c('Sin emitir', M), c('—', M)],
+          [c('[Nombre]', B), c('Ingreso'), c('—', M), c('Reembolsado', neu), c('Anulado', M), c('—', M)]
+        ], foot: 'Exportar lista (CSV) · Enviar mensaje a todos los inscritos' },
+      galerias: { label: 'Galerías', title: 'Galerías', cta: 'Nueva galería',
+        cols: ['Galería', 'Evento', 'Archivos', 'ZIP', 'Estado'],
+        rows: [
+          [c('Camp [Ciudad] 2026', B), c('Volleyball Camp'), c('214 fotos · 12 videos'), c('Generado', ok), c('Publicada', ok)],
+          [c('VBall Tour [Ciudad]', B), c('VBall Tour'), c('88 fotos'), c('Generando…', P('#FFF4CC')), c('Borrador', neu)]
+        ], foot: 'Archivos en Bunny Storage · el ZIP se genera al publicar' },
+      mensajes: { label: 'Mensajes', badge: '3', title: 'Mensajes', cta: '', chips: ['Sin responder (3)', 'Respondidos', 'Todos'],
+        cols: ['De', 'Motivo', 'Mensaje', 'Recibido', 'Estado'],
+        rows: [
+          [c('[Nombre]', B), c('Organizar un camp', dark), c('Somos un club en [ciudad] y queremos…', M), c('Hace 2 h'), c('Nuevo', warn)],
+          [c('[Marca]', B), c('Marcas', dark), c('Nos interesa una colaboración…', M), c('Ayer'), c('Nuevo', warn)],
+          [c('[Nombre]', B), c('Pedido', dark), c('No me ha llegado la guía…', M), c('Ayer'), c('Nuevo', warn)]
+        ], foot: 'Responder abre el correo con la plantilla del motivo' },
+      contenido: { label: 'Textos del sitio', title: 'Textos del sitio', cta: 'Guardar cambios',
+        cols: ['Sección', 'Campo', 'Valor actual', '', ''],
+        rows: [
+          [c('Barra superior', B), c('Anuncio'), c('[Texto del anuncio en lima]'), c('Editar', L), c('')],
+          [c('Home', B), c('Stats'), c('116K · 530K · Millones · LATAM'), c('Editar', L), c('')],
+          [c('Contacto', B), c('WhatsApp'), c('+57 314 648 6275'), c('Editar', L), c('')],
+          [c('Tienda', B), c('Envío gratis desde'), c('$200.000 (solo Colombia)'), c('Editar', L), c('')]
+        ], foot: 'Cambios sin tocar código' },
+      mercados: { label: 'Idiomas y mercados', title: 'Idiomas y mercados', cta: 'Agregar mercado', chips: ['Español · principal', 'English ✓ activo', 'Português · borrador', '+ Agregar idioma'],
+        cols: ['Mercado', 'Moneda', 'Idioma por defecto', 'Envío', 'Pago', 'Estado'],
+        rows: [
+          [c('Colombia', B), c('COP'), c('Español'), c('Gratis desde $200.000'), c('Wompi: tarjeta, PSE, Nequi, Bancolombia', M), c('Activo', ok)],
+          [c('Ecuador', B), c('USD'), c('Español'), c('[Tarifa]'), c('Tarjeta', M), c('Inactivo', neu)],
+          [c('Perú', B), c('PEN'), c('Español'), c('[Tarifa]'), c('Tarjeta', M), c('Inactivo', neu)],
+          [c('Chile', B), c('CLP'), c('Español'), c('[Tarifa]'), c('Tarjeta', M), c('Inactivo', neu)],
+          [c('Brasil', B), c('BRL'), c('Português'), c('[Tarifa]'), c('[Pasarela por definir]', M), c('Inactivo', neu)],
+          [c('Estados Unidos', B), c('USD'), c('English'), c('[Tarifa]'), c('[Pasarela por definir]', M), c('Inactivo', neu)]
+        ], foot: 'Activar un mercado lo muestra en el selector "Envío a" de la tienda. Un idioma en borrador solo lo ve el equipo.' },
+      usuarios: { label: 'Equipo', title: 'Equipo', cta: 'Invitar',
+        cols: ['Nombre', 'Correo', 'Rol', '', ''],
+        rows: [
+          [c('Andrés Piza', B), c('[correo]'), c('Administrador', dark), c(''), c('')],
+          [c('Camilo Gómez', B), c('[correo]'), c('Administrador', dark), c(''), c('')],
+          [c('[Staff camp]', B), c('[correo]'), c('Solo check-in', neu), c('Quitar', L), c('')]
+        ], foot: 'El rol "Solo check-in" solo ve el escáner del evento' }
+    };
+    const order = ['resumen', 'tips', 'productos', 'pedidos', 'camps', 'galerias', 'mensajes', 'contenido', 'mercados', 'usuarios'];
+    const sec = this.state.sec, d = secs[sec], E = this.state.editing, edT = E && sec === 'tips', edP = E && sec === 'productos', edPed = E && sec === 'pedidos', edG = E && sec === 'galerias', edM = E && sec === 'mensajes', ed = edT || edP || edPed || edG || edM;
+    const clickable = ['tips', 'productos', 'pedidos', 'galerias', 'mensajes'].includes(sec);
+    const rows = d.rows.map((cells) => ({ cells, click: clickable ? () => this.setState({ editing: true }) : () => {}, st: clickable ? 'cursor: pointer;' : '' }));
+    const sel = this.state.gsel || { 1: true, 4: true };
+    const gFotos = Array.from({ length: 12 }, (_, i) => { const on = !!sel[i]; return { on: on ? 'true' : 'false', label: i === 0 ? 'Portada' : (i === 7 ? 'Video' : ''),
+      toggle: () => this.setState({ gsel: Object.assign({}, sel, { [i]: !on }) }),
+      style: 'position: relative; aspect-ratio: 1; border-radius: 10px; cursor: pointer; background: #221761; border: 3px solid ' + (on ? '#FC0035' : 'transparent') + ';',
+      check: on ? 'position: absolute; top: 6px; right: 6px; width: 20px; height: 20px; border-radius: 999px; background: #FC0035; color: #140A35; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center;' : 'display: none;',
+      badge: (i === 0 || i === 7) ? 'position: absolute; left: 6px; bottom: 6px; background: #CDF980; color: #140A35; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px;' : 'display: none;' }; });
+    const zip = this.state.zip || 0;
+    const colores = [{ name: 'Negro', hex: '#140A35', n: 4 }, { name: 'Blanco', hex: '#FFFFFF', n: 3 }].concat(this.state.extra ? [{ name: 'Rojo', hex: '#FC0035', n: 0 }] : []);
+    const cSel = Math.min(this.state.color, colores.length - 1);
+    const pColores = colores.map((k, i) => { const on = i === cSel; return { name: k.name, hex: k.hex, n: k.n, sel: on ? 'true' : 'false', pick: () => this.setState({ color: i }),
+      style: 'display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; cursor: pointer; font: 700 14px Archivo, sans-serif; border: 1.5px solid ' + (on ? '#140A35' : '#B3C3C6') + '; background: ' + (on ? '#EEF4F5' : '#FFFFFF') + '; color: #140A35;' }; });
+    const pFotos = Array.from({ length: colores[cSel].n }, (_, i) => ({ t: '[Foto ' + (i + 1) + ' · ' + colores[cSel].name + ']',
+      badge: i === 0 ? 'position: absolute; left: 8px; bottom: 8px; background: #CDF980; color: #140A35; font-size: 11px; font-weight: 700; padding: 3px 7px; border-radius: 5px;' : 'display: none;' }));
+    const TL = ['XS', 'S', 'M', 'L', 'XL'];
+    const pTallas = TL.map((s) => { const on = this.state.tallas[s]; return { t: s, on: on ? 'true' : 'false',
+      toggle: () => this.setState({ tallas: Object.assign({}, this.state.tallas, { [s]: !on }) }),
+      style: 'width: 52px; height: 44px; border-radius: 10px; cursor: pointer; font: 700 15px Archivo, sans-serif; border: 1.5px solid #140A35; background: ' + (on ? '#140A35' : 'transparent') + '; color: ' + (on ? '#D9E6E8' : '#140A35') + ';' }; });
+    const pCols = TL.filter((s) => this.state.tallas[s]);
+    const stock = { Negro: { XS: 2, S: 6, M: 0, L: 5, XL: 3 }, Blanco: { XS: 1, S: 4, M: 7, L: 2, XL: 4 }, Rojo: { XS: 0, S: 0, M: 0, L: 0, XL: 0 } };
+    const pGrid = colores.map((k) => { const cells = pCols.map((s) => { const v = stock[k.name][s];
+      const bg = v === 0 ? '#FFE3E9' : (v < 3 ? '#FFF4CC' : '#FFFFFF'), bc = v === 0 ? '#B0002A' : (v < 3 ? '#9A6B00' : '#B3C3C6');
+      return { v, label: k.name + ' talla ' + s, style: 'width: 100%; box-sizing: border-box; height: 42px; text-align: center; border-radius: 8px; font: 700 15px Archivo, sans-serif; color: #140A35; border: 1.5px solid ' + bc + '; background: ' + bg + ';' }; });
+      return { name: k.name, hex: k.hex, cells, total: cells.reduce((a, c) => a + c.v, 0) }; });
+    const nav = order.map((k) => {
+      const on = k === sec, s = secs[k];
+      return { label: s.label, badge: s.badge || '', current: on ? 'page' : 'false',
+        pick: () => this.setState({ sec: k, editing: false, enviado: false, resp: false }),
+        style: 'display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 11px 12px; border-radius: 10px; border: 0; cursor: pointer; text-align: left; font: ' + (on ? 700 : 600) + ' 15px Archivo, sans-serif; background: ' + (on ? '#221761' : 'transparent') + '; color: ' + (on ? '#FFFFFF' : '#D9E6E8') + '; box-shadow: ' + (on ? 'inset 3px 0 0 #FC0035' : 'none') + ';',
+        badgeStyle: s.badge ? 'min-width: 22px; padding: 2px 7px; border-radius: 999px; background: #FC0035; color: #140A35; font-size: 12px; font-weight: 700; text-align: center;' : 'display: none;' };
+    });
+    const chips = (d.chips || []).map((t, i) => ({ t, style: 'padding: 8px 14px; border-radius: 999px; font-weight: 700; font-size: 14px; ' + (i === 0 ? 'background: #140A35; color: #D9E6E8;' : 'background: #FFFFFF; color: #140A35;') }));
+    const directa = this.state.modo === 0;
+    const modos = ['Venta directa', 'Cupos prepagados'].map((tt, i) => {
+      const on = this.state.modo === i;
+      return { t: tt, sel: on ? 'true' : 'false', pick: () => this.setState({ modo: i }),
+        style: 'border: 0; padding: 10px 18px; border-radius: 999px; cursor: pointer; font: 700 14px Archivo, sans-serif; background: ' + (on ? '#140A35' : 'transparent') + '; color: ' + (on ? '#D9E6E8' : '#140A35') + ';' };
+    });
+    return {
+      modos, modoDirecta: directa, modoCupos: !directa,
+      modoDesc: directa ? 'Cada participante paga en volleytip.com con Wompi. Al final del evento le transfieres al club la diferencia.' : 'El club paga los cupos a VolleyTip y reparte un código. Sus jugadores se inscriben sin pagar y quedan en esta misma lista.',
+      liq: directa ? [{ k: 'Inscritos pagados', v: '108' }, { k: 'Recaudado ([$90.000] c/u)', v: '[$9.720.000]' }, { k: 'VolleyTip ($70.000 c/u)', v: '[$7.560.000]' }]
+                   : [{ k: 'Cupos comprados por el club', v: '120' }, { k: 'Cupos usados', v: '112' }, { k: 'Valor por cupo', v: '$70.000' }],
+      liqTotalK: directa ? 'A transferir al club' : 'Total cobrado al club', liqTotalV: directa ? '[$2.160.000]' : '[$8.400.000]',
+      liqBtn: directa ? 'Marcar como transferido' : 'Generar enlace de pago para el club',
+      showCampCfg: sec === 'camps' && !ed,
+      langTabs: [['es', 'Español', 'Completo'], ['en', 'English', this.state.lang === 'en' ? 'Faltan 2 campos' : 'Faltan 2'], ['pt', 'Português', 'Próximamente']].map(([k, n, s]) => { const on = (this.state.lang || 'es') === k, dis = k === 'pt';
+        return { t: n, status: s, sel: on ? 'true' : 'false', pick: dis ? () => {} : () => this.setState({ lang: k }),
+          style: 'display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; font: 700 14px Archivo, sans-serif; cursor: ' + (dis ? 'not-allowed' : 'pointer') + '; border: 1.5px solid ' + (on ? '#140A35' : '#B3C3C6') + '; background: ' + (on ? '#140A35' : '#FFFFFF') + '; color: ' + (on ? '#D9E6E8' : (dis ? '#8A86A8' : '#140A35')) + ';',
+          badge: 'font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 999px; background: ' + (k === 'es' ? '#CDF980' : (dis ? '#EEF4F5' : '#FFF4CC')) + '; color: #140A35;' }; }),
+      langNote: (this.state.lang || 'es') === 'en' ? 'Los campos vacíos se muestran en español en la versión en inglés.' : 'El español es el idioma principal y es obligatorio.',
+      tTitulo: (this.state.lang || 'es') === 'en' ? 'How to pass a float serve' : 'Cómo recibir un saque flotado',
+      pNombre: (this.state.lang || 'es') === 'en' ? 'VolleyTip T-shirt' : 'Camiseta VolleyTip',
+      staff: [{ nombre: 'Staff 1 · [Nombre]', pin: '4821', code: 'k3f9a', scans: 0 }, { nombre: 'Staff 2 · [Club]', pin: '7305', code: 'p8x2m', scans: 0 }, { nombre: 'Staff 3 · [Nombre]', pin: '1964', code: 'r5t7c', scans: 0 }].slice(0, this.state.staffN).map((s, i) => {
+        const off = !!this.state.staffOff[i];
+        return Object.assign({}, s, { estado: off ? 'Desactivado' : 'Activo',
+          toggle: () => this.setState({ staffOff: Object.assign({}, this.state.staffOff, { [i]: !off }) }),
+          btn: 'border: 0; cursor: pointer; padding: 5px 12px; border-radius: 999px; font: 700 13px Archivo, sans-serif; background: ' + (off ? '#D9E6E8' : '#CDF980') + '; color: #140A35;' });
+      }),
+      addStaff: () => this.setState({ staffN: Math.min(3, this.state.staffN + 1) }),
+      nav, chips, cols: d.cols, rows, foot: d.foot,
+      title: edT ? 'Editar tip' : edP ? 'Camiseta VolleyTip' : edPed ? 'Pedido #VT-1042' : edG ? 'Camp [Ciudad] 2026' : edM ? 'Mensaje' : d.title,
+      crumb: edT ? 'Tips / Editar' : edP ? 'Productos / Editar' : edPed ? 'Pedidos / Detalle' : edG ? 'Galerías / Editar' : edM ? 'Mensajes / Sin responder' : (d.crumb || 'Panel VolleyTip'),
+      showPedido: edPed, showGaleria: edG, showMensaje: edM,
+      pedidoPorEnviar: !this.state.enviado, pedidoEnviado: !!this.state.enviado,
+      marcarEnviado: () => this.setState({ enviado: true }),
+      lblEnviado: this.state.enviado ? '✓ Enviado' : 'Enviado',
+      stEnviado: 'border-radius: 12px; padding: 12px; font-weight: 700; ' + (this.state.enviado ? 'background: #140A35; color: #CDF980;' : 'background: #FFF4CC; color: #140A35; box-shadow: inset 0 0 0 2px #140A35;'),
+      gFotos, nSel: Object.values(sel).filter(Boolean).length,
+      zipEstado: zip === 0 ? 'ZIP sin generar' : zip === 1 ? 'Generando ZIP… (2,1 GB)' : '✓ ZIP listo · 2,1 GB',
+      zipBtn: zip === 2 ? 'Regenerar ZIP' : 'Generar ZIP', genZip: () => this.setState({ zip: zip === 0 ? 1 : 2 }),
+      respBtn: this.state.resp ? '✓ Enviado' : 'Enviar respuesta', responder: () => this.setState({ resp: true }),
+      msgEstado: this.state.resp ? 'Respondido · ahora' : 'Nuevo · sin responder',
+      cta: d.cta, hasCta: !!d.cta && !ed,
+      ctaClick: () => { if (sec === 'tips' || sec === 'productos') this.setState({ editing: true }); },
+      pColores, pFotos, pTallas, pCols, pGrid,
+      gridRow: 'display: grid; grid-template-columns: 150px repeat(' + pCols.length + ', minmax(0, 72px)) 1fr; gap: 12px; align-items: center; padding: 12px 16px;',
+      addColor: () => this.setState({ extra: true, color: 2 }),
+      irProductos: () => this.setState({ sec: 'productos', editing: false }),
+      showKpis: sec === 'resumen', showSub: !!d.chips && !ed, showTable: !ed, showEditor: edT, showProd: edP,
+      cerrar: () => this.setState({ editing: false })
+    };
+  }
+}
+</script>
+</body>
+</html>

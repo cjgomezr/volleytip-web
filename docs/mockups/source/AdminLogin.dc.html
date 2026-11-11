@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Admin · entrar</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#EEF4F5}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="display: flex; min-height: 100vh; font-family: Archivo, system-ui, sans-serif;">
+  <div style="flex: 1; background: #140A35; color: #D9E6E8; padding: 48px; display: flex; flex-direction: column; justify-content: space-between;">
+    <img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; align-self: flex-start;">
+    <div class="an" style="font-size: 96px;">Panel<br><span style="color: #FC0035;">VolleyTip</span></div>
+    <div style="color: #B3B0D4;">Solo para el equipo. ¿Eres staff de un camp? Usa el enlace y el PIN que te dieron.</div>
+  </div>
+  <div style="flex: 1; background: #EEF4F5; color: #140A35; display: flex; align-items: center; justify-content: center; padding: 48px;">
+    <div style="width: 400px; max-width: 100%;">
+      <sc-if value="{{form}}" hint-placeholder-val="{{true}}">
+        <h1 class="an" style="font-size: 48px;">Entrar</h1>
+        <p style="margin: 10px 0 0; color: #5B5680; line-height: 1.5;">Te enviamos un enlace de acceso a tu correo. Sin contraseñas.</p>
+        <label class="lb" for="lg" style="margin-top: 24px;">Correo</label>
+        <input class="in" id="lg" type="email" placeholder="tu@volleytip.com" style="border-width: 1.5px; border-color: #B3C3C6;">
+        <button onClick="{{enviar}}" class="btn" style="width: 100%; margin-top: 14px;">Enviarme el enlace</button>
+        <div style="display: flex; align-items: center; gap: 12px; margin: 20px 0; color: #5B5680; font-size: 14px;"><span style="flex: 1; height: 1px; background: #B3C3C6;"></span>o<span style="flex: 1; height: 1px; background: #B3C3C6;"></span></div>
+        <button style="width: 100%; height: 54px; border-radius: 999px; border: 1.5px solid #140A35; background: #FFFFFF; font: 700 16px Archivo, sans-serif; color: #140A35; cursor: pointer;">Continuar con Google</button>
+        <p style="margin: 16px 0 0; font-size: 13px; color: #5B5680;">Solo entran los correos autorizados en Admin → Equipo.</p>
+      </sc-if>
+      <sc-if value="{{enviado}}" hint-placeholder-val="{{false}}">
+        <h1 class="an" style="font-size: 48px;">Revisa tu correo</h1>
+        <p style="margin: 10px 0 0; color: #5B5680; line-height: 1.5;">Te enviamos un enlace a <strong style="color: #140A35;">[correo]</strong>. Vence en 15 minutos.</p>
+        <a href="Admin.dc.html" class="btn" style="margin-top: 20px;">(Simular) Abrir el enlace</a>
+        <button onClick="{{volver}}" style="width: 100%; margin-top: 10px; height: 48px; border: 0; background: transparent; font: 700 15px Archivo, sans-serif; text-decoration: underline; color: #140A35; cursor: pointer;">Usar otro correo</button>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { sent: false }; }
+  renderVals() { return { form: !this.state.sent, enviado: this.state.sent, enviar: () => this.setState({ sent: true }), volver: () => this.setState({ sent: false }) }; }
+}
+</script>
+</body>
+</html>

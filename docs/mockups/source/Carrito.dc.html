@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — Carrito único y checkout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#D9E6E8}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="position: relative; background: #D9E6E8; color: #140A35; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+  <div style="background: #140A35; border-bottom: 1px solid #221761;">
+    <header style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 20px; padding-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap;">
+      <a href="Main.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 30px; display: block;"></a>
+      <nav aria-label="Principal" style="display: flex; gap: 28px; flex-wrap: wrap; font-weight: 600; font-size: 15px;"><a href="Tips.dc.html" style="color: #D9E6E8; text-decoration: none;">Tips</a><a href="Camps.dc.html" style="color: #D9E6E8; text-decoration: none;">Camps</a><a href="Tienda.dc.html" style="color: #FFFFFF; text-decoration: underline; text-decoration-color: #FC0035; text-decoration-thickness: 3px; text-underline-offset: 8px;">Tienda</a><a href="App.dc.html" style="color: #D9E6E8; text-decoration: none;">App</a><a href="Nosotros.dc.html" style="color: #D9E6E8; text-decoration: none;">Nosotros</a></nav>
+      <div style="display: flex; align-items: center; gap: 16px;"><span style="display: flex; align-items: center; gap: 6px; color: #D9E6E8; font-size: 14px; font-weight: 600;"><span style="color: #CDF980; display: flex;"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg></span>Pago seguro</span></div>
+    </header>
+  </div>
+  <sc-if value="{{vCarrito}}" hint-placeholder-val="{{true}}">
+    <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 40px; padding-bottom: 72px;">
+      <h1 class="an" style="font-size: 64px;">Tu carrito</h1>
+      <p style="margin: 8px 0 0; color: #5B5680;">Todo en un solo pago.</p>
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; margin-top: 24px;">
+        <div style="flex: 1 1 600px; min-width: 0;">
+          <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px;">
+            <li style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"><div style="width: 80px; height: 100px; border-radius: 12px; background: #221761; flex: none;"></div><div style="flex: 1 1 220px;"><span style="display: inline-block; padding: 3px 8px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;">Envío a domicilio</span><div style="font-weight: 700; font-size: 18px; margin-top: 6px;">Camiseta VolleyTip</div><div style="font-size: 14px; color: #5B5680;">Negro · Talla M</div></div><div style="display: flex; align-items: center; gap: 4px;"><button aria-label="Quitar uno" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 18px Archivo, sans-serif; cursor: pointer;">−</button><span style="min-width: 28px; text-align: center; font-weight: 700;">1</span><button aria-label="Agregar uno" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 18px Archivo, sans-serif; cursor: pointer;">+</button></div><span style="font-weight: 700; min-width: 90px; text-align: right;">[PRECIO]</span><button style="min-height: 44px; border: 0; background: transparent; color: #5B5680; font: 600 13px Archivo, sans-serif; text-decoration: underline; cursor: pointer;">Quitar</button></li>
+            <li style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"><div style="width: 80px; height: 100px; border-radius: 12px; background: #221761; flex: none;"></div><div style="flex: 1 1 220px;"><span style="display: inline-block; padding: 3px 8px; border-radius: 999px; background: #CDF980; color: #140A35; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;">Digital</span><div style="font-weight: 700; font-size: 18px; margin-top: 6px;">Recepción desde cero</div><div style="font-size: 14px; color: #5B5680;">[N] videos + guías · acceso inmediato</div></div><span style="font-size: 13px; color: #5B5680;">1 acceso</span><span style="font-weight: 700; min-width: 90px; text-align: right;">[PRECIO]</span><button style="min-height: 44px; border: 0; background: transparent; color: #5B5680; font: 600 13px Archivo, sans-serif; text-decoration: underline; cursor: pointer;">Quitar</button></li>
+            <li style="background: #FFFFFF; border-radius: 16px; padding: 20px; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"><div style="width: 80px; height: 100px; border-radius: 12px; background: #221761; flex: none;"></div><div style="flex: 1 1 220px;"><span style="display: inline-block; padding: 3px 8px; border-radius: 999px; background: #FC0035; color: #140A35; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;">Camp</span><div style="font-weight: 700; font-size: 18px; margin-top: 6px;">Volleyball Camp [Ciudad]</div><div style="font-size: 14px; color: #5B5680;">[DD–DD MES] · Ingreso + camiseta</div></div><div style="display: flex; align-items: center; gap: 4px;"><button aria-label="Quitar uno" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 18px Archivo, sans-serif; cursor: pointer;">−</button><span style="min-width: 28px; text-align: center; font-weight: 700;">1</span><button aria-label="Agregar uno" style="width: 44px; height: 44px; border-radius: 999px; border: 1.5px solid #140A35; background: transparent; font: 700 18px Archivo, sans-serif; cursor: pointer;">+</button></div><span style="font-weight: 700; min-width: 90px; text-align: right;">[PRECIO]</span><button style="min-height: 44px; border: 0; background: transparent; color: #5B5680; font: 600 13px Archivo, sans-serif; text-decoration: underline; cursor: pointer;">Quitar</button></li>
+          </ul>
+          <p style="margin: 16px 0 0; background: #CDF980; border-radius: 12px; padding: 12px 16px; font-size: 14px; font-weight: 600;">Envío gratis en Colombia desde $200.000 en productos físicos.</p>
+        </div>
+        <aside aria-label="Resumen" style="flex: 1 1 320px; max-width: 420px; background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 24px; position: sticky; top: 24px;">
+        <h2 class="an" style="font-size: 28px;">Resumen</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Camiseta VolleyTip</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Recepción desde cero</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Cupo camp [Ciudad]</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Envío (solo la camiseta)</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px; font-size: 20px; font-weight: 700; padding-top: 12px; margin-top: 4px; border-top: 1.5px solid #D9E6E8;"><span>Total</span><span>[TOTAL] COP</span></div>
+        </div>
+        <div style="margin-top: 16px;"><label class="lb" for="k-cod">Código de club o de descuento</label><div style="display: flex; gap: 8px;"><input id="k-cod" class="in" style="height: 48px; border-width: 1.5px;"><button style="height: 48px; padding: 0 16px; border-radius: 12px; border: 1.5px solid #140A35; background: transparent; font: 700 14px Archivo, sans-serif; cursor: pointer;">Aplicar</button></div><p style="margin: 8px 0 0; font-size: 13px; color: #5B5680; line-height: 1.5;">El código de club deja tu cupo en $0. El resto se cobra normal.</p></div>
+        <button onClick="{{irCheckout}}" class="btn" style="width: 100%; margin-top: 18px;">Continuar</button>
+        <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5; margin-top: 12px; font-size: 13px;">Un solo pago con Wompi: tarjeta, PSE, Nequi o Botón Bancolombia.</p>
+      </aside>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{vCheckout}}" hint-placeholder-val="{{false}}">
+    <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 40px; padding-bottom: 72px;">
+      <h1 class="an" style="font-size: 64px;">Finalizar compra</h1>
+      <div style="display: flex; gap: 32px; flex-wrap: wrap; align-items: flex-start; margin-top: 24px;">
+        <form style="flex: 1 1 600px; min-width: 0; display: flex; flex-direction: column; gap: 16px;">
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <h2 class="eb" style="margin: 0;">1 · Tus datos</h2>
+            <div><label class="lb" for="d-mail">Correo</label><input class="in" id="d-mail" type="email" value="juanperez@gmial.com">
+              <button type="button" style="margin-top: 8px; min-height: 44px; padding: 10px 14px; border-radius: 12px; border: 0; background: #CDF980; color: #140A35; font: 600 14px Archivo, sans-serif; cursor: pointer;">¿Quisiste decir <strong>juanperez@gmail.com</strong>? Haz clic para corregir</button>
+              <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5; margin-top: 8px; font-size: 13px;">Aquí te llegan tu paquete digital y tu tiquete. Revísalo bien.</p></div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="d-nom">Nombre completo</label><input class="in" id="d-nom" type="text" placeholder="" value=""></div><div><label class="lb" for="d-wa">WhatsApp</label><input class="in" id="d-wa" type="tel" placeholder="+57" value=""></div><div><label class="lb" for="d-doc">Documento (opcional)</label><input class="in" id="d-doc" type="text" placeholder="" value=""></div></div>
+          </section>
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <h2 class="eb" style="margin: 0;">2 · Jugador del camp</h2>
+            <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5;">Volleyball Camp [Ciudad] · 1 cupo. Si compras varios cupos, llenas uno por jugador.</p>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="p-nom">Nombre del jugador</label><input class="in" id="p-nom" type="text" placeholder="" value=""></div><div><label class="lb" for="p-nac">Fecha de nacimiento</label><input class="in" id="p-nac" type="date" placeholder="" value=""></div><div><label class="lb" for="p-niv">Nivel</label><select class="in" id="p-niv"><option>Básico</option><option>Intermedio</option><option>Avanzado</option></select></div><div><label class="lb" for="p-talla">Talla de camiseta</label><select class="in" id="p-talla"><option>S</option><option>M</option><option>L</option><option>XL</option></select></div></div>
+            <div style="background: #D9E6E8; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px;">
+              <div style="font-weight: 700;">Es menor de edad: datos del acudiente</div>
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="q-nom">Nombre del acudiente</label><input class="in" id="q-nom" type="text" placeholder="" value=""></div><div><label class="lb" for="q-tel">Teléfono del acudiente</label><input class="in" id="q-tel" type="tel" placeholder="" value=""></div></div>
+              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Autorizo la participación y acepto el <a href="#" style="color: #221761;">deslinde de responsabilidad</a>.</label>
+              <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Autorizo el uso de imagen en fotos y videos del camp.</label>
+            </div>
+          </section>
+          <section style="background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+            <h2 class="eb" style="margin: 0;">3 · Envío de la camiseta</h2>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="s-dep">Departamento</label><input class="in" id="s-dep" type="text" placeholder="" value=""></div><div><label class="lb" for="s-ciu">Ciudad</label><input class="in" id="s-ciu" type="text" placeholder="" value=""></div></div>
+            <div><label class="lb" for="s-dir">Dirección</label><input class="in" id="s-dir" type="text" placeholder="Calle, número, apto" value=""></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px; background: #D9E6E8; border-radius: 12px; padding: 14px;"><span><strong>Envío · [Zona]</strong><br><span style="font-size: 13px; color: #5B5680;">[N–N] días hábiles</span></span><strong>[PRECIO]</strong></div>
+            <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5; font-size: 13px;">Si tu carrito no tiene productos físicos, este paso no aparece.</p>
+          </section>
+        </form>
+        <aside aria-label="Resumen" style="flex: 1 1 320px; max-width: 420px; background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 24px; position: sticky; top: 24px;">
+        <h2 class="an" style="font-size: 28px;">Resumen</h2>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Camiseta VolleyTip</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Recepción desde cero</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Cupo camp [Ciudad]</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px;"><span>Envío (solo la camiseta)</span><span>[PRECIO]</span></div>
+          <div style="display: flex; justify-content: space-between; gap: 12px; font-size: 15px; font-size: 20px; font-weight: 700; padding-top: 12px; margin-top: 4px; border-top: 1.5px solid #D9E6E8;"><span>Total</span><span>[TOTAL] COP</span></div>
+        </div>
+        <p style="margin: 14px 0 0; font-size: 13px; color: #5B5680; line-height: 1.5;">Camp: reembolso completo hasta 8 días antes. Después puedes ceder tu cupo.</p><label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5; margin-top: 12px;"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> <span>Acepto <a href="#" style="color: #221761;">términos</a>, <a href="#" style="color: #221761;">cambios y reembolsos</a> y <a href="#" style="color: #221761;">tratamiento de datos</a>.</span></label>
+        <button onClick="{{pagar}}" class="btn" style="width: 100%; margin-top: 18px;">Pagar</button>
+        <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5; margin-top: 12px; font-size: 13px;">Un solo pago con Wompi: tarjeta, PSE, Nequi o Botón Bancolombia.</p>
+      </aside>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{vCorreo}}" hint-placeholder-val="{{false}}">
+    <div style="position: fixed; inset: 0; z-index: 20; background: rgba(20,10,53,0.78); display: flex; align-items: center; justify-content: center; padding: 24px;">
+      <div role="dialog" aria-modal="true" aria-labelledby="dlg-w" style="width: 100%; max-width: 520px; box-sizing: border-box; background: #FFFFFF; border-radius: 24px; padding: 32px;">
+        <h2 id="dlg-w" class="an" style="font-size: 40px;">¿Este es tu correo?</h2>
+        <div style="margin-top: 18px; background: #D9E6E8; border-radius: 14px; padding: 22px 16px; font-weight: 700; font-size: 26px; text-align: center; overflow-wrap: anywhere;">juanperez@gmail.com</div>
+        <p style="margin: 16px 0 0; line-height: 1.6;">Ahí te llegarán <strong>el acceso a tu paquete</strong> y <strong>tu tiquete del camp</strong>, y con él entras a Mis compras. Si está mal escrito, no podrás verlos.</p>
+        <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 22px;"><button onClick="{{confirmar}}" class="btn" style="flex: 2 1 240px;">Sí, es correcto · Ir a pagar</button><button onClick="{{corregir}}" style="flex: 1 1 120px; height: 54px; border-radius: 999px; border: 2px solid #140A35; background: transparent; color: #140A35; font: 700 16px Archivo, sans-serif; cursor: pointer;">Corregir</button></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{vOk}}" hint-placeholder-val="{{false}}">
+    <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 80px;">
+      <span style="display: inline-flex; width: 64px; height: 64px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 84px; margin-top: 18px;">¡Listo!</h1>
+      <p style="margin: 12px 0 0; font-size: 18px;">Pedido <strong>#VT-[0000]</strong>. Te enviamos todo a [correo].</p>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-top: 28px;">
+        <article style="background: #140A35; color: #D9E6E8; border-radius: 16px; padding: 22px;"><span style="display: inline-block; padding: 3px 8px; border-radius: 999px; background: #CDF980; color: #140A35; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;">Digital</span><div style="font-weight: 700; font-size: 20px; margin-top: 10px;">Recepción desde cero</div><div style="font-size: 14px; color: #B3B0D4;">Ya está disponible.</div><a href="Leccion.dc.html" class="btn" style="margin-top: 16px; height: 48px;">Empezar ahora</a></article>
+        <article style="background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 22px;"><span style="display: inline-block; padding: 3px 8px; border-radius: 999px; background: #FC0035; color: #140A35; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;">Camp</span><div style="font-weight: 700; font-size: 20px; margin-top: 10px;">Tiquete de [Nombre del jugador]</div><div style="font-size: 14px; color: #5B5680;">Volleyball Camp [Ciudad] · [DD–DD MES]</div><a href="Tiquete.dc.html" style="margin-top: 16px; height: 48px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-weight: 700; display: flex; align-items: center; justify-content: center; text-decoration: none;">Ver tiquete</a></article>
+        <article style="background: #FFFFFF; border-radius: 16px; padding: 20px; padding: 22px;"><span style="display: inline-block; padding: 3px 8px; border-radius: 999px; background: #140A35; color: #D9E6E8; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase;">Envío a domicilio</span><div style="font-weight: 700; font-size: 20px; margin-top: 10px;">Camiseta VolleyTip</div><div style="font-size: 14px; color: #5B5680; line-height: 1.5;">Preparando · sale en 1–2 días hábiles. Te avisamos con la guía.</div></article>
+      </div>
+      <a href="MisComprasWeb.dc.html" style="display: inline-block; margin-top: 24px; color: #221761; font-weight: 700;">Ver todo en Mis compras</a>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vista":{"editor":"enum","options":["carrito","checkout","confirmar correo","confirmado"],"default":"carrito"},"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { v: null }; }
+  renderVals() {
+    const v = this.state.v || this.props.vista;
+    return { vCarrito: v === 'carrito', vCheckout: v === 'checkout' || v === 'confirmar correo', vCorreo: v === 'confirmar correo', vOk: v === 'confirmado',
+      irCheckout: () => this.setState({ v: 'checkout' }), pagar: () => this.setState({ v: 'confirmar correo' }),
+      corregir: () => this.setState({ v: 'checkout' }), confirmar: () => this.setState({ v: 'confirmado' }) };
+  }
+}
+</script>
+</body>
+</html>

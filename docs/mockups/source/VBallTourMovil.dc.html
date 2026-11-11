@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>VolleyTip — VBall Tour (celular)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Archivo:wght@400;500;600;700&amp;display=swap">
+<style>
+body{margin:0;background:#140A35}
+a{color:#FFFFFF}
+.an{font-family:Anton,Impact,sans-serif;font-weight:400;text-transform:uppercase;line-height:.95;margin:0}
+.eb{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+.btn{display:flex;align-items:center;justify-content:center;height:54px;border-radius:999px;border:0;background:#FC0035;color:#140A35;font:700 17px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.btn2{display:flex;align-items:center;justify-content:center;height:50px;border-radius:999px;border:2px solid #D9E6E8;background:transparent;color:#D9E6E8;font:700 16px Archivo,sans-serif;text-decoration:none;cursor:pointer}
+.in{width:100%;box-sizing:border-box;height:52px;padding:0 16px;border-radius:12px;border:2px solid #140A35;background:#FFFFFF;color:#140A35;font:16px Archivo,sans-serif}
+.lb{display:block;font-weight:700;font-size:14px;margin-bottom:6px}
+
+</style>
+</helmet>
+<div style="background: #140A35; color: #D9E6E8; font-family: Archivo, system-ui, sans-serif; min-height: 100vh;">
+  <header style="position: sticky; top: 0; z-index: 5; background: #140A35; padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border-bottom: 1px solid #221761;">
+    <a href="HomeMovil.dc.html" aria-label="VolleyTip, inicio"><img src="../assets/wordmark.png" alt="volleytip" style="height: 24px; display: block;"></a>
+    <div style="display: flex; gap: 8px;">
+      <a href="ProductoMovil.dc.html" aria-label="Carrito, 2 productos" style="position: relative; width: 44px; height: 44px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center; box-sizing: border-box;">
+        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#D9E6E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 7h12l-1 13H7z"></path><path d="M9 7a3 3 0 0 1 6 0"></path></svg>
+        <span style="position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; border-radius: 999px; background: #CDF980; color: #140A35; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center;">2</span>
+      </a>
+      <button aria-label="Abrir menú" style="width: 44px; height: 44px; border-radius: 999px; border: 0; background: #FC0035; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="2.5" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+      </button>
+    </div>
+  </header>
+  <sc-if value="{{vPagina}}" hint-placeholder-val="{{true}}">
+    <section style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 48px; padding-bottom: 48px;">
+      <div class="eb" style="color: #CDF980;">Evento social · entrada libre</div>
+      <h1 class="an" style="font-size: 64px; margin-top: 10px;">VBall Tour</h1>
+      <p style="margin: 16px 0 0; font-size: 19px; line-height: 1.6; max-width: 640px;">Llevamos voleibol, juegos y premios a comunidades que lo necesitan, junto a fundaciones y empresas aliadas. No es un entrenamiento: es un día para jugar y compartir.</p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap; margin-top: 24px;"><a href="#asistir" class="btn" style="padding: 0 32px;">Voy a asistir</a><a href="#aliados" class="btn2" style="height: 54px; padding: 0 28px;">Quiero sumarme como aliado</a></div>
+      <div style="margin-top: 32px; aspect-ratio: 4 / 3; border-radius: 20px; background: #221761; display: flex; align-items: center; justify-content: center; color: #B3B0D4; font-weight: 600;">[Foto o video de una parada del Tour]</div>
+    </section>
+
+    <section style="background: #CDF980; color: #140A35;">
+      <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 36px; padding-bottom: 36px; display: flex; gap: 24px; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+        <div><div class="eb">Próxima parada</div><div class="an" style="font-size: 36px; margin-top: 6px;">[Municipio, Región]</div><div style="margin-top: 8px; font-weight: 600; font-size: 17px;">[DD de MES] · [HH:MM] · [Cancha o parque]</div><div style="margin-top: 4px;">Con: [Fundación aliada] y [Empresa aliada]</div></div>
+        <div style="background: #140A35; color: #D9E6E8; border-radius: 20px; padding: 20px 28px; text-align: center;"><div class="an" style="font-size: 56px; color: #CDF980;">[N]</div><div style="font-weight: 600;">personas ya dijeron que van</div></div>
+      </div>
+    </section>
+
+    <section style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 56px;">
+      <h2 class="an" style="font-size: 36px;">Qué pasa en una parada</h2>
+      <ul style="list-style: none; margin: 20px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+        <li style="background: #221761; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 28px; color: #CDF980;">Juegos y retos</div><div style="margin-top: 10px; line-height: 1.6;">Actividades de voleibol para todas las edades. No hace falta saber jugar.</div></li>
+        <li style="background: #221761; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 28px; color: #CDF980;">Premios</div><div style="margin-top: 10px; line-height: 1.6;">Balones y otros premios de voleibol para quienes participan.</div></li>
+        <li style="background: #221761; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 28px; color: #CDF980;">Recursos para la comunidad</div><div style="margin-top: 10px; line-height: 1.6;">Las fundaciones y empresas aliadas entregan lo que reunieron para la región.</div></li>
+      </ul>
+      <p style="margin: 20px 0 0; color: #B3B0D4;">¿Buscas entrenamiento? Eso es el <a href="Camps.dc.html" style="font-weight: 700;">Volleyball Camp</a>: 10 horas de práctica con entrenadores.</p>
+    </section>
+
+    <section id="asistir" style="background: #D9E6E8; color: #140A35;">
+      <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 56px; display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 40px; align-items: start;">
+        <div>
+          <h2 class="an" style="font-size: 36px;">Voy a asistir</h2>
+          <p style="margin: 14px 0 0; font-size: 18px; line-height: 1.6;">Es gratis y no necesitas tiquete. Cuéntanos cuántos vienen para preparar bien el evento: premios, hidratación y actividades.</p>
+          <ul style="margin: 16px 0 0; padding-left: 20px; line-height: 1.8;"><li>No se cobra nada.</li><li>Puedes llegar aunque no te hayas anotado.</li><li>Te recordamos el día antes por WhatsApp o correo.</li></ul>
+        </div>
+        <form style="background: #FFFFFF; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px;">
+          <div><label class="lb" for="m-par">Parada</label><select class="in" id="m-par"><option>[Municipio] · [DD MES]</option><option>[Municipio] · [DD MES]</option></select></div>
+          <fieldset style="border: 0; padding: 0; margin: 0;"><legend class="lb" style="padding: 0;">¿Cómo vienes?</legend>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+              <label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600;"><input type="radio" name="m-modo" onClick="{{modoSolo}}" checked style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Solo o en familia</label>
+              <label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600;"><input type="radio" name="m-modo" onClick="{{modoGrupo}}" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Con un grupo</label>
+            </div>
+          </fieldset>
+          <sc-if value="{{esGrupo}}" hint-placeholder-val="{{false}}">
+            <div><label class="lb" for="m-inst">Colegio, club o fundación</label><input class="in" id="m-inst" type="text"><p style="margin: 8px 0 0; font-size: 13px; color: #5B5680; line-height: 1.5;">Anota a todo el grupo de una vez. Si son más de 50, te escribimos para confirmar.</p></div>
+          </sc-if>
+          <div><label class="lb" for="m-nom">Tu nombre</label><input class="in" id="m-nom" type="text" placeholder=""></div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="m-wa">WhatsApp</label><input class="in" id="m-wa" type="tel" placeholder="+57"></div><div><label class="lb" for="m-mail">Correo (opcional)</label><input class="in" id="m-mail" type="email" placeholder=""></div></div>
+          <fieldset style="border: 0; padding: 0; margin: 0;"><legend class="lb" style="padding: 0;">¿Cuántos vienen, contándote a ti?</legend>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;"><div><label for="m-ad" style="display: block; font-size: 13px; color: #5B5680; margin-bottom: 6px;">Adultos</label><input class="in" id="m-ad" type="number" min="0" inputmode="numeric" value="1"></div><div><label for="m-ni" style="display: block; font-size: 13px; color: #5B5680; margin-bottom: 6px;">Niños y jóvenes</label><input class="in" id="m-ni" type="number" min="0" inputmode="numeric" value="0"></div></div>
+          </fieldset>
+          <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.5;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> <span>Acepto el <a href="#" style="color: #221761;">tratamiento de datos</a>. Solo se usan para organizar este evento.</span></label>
+          <button type="button" onClick="{{asistir}}" class="btn">Confirmar que voy</button>
+          <p style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5; font-size: 13px;">No pedimos nombres ni datos de los niños, solo cuántos son.</p>
+        </form>
+      </div>
+    </section>
+
+    <section id="aliados" style="background: #FFFFFF; color: #140A35;">
+      <div style="max-width: 1280px; margin: 0 auto; padding-left: 24px; padding-right: 24px; padding-top: 56px; padding-bottom: 64px;">
+        <div class="eb" style="color: #5B5680;">Empresas y fundaciones</div>
+        <h2 class="an" style="font-size: 36px; margin-top: 8px;">Súmate al VBall Tour</h2>
+        <ul style="list-style: none; margin: 24px 0 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+          <li style="background: #D9E6E8; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 26px;">Dona en especie</div><div style="margin-top: 8px; line-height: 1.5; color: #5B5680;">Balones, uniformes, refrigerios, transporte o lo que tu organización pueda aportar.</div></li>
+          <li style="background: #D9E6E8; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 26px;">Patrocina una parada</div><div style="margin-top: 8px; line-height: 1.5; color: #5B5680;">Tu marca presente en el evento y en las redes de VolleyTip.</div></li>
+          <li style="background: #D9E6E8; border-radius: 20px; padding: 24px;"><div class="an" style="font-size: 26px;">Participa</div><div style="margin-top: 8px; line-height: 1.5; color: #5B5680;">Trae voluntarios o una actividad propia para la comunidad.</div></li>
+        </ul>
+        <p style="margin: 20px 0 0; background: #140A35; color: #D9E6E8; border-radius: 16px; padding: 18px 20px; line-height: 1.6;"><strong>¿Quieres donar dinero?</strong> Las donaciones en dinero las reciben directamente las fundaciones aliadas, que entregan el certificado de donación: [Fundación 1] · [Fundación 2]. VolleyTip no recibe donaciones en dinero.</p>
+
+        <form style="margin-top: 28px; background: #D9E6E8; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 16px;">
+          <h3 class="an" style="font-size: 30px;">Cuéntanos cómo quieres sumarte</h3>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px;"><div><label class="lb" for="m-org">Empresa o fundación</label><input class="in" id="m-org" type="text" placeholder=""></div><div><label class="lb" for="m-tipo">Tipo</label><select class="in" id="m-tipo"><option>Empresa</option><option>Fundación</option><option>Entidad pública</option><option>Otro</option></select></div><div><label class="lb" for="m-con">Nombre de contacto</label><input class="in" id="m-con" type="text" placeholder=""></div><div><label class="lb" for="m-cmail">Correo</label><input class="in" id="m-cmail" type="email" placeholder=""></div><div><label class="lb" for="m-cwa">WhatsApp</label><input class="in" id="m-cwa" type="tel" placeholder="+57"></div><div><label class="lb" for="m-reg">Ciudad o región de interés</label><input class="in" id="m-reg" type="text" placeholder=""></div></div>
+          <fieldset style="border: 0; padding: 0; margin: 0;"><legend class="lb" style="padding: 0;">¿Cómo quieres participar? Puedes marcar varias</legend>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px;"><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Donar en especie</label><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Patrocinar una parada</label><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Voluntarios o actividad</label><label style="display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-radius: 12px; border: 2px solid #140A35; font-weight: 600; min-height: 24px;"><input type="checkbox" style="width: 20px; height: 20px; accent-color: #140A35; flex: none;"> Llevar el Tour a mi región</label></div>
+          </fieldset>
+          <div><label class="lb" for="m-msg">Cuéntanos más</label><textarea id="m-msg" rows="4" class="in" style="height: auto; padding: 14px 16px; resize: vertical;" placeholder="Qué pueden aportar, fechas, dudas"></textarea></div>
+          <div style="display: flex; gap: 16px; flex-wrap: wrap; align-items: center;"><button type="button" onClick="{{aliado}}" class="btn" style="padding: 0 32px;">Enviar</button><span style="margin: 0; font-size: 14px; color: #5B5680; line-height: 1.5;">Te respondemos en 24 horas. También por <a href="https://wa.me/573146486275" style="color: #221761; font-weight: 700;">WhatsApp</a>.</span></div>
+        </form>
+
+        <h3 class="eb" style="margin: 36px 0 12px; color: #5B5680;">Aliados del Tour</h3>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px;"><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div><div style="height: 72px; border-radius: 12px; border: 2px dashed #8A86A8; display: flex; align-items: center; justify-content: center; color: #5B5680; font-size: 13px; font-weight: 600;">[Logo]</div></div>
+      </div>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vAsistir}}" hint-placeholder-val="{{false}}">
+    <section style="max-width: 560px; margin: 0 auto; padding: 88px 24px; text-align: center;">
+      <span style="display: inline-flex; width: 72px; height: 72px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 56px; margin-top: 20px;">¡Te esperamos!</h1>
+      <p style="margin: 14px 0 0; line-height: 1.6; font-size: 18px; color: #B3B0D4;">Anotamos [N] personas para la parada de [Municipio] el [DD de MES]. Te recordamos el día antes. No necesitas tiquete: solo llega.</p>
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 24px;"><a href="#" class="btn">Agregar al calendario</a><button onClick="{{volver}}" class="btn2" style="width: 100%;">Volver al VBall Tour</button></div>
+      <p style="margin: 18px 0 0; font-size: 14px; color: #B3B0D4;">¿Ya no puedes ir o cambió el número? Usa el enlace del mensaje de confirmación.</p>
+    </section>
+  </sc-if>
+
+  <sc-if value="{{vAliado}}" hint-placeholder-val="{{false}}">
+    <section style="max-width: 560px; margin: 0 auto; padding: 88px 24px; text-align: center;">
+      <span style="display: inline-flex; width: 72px; height: 72px; border-radius: 999px; background: #CDF980; align-items: center; justify-content: center;"><svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#140A35" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-10"></path></svg></span>
+      <h1 class="an" style="font-size: 56px; margin-top: 20px;">¡Gracias por sumarte!</h1>
+      <p style="margin: 14px 0 0; line-height: 1.6; font-size: 18px; color: #B3B0D4;">Recibimos tu mensaje. Andrés te escribe en las próximas 24 horas para contarte cómo seguimos.</p>
+      <button onClick="{{volver}}" class="btn2" style="width: 100%; margin-top: 24px;">Volver al VBall Tour</button>
+    </section>
+  </sc-if>
+  <footer style="background: #221761; border-top: 4px solid #FC0035; padding: 32px 16px 28px; color: #D9E6E8;">
+    <div class="an" style="font-size: 36px;">¡Sigamos jugando!</div>
+    <div style="display: flex; gap: 10px; margin-top: 16px;">
+        <a href="#" aria-label="VolleyTip en TikTok" style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="#D9E6E8" d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"></path></svg></a>
+        <a href="#" aria-label="VolleyTip en Instagram" style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="#D9E6E8" d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"></path></svg></a>
+        <a href="#" aria-label="VolleyTip en YouTube" style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="#D9E6E8" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"></path></svg></a>
+        <a href="#" aria-label="VolleyTip en Facebook" style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="#D9E6E8" d="M9.101 23.691v-7.98H6.627v-3.667h2.474v-1.58c0-4.085 1.848-5.978 5.858-5.978.401 0 .955.042 1.468.103a8.68 8.68 0 0 1 1.141.195v3.325a8.623 8.623 0 0 0-.653-.036 26.805 26.805 0 0 0-.733-.009c-.707 0-1.259.096-1.675.309a1.686 1.686 0 0 0-.679.622c-.258.42-.374.995-.374 1.752v1.297h3.919l-.386 2.103-.287 1.564h-3.246v8.245C19.396 23.238 24 18.179 24 12.044c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.628 3.874 10.35 9.101 11.647Z"></path></svg></a>
+        <a href="https://wa.me/573146486275" aria-label="VolleyTip en WhatsApp" style="width: 40px; height: 40px; border-radius: 999px; border: 2px solid #D9E6E8; display: flex; align-items: center; justify-content: center;"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24"><path fill="#D9E6E8" d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"></path></svg></a>
+    </div>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 28px; font-size: 15px;">
+      <div style="display: flex; flex-direction: column; gap: 10px;"><span class="eb" style="color: #B3B0D4;">Explora</span><a href="TipMovil.dc.html" style="color: #D9E6E8; text-decoration: none;">Tips</a><a href="CampMovil.dc.html" style="color: #D9E6E8; text-decoration: none;">Camps</a><a href="TiendaMovil.dc.html" style="color: #D9E6E8; text-decoration: none;">Tienda</a><a href="App.dc.html" style="color: #D9E6E8; text-decoration: none;">App</a></div>
+      <div style="display: flex; flex-direction: column; gap: 10px;"><span class="eb" style="color: #B3B0D4;">VolleyTip</span><a href="Nosotros.dc.html" style="color: #D9E6E8; text-decoration: none;">Nosotros</a><a href="Contacto.dc.html" style="color: #D9E6E8; text-decoration: none;">Contacto</a><a href="#" style="color: #D9E6E8; text-decoration: none;">Envíos y cambios</a><a href="#" style="color: #D9E6E8; text-decoration: none;">Preguntas</a></div>
+    </div>
+    <div style="margin-top: 20px; font-size: 13px; color: #B3B0D4;"><strong style="color: #FFFFFF;">Español</strong> · <a href="#" lang="en" style="color: #B3B0D4;">English</a><br>© VolleyTip · Hecho en Colombia · <a href="#" style="color: #B3B0D4;">Términos</a> · <a href="#" style="color: #B3B0D4;">Privacidad</a></div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"vista":{"editor":"enum","options":["página","asistencia confirmada","aliado enviado"],"default":"página"},"registro":{"editor":"enum","options":["individual","grupo"],"default":"individual"},"$preview":{"width":390,"height":5400}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { v: null, g: undefined }; }
+  renderVals() {
+    const v = this.state.v || this.props.vista;
+    const g = this.state.g === undefined ? this.props.registro === 'grupo' : this.state.g;
+    return { esGrupo: g, noGrupo: !g, modoGrupo: () => this.setState({ g: true }), modoSolo: () => this.setState({ g: false }), vPagina: v === 'página', vAsistir: v === 'asistencia confirmada', vAliado: v === 'aliado enviado',
+      asistir: () => this.setState({ v: 'asistencia confirmada' }), aliado: () => this.setState({ v: 'aliado enviado' }), volver: () => this.setState({ v: 'página' }) };
+  }
+}
+</script>
+</body>
+</html>
