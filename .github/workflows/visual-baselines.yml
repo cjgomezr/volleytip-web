@@ -1,0 +1,243 @@
+# La línea base visual vinculante es la de Linux, y sólo se acepta a mano.
+#
+# En cada PR este workflow COMPARA y nada más. No regenera, no commitea y no
+# empuja. Esa es la diferencia que importa: si el job pudiera arreglar el
+# desajuste por su cuenta, el commit que de verdad se mergea nunca quedaría
+# validado, porque el push del bot dispararía otra corrida que habría que
+# saltar para no entrar en bucle, y el rojo terminaría colgando siempre de un
+# commit ya superado. Sin push no hay bucle que cerrar ni validación que
+# saltarse: el check cae sobre el HEAD real del PR.
+#
+# Cuando la diferencia es intencionada, un humano acepta la nueva línea base
+# ejecutando este mismo workflow a mano sobre la rama del PR:
+#   gh workflow run visual-baselines.yml --ref <rama-de-PR> \
+#     -f reviewed_run_url=<url de la corrida fallida>
+# Se pide esa URL a propósito: aceptar sin haber abierto el artefacto
+# `visual-diff` es dar por bueno cualquier píxel que estuviera renderizando en
+# ese momento, que es justo lo que la regresión visual existe para impedir. La
+# URL queda en el resumen del run, así que la decisión deja rastro.
+#
+# Normalmente `--ref` es una rama de PR: ahí es donde la línea base nueva
+# tiene que aterrizar antes de mergear. La excepción es un `main` que ya
+# quedó desajustado (el incidente que abre scripts/report-visual-incident.sh):
+# ahí no hay rama de PR donde aceptar, y `--ref main` es lo correcto.
+#
+# Ojo con el push del job `accept`: la corrida de `compare` que dispara queda
+# en `action_required` esperando aprobación, porque la empuja
+# `github-actions[bot]`. Hasta que alguien la apruebe, el check no está
+# verde: está sin arrancar, que no es lo mismo.
+#
+# Al comparar sin escribir, el job funciona igual en PRs desde un fork, donde
+# GitHub degrada el token a sólo lectura pase lo que pase.
+#
+# El disparador `push` sobre `main` existe porque nada impide mergear con este
+# check en rojo: el repo es privado en plan gratuito y no admite branch
+# protection ni rulesets. No se puede evitar el desajuste, así que se lo hace
+# ruidoso: si `main` queda incoherente, el job `report-incident` abre un
+# issue en la cola (ver scripts/report-visual-incident.sh) en vez de dejarlo
+# como una corrida roja que nadie mira hasta que otro PR salga rojo por algo
+# que no era suyo.
+name: Visual baselines (Linux)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # Sólo lo que puede cambiar un píxel. Un PR de scripts, documentos o tests
+    # unitarios no puede mover la captura y gastaba minutos comparándola
+    # igual. La lista es la de .github/visual-paths.txt (la misma que usa el
+    # Stop gate), copiada porque Actions no sabe cargarla de un archivo; un
+    # test comprueba que siguen siendo iguales. El bootstrap añade la
+    # configuración de tu framework que cambie lo que se pinta.
+    #
+    # `paths` es seguro mientras el repositorio no tenga branch protection: un
+    # check obligatorio que no arranca deja el PR esperando un estado que nunca
+    # llega. Si la activas, la alternativa es dejar que el job arranque y
+    # salga temprano.
+    paths:
+      - "src/**"
+      # Las dos formas porque `*` no cruza `/`: un spec agrupado en una
+      # carpeta de tests/ cuenta igual que los de la raíz.
+      - "tests/*.spec.ts"
+      - "tests/**/*.spec.ts"
+      - "tests/ui.spec.ts-snapshots/**"
+      - "tests/support/**"
+      - "playwright.config.ts"
+      - ".nvmrc"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/visual-baselines.yml"
+      - ".github/actions/playwright-browsers/**"
+  push:
+    branches: [main]
+    # Las mismas de arriba, palabra por palabra: Actions no admite anclas de
+    # YAML. Un filtro distinto en cada disparador o gastaría de más en main, o
+    # dejaría de vigilar en main lo que el PR sí vigilaba.
+    paths:
+      - "src/**"
+      # Las dos formas porque `*` no cruza `/`: un spec agrupado en una
+      # carpeta de tests/ cuenta igual que los de la raíz.
+      - "tests/*.spec.ts"
+      - "tests/**/*.spec.ts"
+      - "tests/ui.spec.ts-snapshots/**"
+      - "tests/support/**"
+      - "playwright.config.ts"
+      - ".nvmrc"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/visual-baselines.yml"
+      - ".github/actions/playwright-browsers/**"
+  workflow_dispatch:
+    inputs:
+      reviewed_run_url:
+        description: "URL de la corrida cuyo artefacto visual-diff ya miraste"
+        required: true
+
+permissions:
+  contents: read
+
+# Un push nuevo al PR deja sin valor la visual del commit anterior. Sólo se
+# cancela en `pull_request`. Fuera de un PR el grupo lleva el id de la corrida
+# y no la rama: GitHub deja una sola corrida en espera por grupo y descarta la
+# que ya esperaba, así que un grupo por rama sin cancelar pondría en cola los
+# merges a `main` y perdería el del medio. Una aceptación a mano tampoco se
+# corta ni se queda esperando.
+concurrency:
+  group: visual-${{ github.workflow }}-${{ github.event_name }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  # En un push a main, ¿este árbol es el mismo que la visual del PR acaba de
+  # comparar en verde? La fábrica mergea con squash un PR rebasado, así que
+  # casi siempre lo es, y repetir la comparación no puede descubrir nada. El
+  # script es el de `checks.yml`, apuntado a este workflow; ante cualquier
+  # duda responde que no y se compara.
+  #
+  # El commit que empuja `accept` no rompe esto: su `compare` sobre la rama
+  # queda en `action_required` hasta que alguien lo aprueba, y sólo una
+  # corrida de `pull_request` terminada en verde sobre la cabeza del PR
+  # cuenta. Mergear sin aprobarla deja la respuesta en "no".
+  arbol-ya-verificado:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    outputs:
+      ya_verificado: ${{ steps.pregunta.outputs.ya_verificado }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pregunta
+        run: bash scripts/checks-already-green-on-pr.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+          WORKFLOW_FILE: visual-baselines.yml
+
+  compare:
+    needs: [arbol-ya-verificado]
+    # En un pull request la pregunta no arranca, y sin una función de estado
+    # Actions exige que la dependencia haya salido bien: la visual se saltaría
+    # en todos los PRs. `!cancelled()` y no `always()`: al cancelar una
+    # corrida, GitHub no corta un job cuyo `if` sigue dando true, así que con
+    # `always()` un push nuevo al PR dejaría la comparación vieja corriendo.
+    # Un `compare` saltado queda `skipped` y `report-incident` no arranca.
+    if: >-
+      !cancelled()
+      && (github.event_name == 'pull_request' || github.event_name == 'push')
+      && needs.arbol-ya-verificado.outputs.ya_verificado != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/playwright-browsers
+      - name: Compara contra la línea base vinculante
+        run: npx playwright test
+      - name: Guarda el diff para que alguien lo mire
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-diff
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 14
+          if-no-files-found: ignore
+
+  report-incident:
+    needs: compare
+    # `always()` es obligatorio: sin una función de estado explícita, Actions
+    # exige implícitamente que `compare` (su única dependencia) haya
+    # terminado en success(), así que este job nunca correría cuando
+    # compare falla si sólo se compara needs.compare.result.
+    if: always() && github.event_name == 'push' && needs.compare.result == 'failure'
+    runs-on: ubuntu-latest
+    permissions:
+      # Declarar permisos deja en `none` todo lo que no se lista. Este job
+      # hace checkout para correr scripts/report-visual-incident.sh, y
+      # clonar un repo privado sin contents: read falla con 403 (ver
+      # labels-cleanup.yml).
+      contents: read
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Abre (o no duplica) el incidente de main desajustado
+        run: bash scripts/report-visual-incident.sh
+
+  accept:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: ./.github/actions/playwright-browsers
+      - name: Deja constancia de qué diff se revisó
+        run: |
+          echo "Línea base aceptada tras revisar:" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ inputs.reviewed_run_url }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Regenera la línea base
+        id: update
+        run: bash scripts/update-visual-baselines.sh
+        continue-on-error: true
+      - name: Commitea la línea base aceptada
+        id: commit
+        if: steps.update.outcome == 'failure'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --cached --quiet; then
+            echo "El fallo no era de píxeles: no hay línea base que aceptar." >&2
+            exit 1
+          fi
+          git commit -m "Línea base visual para Linux (aceptada a mano)"
+          git push
+      - name: Avisa en el PR de que falta confirmar el check
+        if: steps.commit.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          branch="${GITHUB_REF#refs/heads/}"
+          pr_number=$(gh pr list --head "$branch" --state open --json number --jq '.[0].number // empty')
+          if [ -n "$pr_number" ]; then
+            gh pr comment "$pr_number" --body "✅ Línea base visual aceptada y empujada a esta rama. **Todavía no mergees**: espera a que \`compare\` corra sobre este commit y salga verde. Si aparece como \`action_required\`, apruébala primero, porque la empujó un bot y GitHub no la arranca sola. Mergear antes deja \`main\` con el código nuevo y la captura vieja."
+          else
+            echo "No encontré un PR abierto para la rama $branch; nadie a quien avisar." >&2
+          fi

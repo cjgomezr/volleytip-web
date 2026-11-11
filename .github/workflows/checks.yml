@@ -1,0 +1,193 @@
+# Los checks básicos (tests, lint, tipos, build) no corrían en ningún CI: los
+# corría el Stop gate del worker, en la máquina de quien lanzó la fábrica. Eso
+# no cubre un PR abierto a mano, uno que venga de un fork, ni un commit
+# empujado después de que el gate ya pasó. Este workflow los hace visibles
+# como checks del PR.
+#
+# Los tests que necesitan servicios (una base de datos, una API de terceros)
+# se piden con `RUN_INTEGRATION_TESTS=1`, que este workflow pone salvo en un
+# PR de solo texto. Lo que cada proyecto haga con esa variable lo decide su
+# runner: lo recomendable es que fuera de CI se salten y que aquí se exijan,
+# contra un servicio desechable que levante la propia corrida (un paso antes
+# de `Tests`), nunca contra tu entorno de desarrollo compartido. Que falte una
+# credencial aquí debe ser un fallo, no un salto silencioso: un check verde
+# que no corrió nada es peor que uno rojo.
+#
+# No puede impedir el merge si el repositorio no admite branch protection
+# (privado en plan gratuito). Hace ruidoso el fallo, no lo bloquea.
+#
+# `npm test` necesita chromium: no es la comparación visual vinculante (esa
+# vive en visual-baselines.yml y no se toca aquí), sino que varios tests
+# unitarios lanzan un navegador de verdad para capturar UI, y en un runner
+# nuevo esa instalación no existe. Lo pone la acción local que lo cachea,
+# para no bajarlo en cada corrida.
+#
+# No lleva filtro `paths`: hay tests que leen docs/ y CLAUDE.md, así que un PR
+# de sólo documentación puede romperlo igual que uno de código. Lo que sí se
+# evita es repetir en `main` un árbol que el PR ya dejó en verde, y repetir la
+# suite en un PR cuando el empujón solo trae líneas base visuales.
+name: checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Un merge con squash deja en `main` un commit con SHA nuevo y árbol idéntico
+  # al que el PR acaba de comprobar. Este job lo averigua en segundos para que
+  # el de abajo, que cuesta minutos, no repita lo ya hecho. Ante cualquier
+  # duda responde que no y los checks corren igual.
+  arbol-ya-verificado:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      actions: read
+    outputs:
+      ya_verificado: ${{ steps.pregunta.outputs.ya_verificado }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pregunta
+        run: bash scripts/checks-already-green-on-pr.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+
+  # Lo mismo en un PR: al aceptar capturas, visual-baselines.yml sube a la rama
+  # un commit que solo trae PNG de Linux, y eso disparaba otra vez la suite
+  # entera sobre el código que acababa de salir verde. Si el empujón solo trae
+  # líneas base y el commit anterior pasó el job `checks` de verdad, se salta.
+  # Solo en `synchronize`: es el único evento con commit anterior.
+  # La corrida anterior probó la rama mezclada con el main de entonces; si
+  # main avanzó después, el salto no prueba la mezcla nueva. Es el mismo
+  # riesgo que `arbol-ya-verificado` ya acepta en el push a main.
+  solo-lineas-base:
+    if: github.event_name == 'pull_request' && github.event.action == 'synchronize'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      ya_verificado: ${{ steps.pregunta.outputs.ya_verificado }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: pregunta
+        run: bash scripts/baselines-only-after-green.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BEFORE_SHA: ${{ github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          WORKFLOW_FILE: checks.yml
+          HEAVY_JOB: checks
+
+  # Cuando la suite se salta, corren igual los tests que listan las líneas
+  # base: un PNG nuevo puede dejar una captura huérfana. No necesitan
+  # servicios ni navegador.
+  tests-lineas-base:
+    needs: [solo-lineas-base]
+    if: needs.solo-lineas-base.outputs.ya_verificado == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Tests que leen las líneas base
+        run: npx vitest run --config vitest.kit.config.mts tests/unit/scripts/visual-baselines-tracking.test.ts
+
+  checks:
+    needs: [arbol-ya-verificado, solo-lineas-base]
+    # Una función de estado es obligatoria: sin ella, Actions exige
+    # implícitamente que la dependencia haya terminado en success(), y en un
+    # pull request ese job ni siquiera arranca. Sin esto, los checks se
+    # saltarían en todos los PRs, que es lo contrario de lo que se busca.
+    #
+    # `!cancelled()` y no `always()`: al cancelar una corrida, GitHub no corta
+    # un job cuyo `if` sigue dando true. Con `always()`, un push nuevo al PR
+    # dejaba los checks viejos corriendo junto a los nuevos.
+    if: "!cancelled() && needs.arbol-ya-verificado.outputs.ya_verificado != 'true' && needs.solo-lineas-base.outputs.ya_verificado != 'true'"
+    runs-on: ubuntu-latest
+    steps:
+      # Con toda la historia: el paso `texto` compara la rama con main, y el
+      # checkout por defecto trae un solo commit sin merge-base con nada.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Instala el navegador que necesitan los tests de captura de UI
+        uses: ./.github/actions/playwright-browsers
+      # Qué comandos tiene de verdad este repositorio. La plantilla de la que
+      # nace un proyecto llega con `test`, `lint`, `typecheck` y `build` sin
+      # rellenar, y ahí estos pasos fallarían por no existir todavía, no por
+      # trabajo mal hecho. Mismo centinela que usa el Stop gate.
+      - id: repo
+        name: Averigua qué comandos están configurados
+        run: |
+          if grep -q '{{TEST_CMD}}' package.json; then
+            echo "bootstrapped=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "bootstrapped=true" >> "$GITHUB_OUTPUT"
+          fi
+          if jq -e '.scripts["test:kit"] // empty' package.json > /dev/null; then
+            echo "has_kit=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_kit=false" >> "$GITHUB_OUTPUT"
+          fi
+      # Los tests del kit no dependen del bootstrap: vigilan las piezas de la
+      # fábrica, que son iguales en todos los proyectos.
+      - name: Tests del kit
+        if: steps.repo.outputs.has_kit == 'true'
+        run: npm run test:kit
+      # Un PR que solo cambia texto (.github/text-only-paths.txt) no puede
+      # romper un test de red. Solo en pull_request: en un push a main el
+      # paso no corre, la salida queda vacía y los tests corren completos. Si
+      # el script no puede comparar con main, responde que no es texto.
+      - id: texto
+        name: Averigua si el PR solo cambia texto
+        if: github.event_name == 'pull_request'
+        run: |
+          if bash scripts/branch-is-text-only.sh; then
+            echo "solo_texto=true" >> "$GITHUB_OUTPUT"
+            echo "PR de solo texto: todos sus archivos están en .github/text-only-paths.txt, así que los tests de red no corren."
+          else
+            echo "solo_texto=false" >> "$GITHUB_OUTPUT"
+          fi
+      # Si tus tests de integración necesitan un servicio, levántalo aquí con
+      # la misma condición, para que un PR de solo texto no pague por él:
+      #   if: steps.repo.outputs.bootstrapped == 'true' && steps.texto.outputs.solo_texto != 'true'
+      #
+      # Actions no tiene operador ternario, y `cond && '' || '1'` daría
+      # siempre '1' porque la cadena vacía es falsa. Por eso la condición va
+      # negada y el valor que se quiere va en medio.
+      - name: Tests
+        if: steps.repo.outputs.bootstrapped == 'true'
+        run: npm test
+        env:
+          RUN_INTEGRATION_TESTS: ${{ steps.texto.outputs.solo_texto != 'true' && '1' || '' }}
+      - name: Lint
+        if: steps.repo.outputs.bootstrapped == 'true'
+        run: npm run lint
+      - name: Tipos
+        if: steps.repo.outputs.bootstrapped == 'true'
+        run: npm run typecheck
+      - name: Build
+        if: steps.repo.outputs.bootstrapped == 'true'
+        run: npm run build

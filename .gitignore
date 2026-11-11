@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+coverage/
+test-results/
+playwright-report/
+.env
+.env.*
+*.log
+.DS_Store
+
+# Claude worktrees (obreros de la fábrica, nunca commitear)
+.claude/worktrees/
+.factory/
+
+# Líneas base visuales de Playwright: sólo Linux es vinculante. El resto se
+# regenera en la máquina de cada quien y es informativo; versionarlo
+# reintroduce el conflicto binario entre PRs paralelos. Lista blanca en vez de
+# enumerar plataformas: nadie tiene que acordarse de añadir -darwin el día que
+# alguien trabaje en un Mac.
+tests/ui.spec.ts-snapshots/*
+!tests/ui.spec.ts-snapshots/*-linux.png

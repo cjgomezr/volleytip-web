@@ -1,0 +1,19 @@
+# Las rutas que no pueden romper un test de red. Un PR que solo toca estas
+# corre `checks` sin los tests que necesitan servicios (base de datos, APIs
+# de terceros); los unitarios, el lint, los tipos y el build corren igual,
+# porque hay tests que leen docs/ y CLAUDE.md. También la usa el Stop gate:
+# una sesión que solo cambió estas rutas termina sin checks. La lee
+# scripts/branch-is-text-only.sh.
+# Mismo formato que .github/visual-paths.txt (`*` no cruza `/` y `**` sí),
+# con dos añadidos que aquel no admite: `**/` también vale cero directorios, y
+# una línea con `!` delante excluye. Gana la última que coincide, por eso las
+# exclusiones van al final. El bootstrap añade aquí las carpetas de código de
+# tu stack que no deben contar como texto (por ejemplo `!supabase/**`).
+docs/**
+**/*.md
+.claude/skills/**
+.github/ISSUE_TEMPLATE/**
+!src/**
+!tests/**
+!scripts/**
+!.github/workflows/**

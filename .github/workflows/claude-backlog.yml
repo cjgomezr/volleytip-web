@@ -1,0 +1,221 @@
+# Two triggers for the factory in the cloud:
+#  1. Label an issue `ready-for-dev` → Claude implements it right away.
+#  2. Nightly schedule → processes eligible `pending` issues.
+# Credenciales: ver el paso 'Resolver credencial del actor'.
+#   Cron nocturno → CLAUDE_CODE_OAUTH_TOKEN (o ANTHROPIC_API_KEY).
+#   Humanos       → CLAUDE_TOKEN_<SU_USUARIO> (o ANTHROPIC_API_KEY).
+# Requiere además la GitHub App de Claude instalada (github.com/apps/claude).
+name: claude-backlog
+
+on:
+  issues:
+    types: [labeled]
+  schedule:
+    - cron: "0 16 * * *" # 02:00 Australia/Sydney (UTC+10). Adjust to taste
+  workflow_dispatch: {}
+
+jobs:
+  implement:
+    # Runs when an issue gets the ready-for-dev label, or on schedule/manual.
+    if: github.event_name != 'issues' || github.event.label.name == 'ready-for-dev'
+    runs-on: ubuntu-latest
+    # 120/350 min por debajo del tope de 6h de GitHub; ver #38. El disparo por
+    # schedule procesa hasta 5 tickets en una sola sesión y necesita más
+    # colchón que el disparo por etiqueta, que procesa uno solo.
+    timeout-minutes: ${{ github.event_name == 'schedule' && 350 || 120 }}
+    concurrency:
+      group: claude-backlog-${{ github.event.issue.number || github.run_id }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci || npm install # el template no trae lockfile hasta el primer install
+      - run: npx playwright install --with-deps chromium
+
+      - name: Read worker model from factory-models.json
+        run: echo "FACTORY_MODEL=$(jq -r '.models.worker // "sonnet"' factory-models.json 2>/dev/null || echo sonnet)" >> $GITHUB_ENV
+
+      # Same source file the local worker (scripts/process-backlog.sh) reads,
+      # so the cloud and local paths can never drift apart (#60).
+      - name: Read disallowed tools for the headless worker
+        run: |
+          tools=$(grep -v '^[[:space:]]*#' scripts/worker-disallowed-tools.txt \
+            | grep -v '^[[:space:]]*$' | tr -d ' \t' | tr '\n' ',' | sed 's/,$//')
+          echo "WORKER_DISALLOWED_TOOLS=$tools" >> "$GITHUB_ENV"
+
+      - name: Resolver credencial del actor
+        id: cred
+        shell: bash
+        env:
+          # ── Mapa de tokens por persona: una línea por integrante del equipo.
+          #    Cada quien planta el suyo: claude setup-token → gh secret set CLAUDE_TOKEN_SU_USUARIO
+          TOK_CJGOMEZR: ${{ secrets.CLAUDE_TOKEN_CJGOMEZR }}
+          # TOK_ANA_LOPEZ: ${{ secrets.CLAUDE_TOKEN_ANA_LOPEZ }}
+          # ── CRON_OAUTH es la bolsa EXCLUSIVA del turno nocturno (schedule).
+          #    Los humanos jamás caen ahí: token personal, o API key de equipo,
+          #    o auto-onboarding en el issue.
+          CRON_OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          DEFAULT_API: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ github.event.issue.number }}
+        run: |
+          if [ "${GITHUB_EVENT_NAME}" = "schedule" ]; then
+            # Turno nocturno: bolsa del cron → API key de equipo → error.
+            if [ -n "$CRON_OAUTH" ]; then
+              echo "🔑 Credencial: CLAUDE_CODE_OAUTH_TOKEN (bolsa del cron)"
+              { echo "oauth=$CRON_OAUTH"; echo "api="; } >> "$GITHUB_OUTPUT"
+            elif [ -n "$DEFAULT_API" ]; then
+              echo "🔑 Credencial: ANTHROPIC_API_KEY (API key de equipo)"
+              { echo "oauth="; echo "api=$DEFAULT_API"; } >> "$GITHUB_OUTPUT"
+            else
+              echo "::error title=Sin credencial::el cron no tiene CLAUDE_CODE_OAUTH_TOKEN ni ANTHROPIC_API_KEY"
+              exit 1
+            fi
+            exit 0
+          fi
+          A="${GITHUB_ACTOR^^}"; A="${A//[^A-Z0-9]/_}"; KEY="TOK_$A"
+          TOKEN="${!KEY:-}"
+          if [ -n "$TOKEN" ]; then
+            echo "🔑 Credencial: $KEY (token personal de $GITHUB_ACTOR)"
+            { echo "oauth=$TOKEN"; echo "api="; } >> "$GITHUB_OUTPUT"
+          elif [ -n "$DEFAULT_API" ]; then
+            echo "🔑 Credencial: ANTHROPIC_API_KEY (API key de equipo)"
+            { echo "oauth="; echo "api=$DEFAULT_API"; } >> "$GITHUB_OUTPUT"
+          else
+            echo "::error title=Sin credencial::$GITHUB_ACTOR no tiene token ($KEY) y el repo no tiene fallback"
+            if [ -n "${NUM:-}" ]; then
+              BODY=$(printf '🔑 @%s: no encontré credencial tuya para correr la fábrica en la nube, y este repo no tiene token común.\n\nPlanta tu token personal:\n```\nclaude setup-token\ngh secret set CLAUDE_TOKEN_%s --repo %s\n```\n\nY pide que agreguen la línea `TOK_%s` al mapa de credenciales de los workflows (ver GUIA-DE-LA-FABRICA.md, Parte 8). Luego vuelve a poner la etiqueta ready-for-dev.' "$GITHUB_ACTOR" "$A" "$GITHUB_REPOSITORY" "$A")
+              gh issue comment "$NUM" --repo "$GITHUB_REPOSITORY" --body "$BODY" || true
+            fi
+            exit 1
+          fi
+
+      - name: Run Claude Code on the issue / backlog
+        id: worker
+        uses: anthropics/claude-code-action@v1
+        with:
+          # Credencial resuelta por el paso "Resolver credencial del actor":
+          # cron → bolsa del cron; humanos → su token personal (o API key de equipo).
+          #
+          # NOTA sobre credenciales de la APP en la nube: el runner no tiene tu
+          # .env.local, y conviene no pasarle los secretos de tu entorno de
+          # desarrollo: el worker lee texto que escribió cualquiera (el issue).
+          # Si tus tests de integración necesitan servicios (una base de datos,
+          # por ejemplo), que los corra `checks.yml` en el PR contra un servicio
+          # desechable que levante cada corrida; ese check es el que decide, no
+          # el worker.
+          claude_code_oauth_token: ${{ steps.cred.outputs.oauth }}
+          anthropic_api_key: ${{ steps.cred.outputs.api }}
+          prompt: |
+            ${{ github.event_name == 'issues'
+              && format('Process GitHub issue #{0} following the issue lifecycle in CLAUDE.md: label in-progress, branch impl-{0}, TDD until the Definition of Done passes, code-reviewer (and the ui-reviewer ONLY when the UI-review policy in factory-models.json applies to this issue) until APPROVED, then draft PR with "Closes #{0}". If blocked, label needs-human with an explanatory comment.', github.event.issue.number)
+              || 'Process up to 5 eligible pending issues per CLAUDE.md, one at a time (not blocked, highest priority, lowest number first). SKIP any issue that already has an assignee. An assignee is a human''s claim and the nightly run must respect it. For each, the full issue lifecycle: in-progress label, branch impl-N, TDD until Definition of Done, reviewer subagents until APPROVED (ui-reviewer only per the UI-review policy in factory-models.json), draft PR (auto-merge per CLAUDE.md only if the issue has the auto-merge label). After finishing each issue, re-check eligibility: an auto-merged PR may have unblocked dependents. Stop when none are eligible or 5 are done.' }}
+          # 200/1000 turnos por el mismo motivo que el timeout de arriba: un
+          # worker que se queda sin turnos a mitad de ticket no alcanza ni a
+          # commitear lo que ya tenía verde (ver #27 y #38).
+          #
+          # `--permission-mode bypassPermissions` no es un descuido: sin un modo
+          # de permisos el worker no puede hacer NADA. Lo aprendimos el 11 de
+          # septiembre de 2026, en la primera corrida real de este workflow: 11
+          # denegaciones de permiso, 18 turnos, 74 segundos, el issue intacto y
+          # el job en verde.
+          #
+          # Por qué este modo y no otro. `default` y `plan` se detienen a
+          # preguntar y en un runner no hay quien apruebe. `acceptEdits` solo
+          # auto-aprueba escrituras de archivos, y el ciclo de vida es casi todo
+          # Bash (`gh issue edit`, `git push`, `gh pr create`, `npm test`), así
+          # que dejaría al worker igual de bloqueado. `auto`, el que usa
+          # `scripts/process-backlog.sh`, sí trabaja, pero se detiene ante lo que
+          # considera peligroso: sin nadie delante eso es una denegación
+          # silenciosa a mitad de ticket, más difícil de diagnosticar que el
+          # fallo que estamos arreglando.
+          #
+          # La contrapartida, dicha sin adornos. El runner lleva el token de
+          # GitHub con permiso de escritura y la credencial de Claude, y el
+          # worker lee el cuerpo del issue, que es texto que escribió alguien.
+          # Con este modo, unas instrucciones inyectadas ahí pasan de "pregunta
+          # antes" a "lo hace". Lo que sostiene la apuesta no es que la máquina
+          # sea desechable, sino que la compuerta es humana: poner
+          # `ready-for-dev` exige permiso de escritura en el repositorio.
+          claude_args: "--max-turns ${{ github.event_name == 'schedule' && 1000 || 200 }} --model ${{ env.FACTORY_MODEL }} --permission-mode bypassPermissions --disallowedTools ${{ env.WORKER_DISALLOWED_TOOLS }}"
+
+      # El otro defecto que destapó esa corrida, y el más caro: el único aviso
+      # de este workflow colgaba de `failure()`. Un worker que sale limpio sin
+      # tocar nada no lo dispara, así que la cola parecía procesada. Por la
+      # mañana verías el ticket intacto y ninguna explicación.
+      #
+      # La lógica vive en un script, no aquí, por dos motivos. Se puede probar
+      # con un `gh` de mentira (`tests/unit/scripts/check-worker-claimed.test.ts`),
+      # que es donde se ven sus falsos positivos, y así la nube y el local no se
+      # separan, el mismo argumento del #60 con las herramientas prohibidas.
+      #
+      # Solo en el disparo por etiqueta: el turno nocturno procesa varios y
+      # puede terminar sin tocar ninguno, legítimamente, si no hay elegibles.
+      #
+      # `!cancelled()` y no `always()`: una corrida que alguien cancela a mano
+      # no debe acabar con `needs-human` pegado al ticket.
+      #
+      # Y solo si el worker llegó a correr y salió bien. Si el job murió antes
+      # (un `npm ci` roto, el paso de la credencial saliendo en rojo), el issue
+      # está intacto por razones que no tienen nada que ver con el worker, y
+      # acusarlo sería repetir el error de diagnóstico que este guardia vino a
+      # eliminar. Saltándose el paso, su resultado es `skipped` y el aviso de
+      # abajo cae en la rama genérica, que ahí es la correcta.
+      - name: Comprueba que el worker dejó rastro en el issue
+        id: claim-guard
+        if: ${{ !cancelled() && github.event_name == 'issues' && steps.worker.outcome == 'success' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/check-worker-claimed.sh "${{ github.event.issue.number }}"
+
+      - name: Leave a note on the issue if the run failed
+        if: failure() && github.event_name == 'issues'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUM: ${{ github.event.issue.number }}
+          # Los dos fracasos se ven igual desde fuera (el job en rojo) pero no
+          # son lo mismo, y un comentario que describa el que no fue manda a
+          # buscar la causa al sitio equivocado.
+          CLAIM_GUARD: ${{ steps.claim-guard.outcome }}
+        run: |
+          if [ "$CLAIM_GUARD" = "failure" ]; then
+            BODY="🤖 **La corrida terminó sin que el worker tocara este issue.** No se reclamó, no se bloqueó y no dejó ningún PR que declare cerrarlo.
+
+          La causa típica es que el worker no pudo escribir nada: mira el resultado en la pestaña Actions y comprueba si trae \`permission_denials_count\` mayor que cero. También puede ser un límite de cuota o de créditos.
+
+          Para reintentar, deja el ticket como estaba antes y vuelve a disparar:
+
+          \`\`\`
+          gh issue edit $NUM --remove-label needs-human --remove-label in-progress --add-label pending
+          gh issue edit $NUM --remove-label ready-for-dev
+          gh issue edit $NUM --add-label ready-for-dev
+          \`\`\`
+
+          Quitar \`needs-human\` e \`in-progress\` no es cosmético: son las etiquetas que el guardia toma como rastro de trabajo, así que dejarlas puestas lo dejaría ciego en el siguiente intento. Y una etiqueta que ya está puesta no dispara nada, de ahí el quitar y volver a poner."
+          else
+            BODY="🤖 **La corrida en la nube falló** antes de completar este issue. Mira los logs en la pestaña Actions: las causas típicas son un límite de cuota o créditos, un secreto sin configurar, o un error del entorno. Cualquier trabajo parcial quedó en la rama del PR si alcanzó a crearse.
+
+          Para reintentar, resuelve la causa y deja el ticket como estaba antes de volver a disparar:
+
+          \`\`\`
+          gh issue edit $NUM --remove-label needs-human --remove-label in-progress --add-label pending
+          gh issue edit $NUM --remove-label ready-for-dev
+          gh issue edit $NUM --add-label ready-for-dev
+          \`\`\`
+
+          Si el worker alcanzó a dejar trabajo en una rama, míralo antes de borrar nada."
+          fi
+          gh issue edit "$NUM" --repo "$GITHUB_REPOSITORY" --add-label needs-human || true
+          gh issue comment "$NUM" --repo "$GITHUB_REPOSITORY" --body "$BODY" || true

@@ -1,0 +1,313 @@
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { load } from "js-yaml";
+import { describe, expect, it } from "vitest";
+
+const REPO_ROOT = path.resolve(__dirname, "../../..");
+const WORKFLOW_PATH = path.join(REPO_ROOT, ".github/workflows/checks.yml");
+
+const TEXT_ONLY_STEP_ID = "texto";
+const TEXT_ONLY_OUTPUT = `steps.${TEXT_ONLY_STEP_ID}.outputs.solo_texto`;
+/** Actions no tiene operador ternario: `cond && '' || '1'` daría siempre `'1'`
+ * porque la cadena vacía es falsa. Por eso la condición va negada y el valor
+ * que se quiere va en medio. */
+const NOT_TEXT_ONLY_CONDITION = `${TEXT_ONLY_OUTPUT} != 'true'`;
+
+/** La variable con la que el runner de cada proyecto decide si corre los
+ * tests que necesitan servicios. */
+const RUN_INTEGRATION_TESTS_ENV = "RUN_INTEGRATION_TESTS";
+
+function referencedSecrets(): string[] {
+  const source = readFileSync(WORKFLOW_PATH, "utf8");
+  return [
+    ...new Set(
+      [...source.matchAll(/secrets\.([A-Z0-9_]+)/g)].map((match) => match[1]),
+    ),
+  ].filter((name): name is string => name !== undefined);
+}
+
+interface WorkflowStep {
+  id?: string;
+  name?: string;
+  uses?: string;
+  run?: string;
+  if?: string;
+  env?: Record<string, string>;
+  "continue-on-error"?: boolean;
+  with?: {
+    "node-version"?: number;
+    "node-version-file"?: string;
+    "fetch-depth"?: number;
+  };
+}
+
+interface WorkflowJob {
+  if?: string;
+  needs?: string[];
+  permissions?: Record<string, string>;
+  steps: WorkflowStep[];
+}
+
+interface WorkflowFile {
+  on: {
+    pull_request?: { types?: string[] };
+    push?: { branches?: string[] };
+  };
+  permissions: Record<string, string>;
+  concurrency?: { group: string; "cancel-in-progress"?: boolean };
+  jobs: Record<string, WorkflowJob>;
+}
+
+function parseWorkflow(): WorkflowFile {
+  return load(readFileSync(WORKFLOW_PATH, "utf8")) as WorkflowFile;
+}
+
+function allSteps(): WorkflowStep[] {
+  return Object.values(parseWorkflow().jobs).flatMap((job) => job.steps);
+}
+
+function runLines(): string {
+  return allSteps()
+    .map((step) => step.run ?? "")
+    .join("\n");
+}
+
+function stepNamed(name: string): WorkflowStep {
+  const step = allSteps().find((candidate) => candidate.name === name);
+  if (!step) {
+    throw new Error(`el workflow no tiene ningún paso llamado "${name}"`);
+  }
+  return step;
+}
+
+function checksSteps(): WorkflowStep[] {
+  const job = parseWorkflow().jobs.checks;
+  if (!job) {
+    throw new Error("el workflow no tiene el job checks");
+  }
+  return job.steps;
+}
+
+function indexOfStep(predicate: (step: WorkflowStep) => boolean): number {
+  return checksSteps().findIndex(predicate);
+}
+
+describe("workflow de checks", () => {
+  it("parsea como YAML válido", () => {
+    expect(() => parseWorkflow()).not.toThrow();
+  });
+
+  it("se dispara en pull_request y en push a main", () => {
+    const { on } = parseWorkflow();
+
+    expect(on.pull_request?.types).toEqual(
+      expect.arrayContaining(["opened", "synchronize", "reopened"]),
+    );
+    expect(on.push?.branches).toContain("main");
+  });
+
+  it("ejecuta los cuatro comandos: test, lint, typecheck y build", () => {
+    const runs = runLines();
+
+    expect(runs).toMatch(/npm test/);
+    expect(runs).toMatch(/npm run lint/);
+    expect(runs).toMatch(/npm run typecheck/);
+    expect(runs).toMatch(/npm run build/);
+  });
+
+  it("ningún paso lleva continue-on-error ni termina en || true", () => {
+    const source = readFileSync(WORKFLOW_PATH, "utf8");
+
+    for (const step of allSteps()) {
+      expect(step["continue-on-error"]).not.toBe(true);
+    }
+    expect(source).not.toMatch(/\|\|\s*true/);
+  });
+
+  // Fuera de CI conviene que `npm test` se salte los tests que hablan con
+  // servicios. Aquí se exigen: sin la variable, el check saldría verde sin
+  // haberlos corrido.
+  it("corre los tests de integración con RUN_INTEGRATION_TESTS=1 salvo en un PR de solo texto", () => {
+    const env = stepNamed("Tests").env ?? {};
+
+    expect(env[RUN_INTEGRATION_TESTS_ENV]).toBe(
+      `\${{ ${NOT_TEXT_ONLY_CONDITION} && '1' || '' }}`,
+    );
+  });
+
+  // Los secretos que el proyecto necesite los añade él, a sabiendas. La
+  // plantilla no pide ninguno: un PR de un fork tiene que poder pasar.
+  it("no referencia ningún secreto", () => {
+    expect(referencedSecrets()).toEqual([]);
+  });
+
+  it("declara concurrency con cancel-in-progress para no acumular corridas viejas", () => {
+    const { concurrency } = parseWorkflow();
+
+    expect(concurrency?.["cancel-in-progress"]).toBe(true);
+    // El group debe depender de la rama/PR: uno constante cancelaría corridas
+    // de ramas distintas entre sí en vez de sólo las de la misma rama.
+    expect(concurrency?.group).toMatch(/pull_request\.number|github\.ref/);
+  });
+
+  it("declara permissions y sólo pide contents: read", () => {
+    const { permissions } = parseWorkflow();
+
+    expect(permissions).toEqual({ contents: "read" });
+  });
+
+  it("toma la versión de Node de .nvmrc, igual que visual-baselines.yml", () => {
+    const step = allSteps().find((s) =>
+      s.uses?.startsWith("actions/setup-node"),
+    );
+
+    expect(step?.with?.["node-version-file"]).toBe(".nvmrc");
+    expect(step?.with?.["node-version"]).toBeUndefined();
+  });
+
+  it("instala chromium antes de correr los tests, que lo necesitan para las capturas de UI", () => {
+    // Desde el issue #193 lo pone la acción local que cachea los navegadores,
+    // en vez de un `npx playwright install` que los bajaba en cada corrida.
+    const steps = allSteps();
+    const installIndex = steps.findIndex((step) =>
+      step.uses?.includes("playwright-browsers"),
+    );
+    const testIndex = steps.findIndex((step) => step.run === "npm test");
+
+    expect(installIndex).toBeGreaterThanOrEqual(0);
+    expect(testIndex).toBeGreaterThan(installIndex);
+  });
+
+  /**
+   * En la plantilla, `test`, `lint`, `typecheck` y `build` llegan sin
+   * rellenar hasta que alguien corre el bootstrap. Sin guardia, cada PR de la
+   * plantilla saldría rojo por comandos que todavía no existen, que no es
+   * trabajo mal hecho sino un repositorio que aún no es un proyecto. El
+   * centinela es el mismo que usa el Stop gate.
+   */
+  it("salta los comandos de la app mientras el repositorio no haya pasado por el bootstrap", () => {
+    for (const name of ["Tests", "Lint", "Tipos", "Build"]) {
+      expect(
+        stepNamed(name).if,
+        `el paso ${name} corre aunque el proyecto no esté bootstrapeado`,
+      ).toMatch(/steps\.repo\.outputs\.bootstrapped == 'true'/);
+    }
+  });
+
+  it("no salta los tests del kit, que no dependen del bootstrap", () => {
+    // Vigilan las piezas de la fábrica, que son iguales en todos los
+    // proyectos y funcionan desde el primer clon.
+    const kit = stepNamed("Tests del kit");
+
+    expect(kit.run).toMatch(/npm run test:kit/);
+    expect(kit.if).toMatch(/has_kit == 'true'/);
+    expect(kit.if).not.toMatch(/bootstrapped/);
+  });
+
+  it("averigua ambas cosas leyendo el package.json, no adivinando", () => {
+    const probe = stepNamed("Averigua qué comandos están configurados");
+
+    expect(probe.run).toMatch(/\{\{TEST_CMD\}\}/);
+    expect(probe.run).toMatch(/test:kit/);
+  });
+
+  // Un PR que solo cambia texto no necesita los tests de red. Los unitarios, el lint, los tipos y el build
+  // siguen corriendo: varios tests leen docs/.
+  describe("en un PR de solo texto", () => {
+    function textOnlyStep(): WorkflowStep {
+      const step = checksSteps().find(
+        (candidate) => candidate.id === TEXT_ONLY_STEP_ID,
+      );
+      if (!step) {
+        throw new Error(
+          `el job checks no tiene el paso "${TEXT_ONLY_STEP_ID}"`,
+        );
+      }
+      return step;
+    }
+
+    it("lo decide el script que compara la rama con la lista de rutas de texto", () => {
+      expect(textOnlyStep().run).toMatch(/scripts\/branch-is-text-only\.sh/);
+    });
+
+    it("lo decide solo en pull_request: un push a main corre completo", () => {
+      expect(textOnlyStep().if).toMatch(/github\.event_name == 'pull_request'/);
+    });
+
+    it("lo decide antes de correr los tests", () => {
+      const steps = checksSteps();
+      const decisionIndex = steps.findIndex(
+        (step) => step.id === TEXT_ONLY_STEP_ID,
+      );
+      const testIndex = steps.findIndex((step) => step.name === "Tests");
+
+      expect(decisionIndex).toBeGreaterThanOrEqual(0);
+      expect(testIndex).toBeGreaterThan(decisionIndex);
+    });
+
+    it("dice en el log que el PR es solo texto y por qué", () => {
+      expect(textOnlyStep().run).toMatch(/solo texto.*text-only-paths\.txt/);
+    });
+
+    // El checkout por defecto trae un solo commit: sin historia no hay
+    // merge-base con main, y el script respondería siempre que no.
+    it("baja la historia completa para poder comparar con main", () => {
+      const checkout = checksSteps().find((step) =>
+        step.uses?.startsWith("actions/checkout"),
+      );
+
+      expect(checkout?.with?.["fetch-depth"]).toBe(0);
+    });
+
+    it("lint, tipos y build no dependen de esa decisión", () => {
+      for (const name of ["Lint", "Tipos", "Build"]) {
+        expect(JSON.stringify(stepNamed(name))).not.toMatch(/solo_texto/);
+      }
+    });
+  });
+
+  // Un merge con squash deja en main el mismo árbol que el PR ya probó, y
+  // aceptar capturas sube a la rama un commit de solo PNG. Ninguno de los dos
+  // necesita la suite entera otra vez.
+  describe("lo ya verificado", () => {
+    it("el job checks espera a las dos preguntas y no corre si alguna dice que sí", () => {
+      const job = parseWorkflow().jobs.checks;
+
+      expect(job?.needs).toEqual(["arbol-ya-verificado", "solo-lineas-base"]);
+      expect(job?.if).toMatch(/^!cancelled\(\)/);
+      expect(job?.if).toMatch(
+        /arbol-ya-verificado\.outputs\.ya_verificado != 'true'/,
+      );
+      expect(job?.if).toMatch(
+        /solo-lineas-base\.outputs\.ya_verificado != 'true'/,
+      );
+    });
+
+    it("pregunta por el árbol solo en el push a main", () => {
+      const job = parseWorkflow().jobs["arbol-ya-verificado"];
+
+      expect(job?.if).toBe("github.event_name == 'push'");
+      expect(JSON.stringify(job?.steps)).toMatch(
+        /checks-already-green-on-pr\.sh/,
+      );
+    });
+
+    it("pregunta por los PNG solo en un synchronize de PR", () => {
+      const job = parseWorkflow().jobs["solo-lineas-base"];
+
+      expect(job?.if).toMatch(/github\.event\.action == 'synchronize'/);
+      expect(JSON.stringify(job?.steps)).toMatch(
+        /baselines-only-after-green\.sh/,
+      );
+    });
+
+    it("cuando se salta la suite, corren igual los tests que leen las líneas base", () => {
+      const job = parseWorkflow().jobs["tests-lineas-base"];
+
+      expect(job?.needs).toEqual(["solo-lineas-base"]);
+      expect(JSON.stringify(job?.steps)).toMatch(
+        /visual-baselines-tracking\.test\.ts/,
+      );
+    });
+  });
+});

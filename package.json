@@ -1,0 +1,24 @@
+{
+  "name": "fabrica-app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Created from the fabrica-template. Replace this description.",
+  "scripts": {
+    "dev": "echo 'TODO: replace with your dev server ({{DEV_SERVER_CMD}})' && exit 1",
+    "test": "echo 'TODO: replace with your test runner ({{TEST_CMD}})' && exit 1",
+    "test:kit": "vitest run --config vitest.kit.config.mts",
+    "lint": "eslint . --max-warnings 0",
+    "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "ui:screenshots": "node --experimental-strip-types scripts/capture-ui.ts"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.50.0",
+    "eslint": "^9.0.0",
+    "js-yaml": "^4.1.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.6.0",
+    "vitest": "^4.1.11"
+  }
+}
