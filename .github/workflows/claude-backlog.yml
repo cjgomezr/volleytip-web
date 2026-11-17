@@ -10,8 +10,11 @@ name: claude-backlog
 on:
   issues:
     types: [labeled]
-  schedule:
-    - cron: "0 16 * * *" # 02:00 Australia/Sydney (UTC+10). Adjust to taste
+  # Cron nocturno desactivado por Camilo el 18 de noviembre de 2026, mientras
+  # W1 se trabaja acompañado. Para reactivarlo, quita el comentario de las dos
+  # líneas siguientes.
+  # schedule:
+  #   - cron: "0 16 * * *" # 02:00 Australia/Sydney (UTC+10). Adjust to taste
   workflow_dispatch: {}
 
 jobs:
