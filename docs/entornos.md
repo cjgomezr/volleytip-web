@@ -80,3 +80,11 @@ Pendiente: los lista el ticket #29.
 ## Railway
 
 Pendiente: lo completa el ticket #31, con las variables de cada servicio y cómo se despliega producción.
+
+## Protección de formularios
+
+Pendiente: lo completa el ticket #34, con las variables de Turnstile, el secreto de firma y la cabecera de IP.
+
+## Imágenes
+
+Pendiente: lo completa el ticket #36, con el dominio del CDN de imágenes.
