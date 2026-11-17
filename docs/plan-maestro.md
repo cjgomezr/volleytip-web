@@ -120,7 +120,7 @@ Valen para todos los epics. Un PRD no las repite ni las contradice; si un epic n
 
 - Un solo repo. React Router 8 en modo framework (SSR; la 7 queda como respaldo si la 8 no funciona con Tailwind 4), TypeScript estricto, Tailwind 4. Hosting en Railway; nada exclusivo de Railway en el código (FR-124).
 - Supabase es el único backend: Postgres con RLS, Auth, Edge Functions para webhooks y tareas programadas con `pg_cron`.
-- Dos proyectos de Supabase en una misma organización con plan Pro: `volleytip-dev` (pruebas y staging) y `volleytip-prod`. Las migraciones viven en el repo y las aplica el CI en cada merge a `main`, primero a pruebas y después a producción; nadie cambia el esquema a mano. (Cambiado el 11 de noviembre de 2026: el SRD contaba con `volleytip-dev` en el plan gratis. En Pro no se pausa por inactividad.)
+- Dos proyectos de Supabase en una misma organización (`volleytip-web`): `volleytip-dev` (pruebas y staging) y `volleytip-prod`. Las migraciones viven en el repo y las aplica el CI en cada merge a `main`, primero a pruebas y después a producción; nadie cambia el esquema a mano. Durante el desarrollo la organización está en el plan gratis, que pausa un proyecto tras cerca de una semana sin actividad y no hace copias diarias. Pasa a Pro antes del lanzamiento L1. (Decidido por Camilo el 17 de noviembre de 2026. El 11 de noviembre se había decidido Pro desde el inicio.)
 - Tipos de Supabase generados en cada migración. El CI falla si están desactualizados.
 
 ### Datos
@@ -204,6 +204,7 @@ Del SRD, sección 16. Solo los que mueven un lanzamiento:
 
 | Pendiente                                                                           | Bloquea                                                              |
 | ----------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Pasar la organización de Supabase a Pro (decisión del 17 de noviembre de 2026)      | L1 (W13)                                                             |
 | P-18 · Confirmar el plan Hobby de Railway                                           | L1 (W13)                                                             |
 | P-15 · Textos legales                                                               | L1 puede salir con borradores marcados; deben estar firmes en L2     |
 | P-08 · Fundaciones que reciben donaciones                                           | Publicar la primera parada del Tour (L1)                             |
