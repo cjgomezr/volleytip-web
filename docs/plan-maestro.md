@@ -120,7 +120,7 @@ Valen para todos los epics. Un PRD no las repite ni las contradice; si un epic n
 
 - Un solo repo. React Router 8 en modo framework (SSR; la 7 queda como respaldo si la 8 no funciona con Tailwind 4), TypeScript estricto, Tailwind 4. Hosting en Railway; nada exclusivo de Railway en el código (FR-124).
 - Supabase es el único backend: Postgres con RLS, Auth, Edge Functions para webhooks y tareas programadas con `pg_cron`.
-- Dos proyectos de Supabase: `volleytip-dev` (pruebas y staging, plan gratis) y `volleytip-prod` (plan Pro). Las migraciones viven en el repo y las aplica el CI; nadie cambia el esquema a mano en producción. El plan gratis puede pausar un proyecto sin actividad: W1 verifica que el de pruebas se mantenga activo.
+- Dos proyectos de Supabase en una misma organización con plan Pro: `volleytip-dev` (pruebas y staging) y `volleytip-prod`. Las migraciones viven en el repo y las aplica el CI en cada merge a `main`, primero a pruebas y después a producción; nadie cambia el esquema a mano. (Cambiado el 11 de noviembre de 2026: el SRD contaba con `volleytip-dev` en el plan gratis. En Pro no se pausa por inactividad.)
 - Tipos de Supabase generados en cada migración. El CI falla si están desactualizados.
 
 ### Datos
@@ -229,7 +229,7 @@ Cada FR del SRD pertenece a un solo epic. La matriz completa (FR, AC, historias 
 
 ## Estado
 
-El repo y la fábrica quedan instalados con el bootstrap. Siguiente paso: el PRD de W1.
+El repo y la fábrica quedan instalados con el bootstrap. El PRD de W1 (`docs/prd/w1-fundacion-tecnica.md`) quedó aprobado el 17 de noviembre de 2026. Siguiente paso: crear sus tickets.
 
 | Epic                                              | Issue | Estado                                                                                                                                                                     |
 | ------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
