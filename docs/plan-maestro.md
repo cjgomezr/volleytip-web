@@ -229,11 +229,11 @@ Cada FR del SRD pertenece a un solo epic. La matriz completa (FR, AC, historias 
 
 ## Estado
 
-El repo y la fábrica quedan instalados con el bootstrap. El PRD de W1 (`docs/prd/w1-fundacion-tecnica.md`) quedó aprobado el 17 de noviembre de 2026. Siguiente paso: crear sus tickets.
+El repo y la fábrica quedan instalados con el bootstrap. El PRD de W1 (`docs/prd/w1-fundacion-tecnica.md`) quedó aprobado el 17 de noviembre de 2026 y sus 17 tickets están creados (#20 a #36). Siguiente paso: trabajar el #20 y el #23, que son acompañados.
 
 | Epic                                              | Issue | Estado                                                                                                                                                                     |
 | ------------------------------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| W1 · Fundación técnica y entornos                 | #1    | Sin empezar                                                                                                                                                                |
+| W1 · Fundación técnica y entornos                 | #1    | Tickets #20 a #36 creados                                                                                                                                                  |
 | W2 · Idiomas, mercados y monedas                  | #2    | Sin empezar                                                                                                                                                                |
 | W3 · Navegación, home y páginas de apoyo          | #3    | Sin empezar                                                                                                                                                                |
 | W4 · Tips                                         | #4    | Sin empezar                                                                                                                                                                |

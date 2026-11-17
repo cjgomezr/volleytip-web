@@ -293,6 +293,8 @@ Los 17 tickets cuelgan de la épica #1. Como W1 se hace acompañada, la propuest
 
 Carril de migraciones: los tickets 5, 6 y 7 van uno tras otro, nunca en paralelo.
 
+Creados el 17 de noviembre de 2026 como #20 a #36, en el mismo orden de la tabla (el ticket 1 es el #20 y el 17 es el #36). Los seis acompañados (#20, #23, #29, #31, #34 y #36) nacieron sin `pending` y con su tarjeta en `Blocked`: entran a la cola cuando Camilo mueve la tarjeta a `Todo`. Dos tickets recibieron un bloqueo más que el de la tabla: #25 y #28 esperan también al #22, porque usan los clientes de Supabase que ese ticket crea.
+
 | #   | Título propuesto                                                                                                     | RF          | Tamaño | Depende de   | Acompañado                                                            | Auto-merge sugerido                                        |
 | --- | -------------------------------------------------------------------------------------------------------------------- | ----------- | ------ | ------------ | --------------------------------------------------------------------- | ---------------------------------------------------------- |
 | 1   | Actualizar React Router a la versión 8 y fijar la versión mínima de Node                                             | CON-001     | S      | ninguna      | **Sí**: Node 22.22 o más en tu máquina                                | No: cambia el framework de toda la app                     |
