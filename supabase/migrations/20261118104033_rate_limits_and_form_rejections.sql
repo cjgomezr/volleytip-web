@@ -14,7 +14,8 @@ create table public.rate_limits (
   -- sepa cuándo venció sin conocer el límite de cada formulario.
   expires_at timestamptz not null,
   count integer not null,
-  constraint rate_limits_key_check check (btrim(key) <> ''),
+  -- El largo máximo evita filas enormes si un error pasara una entrada cruda.
+  constraint rate_limits_key_check check (btrim(key) <> '' and char_length(key) <= 200),
   constraint rate_limits_window_check check (expires_at > window_start),
   constraint rate_limits_count_check check (count > 0)
 );
@@ -40,6 +41,8 @@ create policy rate_limits_select on public.rate_limits
 -- fila y cada una ve el conteo que dejó la anterior. La aplicación nunca lee
 -- el conteo para decidir por su cuenta.
 -- Un intento rechazado también cuenta. Devuelve verdadero si se permite.
+-- La ventana queda fija en la primera llamada: mientras siga abierta, el
+-- `p_window_seconds` de las llamadas siguientes no la cambia.
 create function public.check_rate_limit(
   p_key text,
   p_max_attempts integer,

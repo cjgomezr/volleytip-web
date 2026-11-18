@@ -344,6 +344,28 @@ describeIntegration("check_rate_limit: entradas borde", () => {
     expect(await readRateLimitRows(key)).toEqual([]);
   });
 
+  it("falla con una clave de más de 200 caracteres", async () => {
+    const key = TEST_KEY_PREFIX + "a".repeat(200);
+
+    await expect(checkRateLimit({ key })).rejects.toThrow(
+      /rate_limits_key_check/,
+    );
+
+    expect(await readRateLimitRows(key)).toEqual([]);
+  });
+
+  it("falla con un máximo nulo", async () => {
+    await expect(
+      database`select public.check_rate_limit(${buildTestKey()}, null, 600)`,
+    ).rejects.toThrow(/p_max_attempts/);
+  });
+
+  it("falla con una ventana nula", async () => {
+    await expect(
+      database`select public.check_rate_limit(${buildTestKey()}, 5, null)`,
+    ).rejects.toThrow(/p_window_seconds/);
+  });
+
   it("falla con una clave nula", async () => {
     await expect(
       database`select public.check_rate_limit(null, 5, 600)`,
