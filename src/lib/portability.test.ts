@@ -11,11 +11,12 @@ const SOURCE_FILE = /\.(ts|tsx)$/;
 const TEST_FILE = /\.test\.(ts|tsx)$/;
 const SERVER_MODULE = /\.server\.(ts|tsx)$/;
 
-const PROCESS_ENV = /process\.env/;
+const PROCESS_ENV = /process\s*(\.|\[\s*["'])env/;
 // DEV, PROD, MODE y SSR los define Vite y no son configuración del despliegue.
 const IMPORT_META_ENV = /import\.meta\.env\.(?!DEV\b|PROD\b|MODE\b|SSR\b)/;
 const RAILWAY_VARIABLE = /RAILWAY_/;
-const SERVICE_CLIENT_IMPORT = /from\s+["'][^"']*service-client\.server["']/;
+// Cubre `from "..."`, `import("...")` e `import "..."`, con o sin extensión.
+const SERVICE_CLIENT_IMPORT = /["'][^"']*service-client\.server(\.tsx?)?["']/;
 
 interface SourceFile {
   readonly relativePath: string;
@@ -68,6 +69,7 @@ describe("portabilidad", () => {
     ["process.env.SECRETO", PROCESS_ENV],
     ['process.env["SECRETO"]', PROCESS_ENV],
     ["const { SECRETO } = process.env;", PROCESS_ENV],
+    ['process["env"].SECRETO', PROCESS_ENV],
     ["import.meta.env.VITE_SECRETO", IMPORT_META_ENV],
     ["const { RAILWAY_PUBLIC_DOMAIN } = variables;", RAILWAY_VARIABLE],
   ])("la búsqueda detecta %j", (snippet, pattern) => {
@@ -93,11 +95,13 @@ describe("cliente de Supabase con llave de servicio", () => {
     expect(importers).toEqual([]);
   });
 
-  it("la búsqueda detecta un import desde una ruta", () => {
-    const files = asSourceFile(
-      "routes/pedidos.tsx",
-      'import { createServiceSupabaseClient } from "~/lib/supabase/service-client.server";',
-    );
+  it.each([
+    'import { createServiceSupabaseClient } from "~/lib/supabase/service-client.server";',
+    'import { createServiceSupabaseClient } from "./service-client.server.ts";',
+    'const client = await import("~/lib/supabase/service-client.server");',
+    'export * from "../lib/supabase/service-client.server";',
+  ])("la búsqueda detecta %j desde una ruta", (snippet) => {
+    const files = asSourceFile("routes/pedidos.tsx", snippet);
 
     expect(findFilesMatching(SERVICE_CLIENT_IMPORT, files)).toEqual([
       "routes/pedidos.tsx",
