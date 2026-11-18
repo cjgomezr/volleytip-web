@@ -22,7 +22,12 @@ class RollbackSignal extends Error {}
 
 let database: Database;
 
-/** Todas las tablas del esquema `public`, incluidas las particionadas. */
+/**
+ * Todas las tablas del esquema `public`: normales, particionadas y foráneas.
+ * Una tabla foránea no admite RLS y la API la expone igual, así que la
+ * revisión la reporta y obliga a decidir qué hacer con ella. Las vistas
+ * quedan fuera: las cubre el ticket que cree cada una.
+ */
 async function readPublicTables(
   connection: Database | Transaction,
 ): Promise<CatalogTable[]> {
@@ -34,7 +39,7 @@ async function readPublicTables(
            obj_description(c.oid, 'pg_class') as comment
     from pg_class c
     where c.relnamespace = 'public'::regnamespace
-      and c.relkind in ('r', 'p')
+      and c.relkind in ('r', 'p', 'f')
     order by c.relname
   `;
   return rows.map((row) => ({
