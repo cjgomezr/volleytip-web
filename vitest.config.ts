@@ -4,6 +4,7 @@ import {
   resolveIntegrationMode,
   type IntegrationMode,
 } from "./src/testing/integration-mode.ts";
+import { TEST_ENV } from "./tests/support/test-env.ts";
 
 declare module "vitest" {
   export interface ProvidedContext {
@@ -23,6 +24,9 @@ export default defineConfig({
   test: {
     include: ["src/**/*.test.{ts,tsx}"],
     environment: "node",
+    // El módulo de entorno valida al cargarse. Las pruebas corren con
+    // APP_ENV=test y no dependen del .env.local de nadie.
+    env: TEST_ENV,
     // Las pruebas de integración (src/testing/describe-integration.ts) corren
     // solo con RUN_INTEGRATION_TESTS=1. Se lee aquí y no en src/, donde el
     // único archivo que lee process.env es env.server.ts.
