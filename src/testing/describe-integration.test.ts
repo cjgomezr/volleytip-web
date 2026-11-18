@@ -21,7 +21,8 @@ type Reporter = "json" | "default";
 
 interface ChildOutput {
   readonly exitCode: number | null;
-  readonly text: string;
+  readonly stdout: string;
+  readonly stderr: string;
 }
 
 /**
@@ -53,11 +54,15 @@ function runUnreachableDatabaseFixture(
   if (result.error !== undefined) {
     throw result.error;
   }
-  return { exitCode: result.status, text: result.stdout + result.stderr };
+  return {
+    exitCode: result.status,
+    stdout: result.stdout,
+    stderr: result.stderr,
+  };
 }
 
-function parseReport({ text }: ChildOutput): VitestJsonReport {
-  return JSON.parse(text) as VitestJsonReport;
+function parseReport({ stdout }: ChildOutput): VitestJsonReport {
+  return JSON.parse(stdout) as VitestJsonReport;
 }
 
 describe("pruebas de integración sin RUN_INTEGRATION_TESTS", () => {
@@ -93,7 +98,8 @@ describe("pruebas de integración con RUN_INTEGRATION_TESTS=1 y la base apagada"
   it(
     "el fallo dice que la base local no responde y cómo levantarla",
     () => {
-      const { text } = runUnreachableDatabaseFixture("1", "default");
+      const { stdout, stderr } = runUnreachableDatabaseFixture("1", "default");
+      const text = stdout + stderr;
 
       expect(text).toContain("base local no responde");
       expect(text).toContain("npm run db:start");
