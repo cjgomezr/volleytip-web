@@ -425,7 +425,7 @@ describeIntegration("AC-033: el rol buyer no obtiene acceso de admin", () => {
 
     expect(policies.length).toBeGreaterThan(0);
     for (const { name, rule } of policies) {
-      const alternatives = rule.split(/sORs/i);
+      const alternatives = rule.split(/\sOR\s/i);
       const openAlternatives = alternatives.filter(
         (alternative) =>
           !alternative.includes("uid()") && !alternative.includes("is_admin()"),
