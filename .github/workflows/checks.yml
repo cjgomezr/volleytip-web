@@ -170,9 +170,15 @@ jobs:
           else
             echo "solo_texto=false" >> "$GITHUB_OUTPUT"
           fi
-      # Si tus tests de integración necesitan un servicio, levántalo aquí con
-      # la misma condición, para que un PR de solo texto no pague por él:
-      #   if: steps.repo.outputs.bootstrapped == 'true' && steps.texto.outputs.solo_texto != 'true'
+      # Las pruebas de integración corren contra una base local de Supabase
+      # que levanta esta misma corrida (Docker ya viene en el runner), nunca
+      # contra volleytip-dev. Lleva la misma condición que decide
+      # RUN_INTEGRATION_TESTS abajo, para que un PR de solo texto no pague
+      # por ella. `supabase start` aplica las migraciones de
+      # supabase/migrations/ y vuelve cuando la base responde.
+      - name: Levanta la base local de Supabase
+        if: steps.repo.outputs.bootstrapped == 'true' && steps.texto.outputs.solo_texto != 'true'
+        run: npm run db:start
       #
       # Actions no tiene operador ternario, y `cond && '' || '1'` daría
       # siempre '1' porque la cadena vacía es falsa. Por eso la condición va

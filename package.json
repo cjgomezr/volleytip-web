@@ -13,7 +13,10 @@
     "lint": "eslint . --max-warnings 0",
     "typecheck": "react-router typegen && tsc --noEmit",
     "e2e": "playwright test",
-    "ui:screenshots": "node --experimental-strip-types scripts/capture-ui.ts"
+    "ui:screenshots": "node --experimental-strip-types scripts/capture-ui.ts",
+    "db:start": "supabase start",
+    "db:stop": "supabase stop",
+    "db:reset": "supabase db reset"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
@@ -29,7 +32,9 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.14.0",
     "js-yaml": "^4.1.0",
+    "postgres": "4.1.1",
     "prettier": "^3.3.0",
+    "supabase": "3.2.0",
     "tailwindcss": "^4.3.5",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.72.2",

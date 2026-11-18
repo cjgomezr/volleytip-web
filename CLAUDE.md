@@ -12,7 +12,7 @@ referencia visual en `docs/mockups/` y `design-system.md`.
 Stack: React Router 8 en modo framework (SSR) + TypeScript estricto +
 Tailwind 4 + Vite. Vitest para unitarias, Playwright para visual y
 accesibilidad. El código de la app vive en `src/` (no en `app/`). Supabase
-será el único backend; todavía no está en el repo, llega con el epic W1.
+es el único backend: su configuración y sus migraciones viven en `supabase/`.
 
 ## Commands
 
@@ -23,6 +23,13 @@ será el único backend; todavía no está en el repo, llega con el epic W1.
   tiene su propio puerto, nunca el 3000 compartido)
 - Tests: `npm test` (Vitest, `src/**/*.test.{ts,tsx}`; los tests del kit de
   la fábrica van aparte con `npm run test:kit`)
+- Base local: `npm run db:start` levanta Supabase en Docker (Docker Desktop
+  abierto), `npm run db:reset` la reconstruye desde `supabase/migrations/` y
+  `npm run db:stop` la apaga. No la dejes corriendo al terminar un ticket.
+- Tests de integración: `RUN_INTEGRATION_TESTS=1 npm test`, con la base
+  local arriba. Sin la variable se saltan; con ella y la base apagada, fallan.
+  Se escriben con `describeIntegration` (`src/testing/describe-integration.ts`)
+  y solo se conectan a la base local.
 - E2E / visual: `npx playwright test`
 - Lint: `npm run lint`
 - Types: `npm run typecheck` (regenera los tipos de rutas y corre `tsc`. Si
