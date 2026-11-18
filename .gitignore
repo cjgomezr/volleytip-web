@@ -6,6 +6,8 @@ test-results/
 playwright-report/
 .env
 .env.*
+# Solo nombres, sin valores: es la lista de variables que el servidor exige.
+!.env.example
 *.log
 .DS_Store
 
