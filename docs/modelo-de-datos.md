@@ -17,6 +17,7 @@ Este documento define las tablas, sus campos principales, las reglas que la base
 | Borrado | No se borran pedidos, inscripciones, accesos ni facturas: se usa `status` (DR-006) |
 | Traducciones | Tabla base + tabla `<base>_translations` con `locale` y los campos de texto. Clave única (`<base>_id`, `locale`). El español es obligatorio |
 | RLS | Activado en todas las tablas. Sin política = sin acceso desde el navegador. El servidor usa `service_role` solo dentro de funciones concretas |
+| Ámbito | El comentario de cada tabla empieza con `scope: shared` (la comparte la app) o `scope: web` (solo la web), y declara uno solo (FR-076). Una prueba revisa el catálogo y falla si una tabla de `public` no tiene RLS o no declara su ámbito (`src/db/catalog-review.ts`) |
 | Estados | Tipos `enum` de Postgres, listados en la sección 3 |
 | Auditoría | Toda acción del admin escribe en `audit_log` (FR-067) |
 
