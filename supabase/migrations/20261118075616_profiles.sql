@@ -228,7 +228,10 @@ create trigger on_auth_user_email_changed
   execute function public.handle_user_email_change();
 
 -- Usuarios que ya existieran en Auth antes de esta migración. En una base
--- recién creada no hay ninguno y esto no inserta nada.
+-- recién creada no hay ninguno y esto no inserta nada. Un usuario sin correo
+-- se omite a propósito: no puede tener perfil. Dos usuarios cuyo correo
+-- normalizado coincida hacen fallar la migración, que es preferible a perder
+-- un perfil en silencio.
 insert into public.profiles (id, email)
 select id, lower(btrim(email))
 from auth.users
