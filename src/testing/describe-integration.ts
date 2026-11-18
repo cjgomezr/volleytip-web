@@ -1,6 +1,10 @@
 import { beforeAll, describe, inject } from "vitest";
 
-import { assertLocalDatabaseResponds } from "./local-database";
+import {
+  assertLocalDatabaseResponds,
+  LOCAL_DATABASE,
+  type DatabaseTarget,
+} from "./local-database";
 
 /**
  * `describe` para pruebas que necesitan la base local de Supabase. Es el
@@ -18,10 +22,23 @@ export function describeIntegration(
   name: string,
   defineTests: () => void,
 ): void {
+  describeIntegrationAgainst(LOCAL_DATABASE, name, defineTests);
+}
+
+/**
+ * Lo mismo, contra otra dirección. Existe solo para que los tests de este
+ * ayudante puedan apuntar a un puerto cerrado sin depender de si la base
+ * local está arriba. Las pruebas de integración usan `describeIntegration`.
+ */
+export function describeIntegrationAgainst(
+  target: DatabaseTarget,
+  name: string,
+  defineTests: () => void,
+): void {
   const suite = inject("integrationMode") === "run" ? describe : describe.skip;
 
   suite(name, () => {
-    beforeAll(() => assertLocalDatabaseResponds());
+    beforeAll(() => assertLocalDatabaseResponds(target));
     defineTests();
   });
 }

@@ -3,7 +3,7 @@ import { defineConfig } from "vitest/config";
 import {
   resolveIntegrationMode,
   type IntegrationMode,
-} from "./src/testing/integration-mode";
+} from "./src/testing/integration-mode.ts";
 
 declare module "vitest" {
   export interface ProvidedContext {

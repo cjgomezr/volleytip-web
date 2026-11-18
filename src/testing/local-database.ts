@@ -38,7 +38,8 @@ export class LocalDatabaseUnreachableError extends Error {
 /**
  * Comprueba que algo escucha en el puerto de la base local. Rechaza con un
  * mensaje que dice cómo levantarla, para que una base apagada sea un fallo
- * claro y no un tiempo agotado sin explicación.
+ * claro y no un tiempo agotado sin explicación. Solo mira el puerto: que
+ * Postgres conteste de verdad lo prueba cada consulta de integración.
  */
 export function assertLocalDatabaseResponds(
   target: DatabaseTarget = LOCAL_DATABASE,
