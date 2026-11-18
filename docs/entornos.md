@@ -37,11 +37,19 @@ Si el panel muestra las llaves con los nombres nuevos, la "publishable" va en `S
 | Entorno    | Dónde se ponen                                                 | De qué proyecto salen                           |
 | ---------- | -------------------------------------------------------------- | ----------------------------------------------- |
 | Local      | `.env.local` en la raíz del repo. Git lo ignora; nunca se sube | De la base local: los imprime `supabase status` |
-| Pruebas    | Las pone la propia corrida de pruebas (#21)                    | De la base local                                |
+| Pruebas    | Las pone la propia corrida: `tests/support/test-env.ts`        | URL de la base local; las llaves son marcadores |
 | Staging    | Variables del servicio de pruebas en Railway (#31)             | `volleytip-dev`                                 |
 | Producción | Variables del servicio de producción en Railway (#31)          | `volleytip-prod`                                |
 
-Ninguna llave se comparte entre staging y producción. `.env.example` (lo crea #22) lista los mismos nombres sin valores.
+Ninguna llave se comparte entre staging y producción. `.env.example` lista los mismos nombres sin valores.
+
+### Cómo se validan
+
+`src/lib/env.server.ts` valida las cuatro variables cuando el servidor carga. Si falta alguna, está vacía o `APP_ENV` no es uno de los cuatro valores, el servidor no arranca y el mensaje nombra cada variable con problema. Nunca imprime un valor.
+
+- **En local:** `npm run dev` lee `.env.local`. Sin ese archivo, el servidor de desarrollo falla al arrancar. Se crea copiando `.env.example` y llenando los valores de la base local (`npm run db:start` y luego `npx supabase status`).
+- **En pruebas:** Vitest y el servidor que levanta Playwright reciben `APP_ENV=test` desde `tests/support/test-env.ts`. No dependen del `.env.local` de nadie.
+- **En Railway:** las variables del servicio. `npm run start` no lee ningún archivo `.env`.
 
 ### Lo que se guarda fuera del repo
 

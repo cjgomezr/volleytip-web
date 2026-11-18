@@ -21,6 +21,12 @@ es el único backend: su configuración y sus migraciones viven en `supabase/`.
 - Dev server: `npm run dev` (serves `http://localhost:3740`, con puerto
   estricto: si está ocupado falla en vez de moverse a otro; este proyecto
   tiene su propio puerto, nunca el 3000 compartido)
+- Entorno: el servidor valida sus variables al arrancar
+  (`src/lib/env.server.ts`, el único archivo de `src/` que lee
+  `process.env`). `npm run dev` las toma de `.env.local`; sin ese archivo no
+  arranca. Los nombres están en `.env.example` y el detalle en
+  `docs/entornos.md`. Los tests y Playwright traen su propio entorno
+  (`tests/support/test-env.ts`).
 - Tests: `npm test` (Vitest, `src/**/*.test.{ts,tsx}`; los tests del kit de
   la fábrica van aparte con `npm run test:kit`)
 - Base local: `npm run db:start` levanta Supabase en Docker (Docker Desktop

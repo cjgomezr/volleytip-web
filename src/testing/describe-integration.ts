@@ -16,7 +16,7 @@ import {
  *   responde, falla diciendo cómo levantarla; nunca se salta en silencio.
  *
  * El modo llega de `vitest.config.ts`, que es quien lee la variable de
- * entorno: en `src/` solo `env.server.ts` lee `process.env`.
+ * entorno: en `src/` solo `env.server.ts` lee las variables del proceso.
  */
 export function describeIntegration(
   name: string,
