@@ -79,30 +79,29 @@ grant execute on function public.is_admin() to authenticated, service_role;
 -- Políticas
 -- ---------------------------------------------------------------------------
 
-create policy profiles_select_own on public.profiles
+-- Una sola política por acción: varias políticas permisivas para el mismo rol
+-- y la misma acción se evalúan todas en cada consulta.
+
+-- Cada quien lee su fila. Un admin activo las lee todas.
+create policy profiles_select on public.profiles
   for select
   to authenticated
-  using (id = (select auth.uid()));
+  using (id = (select auth.uid()) or (select public.is_admin()));
 
-create policy profiles_select_admin on public.profiles
-  for select
-  to authenticated
-  using ((select public.is_admin()));
-
--- Solo un comprador edita su propia fila. El staff no la edita. `with check`
--- impide que salga de `buyer`; `email` e `is_active` los cuida el disparador
--- `profiles_protect_columns`.
-create policy profiles_update_own_buyer on public.profiles
+-- Un comprador edita su propia fila; el staff no. `with check` impide que un
+-- comprador salga de `buyer`; `email` e `is_active` los cuida el disparador
+-- `profiles_protect_columns`. Un admin activo edita cualquier fila.
+create policy profiles_update on public.profiles
   for update
   to authenticated
-  using (id = (select auth.uid()) and role = 'buyer')
-  with check (id = (select auth.uid()) and role = 'buyer');
-
-create policy profiles_update_admin on public.profiles
-  for update
-  to authenticated
-  using ((select public.is_admin()))
-  with check ((select public.is_admin()));
+  using (
+    (id = (select auth.uid()) and role = 'buyer')
+    or (select public.is_admin())
+  )
+  with check (
+    (id = (select auth.uid()) and role = 'buyer')
+    or (select public.is_admin())
+  );
 
 -- ---------------------------------------------------------------------------
 -- Disparadores de la tabla

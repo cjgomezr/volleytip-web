@@ -415,7 +415,7 @@ describeIntegration("AC-033: el rol buyer no obtiene acceso de admin", () => {
     );
   });
 
-  it("toda política que no es de la propia fila pasa por is_admin()", async () => {
+  it("ninguna política abre filas ajenas sin pasar por is_admin()", async () => {
     const policies = await database<{ name: string; rule: string }[]>`
       select policyname as name,
              coalesce(qual, '') || ' ' || coalesce(with_check, '') as rule
@@ -423,11 +423,14 @@ describeIntegration("AC-033: el rol buyer no obtiene acceso de admin", () => {
       where schemaname = 'public' and tablename = 'profiles'
     `;
 
-    const beyondOwnRow = policies.filter(({ rule }) => !rule.includes("uid()"));
-
     expect(policies.length).toBeGreaterThan(0);
-    for (const { name, rule } of beyondOwnRow) {
-      expect(rule, name).toContain("is_admin()");
+    for (const { name, rule } of policies) {
+      const alternatives = rule.split(/OR/i);
+      const openAlternatives = alternatives.filter(
+        (alternative) =>
+          !alternative.includes("uid()") && !alternative.includes("is_admin()"),
+      );
+      expect(openAlternatives, name).toEqual([]);
     }
   });
 
