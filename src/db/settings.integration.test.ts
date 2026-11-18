@@ -162,6 +162,39 @@ describeIntegration("RLS de settings", () => {
     },
   );
 
+  it("un admin desactivado no puede cambiar ni crear ajustes", async () => {
+    const inactiveAdmin = await createTestUser(database, {
+      role: "admin",
+      isActive: false,
+    });
+    const key = await seedSetting(true);
+
+    const changedRows = await updateSetting(
+      signedInAs(inactiveAdmin),
+      key,
+      false,
+    );
+    await expect(
+      insertSetting(signedInAs(inactiveAdmin), buildTestKey()),
+    ).rejects.toThrow(PERMISSION_DENIED);
+
+    expect(changedRows).toBe(0);
+    expect((await readSettingRow(key)).value).toBe(true);
+  });
+
+  it("un admin no puede renombrar la clave de un ajuste", async () => {
+    const admin = await createTestUser(database, { role: "admin" });
+    const key = await seedSetting(true);
+
+    await runAs(database, signedInAs(admin), async (transaction) => {
+      await transaction`
+        update public.settings set key = ${buildTestKey()} where key = ${key}
+      `;
+    });
+
+    expect((await readSettingRow(key)).key).toBe(key);
+  });
+
   it("un admin activo lee los ajustes", async () => {
     const admin = await createTestUser(database, { role: "admin" });
     const key = await seedSetting({ enabled: true });

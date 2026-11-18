@@ -51,13 +51,22 @@ create policy settings_update on public.settings
 -- Quién y cuándo los pone la base, no quien escribe. Con sesión, el autor es
 -- siempre quien consulta: un admin no puede atribuirle el cambio a otro. Sin
 -- sesión (el servidor con la llave de servicio, o una migración que siembra
--- una clave) se respeta el `updated_by` que llegue.
+-- una clave) se respeta el `updated_by` que llegue: el servidor lo indica en
+-- cada cambio, porque si lo omite queda el autor anterior con la hora nueva.
+-- `created_at` y `key` no cambian después de crear el ajuste.
 create function public.settings_stamp_change()
 returns trigger
 language plpgsql
 set search_path = ''
 as $$
 begin
+  if tg_op = 'INSERT' then
+    new.created_at := now();
+  else
+    new.created_at := old.created_at;
+    new.key := old.key;
+  end if;
+
   new.updated_at := now();
   if (select auth.uid()) is not null then
     new.updated_by := (select auth.uid());
@@ -141,7 +150,7 @@ language plpgsql
 set search_path = ''
 as $$
 begin
-  raise exception 'audit_log es de solo inserción: no se puede % una entrada', lower(tg_op)
+  raise exception 'audit_log es de solo inserción: no se permite %', tg_op
     using errcode = '42501';
 end;
 $$;
@@ -157,3 +166,9 @@ create trigger audit_log_reject_truncate
   before truncate on public.audit_log
   for each statement
   execute function public.audit_log_reject_change();
+
+-- `always`: los disparadores normales no corren cuando la sesión está en modo
+-- réplica (`session_replication_role = replica`). Estos tres sí.
+alter table public.audit_log enable always trigger audit_log_stamp_insert;
+alter table public.audit_log enable always trigger audit_log_reject_update_or_delete;
+alter table public.audit_log enable always trigger audit_log_reject_truncate;

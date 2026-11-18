@@ -213,6 +213,27 @@ describeIntegration("audit_log es de solo inserción", () => {
     ).rejects.toThrow(APPEND_ONLY);
   });
 
+  it("la llave de servicio no puede vaciarla", async () => {
+    await expect(
+      runAs(database, SERVICE, async (transaction) => {
+        await transaction`truncate public.audit_log`;
+      }),
+    ).rejects.toThrow(PERMISSION_DENIED);
+  });
+
+  it("los disparadores siguen activos en modo réplica", async () => {
+    const entryId = await insertEntry(SERVICE, null);
+
+    await expect(
+      database.begin(async (transaction) => {
+        await transaction`set local session_replication_role = replica`;
+        await transaction`
+          delete from public.audit_log where id = ${entryId}
+        `;
+      }),
+    ).rejects.toThrow(APPEND_ONLY);
+  });
+
   it("ni el dueño de la tabla puede vaciarla", async () => {
     await expect(database`truncate public.audit_log`).rejects.toThrow(
       APPEND_ONLY,

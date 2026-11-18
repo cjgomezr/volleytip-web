@@ -30,6 +30,14 @@ function isLocalSupabaseStatus(value: unknown): value is LocalSupabaseStatus {
   );
 }
 
+function parseStatusOutput(output: string): unknown {
+  try {
+    return JSON.parse(output);
+  } catch (error) {
+    throw new Error("`supabase status` no devolvió JSON", { cause: error });
+  }
+}
+
 /** Pide a Supabase CLI la URL y las llaves de la base local que está arriba.
  * Así la llave de servicio local no queda escrita en el repo. */
 function readLocalSupabaseStatus(): LocalSupabaseStatus {
@@ -43,7 +51,7 @@ function readLocalSupabaseStatus(): LocalSupabaseStatus {
       `\`supabase status\` falló. ¿Está arriba la base local (npm run db:start)?\n${result.stderr}`,
     );
   }
-  const status: unknown = JSON.parse(result.stdout);
+  const status = parseStatusOutput(result.stdout);
   if (!isLocalSupabaseStatus(status)) {
     throw new Error(
       "`supabase status` no devolvió API_URL, PUBLISHABLE_KEY y SECRET_KEY",
