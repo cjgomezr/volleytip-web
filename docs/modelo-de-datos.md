@@ -109,7 +109,7 @@ Un perfil por usuario de Supabase Auth (FR-077). El de comprador se crea solo, s
 `id`, `actor_id` (profiles), `action` (text, por ejemplo `order.refund`), `entity` (text), `entity_id` (uuid), `details` (jsonb), `created_at`. Solo inserción; nadie la edita ni la borra.
 
 ### `rate_limits` y `form_rejections`
-- `rate_limits`: `key` (texto: formulario + hash de IP), `window_start`, `count`. La limpia una tarea programada.
+- `rate_limits`: `key` (texto: formulario + hash de IP), `window_start`, `expires_at` (final de la ventana, fijo desde que empieza), `count`. Solo la escribe `check_rate_limit`. Una tarea diaria borra las que vencieron hace más de un día.
 - `form_rejections`: `form`, `reason` (`turnstile`, `honeypot`, `too_fast`, `rate_limit`, `validation`), `day`, `count`. Solo contadores, sin contenido (FR-135).
 
 La IP nunca se guarda en claro: se guarda un hash con sal que rota cada día.
