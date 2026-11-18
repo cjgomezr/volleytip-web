@@ -195,3 +195,42 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row
   execute function public.handle_new_user();
+
+-- El correo del perfil sigue al de Auth. Sin esto, quien cambie su correo en
+-- Auth quedaría con el viejo en su perfil, y no podría corregirlo porque
+-- `email` es una columna protegida.
+create function public.handle_user_email_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.email is null or btrim(new.email) = '' then
+    raise exception 'No se puede dejar a un usuario sin correo: su perfil lo exige'
+      using errcode = '23502';
+  end if;
+
+  update public.profiles
+  set email = lower(btrim(new.email))
+  where id = new.id;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.handle_user_email_change() from public, anon, authenticated;
+
+create trigger on_auth_user_email_changed
+  after update of email on auth.users
+  for each row
+  when (old.email is distinct from new.email)
+  execute function public.handle_user_email_change();
+
+-- Usuarios que ya existieran en Auth antes de esta migración. En una base
+-- recién creada no hay ninguno y esto no inserta nada.
+insert into public.profiles (id, email)
+select id, lower(btrim(email))
+from auth.users
+where email is not null and btrim(email) <> ''
+on conflict (id) do nothing;

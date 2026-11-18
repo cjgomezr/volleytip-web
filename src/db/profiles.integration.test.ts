@@ -6,7 +6,9 @@ import {
   connectToLocalDatabase,
   createTestUser,
   deleteTestUsers,
+  insertAuthUser as insertAuthUserInto,
   runAs,
+  takeOnlyRow,
   type Database,
   type Session,
   type TestUser,
@@ -23,6 +25,7 @@ interface Profile {
 }
 
 const ANONYMOUS: Session = { kind: "anonymous" };
+const SERVICE: Session = { kind: "service" };
 const PERMISSION_DENIED = /permission denied|row-level security|protegid/i;
 
 let database: Database;
@@ -53,29 +56,39 @@ function readVisibleProfileIds(session: Session): Promise<string[]> {
 
 function callIsAdmin(session: Session): Promise<boolean> {
   return runAs(database, session, async (transaction) => {
-    const [row] = await transaction<{ is_admin: boolean }[]>`
+    const rows = await transaction<{ is_admin: boolean }[]>`
       select public.is_admin() as is_admin
     `;
-    return row?.is_admin ?? false;
+    return takeOnlyRow(rows, "is_admin()").is_admin;
   });
 }
 
-async function insertAuthUser(email: string | null): Promise<string> {
-  const [user] = await database<{ id: string }[]>`
-    insert into auth.users (id, email) values (gen_random_uuid(), ${email})
-    returning id
-  `;
-  if (user === undefined) {
-    throw new Error("auth.users no devolvió el usuario creado");
-  }
-  return user.id;
+function insertAuthUser(email: string | null): Promise<string> {
+  return insertAuthUserInto(database, email);
 }
 
+// Conteo global: sirve mientras este sea el único archivo de integración que
+// crea usuarios. Vitest corre los tests de un archivo uno tras otro.
 async function countAuthUsers(): Promise<number> {
-  const [row] = await database<{ total: number }[]>`
+  const rows = await database<{ total: number }[]>`
     select count(*)::int as total from auth.users
   `;
-  return row?.total ?? 0;
+  return takeOnlyRow(rows, "el conteo de auth.users").total;
+}
+
+/** Intenta un cambio sobre un perfil con la sesión dada. Devuelve cuántas
+ * filas cambió; lanza si la base lo rechaza. */
+function updateProfile(
+  session: Session,
+  userId: string,
+  changes: Readonly<Record<string, string | boolean>>,
+): Promise<number> {
+  return runAs(database, session, async (transaction) => {
+    const result = await transaction`
+      update public.profiles set ${transaction(changes)} where id = ${userId}
+    `;
+    return result.count;
+  });
 }
 
 beforeAll(() => {
@@ -138,6 +151,30 @@ describeIntegration("alta de perfil", () => {
   });
 });
 
+describeIntegration("correo del perfil", () => {
+  it("sigue al de Auth cuando la persona cambia su correo", async () => {
+    const user = await createTestUser(database);
+    const newEmail = buildTestEmail();
+
+    await database`
+      update auth.users set email = ${` ${newEmail.toUpperCase()} `}
+      where id = ${user.id}
+    `;
+
+    expect((await readProfile(user.id)).email).toBe(newEmail);
+  });
+
+  it("no deja a un usuario de Auth sin correo", async () => {
+    const user = await createTestUser(database);
+
+    await expect(
+      database`update auth.users set email = null where id = ${user.id}`,
+    ).rejects.toThrow(/correo/i);
+
+    expect((await readProfile(user.id)).email).toBe(user.email);
+  });
+});
+
 describeIntegration("RLS de profiles: comprador", () => {
   it("lee solo su fila", async () => {
     const buyer = await createTestUser(database);
@@ -149,11 +186,9 @@ describeIntegration("RLS de profiles: comprador", () => {
   it("guarda su full_name y su locale", async () => {
     const buyer = await createTestUser(database);
 
-    await runAs(database, signedInAs(buyer), async (transaction) => {
-      await transaction`
-        update public.profiles set full_name = 'Ana Pérez', locale = 'en'
-        where id = ${buyer.id}
-      `;
+    await updateProfile(signedInAs(buyer), buyer.id, {
+      full_name: "Ana Pérez",
+      locale: "en",
     });
 
     expect(await readProfile(buyer.id)).toMatchObject({
@@ -169,17 +204,13 @@ describeIntegration("RLS de profiles: comprador", () => {
       where id = ${buyer.id}
     `;
 
-    await runAs(database, signedInAs(buyer), async (transaction) => {
-      await transaction`
-        update public.profiles set full_name = 'Ana' where id = ${buyer.id}
-      `;
-    });
+    await updateProfile(signedInAs(buyer), buyer.id, { full_name: "Ana" });
 
-    const [row] = await database<{ is_recent: boolean }[]>`
+    const rows = await database<{ is_recent: boolean }[]>`
       select updated_at > now() - interval '1 minute' as is_recent
       from public.profiles where id = ${buyer.id}
     `;
-    expect(row?.is_recent).toBe(true);
+    expect(takeOnlyRow(rows, "profiles").is_recent).toBe(true);
   });
 
   it.each([
@@ -193,18 +224,10 @@ describeIntegration("RLS de profiles: comprador", () => {
       const buyer = await createTestUser(database);
       const before = await readProfile(buyer.id);
 
-      const attempt = runAs(
-        database,
-        signedInAs(buyer),
-        async (transaction) => {
-          await transaction`
-            update public.profiles set ${transaction({ [column]: value })}
-            where id = ${buyer.id}
-          `;
-        },
-      );
+      await expect(
+        updateProfile(signedInAs(buyer), buyer.id, { [column]: value }),
+      ).rejects.toThrow(PERMISSION_DENIED);
 
-      await expect(attempt).rejects.toThrow(PERMISSION_DENIED);
       expect(await readProfile(buyer.id)).toEqual(before);
     },
   );
@@ -212,47 +235,46 @@ describeIntegration("RLS de profiles: comprador", () => {
   it("no acepta un locale fuera de es y en", async () => {
     const buyer = await createTestUser(database);
 
-    const attempt = runAs(database, signedInAs(buyer), async (transaction) => {
-      await transaction`
-        update public.profiles set locale = 'fr' where id = ${buyer.id}
-      `;
-    });
-
-    await expect(attempt).rejects.toThrow(/profiles_locale_check/);
+    await expect(
+      updateProfile(signedInAs(buyer), buyer.id, { locale: "fr" }),
+    ).rejects.toThrow(/profiles_locale_check/);
   });
 
   it("no puede editar la fila de otra persona", async () => {
     const buyer = await createTestUser(database);
     const other = await createTestUser(database);
 
-    await runAs(database, signedInAs(buyer), async (transaction) => {
-      await transaction`
-        update public.profiles set full_name = 'Intruso' where id = ${other.id}
-      `;
+    const changedRows = await updateProfile(signedInAs(buyer), other.id, {
+      full_name: "Intruso",
     });
 
+    expect(changedRows).toBe(0);
     expect((await readProfile(other.id)).full_name).toBeNull();
   });
 
-  it("no puede insertar ni borrar perfiles", async () => {
+  it("no puede insertar perfiles", async () => {
     const buyer = await createTestUser(database);
 
-    const insertion = runAs(
-      database,
-      signedInAs(buyer),
-      async (transaction) => {
+    await expect(
+      runAs(database, signedInAs(buyer), async (transaction) => {
         await transaction`
           insert into public.profiles (id, email)
           values (gen_random_uuid(), ${buildTestEmail()})
         `;
-      },
-    );
-    const deletion = runAs(database, signedInAs(buyer), async (transaction) => {
-      await transaction`delete from public.profiles where id = ${buyer.id}`;
-    });
+      }),
+    ).rejects.toThrow(PERMISSION_DENIED);
+  });
 
-    await expect(insertion).rejects.toThrow(PERMISSION_DENIED);
-    await expect(deletion).rejects.toThrow(PERMISSION_DENIED);
+  it("no puede borrar su perfil", async () => {
+    const buyer = await createTestUser(database);
+
+    await expect(
+      runAs(database, signedInAs(buyer), async (transaction) => {
+        await transaction`delete from public.profiles where id = ${buyer.id}`;
+      }),
+    ).rejects.toThrow(PERMISSION_DENIED);
+
+    expect((await readProfile(buyer.id)).id).toBe(buyer.id);
   });
 });
 
@@ -267,12 +289,11 @@ describeIntegration("RLS de profiles: staff", () => {
   it("no puede editar su fila", async () => {
     const staff = await createTestUser(database, { role: "staff" });
 
-    await runAs(database, signedInAs(staff), async (transaction) => {
-      await transaction`
-        update public.profiles set full_name = 'Cambio' where id = ${staff.id}
-      `;
+    const changedRows = await updateProfile(signedInAs(staff), staff.id, {
+      full_name: "Cambio",
     });
 
+    expect(changedRows).toBe(0);
     expect((await readProfile(staff.id)).full_name).toBeNull();
   });
 });
@@ -294,12 +315,10 @@ describeIntegration("RLS de profiles: admin", () => {
     const admin = await createTestUser(database, { role: "admin" });
     const buyer = await createTestUser(database);
 
-    await runAs(database, signedInAs(admin), async (transaction) => {
-      await transaction`
-        update public.profiles
-        set role = 'staff', is_active = false, full_name = 'Nuevo staff'
-        where id = ${buyer.id}
-      `;
+    await updateProfile(signedInAs(admin), buyer.id, {
+      role: "staff",
+      is_active: false,
+      full_name: "Nuevo staff",
     });
 
     expect(await readProfile(buyer.id)).toMatchObject({
@@ -321,32 +340,55 @@ describeIntegration("RLS de profiles: admin", () => {
     ]);
   });
 
-  it("desactivado, no puede reactivarse ni editar a otros", async () => {
+  it("desactivado, su intento de reactivarse no cambia ninguna fila", async () => {
+    const inactiveAdmin = await createTestUser(database, {
+      role: "admin",
+      isActive: false,
+    });
+
+    const changedRows = await updateProfile(
+      signedInAs(inactiveAdmin),
+      inactiveAdmin.id,
+      { is_active: true },
+    );
+
+    expect(changedRows).toBe(0);
+    expect((await readProfile(inactiveAdmin.id)).is_active).toBe(false);
+  });
+
+  it("desactivado, no puede editar a otros", async () => {
     const inactiveAdmin = await createTestUser(database, {
       role: "admin",
       isActive: false,
     });
     const buyer = await createTestUser(database);
 
-    const reactivation = runAs(
-      database,
+    const changedRows = await updateProfile(
       signedInAs(inactiveAdmin),
-      async (transaction) => {
-        await transaction`
-          update public.profiles set is_active = true
-          where id = ${inactiveAdmin.id}
-        `;
-      },
+      buyer.id,
+      { full_name: "Intruso" },
     );
-    await runAs(database, signedInAs(inactiveAdmin), async (transaction) => {
-      await transaction`
-        update public.profiles set full_name = 'Intruso' where id = ${buyer.id}
-      `;
-    });
 
-    await expect(reactivation).resolves.toBeUndefined();
-    expect((await readProfile(inactiveAdmin.id)).is_active).toBe(false);
+    expect(changedRows).toBe(0);
     expect((await readProfile(buyer.id)).full_name).toBeNull();
+  });
+});
+
+describeIntegration("profiles con la llave de servicio", () => {
+  it("el servidor puede cambiar el rol de un perfil", async () => {
+    const buyer = await createTestUser(database);
+
+    await updateProfile(SERVICE, buyer.id, { role: "admin" });
+
+    expect((await readProfile(buyer.id)).role).toBe("admin");
+  });
+
+  it("el servidor puede desactivar un perfil", async () => {
+    const staff = await createTestUser(database, { role: "staff" });
+
+    await updateProfile(SERVICE, staff.id, { is_active: false });
+
+    expect((await readProfile(staff.id)).is_active).toBe(false);
   });
 });
 
@@ -371,13 +413,10 @@ describeIntegration("RLS de profiles: sin sesión", () => {
   it("no puede escribir", async () => {
     const buyer = await createTestUser(database);
 
-    const update = runAs(database, ANONYMOUS, async (transaction) => {
-      await transaction`
-        update public.profiles set full_name = 'Intruso' where id = ${buyer.id}
-      `;
-    });
+    await expect(
+      updateProfile(ANONYMOUS, buyer.id, { full_name: "Intruso" }),
+    ).rejects.toThrow(PERMISSION_DENIED);
 
-    await expect(update).rejects.toThrow(PERMISSION_DENIED);
     expect((await readProfile(buyer.id)).full_name).toBeNull();
   });
 });
@@ -415,7 +454,21 @@ describeIntegration("AC-033: el rol buyer no obtiene acceso de admin", () => {
     );
   });
 
-  it("ninguna política abre filas ajenas sin pasar por is_admin()", async () => {
+  it("un comprador no puede editar la fila de un admin", async () => {
+    const admin = await createTestUser(database, { role: "admin" });
+    const buyer = await createTestUser(database);
+
+    const changedRows = await updateProfile(signedInAs(buyer), admin.id, {
+      full_name: "Intruso",
+    });
+
+    expect(changedRows).toBe(0);
+  });
+
+  // Complemento de las pruebas de comportamiento de arriba, no su reemplazo:
+  // solo avisa si alguien agrega una política que no nombra ni a quien
+  // consulta ni a is_admin().
+  it("toda política de profiles nombra auth.uid() o is_admin()", async () => {
     const policies = await database<{ name: string; rule: string }[]>`
       select policyname as name,
              coalesce(qual, '') || ' ' || coalesce(with_check, '') as rule
@@ -439,36 +492,37 @@ describeIntegration("AC-033: el rol buyer no obtiene acceso de admin", () => {
       select roles::text[] as roles from pg_policies
       where schemaname = 'public' and tablename = 'profiles'
     `;
+    const grantedRoles = policies.flatMap(({ roles }) => roles);
 
-    expect(policies.flatMap(({ roles }) => roles)).not.toEqual(
-      expect.arrayContaining(["anon"]),
-    );
-    expect(policies.flatMap(({ roles }) => roles)).not.toEqual(
-      expect.arrayContaining(["public"]),
-    );
+    expect(grantedRoles).not.toContain("anon");
+    expect(grantedRoles).not.toContain("public");
   });
 });
 
 describeIntegration("tabla profiles", () => {
   it("tiene RLS activado", async () => {
-    const [table] = await database<{ has_rls: boolean }[]>`
+    const rows = await database<{ has_rls: boolean }[]>`
       select relrowsecurity as has_rls from pg_class
       where oid = 'public.profiles'::regclass
     `;
 
-    expect(table?.has_rls).toBe(true);
+    expect(takeOnlyRow(rows, "pg_class").has_rls).toBe(true);
   });
 
   it("su comentario declara scope: shared", async () => {
-    const [table] = await database<{ comment: string | null }[]>`
+    const rows = await database<{ comment: string | null }[]>`
       select obj_description('public.profiles'::regclass) as comment
     `;
 
-    expect(table?.comment).toMatch(/^scope: shared\b/);
+    expect(takeOnlyRow(rows, "el comentario").comment).toMatch(
+      /^scope: shared\b/,
+    );
   });
 });
 
 describeIntegration("enums base", () => {
+  // Lista completa de los enums de `public`. La épica que cree un enum nuevo
+  // lo agrega aquí a propósito: así ninguno aparece sin que alguien lo vea.
   it("existen user_role y publish_status con sus valores exactos, y ningún otro", async () => {
     const enums = await database<{ name: string; labels: string[] }[]>`
       select t.typname as name,
