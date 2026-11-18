@@ -29,9 +29,12 @@ interface SessionSettings {
   readonly claims: Readonly<Record<string, string>>;
 }
 
-// Todo usuario de prueba vive bajo este dominio, para poder borrarlos todos
-// al terminar sin tocar nada más.
+// Dominio de los correos de prueba: no existe y deja claro de dónde vienen.
 const TEST_EMAIL_DOMAIN = "prueba.volleytip.test";
+
+// Usuarios creados desde este módulo. Vitest carga el módulo una vez por
+// archivo de pruebas, así que cada archivo lleva la cuenta de los suyos.
+const createdUserIds: string[] = [];
 
 /** Conexión a la base local como superusuario. Solo para preparar datos y
  * para comprobar el resultado; lo que se prueba corre con `runAs`. */
@@ -104,7 +107,9 @@ export async function insertAuthUser(
     insert into auth.users (id, email) values (gen_random_uuid(), ${email})
     returning id
   `;
-  return takeOnlyRow(rows, "auth.users").id;
+  const { id } = takeOnlyRow(rows, "auth.users");
+  createdUserIds.push(id);
+  return id;
 }
 
 /** Crea un usuario con el rol y el estado pedidos. */
@@ -122,14 +127,24 @@ export async function createTestUser(
   return { id, email };
 }
 
-/** Borra los usuarios de prueba. Los busca por el perfil, cuyo correo ya está
- * normalizado: el de auth.users puede traer mayúsculas o espacios. */
+/**
+ * Borra los usuarios que creó este archivo de pruebas. Solo los suyos: los
+ * archivos de integración corren en paralelo contra la misma base, y borrar
+ * por dominio se llevaría los que otro archivo todavía está usando.
+ *
+ * Los que tienen entradas en la bitácora se quedan: `audit_log` no deja
+ * borrar a su autor. Desaparecen con el siguiente `npm run db:reset`.
+ */
 export async function deleteTestUsers(database: Database): Promise<void> {
+  const userIds = createdUserIds.splice(0);
+  if (userIds.length === 0) {
+    return;
+  }
   await database`
     delete from auth.users
-    where id in (
-      select id from public.profiles
-      where email::text like ${`%@${TEST_EMAIL_DOMAIN}`}
-    )
+    where id in ${database(userIds)}
+      and id not in (
+        select actor_id from public.audit_log where actor_id is not null
+      )
   `;
 }

@@ -67,11 +67,12 @@ function insertAuthUser(email: string | null): Promise<string> {
   return insertAuthUserInto(database, email);
 }
 
-// Conteo global: sirve mientras este sea el único archivo de integración que
-// crea usuarios. Vitest corre los tests de un archivo uno tras otro.
-async function countAuthUsers(): Promise<number> {
+// Cuenta solo los usuarios sin correo, no todos: otros archivos de
+// integración crean usuarios en paralelo contra la misma base.
+async function countAuthUsersWithoutEmail(): Promise<number> {
   const rows = await database<{ total: number }[]>`
     select count(*)::int as total from auth.users
+    where email is null or btrim(email) = ''
   `;
   return takeOnlyRow(rows, "el conteo de auth.users").total;
 }
@@ -125,11 +126,9 @@ describeIntegration("alta de perfil", () => {
   it.each([null, "", "   "])(
     "un usuario con correo %j no se crea: no queda usuario sin perfil",
     async (email) => {
-      const usersBefore = await countAuthUsers();
-
       await expect(insertAuthUser(email)).rejects.toThrow(/correo/i);
 
-      expect(await countAuthUsers()).toBe(usersBefore);
+      expect(await countAuthUsersWithoutEmail()).toBe(0);
     },
   );
 
