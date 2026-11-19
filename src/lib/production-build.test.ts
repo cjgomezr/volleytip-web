@@ -122,16 +122,32 @@ function loadServerBundle(serverEnv: Record<string, string>): {
   return { exitCode: result.status, stderr: result.stderr };
 }
 
-interface ServedResponse {
+interface ServedRequest {
+  readonly method: string;
   readonly path: string;
+}
+
+interface ServedResponse extends ServedRequest {
   readonly status: number;
+  readonly contentType: string | null;
   readonly robots: string | null;
 }
 
-const HOME_PATH = "/";
-const HEALTHZ_PATH = "/healthz";
-const MISSING_PATH = "/esta-pagina-no-existe";
-const SERVED_PATHS = [HOME_PATH, HEALTHZ_PATH, MISSING_PATH];
+const HOME_PAGE = { method: "GET", path: "/" };
+const MISSING_PAGE = { method: "GET", path: "/esta-pagina-no-existe" };
+// Enviar a una ruta sin `action` es un error que React Router responde por
+// su cuenta, sin que ninguna ruta lo decida.
+const REJECTED_SUBMISSION = { method: "POST", path: "/healthz" };
+const SERVED_REQUESTS: readonly ServedRequest[] = [
+  HOME_PAGE,
+  { method: "HEAD", path: "/" },
+  { method: "GET", path: "/healthz" },
+  // Las navegaciones del navegador piden los datos de la ruta con `.data`.
+  { method: "GET", path: "/_root.data" },
+  MISSING_PAGE,
+  { method: "GET", path: "/esta-pagina-no-existe.data" },
+  REJECTED_SUBMISSION,
+];
 
 /** Pide cada ruta al servidor ya construido, en un proceso aparte y con el
  * `APP_ENV` que se le pase. Es el mismo manejador que usa `npm run start`. */
@@ -141,11 +157,15 @@ function requestFromBuiltServer(appEnv: string): ServedResponse[] {
     const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
     const handle = createRequestHandler(build, "production");
     const served = [];
-    for (const path of ${JSON.stringify(SERVED_PATHS)}) {
-      const response = await handle(new Request("http://localhost" + path));
+    for (const { method, path } of ${JSON.stringify(SERVED_REQUESTS)}) {
+      const response = await handle(
+        new Request("http://localhost" + path, { method }),
+      );
       served.push({
+        method,
         path,
         status: response.status,
+        contentType: response.headers.get("Content-Type"),
         robots: response.headers.get("X-Robots-Tag"),
       });
     }
@@ -170,25 +190,38 @@ function requestFromBuiltServer(appEnv: string): ServedResponse[] {
 
 function findServed(
   served: readonly ServedResponse[],
-  path: string,
+  request: ServedRequest,
 ): ServedResponse {
-  const response = served.find((candidate) => candidate.path === path);
+  const response = served.find(
+    (candidate) =>
+      candidate.method === request.method && candidate.path === request.path,
+  );
   if (response === undefined) {
-    throw new Error(`No se pidió ${path}`);
+    throw new Error(`No se pidió ${request.method} ${request.path}`);
   }
   return response;
 }
 
+function describeRobots(served: readonly ServedResponse[]): string[] {
+  return served.map(
+    ({ method, path, robots }) => `${method} ${path}: ${String(robots)}`,
+  );
+}
+
+function expectRobotsOnEveryRequest(robots: string | null): string[] {
+  return SERVED_REQUESTS.map(
+    ({ method, path }) => `${method} ${path}: ${String(robots)}`,
+  );
+}
+
 describe("X-Robots-Tag en el servidor construido", () => {
   it.each(["local", "test", "staging"])(
-    "en %s la llevan la página, /healthz y el 404",
+    "en %s la llevan las páginas, los datos, /healthz y los errores",
     (appEnv) => {
       const served = requestFromBuiltServer(appEnv);
 
-      expect(findServed(served, HOME_PATH).status).toBe(200);
-      expect(findServed(served, MISSING_PATH).status).toBe(404);
-      expect(served.map((response) => response.robots)).toEqual(
-        SERVED_PATHS.map(() => "noindex, nofollow"),
+      expect(describeRobots(served)).toEqual(
+        expectRobotsOnEveryRequest("noindex, nofollow"),
       );
     },
   );
@@ -196,10 +229,21 @@ describe("X-Robots-Tag en el servidor construido", () => {
   it("en production no la lleva ninguna respuesta", () => {
     const served = requestFromBuiltServer("production");
 
-    expect(findServed(served, MISSING_PATH).status).toBe(404);
-    expect(served.map((response) => response.robots)).toEqual(
-      SERVED_PATHS.map(() => null),
-    );
+    expect(describeRobots(served)).toEqual(expectRobotsOnEveryRequest(null));
+  });
+
+  it("las peticiones de la prueba cubren una página, un 404 y otro error", () => {
+    const served = requestFromBuiltServer("staging");
+
+    expect(findServed(served, HOME_PAGE).status).toBe(200);
+    expect(findServed(served, MISSING_PAGE).status).toBe(404);
+    expect(findServed(served, REJECTED_SUBMISSION).status).toBe(405);
+  });
+
+  it("el 404 sale como página, no como respuesta suelta", () => {
+    const served = requestFromBuiltServer("staging");
+
+    expect(findServed(served, MISSING_PAGE).contentType).toContain("text/html");
   });
 });
 

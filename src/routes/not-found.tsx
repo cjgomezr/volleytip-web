@@ -8,12 +8,10 @@ const NOT_FOUND_STATUS = 404;
 // (`X-Robots-Tag`). Lo que se ve lo pinta el `ErrorBoundary` de la raíz.
 
 export function loader(): never {
-   
   throw data(null, { status: NOT_FOUND_STATUS });
 }
 
 export function action(): never {
-   
   throw data(null, { status: NOT_FOUND_STATUS });
 }
 
