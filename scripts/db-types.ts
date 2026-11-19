@@ -29,6 +29,8 @@ const SUPABASE_CLI = path.join(
 );
 const RELATIVE_TYPES_PATH = "src/lib/database.types.ts";
 const GENERATION_TIMEOUT_MS = 120_000;
+// El archivo crece con cada tabla. El límite por defecto de Node es 1 MB.
+const MAX_OUTPUT_BYTES = 16 * 1024 * 1024;
 const CHECK_FLAG = "--check";
 const GENERATED_FILE_HEADER =
   "// Archivo generado por `npm run db:types` desde la base local. No lo edites a mano.\n";
@@ -42,12 +44,19 @@ function runSupabaseGenTypes(): CliResult {
   const result = spawnSync(
     process.execPath,
     [SUPABASE_CLI, "gen", "types", "typescript", "--schema", "public"],
-    { cwd: REPO_ROOT, encoding: "utf8", timeout: GENERATION_TIMEOUT_MS },
+    {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+      timeout: GENERATION_TIMEOUT_MS,
+      maxBuffer: MAX_OUTPUT_BYTES,
+    },
   );
   return {
     status: result.status,
     stdout: result.stdout ?? "",
-    stderr: result.stderr ?? "",
+    // Si el proceso no arrancó, venció el plazo o la salida no cupo, la CLI no
+    // escribe nada: el motivo viene en `result.error`.
+    stderr: [result.stderr, result.error?.message].filter(Boolean).join("\n"),
   };
 }
 
