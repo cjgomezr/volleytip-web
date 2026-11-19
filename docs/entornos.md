@@ -135,7 +135,7 @@ Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación
 
 De dónde sale cada valor está arriba, en "Variables de la aplicación".
 
-- **`SUPABASE_SERVICE_ROLE_KEY` va sellada** (menú de la variable, Seal). Sellada no se puede leer desde el panel ni desde la API de Railway; el servidor la recibe igual. No se puede quitar el sello: para cambiarla se reemplaza el valor.
+- **`SUPABASE_SERVICE_ROLE_KEY` va sellada** (menú de la variable, Seal). Sellada no se puede leer desde el panel ni desde la API de Railway; el servidor la recibe igual. No se puede quitar el sello: para cambiarla se reemplaza el valor. El original sigue en el gestor de contraseñas.
 - **`PORT` no se pone.** Railway la define sola y `npm run start` la lee.
 - **Si falta una variable, el servidor no arranca.** El despliegue falla y el registro nombra la variable, sin imprimir ningún valor.
 
@@ -154,6 +154,8 @@ No hay ningún archivo de configuración de Railway en el repo. El código solo 
 ### Cómo se despliega
 
 Nadie despliega a mano. Cada merge a `main` despliega los dos servicios, staging y producción, en cuanto los workflows del commit terminan en verde. Si un workflow falla, Railway no despliega ese commit y sigue sirviendo el anterior.
+
+**Pendiente de comprobar (#31):** que Railway espera también al workflow de migraciones y no solo a `checks`, y que un workflow en rojo de verdad frena el despliegue. Es la pregunta abierta 5 del PRD. Hasta que quede anotado aquí el resultado, el párrafo de arriba describe lo que se configuró, no lo que se vio. Si Railway no espera a las migraciones, el despliegue lo tendrá que disparar ese workflow al terminar, y eso va en un ticket aparte.
 
 Producción no tiene un paso de aprobación manual. Si gana uno se decide en W13.
 
