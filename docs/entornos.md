@@ -153,9 +153,11 @@ No hay ningún archivo de configuración de Railway en el repo. El código solo 
 
 ### Cómo se despliega
 
-Nadie despliega a mano. Cada merge a `main` despliega los dos servicios, staging y producción, en cuanto los workflows del commit terminan en verde. Si un workflow falla, Railway no despliega ese commit y sigue sirviendo el anterior.
+Nadie despliega a mano. Cada merge a `main` despliega los dos servicios, staging y producción, en cuanto los workflows del commit terminan en verde. Si un workflow falla, Railway no despliega ese commit y sigue sirviendo el anterior; así lo documenta Railway, y aquí todavía no se ha visto (ver abajo).
 
-**Pendiente de comprobar (#31):** que Railway espera también al workflow de migraciones y no solo a `checks`, y que un workflow en rojo de verdad frena el despliegue. Es la pregunta abierta 5 del PRD. Hasta que quede anotado aquí el resultado, el párrafo de arriba describe lo que se configuró, no lo que se vio. Si Railway no espera a las migraciones, el despliegue lo tendrá que disparar ese workflow al terminar, y eso va en un ticket aparte.
+**Comprobado el 19 de noviembre de 2026:** Railway espera a todos los workflows del commit, no solo a `checks`. En el merge del PR #48, `checks` terminó a las 10:05:20 UTC y el workflow de migraciones a las 10:06:15. Los dos servicios quedaron en "Waiting for CI" y la construcción de `staging` empezó a las 10:06:27. Eso responde la pregunta abierta 5 del PRD: el código nuevo no llega antes que su migración.
+
+**Sin comprobar todavía:** que un workflow en rojo frene el despliegue, y que con una variable borrada Railway conserve el despliegue anterior. Camilo decidió dejar esas pruebas para después. Lo primero es el comportamiento documentado de "Wait for CI"; lo segundo se apoya en la ruta de salud, que impide pasar el tráfico a un servidor que no arrancó.
 
 Producción no tiene un paso de aprobación manual. Si gana uno se decide en W13.
 

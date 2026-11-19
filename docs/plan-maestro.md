@@ -202,20 +202,21 @@ En estas áreas la fábrica propone y una persona aprueba. Las pruebas en verde 
 
 Del SRD, sección 16. Solo los que mueven un lanzamiento:
 
-| Pendiente                                                                           | Bloquea                                                              |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Pasar la organización de Supabase a Pro (decisión del 17 de noviembre de 2026)      | L1 (W13)                                                             |
-| P-18 · Confirmar el plan Hobby de Railway                                           | L1 (W13)                                                             |
-| P-15 · Textos legales                                                               | L1 puede salir con borradores marcados; deben estar firmes en L2     |
-| P-08 · Fundaciones que reciben donaciones                                           | Publicar la primera parada del Tour (L1)                             |
-| P-01 a P-04 · Precios, fotos, zonas de envío, plataforma de envíos, cambio de talla | L2                                                                   |
-| P-10 y P-17 · Comisión en reembolsos y cómo reversa Wompi                           | L2 (W10b)                                                            |
-| P-13 · Consulta con el contador                                                     | L2                                                                   |
-| P-06 y P-16 · Datos de cada camp y retracto en camps                                | L3                                                                   |
-| P-11 · Retención de datos de menores                                                | L3                                                                   |
-| P-05, P-09 y P-14 · Primeros paquetes, reembolso digital e IVA digital              | L4                                                                   |
-| P-19 a P-24 · Mockups faltantes y correcciones a los existentes                     | W14, W6b, W8, W15, W3 y W9. No bloquean: mientras tanto manda el SRD |
-| P-26 y P-27 · Códigos y enlaces con Supabase Auth o propios                         | W9 y W14                                                             |
+| Pendiente                                                                                                                            | Bloquea                                                              |
+| ------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- |
+| Pasar la organización de Supabase a Pro (decisión del 17 de noviembre de 2026)                                                       | L1 (W13)                                                             |
+| P-18 · Confirmar el plan Hobby de Railway                                                                                            | L1 (W13)                                                             |
+| Probar en Railway que un workflow en rojo no despliega y que una variable borrada conserva el despliegue anterior (pospuesto en #31) | L1 (W13)                                                             |
+| P-15 · Textos legales                                                                                                                | L1 puede salir con borradores marcados; deben estar firmes en L2     |
+| P-08 · Fundaciones que reciben donaciones                                                                                            | Publicar la primera parada del Tour (L1)                             |
+| P-01 a P-04 · Precios, fotos, zonas de envío, plataforma de envíos, cambio de talla                                                  | L2                                                                   |
+| P-10 y P-17 · Comisión en reembolsos y cómo reversa Wompi                                                                            | L2 (W10b)                                                            |
+| P-13 · Consulta con el contador                                                                                                      | L2                                                                   |
+| P-06 y P-16 · Datos de cada camp y retracto en camps                                                                                 | L3                                                                   |
+| P-11 · Retención de datos de menores                                                                                                 | L3                                                                   |
+| P-05, P-09 y P-14 · Primeros paquetes, reembolso digital e IVA digital                                                               | L4                                                                   |
+| P-19 a P-24 · Mockups faltantes y correcciones a los existentes                                                                      | W14, W6b, W8, W15, W3 y W9. No bloquean: mientras tanto manda el SRD |
+| P-26 y P-27 · Códigos y enlaces con Supabase Auth o propios                                                                          | W9 y W14                                                             |
 
 ## Trazabilidad
 
