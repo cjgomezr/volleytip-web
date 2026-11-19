@@ -1,0 +1,96 @@
+# Nadie cambia el esquema a mano. En cada merge a `main` este workflow aplica
+# las migraciones de supabase/migrations/: primero a `volleytip-dev` y, solo
+# si eso sale bien, a `volleytip-prod`. Así el código nuevo nunca llega a un
+# entorno antes que su migración.
+#
+# Corre en todos los merges, traigan o no migraciones: `supabase db push`
+# compara la carpeta con el historial del proyecto y, si no hay nada nuevo,
+# termina en verde sin cambiar nada. Por eso no lleva filtro `paths`.
+#
+# Cada archivo de migración se aplica dentro de una transacción: si una
+# sentencia falla, no queda nada de ese archivo y el workflow sale en rojo.
+# Lo prueba src/db/migration-push.integration.test.ts contra la base local, y
+# src/db/migration-review.test.ts vigila que ninguna migración abra o cierre
+# transacciones por su cuenta, que es lo que rompería esa garantía. Las
+# migraciones anteriores a la que falló sí quedan aplicadas. Una migración
+# que sale mal se corrige con otra migración; aquí no se deshace nada.
+#
+# Los secretos y dónde se obtienen: docs/entornos.md.
+name: migrations
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+# Un solo grupo para todas las corridas: dos merges seguidos no aplican
+# migraciones a la vez. La segunda corrida espera a la primera y ninguna se
+# cancela a mitad. Si llegan tres, GitHub solo deja una en espera y descarta
+# la del medio antes de que arranque; no se pierde nada, porque la última
+# aplica todas las migraciones que falten.
+concurrency:
+  group: migrations
+  cancel-in-progress: false
+
+jobs:
+  # Antes de tocar ninguna base. Comprueba también los secretos de producción:
+  # si falta uno, es mejor saberlo antes de aplicar nada a pruebas.
+  secretos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Comprueba que estén los secretos
+        run: bash scripts/check-required-secrets.sh SUPABASE_ACCESS_TOKEN SUPABASE_DEV_PROJECT_REF SUPABASE_DEV_DB_PASSWORD SUPABASE_PROD_PROJECT_REF SUPABASE_PROD_DB_PASSWORD
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DEV_PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          SUPABASE_DEV_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+          SUPABASE_PROD_PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_PROD_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+
+  pruebas:
+    needs: [secretos]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      # Supabase CLI es una dependencia de desarrollo del repo: la misma
+      # versión que usan la base local y las pruebas.
+      - run: npm ci
+      # Los valores llegan por variables de entorno, nunca escritos en el
+      # comando. La CLI lee sola SUPABASE_ACCESS_TOKEN y SUPABASE_DB_PASSWORD.
+      # `--yes` porque aquí nadie contesta la confirmación.
+      - name: Aplica las migraciones a volleytip-dev
+        run: npx supabase db push --yes --remote="$PROJECT_REF" < /dev/null
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+
+  # Sin `if`: con `needs` a secas, Actions solo arranca este job si `pruebas`
+  # terminó bien. Si las migraciones fallaron en volleytip-dev, producción no
+  # se toca.
+  produccion:
+    needs: [pruebas]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Aplica las migraciones a volleytip-prod
+        run: npx supabase db push --yes --remote="$PROJECT_REF" < /dev/null
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
