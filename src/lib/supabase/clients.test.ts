@@ -45,7 +45,7 @@ describe("clientes de Supabase", () => {
   it("el cliente público habla con el proyecto usando la llave pública", async () => {
     const requests = captureRequests();
 
-    await createAnonSupabaseClient(FAKE_ENV).from("ejemplo").select();
+    await createAnonSupabaseClient(FAKE_ENV).from("profiles").select();
 
     expect(requests).toHaveLength(1);
     expect(requests[0]?.url).toContain(FAKE_ENV.supabaseUrl);
@@ -58,7 +58,7 @@ describe("clientes de Supabase", () => {
   it("el cliente de servicio habla con el proyecto usando la llave de servicio", async () => {
     const requests = captureRequests();
 
-    await createServiceSupabaseClient(FAKE_ENV).from("ejemplo").select();
+    await createServiceSupabaseClient(FAKE_ENV).from("profiles").select();
 
     expect(requests).toHaveLength(1);
     expect(requests[0]?.url).toContain(FAKE_ENV.supabaseUrl);
@@ -71,7 +71,7 @@ describe("clientes de Supabase", () => {
   it("el cliente público nunca envía la llave de servicio", async () => {
     const requests = captureRequests();
 
-    await createAnonSupabaseClient(FAKE_ENV).from("ejemplo").select();
+    await createAnonSupabaseClient(FAKE_ENV).from("profiles").select();
 
     expect(JSON.stringify(requests)).not.toContain(
       FAKE_ENV.supabaseServiceRoleKey,
@@ -81,7 +81,7 @@ describe("clientes de Supabase", () => {
   it("sin argumentos usan el entorno validado del servidor", async () => {
     const requests = captureRequests();
 
-    await createAnonSupabaseClient().from("ejemplo").select();
+    await createAnonSupabaseClient().from("profiles").select();
 
     expect(requests[0]?.url).toContain(TEST_RUN_SUPABASE_HOST);
   });

@@ -1,8 +1,9 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
+import type { Json } from "./database.types";
 import { createServiceSupabaseClient } from "./supabase/service-client.server";
+import type { TypedSupabaseClient } from "./supabase/typed-client";
 
-export type AuditDetails = Readonly<Record<string, unknown>>;
+/** Datos de contexto de una entrada. Solo valores que caben en JSON. */
+export type AuditDetails = { readonly [key: string]: Json | undefined };
 
 /** Una acción del admin que queda en la bitácora (FR-067). */
 export interface AuditEntry {
@@ -27,7 +28,7 @@ export interface AuditEntry {
  */
 export async function recordAuditEntry(
   entry: AuditEntry,
-  client: SupabaseClient = createServiceSupabaseClient(),
+  client: TypedSupabaseClient = createServiceSupabaseClient(),
 ): Promise<void> {
   const { error } = await client.from("audit_log").insert({
     actor_id: entry.actorId,

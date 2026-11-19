@@ -1,7 +1,9 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "../database.types";
 import { serverEnv, type ServerEnv } from "../env.server";
 import { SERVER_CLIENT_OPTIONS } from "./server-client-options.server";
+import type { TypedSupabaseClient } from "./typed-client";
 
 /**
  * Cliente de Supabase con la llave de servicio. SALTA RLS: lee y escribe
@@ -16,8 +18,8 @@ import { SERVER_CLIENT_OPTIONS } from "./server-client-options.server";
  */
 export function createServiceSupabaseClient(
   env: ServerEnv = serverEnv,
-): SupabaseClient {
-  return createClient(
+): TypedSupabaseClient {
+  return createClient<Database>(
     env.supabaseUrl,
     env.supabaseServiceRoleKey,
     SERVER_CLIENT_OPTIONS,

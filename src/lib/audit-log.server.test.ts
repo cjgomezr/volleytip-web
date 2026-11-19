@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import {
@@ -14,6 +13,7 @@ import { createLocalServiceClient } from "~/testing/local-supabase.server";
 import { recordAuditEntry } from "./audit-log.server";
 import type { ServerEnv } from "./env.server";
 import { createServiceSupabaseClient } from "./supabase/service-client.server";
+import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 interface StoredEntry {
   readonly actor_id: string | null;
@@ -46,7 +46,7 @@ describe("registro de auditoría: fallo de la base", () => {
 
 describeIntegration("registro de auditoría", () => {
   let database: Database;
-  let client: SupabaseClient;
+  let client: TypedSupabaseClient;
   let actionCounter = 0;
 
   // La bitácora no se puede limpiar, así que cada prueba usa una acción

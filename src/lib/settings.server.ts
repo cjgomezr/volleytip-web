@@ -1,6 +1,5 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import { createServiceSupabaseClient } from "./supabase/service-client.server";
+import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 /** Cómo se lee un ajuste: su clave, la forma que debe tener su valor y qué
  * devolver cuando la clave todavía no existe. */
@@ -34,7 +33,7 @@ export class InvalidSettingError extends Error {
  */
 export async function readSetting<Value>(
   definition: SettingDefinition<Value>,
-  client: SupabaseClient = createServiceSupabaseClient(),
+  client: TypedSupabaseClient = createServiceSupabaseClient(),
 ): Promise<Value> {
   const { key, isValid, fallback } = definition;
   const { data, error } = await client

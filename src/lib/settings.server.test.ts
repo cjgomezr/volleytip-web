@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   afterAll,
   afterEach,
@@ -20,6 +19,7 @@ import {
   type SettingDefinition,
 } from "./settings.server";
 import { createServiceSupabaseClient } from "./supabase/service-client.server";
+import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 interface AnnouncementBar {
   readonly text: string;
@@ -39,7 +39,7 @@ const FAKE_ENV: ServerEnv = {
 const DATABASE_ERROR_STATUS = 500;
 
 /** Un cliente cuya base responde siempre con un error, sin tocar la red. */
-function createFailingClient(): SupabaseClient {
+function createFailingClient(): TypedSupabaseClient {
   vi.stubGlobal("fetch", (): Promise<Response> =>
     Promise.resolve(
       Response.json(
@@ -86,7 +86,7 @@ describe("lector de ajustes: fallo de la base", () => {
 
 describeIntegration("lector de ajustes", () => {
   let database: Database;
-  let client: SupabaseClient;
+  let client: TypedSupabaseClient;
   let keyCounter = 0;
 
   async function seedSetting(value: unknown): Promise<string> {

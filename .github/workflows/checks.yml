@@ -179,6 +179,14 @@ jobs:
       - name: Levanta la base local de Supabase
         if: steps.repo.outputs.bootstrapped == 'true' && steps.texto.outputs.solo_texto != 'true'
         run: npm run db:start
+      # Con la base ya arriba y las migraciones aplicadas, regenera los tipos
+      # en memoria y los compara con src/lib/database.types.ts. Si una
+      # migración los dejó viejos, falla y dice que se corra
+      # `npm run db:types`. Misma condición que el paso de arriba: sin base
+      # local no hay de dónde generarlos.
+      - name: Tipos de la base al día
+        if: steps.repo.outputs.bootstrapped == 'true' && steps.texto.outputs.solo_texto != 'true'
+        run: npm run db:types:check
       #
       # Actions no tiene operador ternario, y `cond && '' || '1'` daría
       # siempre '1' porque la cadena vacía es falsa. Por eso la condición va

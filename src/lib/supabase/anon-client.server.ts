@@ -1,7 +1,9 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
+import type { Database } from "../database.types";
 import { serverEnv, type ServerEnv } from "../env.server";
 import { SERVER_CLIENT_OPTIONS } from "./server-client-options.server";
+import type { TypedSupabaseClient } from "./typed-client";
 
 /**
  * Cliente de Supabase con la llave pública. Respeta RLS: ve lo mismo que
@@ -12,8 +14,8 @@ import { SERVER_CLIENT_OPTIONS } from "./server-client-options.server";
  */
 export function createAnonSupabaseClient(
   env: ServerEnv = serverEnv,
-): SupabaseClient {
-  return createClient(
+): TypedSupabaseClient {
+  return createClient<Database>(
     env.supabaseUrl,
     env.supabaseAnonKey,
     SERVER_CLIENT_OPTIONS,
