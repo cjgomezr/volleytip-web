@@ -153,7 +153,7 @@ No hay ningún archivo de configuración de Railway en el repo. El código solo 
 
 ### Cómo se despliega
 
-Nadie despliega a mano. Cada merge a `main` despliega los dos servicios, staging y producción, en cuanto los workflows del commit terminan en verde. Si un workflow falla, Railway no despliega ese commit y sigue sirviendo el anterior.
+Nadie despliega a mano. Cada merge a `main` despliega los dos servicios, staging y producción, en cuanto los workflows del commit terminan en verde. Si un workflow falla, Railway no despliega ese commit y sigue sirviendo el anterior; así lo documenta Railway, y aquí todavía no se ha visto (ver abajo).
 
 **Comprobado el 19 de noviembre de 2026:** Railway espera a todos los workflows del commit, no solo a `checks`. En el merge del PR #48, `checks` terminó a las 10:05:20 UTC y el workflow de migraciones a las 10:06:15. Los dos servicios quedaron en "Waiting for CI" y la construcción de `staging` empezó a las 10:06:27. Eso responde la pregunta abierta 5 del PRD: el código nuevo no llega antes que su migración.
 
