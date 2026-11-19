@@ -164,11 +164,13 @@ Rules:
 **Text field states** (ticket #33; `src/components/text-field.tsx`)
 
 The field itself is the same on both zones: white background, `brand-night`
-text. Its label takes the text color of the zone.
+text. Its label takes the text color of the zone. On dark zones the
+`brand-night` border blends into the page and the field reads as a white
+block; that is intended.
 
 | State    | On dark zones                                       | On light zones                                       |
 | -------- | --------------------------------------------------- | ---------------------------------------------------- |
-| Hover    | Border `brand-lime`                                 | Border `brand-indigo`                                |
+| Hover    | Border `brand-lime`                                 | Border thickens inward: 2px more of `brand-night`    |
 | Focus    | 3px `brand-lime` ring, 3px offset                   | 3px `brand-night` ring, 3px offset                   |
 | Disabled | Same field at 50% opacity, `not-allowed` cursor     | Same                                                 |
 | Error    | Border `brand-red`; message in `brand-red` 600 14px | Border `brand-red-deep`; message in `brand-red-deep` |

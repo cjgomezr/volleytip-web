@@ -415,6 +415,48 @@ test.describe("Campo de texto", () => {
   });
 });
 
+test.describe("Campo de texto: bordes", () => {
+  const BORDERS = [
+    { zone: "dark", name: "normal", color: BRAND_NIGHT },
+    { zone: "dark", name: "hover", color: BRAND_LIME },
+    { zone: "dark", name: "error", color: BRAND_RED },
+    { zone: "light", name: "normal", color: BRAND_NIGHT },
+    // En zona clara el hover no cambia el color: engrosa el borde.
+    { zone: "light", name: "hover", color: BRAND_NIGHT },
+    { zone: "light", name: "error", color: BRAND_RED_DEEP },
+  ] as const;
+
+  for (const { zone, name, color } of BORDERS) {
+    test(`en zona ${zone}, el campo "${name}" tiene su borde`, async ({
+      page,
+    }) => {
+      await openComponentsPage(page);
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      const field = page.locator(`[data-zone="${zone}"] input[name="${name}"]`);
+
+      const borderColor = await field.evaluate(
+        (input) => getComputedStyle(input).borderTopColor,
+      );
+
+      expect(borderColor).toBe(color);
+    });
+  }
+});
+
+test.describe("Campo de texto: hover en zona clara", () => {
+  test("el borde se engrosa hacia adentro; en reposo no", async ({ page }) => {
+    await openComponentsPage(page);
+    const readShadow = (name: string): Promise<string> =>
+      page
+        .locator(`[data-zone="light"] input[name="${name}"]`)
+        .evaluate((input) => getComputedStyle(input).boxShadow);
+
+    expect(await readShadow("normal")).not.toContain("inset");
+    expect(await readShadow("hover")).toContain("inset");
+    expect(await readShadow("hover")).toContain(BRAND_NIGHT);
+  });
+});
+
 test.describe("Botón", () => {
   test("deshabilitado y en envío no disparan el clic; activo sí", async ({
     page,

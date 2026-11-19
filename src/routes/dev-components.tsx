@@ -124,9 +124,11 @@ function Specimen({
   children,
 }: ZoneProps & { name: string; children: ReactNode }): ReactElement {
   return (
-    <figure className="flex min-w-0 flex-col items-start gap-2">
+    <figure className="flex min-w-0 flex-col items-start gap-3">
       {children}
-      <figcaption className={`text-[13px] ${CAPTION_STYLES[zone]}`}>
+      <figcaption
+        className={`text-[11px] font-bold tracking-[0.08em] uppercase ${CAPTION_STYLES[zone]}`}
+      >
         {name}
       </figcaption>
     </figure>

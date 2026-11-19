@@ -31,11 +31,12 @@ const INPUT_STYLES =
   "block h-[52px] w-full min-w-0 rounded-control border-2 bg-surface-light px-4 text-[16px] text-brand-night placeholder:text-ink-subtle";
 
 // Hover como en los botones: lima en zona oscura. En zona clara el borde ya
-// es noche, así que pasa a índigo.
+// es noche, así que se engrosa hacia adentro: otro tono oscuro no se
+// distinguiría.
 const BORDER_STYLES: Record<Zone, string> = {
   dark: "border-brand-night hovered:border-brand-lime",
   light:
-    "border-brand-night hovered:border-brand-indigo focused:outline-brand-night",
+    "border-brand-night hovered:inset-ring-2 hovered:inset-ring-brand-night focused:outline-brand-night",
 };
 
 // Con error el borde no cambia al pasar el puntero: el error manda.
