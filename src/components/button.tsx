@@ -7,6 +7,12 @@ import {
   type PressableTarget,
   type Zone,
 } from "./pressable";
+import {
+  DISABLED_STYLES,
+  OUTLINE_INTERACTIVE_STYLES,
+  OUTLINE_ZONE_STYLES,
+  TRANSITION_STYLES,
+} from "./pressable-styles";
 
 export type ButtonVariant = "primary" | "secondary";
 
@@ -18,39 +24,29 @@ type ButtonProps = PressableTarget & {
 
 // `min-h` y no `h`: un texto largo baja a otra línea en vez de salirse.
 const SHARED_STYLES =
-  "inline-flex max-w-full items-center justify-center gap-2 rounded-pill py-2 text-center leading-tight font-bold no-underline transition-colors motion-reduce:transition-none";
+  "inline-flex max-w-full items-center justify-center gap-2 rounded-pill py-2 text-center leading-tight font-bold no-underline";
 
 const VARIANT_STYLES: Record<ButtonVariant, string> = {
   primary: "min-h-[54px] bg-brand-red px-7 text-[17px] text-brand-night",
   secondary: "min-h-[50px] border-2 bg-transparent px-6 text-[16px]",
 };
 
-// El secundario toma el color del texto de su zona.
 const ZONE_STYLES: Record<ButtonVariant, Record<Zone, string>> = {
   primary: { dark: "", light: "focused:outline-brand-night" },
-  secondary: {
-    dark: "border-brand-mist text-brand-mist",
-    light: "border-brand-night text-brand-night focused:outline-brand-night",
-  },
+  secondary: OUTLINE_ZONE_STYLES,
 };
 
-// Hover como en los enlaces de los mockups: lima en zona oscura, noche en
-// zona clara. Al presionar se rellena: niebla en zona oscura, índigo en zona
-// clara.
+// El primario sigue la misma regla que el aspecto de contorno: hover lima en
+// zona oscura y noche en zona clara; al presionar, niebla o índigo.
 const INTERACTIVE_STYLES: Record<ButtonVariant, Record<Zone, string>> = {
   primary: {
     dark: "hovered:bg-brand-lime pressed:bg-brand-mist",
     light:
       "hovered:bg-brand-night hovered:text-brand-mist pressed:bg-brand-indigo pressed:text-brand-mist",
   },
-  secondary: {
-    dark: "hovered:border-brand-lime hovered:text-brand-lime pressed:border-brand-mist pressed:bg-brand-mist pressed:text-brand-night",
-    light:
-      "hovered:bg-brand-night hovered:text-brand-mist pressed:border-brand-indigo pressed:bg-brand-indigo pressed:text-brand-mist",
-  },
+  secondary: OUTLINE_INTERACTIVE_STYLES,
 };
 
-const DISABLED_STYLES = "cursor-not-allowed opacity-50";
 // En envío conserva el color: la persona acaba de presionarlo y lo está
 // mirando. Lo que cambia es el indicador que gira.
 const SUBMITTING_STYLES = "cursor-progress";
@@ -83,6 +79,7 @@ export function Button({
   );
   const className = [
     SHARED_STYLES,
+    TRANSITION_STYLES,
     VARIANT_STYLES[variant],
     ZONE_STYLES[variant][zone],
     stateStyles,
