@@ -10,8 +10,8 @@ Lo abrió el ticket #23. Lo completan #29 (secretos del workflow de migraciones)
 | ---------- | ------------ | --------------------------------------------- | ------------------------------------- |
 | Local      | `local`      | La máquina de cada persona (`npm run dev`)    | Base local de Supabase CLI (#21)      |
 | Pruebas    | `test`       | Vitest y Playwright, en la máquina y en el CI | Base local de Supabase CLI            |
-| Staging    | `staging`    | Railway, `staging.volleytip.com` (#31)        | Proyecto `volleytip-dev` de Supabase  |
-| Producción | `production` | Railway (#31). Recibe `volleytip.com` en W13  | Proyecto `volleytip-prod` de Supabase |
+| Staging    | `staging`    | Railway, `staging.volleytip.com`              | Proyecto `volleytip-dev` de Supabase  |
+| Producción | `production` | Railway. Recibe `volleytip.com` en W13        | Proyecto `volleytip-prod` de Supabase |
 
 Las pruebas nunca apuntan a `volleytip-dev` ni a `volleytip-prod`.
 
@@ -38,8 +38,8 @@ Si el panel muestra las llaves con los nombres nuevos, la "publishable" va en `S
 | ---------- | -------------------------------------------------------------- | ----------------------------------------------- |
 | Local      | `.env.local` en la raíz del repo. Git lo ignora; nunca se sube | De la base local: los imprime `supabase status` |
 | Pruebas    | Las pone la propia corrida: `tests/support/test-env.ts`        | URL de la base local; las llaves son marcadores |
-| Staging    | Variables del servicio de pruebas en Railway (#31)             | `volleytip-dev`                                 |
-| Producción | Variables del servicio de producción en Railway (#31)          | `volleytip-prod`                                |
+| Staging    | Variables del servicio `staging` en Railway                    | `volleytip-dev`                                 |
+| Producción | Variables del servicio `production` en Railway                 | `volleytip-prod`                                |
 
 Ninguna llave se comparte entre staging y producción. `.env.example` lista los mismos nombres sin valores.
 
@@ -107,7 +107,70 @@ Una migración que falla no queda aplicada a medias: cada archivo corre en una t
 
 ## Railway
 
-Pendiente: lo completa el ticket #31, con las variables de cada servicio y cómo se despliega producción.
+El sitio corre en Railway, en un proyecto llamado `volleytip-web`. Lo montó el ticket #31 el 19 de noviembre de 2026.
+
+### Cómo está organizado
+
+Railway agrupa los servicios en "environments". Aquí hay uno solo, `volleytip`, y es solo una carpeta: no es ni staging ni producción. Adentro viven los dos servicios, que despliegan el mismo repositorio:
+
+| Servicio     | `APP_ENV`    | Dirección                                     | Base de datos    |
+| ------------ | ------------ | --------------------------------------------- | ---------------- |
+| `staging`    | `staging`    | `https://staging.volleytip.com`               | `volleytip-dev`  |
+| `production` | `production` | `https://production-volleytip.up.railway.app` | `volleytip-prod` |
+
+El servicio `staging` también responde en `volleytip-web-staging.up.railway.app`, la dirección que le generó Railway. La de `production` es provisional: recibe `volleytip.com` en W13 (#8).
+
+Para saber a qué entorno apunta un servicio, se abre su dirección con `/healthz` al final. La respuesta dice `environment`.
+
+### Variables de cada servicio
+
+Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación, y ninguna llave se repite entre los dos.
+
+| Variable                    | Servicio `staging` | Servicio `production` |
+| --------------------------- | ------------------ | --------------------- |
+| `APP_ENV`                   | `staging`          | `production`          |
+| `SUPABASE_URL`              | De `volleytip-dev` | De `volleytip-prod`   |
+| `SUPABASE_ANON_KEY`         | De `volleytip-dev` | De `volleytip-prod`   |
+| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev` | De `volleytip-prod`   |
+
+De dónde sale cada valor está arriba, en "Variables de la aplicación".
+
+- **`SUPABASE_SERVICE_ROLE_KEY` va sellada** (menú de la variable, Seal). Sellada no se puede leer desde el panel ni desde la API de Railway; el servidor la recibe igual. No se puede quitar el sello: para cambiarla se reemplaza el valor.
+- **`PORT` no se pone.** Railway la define sola y `npm run start` la lee.
+- **Si falta una variable, el servidor no arranca.** El despliegue falla y el registro nombra la variable, sin imprimir ningún valor.
+
+### Ajustes de cada servicio
+
+Los dos servicios llevan los mismos, en la pestaña Settings:
+
+- **Rama:** `main`.
+- **Wait for CI:** activado. Railway espera a que los workflows de GitHub del commit terminen en verde antes de desplegar.
+- **Región:** US East, la misma de Supabase.
+- **Healthcheck Path:** `/healthz`. Railway no pasa el tráfico al despliegue nuevo hasta que esa ruta responde.
+- **Comandos:** los que detecta, `npm run build` y `npm run start`. La versión de Node sale de `.nvmrc`.
+
+No hay ningún archivo de configuración de Railway en el repo. El código solo lee las variables de arriba (NFR-011).
+
+### Cómo se despliega
+
+Nadie despliega a mano. Cada merge a `main` despliega los dos servicios, staging y producción, en cuanto los workflows del commit terminan en verde. Si un workflow falla, Railway no despliega ese commit y sigue sirviendo el anterior.
+
+Producción no tiene un paso de aprobación manual. Si gana uno se decide en W13.
+
+Para volver a un despliegue anterior: pestaña Deployments del servicio, menú del despliegue, Redeploy. Eso no deshace una migración; una migración que salió mal se corrige con otra.
+
+### El dominio de staging
+
+`staging.volleytip.com` se agregó como Custom Domain en el servicio `staging`. Railway pidió dos registros, que se crearon en Namecheap (Advanced DNS de `volleytip.com`):
+
+- Un CNAME con host `staging`.
+- Un TXT de verificación con host `_railway-verify.staging`.
+
+Los valores los muestra Railway en Settings, Networking, "Show DNS records". El certificado lo emite y lo renueva Railway.
+
+### Plan
+
+La cuenta está en el periodo de prueba. Ese plan permite un solo dominio propio, que ya usa `staging`. Antes de W13 hace falta un plan que permita el dominio de producción. Confirmar que el plan Hobby alcanza para este uso es la pregunta P-18 del PRD, que sigue abierta: no bloquea W1, bloquea el lanzamiento.
 
 ## Protección de formularios
 
