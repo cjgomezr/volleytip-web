@@ -35,7 +35,30 @@ body {
   color-scheme: dark;
 }
 
-:focus-visible {
-  outline: 3px solid var(--color-brand-lime);
-  outline-offset: 3px;
+/* Estados de los controles. Cada variante responde al estado real y también
+   a `data-preview`, que solo usa la página de muestra para enseñar todos los
+   estados a la vez (src/components/pressable.tsx). */
+@custom-variant hovered {
+  @media (hover: hover) {
+    &:hover {
+      @slot;
+    }
+  }
+  &[data-preview="hover"] {
+    @slot;
+  }
+}
+
+@custom-variant focused (&:is(:focus-visible, [data-preview="focus"]));
+
+@custom-variant pressed (&:is(:active, [data-preview="active"]));
+
+/* En la capa base para que un componente pueda cambiar el color del anillo
+   con una utilidad: en zonas claras es brand-night. */
+@layer base {
+  :focus-visible,
+  [data-preview="focus"] {
+    outline: 3px solid var(--color-brand-lime);
+    outline-offset: 3px;
+  }
 }
