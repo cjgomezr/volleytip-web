@@ -36,7 +36,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { shouldCreateMissingSnapshot } from "./support/missing-snapshot-policy";
 import { snapshotCreatedNotice } from "./support/visual-baseline-notice";
@@ -141,7 +141,9 @@ for (const vp of viewports) {
     test("has no horizontal scroll", async ({ page }) => {
       await page.goto(APP_URL);
       const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth > document.documentElement.clientWidth
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
       );
       expect(overflow, `horizontal overflow at ${vp.width}px`).toBe(false);
     });
@@ -155,6 +157,207 @@ test("has no accessibility violations (axe-core)", async ({ page }) => {
     .analyze();
   expect(
     results.violations,
-    JSON.stringify(results.violations, null, 2)
+    JSON.stringify(results.violations, null, 2),
   ).toEqual([]);
+});
+
+// ---------------------------------------------------------------------------
+// Página de muestra de los componentes base (/dev/componentes)
+// ---------------------------------------------------------------------------
+
+const COMPONENTS_URL = `${APP_URL}/dev/componentes`;
+// Los tokens de src/app.css tal como los devuelve el navegador.
+const BRAND_LIME = "rgb(205, 249, 128)";
+const BRAND_NIGHT = "rgb(20, 10, 53)";
+const FOCUS_RING_COLOR = { dark: BRAND_LIME, light: BRAND_NIGHT } as const;
+const FOCUS_RING_WIDTH = "3px";
+const MIN_TOUCH_TARGET_PX = 44;
+// Los navegadores redondean posiciones a fracciones de píxel.
+const SUBPIXEL_TOLERANCE_PX = 0.5;
+
+async function openComponentsPage(page: Page): Promise<void> {
+  await page.goto(COMPONENTS_URL);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+}
+
+interface FocusRing {
+  readonly zone: string | undefined;
+  readonly color: string;
+  readonly width: string;
+  readonly offset: string;
+}
+
+async function readFocusRing(page: Page): Promise<FocusRing> {
+  return page.evaluate(() => {
+    const focused = document.activeElement;
+    if (!(focused instanceof HTMLElement)) {
+      throw new Error("Ningún elemento tiene el foco");
+    }
+    const styles = getComputedStyle(focused);
+    return {
+      zone: focused.closest<HTMLElement>("[data-zone]")?.dataset.zone,
+      color: styles.outlineColor,
+      width: styles.outlineWidth,
+      offset: styles.outlineOffset,
+    };
+  });
+}
+
+for (const vp of viewports) {
+  test.describe(`componentes @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    test("coincide con la línea base aprobada", async ({ page }) => {
+      await openComponentsPage(page);
+      const name = `componentes-${vp.name}.png`;
+      await createMissingLocalBaseline(name, () =>
+        page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+      );
+      await expect(page).toHaveScreenshot(name, {
+        ...SCREENSHOT_OPTIONS,
+        fullPage: true,
+        maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+      });
+    });
+
+    test("no tiene scroll horizontal", async ({ page }) => {
+      await openComponentsPage(page);
+      const overflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+      );
+      expect(overflow, `scroll horizontal a ${vp.width}px`).toBe(false);
+    });
+
+    test("axe no reporta violaciones", async ({ page }) => {
+      await openComponentsPage(page);
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa"])
+        .analyze();
+      expect(
+        results.violations,
+        JSON.stringify(results.violations, null, 2),
+      ).toEqual([]);
+    });
+
+    test("texto largo: ningún componente se sale de su caja", async ({
+      page,
+    }) => {
+      await openComponentsPage(page);
+      const escaped = await page.evaluate((tolerance) => {
+        const boxes = [...document.querySelectorAll("[data-long-text]")];
+        return boxes.flatMap((box, index) => {
+          const limit = box.getBoundingClientRect();
+          const overflowing = [...box.querySelectorAll("*")].filter(
+            (element) => {
+              const rect = element.getBoundingClientRect();
+              return (
+                rect.right > limit.right + tolerance ||
+                rect.left < limit.left - tolerance
+              );
+            },
+          );
+          const scrolls = box.scrollWidth > box.clientWidth;
+          return overflowing.length > 0 || scrolls ? [`caja ${index}`] : [];
+        });
+      }, SUBPIXEL_TOLERANCE_PX);
+
+      expect(await page.locator("[data-long-text]").count()).toBeGreaterThan(0);
+      expect(escaped).toEqual([]);
+    });
+
+    test("cada botón de ícono mide 44 por 44 px o más", async ({ page }) => {
+      await openComponentsPage(page);
+      const iconButtons = page.getByRole("button", { name: "Cerrar" });
+      const count = await iconButtons.count();
+
+      expect(count).toBeGreaterThan(0);
+      for (let index = 0; index < count; index += 1) {
+        const box = await iconButtons.nth(index).boundingBox();
+        expect(box?.width).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET_PX);
+        expect(box?.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET_PX);
+      }
+    });
+  });
+}
+
+test.describe("estados de foco", () => {
+  test("con teclado, cada botón muestra el anillo del color de su zona", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const focusable = page.locator(
+      "[data-zone] a[href], [data-zone] button:not([disabled])",
+    );
+    const expectedStops = await focusable.count();
+    const seenZones = new Set<string>();
+
+    // Sin transiciones, para leer el color final del anillo y no uno a medio
+    // camino.
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    // Con Tab y no con `focus()`: el anillo solo aparece cuando el foco
+    // llega por teclado.
+    for (let stop = 0; stop < expectedStops; stop += 1) {
+      await page.keyboard.press("Tab");
+      const ring = await readFocusRing(page);
+      const zone = ring.zone === "light" ? "light" : "dark";
+      seenZones.add(zone);
+      expect(ring.color, `parada ${stop}, zona ${zone}`).toBe(
+        FOCUS_RING_COLOR[zone],
+      );
+      expect(ring.width).toBe(FOCUS_RING_WIDTH);
+      expect(ring.offset).toBe(FOCUS_RING_WIDTH);
+    }
+
+    expect([...seenZones].sort()).toEqual(["dark", "light"]);
+  });
+});
+
+test.describe("Botón", () => {
+  test("deshabilitado y en envío no disparan el clic; activo sí", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const counter = page.getByTestId("click-count");
+    const enabled = page.getByRole("button", { name: "Contar un clic" });
+
+    // El primer clic puede caer antes de que React tome la página.
+    await expect(async () => {
+      await enabled.click();
+      await expect(counter).not.toHaveText("Clics recibidos: 0", {
+        timeout: 500,
+      });
+    }).toPass();
+    const countAfterEnabled = await counter.textContent();
+
+    await page
+      .getByRole("button", { name: "No cuenta: deshabilitado" })
+      .click({ force: true });
+    // `force` en los dos: Playwright se niega a hacer clic en un control
+    // deshabilitado, y aquí se quiere comprobar qué pasa si el clic llega.
+    await page
+      .getByRole("button", { name: "No cuenta: enviando" })
+      .click({ force: true });
+
+    await expect(counter).toHaveText(countAfterEnabled ?? "");
+  });
+
+  test("en envío conserva el foco y anuncia el estado", async ({ page }) => {
+    await openComponentsPage(page);
+    const submitting = page.getByRole("button", {
+      name: "No cuenta: enviando",
+    });
+
+    await submitting.focus();
+
+    await expect(submitting).toBeFocused();
+    await expect(submitting).toHaveAttribute("aria-disabled", "true");
+    await expect(submitting).toHaveAttribute("aria-busy", "true");
+    await expect(
+      page.getByRole("status").filter({ hasText: "Enviando" }).first(),
+    ).toBeAttached();
+  });
 });

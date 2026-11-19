@@ -138,6 +138,8 @@ const MISSING_PAGE = { method: "GET", path: "/esta-pagina-no-existe" };
 // Enviar a una ruta sin `action` es un error que React Router responde por
 // su cuenta, sin que ninguna ruta lo decida.
 const REJECTED_SUBMISSION = { method: "POST", path: "/healthz" };
+// La página de muestra de los componentes no existe en producción.
+const SAMPLE_PAGE = { method: "GET", path: "/dev/componentes" };
 const SERVED_REQUESTS: readonly ServedRequest[] = [
   HOME_PAGE,
   { method: "HEAD", path: "/" },
@@ -147,6 +149,7 @@ const SERVED_REQUESTS: readonly ServedRequest[] = [
   MISSING_PAGE,
   { method: "GET", path: "/esta-pagina-no-existe.data" },
   REJECTED_SUBMISSION,
+  SAMPLE_PAGE,
 ];
 
 /** Pide cada ruta al servidor ya construido, en un proceso aparte y con el
@@ -168,6 +171,9 @@ function requestFromBuiltServer(appEnv: string): ServedResponse[] {
         contentType: response.headers.get("Content-Type"),
         robots: response.headers.get("X-Robots-Tag"),
       });
+      // Se lee el cuerpo entero, como haría un navegador. Una página grande
+      // sin leer deja el envío a medias y el proceso espera a que venza.
+      await response.arrayBuffer();
     }
     process.stdout.write("${RESULT_MARKER}" + JSON.stringify(served));
   `;
@@ -270,5 +276,21 @@ describe("arranque del servidor", () => {
     expect(exitCode).not.toBe(0);
     expect(stderr).toContain("APP_ENV");
     expect(stderr).not.toContain("centinela");
+  });
+});
+
+describe("página de muestra en el servidor construido", () => {
+  it.each(["local", "test", "staging"])("en %s responde 200", (appEnv) => {
+    const served = requestFromBuiltServer(appEnv);
+
+    expect(findServed(served, SAMPLE_PAGE).status).toBe(200);
+  });
+
+  it("en production responde 404 como página, no una redirección", () => {
+    const served = requestFromBuiltServer("production");
+    const response = findServed(served, SAMPLE_PAGE);
+
+    expect(response.status).toBe(404);
+    expect(response.contentType).toContain("text/html");
   });
 });
