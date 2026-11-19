@@ -19,6 +19,8 @@ const REACT_ROUTER_CLI = path.join(
   "node_modules/@react-router/dev/bin.cjs",
 );
 const BUILD_TIMEOUT_MS = 120_000;
+// Separa el resultado de cualquier otra cosa que el servidor imprima.
+const RESULT_MARKER = "@@respuestas@@";
 const TEXT_ASSET = /\.(js|css|html|json|map|txt)$/;
 
 // Valores que solo existen en este test. Si alguno aparece en lo que se
@@ -119,6 +121,87 @@ function loadServerBundle(serverEnv: Record<string, string>): {
   );
   return { exitCode: result.status, stderr: result.stderr };
 }
+
+interface ServedResponse {
+  readonly path: string;
+  readonly status: number;
+  readonly robots: string | null;
+}
+
+const HOME_PATH = "/";
+const HEALTHZ_PATH = "/healthz";
+const MISSING_PATH = "/esta-pagina-no-existe";
+const SERVED_PATHS = [HOME_PATH, HEALTHZ_PATH, MISSING_PATH];
+
+/** Pide cada ruta al servidor ya construido, en un proceso aparte y con el
+ * `APP_ENV` que se le pase. Es el mismo manejador que usa `npm run start`. */
+function requestFromBuiltServer(appEnv: string): ServedResponse[] {
+  const script = `
+    import { createRequestHandler } from "react-router";
+    const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
+    const handle = createRequestHandler(build, "production");
+    const served = [];
+    for (const path of ${JSON.stringify(SERVED_PATHS)}) {
+      const response = await handle(new Request("http://localhost" + path));
+      served.push({
+        path,
+        status: response.status,
+        robots: response.headers.get("X-Robots-Tag"),
+      });
+    }
+    process.stdout.write("${RESULT_MARKER}" + JSON.stringify(served));
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--eval", script],
+    {
+      cwd: REPO_ROOT,
+      env: { ...process.env, ...SENTINEL_ENV, APP_ENV: appEnv },
+      encoding: "utf8",
+      timeout: BUILD_TIMEOUT_MS,
+    },
+  );
+  const [, json] = result.stdout.split(RESULT_MARKER);
+  if (result.status !== 0 || json === undefined) {
+    throw new Error(`El servidor no respondió:\n${result.stderr}`);
+  }
+  return JSON.parse(json) as ServedResponse[];
+}
+
+function findServed(
+  served: readonly ServedResponse[],
+  path: string,
+): ServedResponse {
+  const response = served.find((candidate) => candidate.path === path);
+  if (response === undefined) {
+    throw new Error(`No se pidió ${path}`);
+  }
+  return response;
+}
+
+describe("X-Robots-Tag en el servidor construido", () => {
+  it.each(["local", "test", "staging"])(
+    "en %s la llevan la página, /healthz y el 404",
+    (appEnv) => {
+      const served = requestFromBuiltServer(appEnv);
+
+      expect(findServed(served, HOME_PATH).status).toBe(200);
+      expect(findServed(served, MISSING_PATH).status).toBe(404);
+      expect(served.map((response) => response.robots)).toEqual(
+        SERVED_PATHS.map(() => "noindex, nofollow"),
+      );
+    },
+  );
+
+  it("en production no la lleva ninguna respuesta", () => {
+    const served = requestFromBuiltServer("production");
+
+    expect(findServed(served, MISSING_PATH).status).toBe(404);
+    expect(served.map((response) => response.robots)).toEqual(
+      SERVED_PATHS.map(() => null),
+    );
+  });
+});
 
 describe("arranque del servidor", () => {
   it("carga con un entorno completo", () => {

@@ -8,10 +8,24 @@ import {
   ScrollRestoration,
 } from "react-router";
 
+import { serverEnv } from "~/lib/env.server";
+import { markAsNotIndexable } from "~/lib/indexing.server";
+
 import type { Route } from "./+types/root";
 import "./app.css";
 
 const NOT_FOUND_STATUS = 404;
+
+// El único lugar que pone `X-Robots-Tag`. Al estar en la ruta raíz envuelve
+// todas las respuestas del servidor: páginas, rutas de recurso y errores.
+const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
+  _args,
+  next,
+) => markAsNotIndexable(await next(), serverEnv.appEnv);
+
+export const middleware: Route.MiddlewareFunction[] = [
+  markResponseAsNotIndexable,
+];
 
 export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/brand/mark.png" },
