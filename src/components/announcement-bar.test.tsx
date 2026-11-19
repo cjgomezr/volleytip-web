@@ -36,6 +36,14 @@ describe("Barra de anuncios", () => {
     expect(html.match(/<li/g)).toHaveLength(1);
   });
 
+  it("pinta una sola vez un mensaje repetido", () => {
+    const html = renderToStaticMarkup(
+      <AnnouncementBar messages={["Camp de enero", "Camp de enero"]} />,
+    );
+
+    expect(html.match(/<li/g)).toHaveLength(1);
+  });
+
   it.each([[[]], [[""]], [["", "  "]]])(
     "con los mensajes %j no pinta un contenedor vacío",
     (messages) => {

@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import {
   isInert,
+  isSubmitting,
   Pressable,
   type PressableTarget,
   type Zone,
@@ -49,7 +50,22 @@ const INTERACTIVE_STYLES: Record<ButtonVariant, Record<Zone, string>> = {
   },
 };
 
-const INERT_STYLES = "cursor-not-allowed opacity-50";
+const DISABLED_STYLES = "cursor-not-allowed opacity-50";
+// En envío conserva el color: la persona acaba de presionarlo y lo está
+// mirando. Lo que cambia es el indicador que gira.
+const SUBMITTING_STYLES = "cursor-progress";
+const SPINNER_STYLES =
+  "size-4 shrink-0 animate-spin rounded-pill border-2 border-current border-t-transparent motion-reduce:animate-none";
+
+function chooseStateStyles(
+  target: PressableTarget,
+  interactiveStyles: string,
+): string {
+  if (isSubmitting(target)) {
+    return SUBMITTING_STYLES;
+  }
+  return isInert(target) ? DISABLED_STYLES : interactiveStyles;
+}
 
 /**
  * Botón de texto. Con `to` es un enlace; sin `to` es un `<button>`.
@@ -61,9 +77,10 @@ export function Button({
   zone = "dark",
   ...target
 }: ButtonProps): ReactElement {
-  const stateStyles = isInert(target)
-    ? INERT_STYLES
-    : INTERACTIVE_STYLES[variant][zone];
+  const stateStyles = chooseStateStyles(
+    target,
+    INTERACTIVE_STYLES[variant][zone],
+  );
   const className = [
     SHARED_STYLES,
     VARIANT_STYLES[variant],
@@ -75,6 +92,9 @@ export function Button({
 
   return (
     <Pressable {...target} className={className}>
+      {isSubmitting(target) ? (
+        <span aria-hidden="true" className={SPINNER_STYLES} />
+      ) : null}
       {children}
     </Pressable>
   );

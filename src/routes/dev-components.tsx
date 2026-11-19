@@ -141,6 +141,25 @@ function Showcase({
   );
 }
 
+// Rejilla de columnas iguales: los estados quedan alineados aunque la fila
+// salte de línea.
+function SpecimenGrid({
+  minColumnStyles,
+  children,
+}: {
+  minColumnStyles: string;
+  children: ReactNode;
+}): ReactElement {
+  return (
+    <div className={`grid w-full gap-x-8 gap-y-6 ${minColumnStyles}`}>
+      {children}
+    </div>
+  );
+}
+
+const BUTTON_GRID = "grid-cols-[repeat(auto-fill,minmax(220px,1fr))]";
+const ICON_GRID = "grid-cols-[repeat(auto-fill,minmax(96px,1fr))]";
+
 function ButtonShowcase({
   zone,
   variant,
@@ -148,18 +167,25 @@ function ButtonShowcase({
 }: ZoneProps & { variant: ButtonVariant; title: string }): ReactElement {
   return (
     <Showcase title={title}>
-      {BUTTON_STATES.map(({ name, ...state }) => (
-        <Specimen key={name} name={name} zone={zone}>
-          <Button variant={variant} zone={zone} {...state}>
-            {BUTTON_TEXT}
+      <SpecimenGrid minColumnStyles={BUTTON_GRID}>
+        {BUTTON_STATES.map(({ name, ...state }) => (
+          <Specimen key={name} name={name} zone={zone}>
+            <Button variant={variant} zone={zone} {...state}>
+              {BUTTON_TEXT}
+            </Button>
+          </Specimen>
+        ))}
+        <Specimen name="Enlace" zone={zone}>
+          <Button variant={variant} zone={zone} to="/">
+            {LINK_TEXT}
           </Button>
         </Specimen>
-      ))}
-      <Specimen name="Enlace" zone={zone}>
-        <Button variant={variant} zone={zone} to="/">
-          {LINK_TEXT}
-        </Button>
-      </Specimen>
+        <Specimen name="Enlace deshabilitado" zone={zone}>
+          <Button variant={variant} zone={zone} to="/" isDisabled>
+            {LINK_TEXT}
+          </Button>
+        </Specimen>
+      </SpecimenGrid>
     </Showcase>
   );
 }
@@ -167,13 +193,15 @@ function ButtonShowcase({
 function IconButtonShowcase({ zone }: ZoneProps): ReactElement {
   return (
     <Showcase title="Botón de ícono">
-      {POINTER_STATES.map(({ name, ...state }) => (
-        <Specimen key={name} name={name} zone={zone}>
-          <IconButton zone={zone} aria-label={ICON_LABEL} {...state}>
-            <CloseIcon />
-          </IconButton>
-        </Specimen>
-      ))}
+      <SpecimenGrid minColumnStyles={ICON_GRID}>
+        {POINTER_STATES.map(({ name, ...state }) => (
+          <Specimen key={name} name={name} zone={zone}>
+            <IconButton zone={zone} aria-label={ICON_LABEL} {...state}>
+              <CloseIcon />
+            </IconButton>
+          </Specimen>
+        ))}
+      </SpecimenGrid>
     </Showcase>
   );
 }

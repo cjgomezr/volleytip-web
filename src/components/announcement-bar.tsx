@@ -11,7 +11,10 @@ interface AnnouncementBarProps {
 export function AnnouncementBar({
   messages,
 }: AnnouncementBarProps): ReactElement | null {
-  const visibleMessages = messages.filter((message) => message.trim() !== "");
+  // Sin vacíos ni repetidos: un aviso dos veces no dice nada nuevo.
+  const visibleMessages = [
+    ...new Set(messages.filter((message) => message.trim() !== "")),
+  ];
   if (visibleMessages.length === 0) {
     return null;
   }

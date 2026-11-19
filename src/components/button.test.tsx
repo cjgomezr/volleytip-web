@@ -73,6 +73,24 @@ describe("Botón", () => {
     expect(html).not.toContain("aria-disabled");
   });
 
+  it("un botón que no envía no lleva zona de anuncio", () => {
+    const html = renderInRouter(<Button>Agregar</Button>);
+
+    expect(html).not.toContain('role="status"');
+  });
+
+  it("en envío conserva su color y muestra un indicador decorativo", () => {
+    const html = renderInRouter(
+      <Button type="submit" submittingLabel="Enviando tu mensaje">
+        Enviar
+      </Button>,
+    );
+
+    expect(html).toMatch(/<span aria-hidden="true" class="[^"]*animate-spin/);
+    expect(html).not.toContain("opacity-50");
+    expect(html).not.toContain("hovered:");
+  });
+
   it("no contiene ningún texto propio: solo pinta el que recibe", () => {
     const html = renderInRouter(<Button>Agregar</Button>);
     const visibleText = html.replaceAll(/<[^>]+>/g, "");

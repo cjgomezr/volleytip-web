@@ -169,6 +169,8 @@ const COMPONENTS_URL = `${APP_URL}/dev/componentes`;
 // Los tokens de src/app.css tal como los devuelve el navegador.
 const BRAND_LIME = "rgb(205, 249, 128)";
 const BRAND_NIGHT = "rgb(20, 10, 53)";
+const BRAND_RED = "rgb(252, 0, 53)";
+const BRAND_MIST = "rgb(217, 230, 232)";
 const FOCUS_RING_COLOR = { dark: BRAND_LIME, light: BRAND_NIGHT } as const;
 const FOCUS_RING_WIDTH = "3px";
 const MIN_TOUCH_TARGET_PX = 44;
@@ -343,6 +345,33 @@ test.describe("Botón", () => {
       .click({ force: true });
 
     await expect(counter).toHaveText(countAfterEnabled ?? "");
+  });
+
+  // Al presionar, el puntero sigue encima: valen a la vez el hover y el
+  // activo. Tiene que ganar el activo, y eso depende del orden en que
+  // src/app.css declara las variantes.
+  test("con el puntero: lima al pasar por encima y niebla al presionar", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    const primary = page
+      .locator('[data-zone="dark"]')
+      .getByRole("button", { name: "Agregar al carrito" })
+      .first();
+    const readBackground = (): Promise<string> =>
+      primary.evaluate((button) => getComputedStyle(button).backgroundColor);
+
+    expect(await readBackground()).toBe(BRAND_RED);
+
+    await primary.hover();
+    expect(await readBackground()).toBe(BRAND_LIME);
+
+    await page.mouse.down();
+    expect(await readBackground()).toBe(BRAND_MIST);
+
+    await page.mouse.up();
+    expect(await readBackground()).toBe(BRAND_LIME);
   });
 
   test("en envío conserva el foco y anuncia el estado", async ({ page }) => {

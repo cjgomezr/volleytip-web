@@ -42,12 +42,14 @@ type PressableProps = PressableTarget & {
   readonly children: ReactNode;
 };
 
+/** Dice si el control tiene un envío en curso. Un enlace nunca lo tiene. */
+export function isSubmitting(target: PressableTarget): boolean {
+  return target.to === undefined && target.submittingLabel !== undefined;
+}
+
 /** Dice si el control no debe reaccionar: deshabilitado o con un envío en curso. */
 export function isInert(target: PressableTarget): boolean {
-  if (target.isDisabled === true) {
-    return true;
-  }
-  return target.to === undefined && target.submittingLabel !== undefined;
+  return target.isDisabled === true || isSubmitting(target);
 }
 
 function PressableLink({
@@ -95,10 +97,13 @@ function PressableAction({
   "aria-label": ariaLabel,
 }: ActionTarget &
   Pick<PressableProps, "className" | "children">): ReactElement {
-  const isSubmitting = submittingLabel !== undefined;
+  const hasSubmission = submittingLabel !== undefined;
+  // Solo los botones que pueden enviar llevan región de anuncio. Uno de
+  // `type="button"` que vaya a tener envíos la gana al recibir la etiqueta.
+  const canSubmit = type === "submit" || hasSubmission;
 
   function handleClick(event: MouseEvent<HTMLButtonElement>): void {
-    if (isSubmitting) {
+    if (hasSubmission) {
       // Evita un segundo envío del formulario mientras el primero sigue.
       event.preventDefault();
       return;
@@ -114,8 +119,8 @@ function PressableAction({
       <button
         type={type}
         disabled={isDisabled}
-        aria-disabled={isSubmitting ? "true" : undefined}
-        aria-busy={isSubmitting ? "true" : undefined}
+        aria-disabled={hasSubmission ? "true" : undefined}
+        aria-busy={hasSubmission ? "true" : undefined}
         aria-label={ariaLabel}
         data-preview={previewState}
         onClick={handleClick}
@@ -124,11 +129,14 @@ function PressableAction({
         {children}
       </button>
       {/* Va fuera del botón porque el contenido de un botón no se anuncia
-          como región viva, y existe desde antes del envío porque un lector
-          de pantalla solo anuncia cambios en regiones que ya conocía. */}
-      <span role="status" className="sr-only">
-        {submittingLabel}
-      </span>
+          como región viva. En un botón de envío existe desde antes, vacía,
+          porque un lector de pantalla solo anuncia cambios en regiones que
+          ya conocía. */}
+      {canSubmit ? (
+        <span role="status" className="sr-only">
+          {submittingLabel}
+        </span>
+      ) : null}
     </>
   );
 }
