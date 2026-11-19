@@ -136,13 +136,13 @@ tokens only, and is the rule from now on. The code lives in
 
 **Button states**
 
-| State      | On dark zones                                                                   | On light zones                                    |
-| ---------- | ------------------------------------------------------------------------------- | ------------------------------------------------- |
-| Hover      | Primary: background `brand-lime`. Outline buttons: border and text `brand-lime` | All: background `brand-night`, text `brand-mist`  |
-| Active     | All: background `brand-mist`, text `brand-night`                                | All: background `brand-indigo`, text `brand-mist` |
-| Focus      | 3px `brand-lime` ring, 3px offset                                               | 3px `brand-night` ring, 3px offset                |
-| Disabled   | Same button at 50% opacity, `not-allowed` cursor                                | Same                                              |
-| Submitting | Full color, a spinning indicator before the label, does not react               | Same                                              |
+| State      | On dark zones                                                                        | On light zones                                    |
+| ---------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Hover      | Primary: background `brand-lime`. Outline buttons: border and text `brand-lime`      | All: background `brand-night`, text `brand-mist`  |
+| Active     | All: background `brand-mist`, text `brand-night`                                     | All: background `brand-indigo`, text `brand-mist` |
+| Focus      | 3px `brand-lime` ring, 3px offset                                                    | 3px `brand-night` ring, 3px offset                |
+| Disabled   | Same button at 50% opacity, `not-allowed` cursor                                     | Same                                              |
+| Submitting | Text buttons only: full color, a spinning indicator before the label, does not react | Same                                              |
 
 "Outline buttons" are the secondary button and the icon button; they share
 their zone and state styles (`src/components/pressable-styles.ts`). Hover
@@ -151,9 +151,12 @@ follows the links of the mockups, which turn `brand-lime` on dark and
 
 Rules:
 
+- Hover only applies to pointers that can hover (`@media (hover: hover)`).
+  Touch screens go straight from default to active.
 - A pressed button never shrinks: an icon button would drop under the 44px
   touch target.
-- While submitting, a button keeps focus (`aria-disabled`, not `disabled`)
+- Only text buttons have a submitting state; the icon button does not.
+  While submitting, a text button keeps focus (`aria-disabled`, not `disabled`)
   and announces the state to screen readers. Its label does not change.
 - A long label wraps to a second line. It is never cut with an ellipsis,
   which would hide translated text.
