@@ -208,7 +208,7 @@ function describeRobots(served: readonly ServedResponse[]): string[] {
   );
 }
 
-function expectRobotsOnEveryRequest(robots: string | null): string[] {
+function listExpectedRobots(robots: string | null): string[] {
   return SERVED_REQUESTS.map(
     ({ method, path }) => `${method} ${path}: ${String(robots)}`,
   );
@@ -221,7 +221,7 @@ describe("X-Robots-Tag en el servidor construido", () => {
       const served = requestFromBuiltServer(appEnv);
 
       expect(describeRobots(served)).toEqual(
-        expectRobotsOnEveryRequest("noindex, nofollow"),
+        listExpectedRobots("noindex, nofollow"),
       );
     },
   );
@@ -229,7 +229,7 @@ describe("X-Robots-Tag en el servidor construido", () => {
   it("en production no la lleva ninguna respuesta", () => {
     const served = requestFromBuiltServer("production");
 
-    expect(describeRobots(served)).toEqual(expectRobotsOnEveryRequest(null));
+    expect(describeRobots(served)).toEqual(listExpectedRobots(null));
   });
 
   it("las peticiones de la prueba cubren una página, un 404 y otro error", () => {
