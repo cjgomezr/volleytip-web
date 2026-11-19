@@ -83,7 +83,27 @@ Pasar la organización a Pro es requisito del lanzamiento L1 y está en la lista
 
 ## Secretos del workflow de migraciones
 
-Pendiente: los lista el ticket #29.
+`.github/workflows/migrations.yml` aplica las migraciones de `supabase/migrations/` en cada merge a `main`: primero a `volleytip-dev` y, si sale bien, a `volleytip-prod`. Necesita cinco secretos del repositorio.
+
+| Secreto                     | Qué es                                                      | Dónde se obtiene                                                            |
+| --------------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `SUPABASE_ACCESS_TOKEN`     | Token personal de la cuenta de Supabase. Sirve para los dos | Panel de Supabase, menú de la cuenta, Access Tokens, generar uno nuevo      |
+| `SUPABASE_DEV_PROJECT_REF`  | Identificador (Project ID) de `volleytip-dev`               | Panel de Supabase, proyecto `volleytip-dev`, Project Settings, General      |
+| `SUPABASE_DEV_DB_PASSWORD`  | Contraseña de la base de `volleytip-dev`                    | El gestor de contraseñas. Si se perdió, se restablece en Database, Settings |
+| `SUPABASE_PROD_PROJECT_REF` | Identificador (Project ID) de `volleytip-prod`              | Panel de Supabase, proyecto `volleytip-prod`, Project Settings, General     |
+| `SUPABASE_PROD_DB_PASSWORD` | Contraseña de la base de `volleytip-prod`                   | El gestor de contraseñas. Si se perdió, se restablece en Database, Settings |
+
+**Dónde se ponen:** en GitHub, en el repositorio: Settings, Secrets and variables, Actions, pestaña Secrets, botón "New repository secret". Uno por cada fila, con el nombre exacto. También sirve `gh secret set NOMBRE` desde la terminal, que pide el valor sin mostrarlo.
+
+Cosas que conviene saber:
+
+- **El token se muestra una sola vez.** Si se pierde, se genera otro y se reemplaza el secreto. Si se le pone fecha de vencimiento, el workflow sale en rojo cuando venza.
+- **Restablecer la contraseña de una base obliga a actualizar su secreto.**
+- **Si falta un secreto**, el workflow falla en su primer paso, antes de tocar ninguna base, y dice cuál falta. Nunca imprime un valor.
+- **GitHub no deja leer un secreto ya guardado.** Solo se puede reemplazar.
+- **Un proyecto pausado** (plan gratis, ver arriba) hace fallar la corrida. Se reactiva desde el panel y se vuelve a lanzar la corrida desde la pestaña Actions.
+
+Una migración que falla no queda aplicada a medias: cada archivo corre en una transacción. Para que eso se cumpla, una migración nunca lleva `begin`, `commit` ni `rollback` propios; una prueba lo vigila. Si una migración sale mal, se corrige con otra migración.
 
 ## Railway
 
