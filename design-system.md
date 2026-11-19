@@ -119,6 +119,48 @@ A 2px border in `brand-night` marks inputs on light zones.
 Base components are built once in W1 on top of these specs. A ticket that
 needs a component missing here adds it to this table in the same PR.
 
+The mockups draw each button only in its default state, and the secondary
+button only on dark. The rest was decided in ticket #32, using existing
+tokens only, and is the rule from now on. The code lives in
+`src/components/` and every state is on display at `/dev/componentes`.
+
+**Variants by zone**
+
+| Component        | On dark zones                         | On light zones                        |
+| ---------------- | ------------------------------------- | ------------------------------------- |
+| Primary button   | As in the table above                 | Same colors                           |
+| Secondary button | 2px border and text `brand-mist`      | 2px border and text `brand-night`     |
+| Icon button      | 2px border and icon `brand-mist`      | 2px border and icon `brand-night`     |
+| Eyebrow          | Takes the text color of its zone      | Takes the text color of its zone      |
+| Announcement bar | Same on both: `brand-lime` background | Same on both: `brand-lime` background |
+
+**Button states**
+
+| State      | On dark zones                                                                        | On light zones                                    |
+| ---------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Hover      | Primary: background `brand-lime`. Outline buttons: border and text `brand-lime`      | All: background `brand-night`, text `brand-mist`  |
+| Active     | All: background `brand-mist`, text `brand-night`                                     | All: background `brand-indigo`, text `brand-mist` |
+| Focus      | 3px `brand-lime` ring, 3px offset                                                    | 3px `brand-night` ring, 3px offset                |
+| Disabled   | Same button at 50% opacity, `not-allowed` cursor                                     | Same                                              |
+| Submitting | Text buttons only: full color, a spinning indicator before the label, does not react | Same                                              |
+
+"Outline buttons" are the secondary button and the icon button; they share
+their zone and state styles (`src/components/pressable-styles.ts`). Hover
+follows the links of the mockups, which turn `brand-lime` on dark and
+`brand-night` on light.
+
+Rules:
+
+- Hover only applies to pointers that can hover (`@media (hover: hover)`).
+  Touch screens go straight from default to active.
+- A pressed button never shrinks: an icon button would drop under the 44px
+  touch target.
+- Only text buttons have a submitting state; the icon button does not.
+  While submitting, a text button keeps focus (`aria-disabled`, not `disabled`)
+  and announces the state to screen readers. Its label does not change.
+- A long label wraps to a second line. It is never cut with an ellipsis,
+  which would hide translated text.
+
 ## Mandatory component states
 
 Every interactive component ships with ALL of: default, hover, focus-visible
