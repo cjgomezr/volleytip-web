@@ -8,6 +8,11 @@
  * Solo coincide la sentencia suelta. El `begin` de un bloque plpgsql va
  * seguido de un salto de línea, no de un punto y coma, y su `end;` no es una
  * de estas palabras.
+ *
+ * Es una revisión por texto, no un analizador de SQL: no entiende comentarios
+ * de bloque ni literales de cadena, y no detecta sentencias que no pueden
+ * correr dentro de una transacción (`create index concurrently`, `vacuum`).
+ * Esas fallan solas al aplicarse, sin dejar nada a medias.
  */
 const TRANSACTION_CONTROL =
   /^\s*(begin|start\s+transaction|commit|rollback)(\s+(transaction|work))?\s*;/im;

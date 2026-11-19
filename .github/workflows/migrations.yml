@@ -65,14 +65,16 @@ jobs:
       # versión que usan la base local y las pruebas.
       - run: npm ci
       # Los valores llegan por variables de entorno, nunca escritos en el
-      # comando. La CLI lee sola SUPABASE_ACCESS_TOKEN y SUPABASE_DB_PASSWORD.
+      # comando. La CLI lee sola SUPABASE_ACCESS_TOKEN. La contraseña va con
+      # `--password`: con una referencia suelta en `--remote` (sin `supabase
+      # link`), la CLI ignora la variable SUPABASE_DB_PASSWORD.
       # `--yes` porque aquí nadie contesta la confirmación.
       - name: Aplica las migraciones a volleytip-dev
-        run: npx supabase db push --yes --remote="$PROJECT_REF" < /dev/null
+        run: npx supabase db push --yes --remote="$PROJECT_REF" --password "$DB_PASSWORD" < /dev/null
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: ${{ secrets.SUPABASE_DEV_PROJECT_REF }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_DEV_DB_PASSWORD }}
 
   # Sin `if`: con `needs` a secas, Actions solo arranca este job si `pruebas`
   # terminó bien. Si las migraciones fallaron en volleytip-dev, producción no
@@ -89,8 +91,8 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Aplica las migraciones a volleytip-prod
-        run: npx supabase db push --yes --remote="$PROJECT_REF" < /dev/null
+        run: npx supabase db push --yes --remote="$PROJECT_REF" --password "$DB_PASSWORD" < /dev/null
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           PROJECT_REF: ${{ secrets.SUPABASE_PROD_PROJECT_REF }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}
+          DB_PASSWORD: ${{ secrets.SUPABASE_PROD_DB_PASSWORD }}

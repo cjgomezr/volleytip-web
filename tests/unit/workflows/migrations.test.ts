@@ -20,9 +20,11 @@ const PROD_SECRETS = ["SUPABASE_PROD_PROJECT_REF", "SUPABASE_PROD_DB_PASSWORD"];
 const WORKFLOW_SECRETS = [ACCESS_TOKEN_SECRET, ...DEV_SECRETS, ...PROD_SECRETS];
 
 /** `--yes` porque en CI nadie contesta la confirmación, y la entrada cerrada
- * para que la CLI no se quede esperando una respuesta. */
+ * para que la CLI no se quede esperando una respuesta. La contraseña va con
+ * `--password`: con una referencia suelta en `--remote`, la CLI ignora la
+ * variable SUPABASE_DB_PASSWORD. */
 const PUSH_COMMAND =
-  'npx supabase db push --yes --remote="$PROJECT_REF" < /dev/null';
+  'npx supabase db push --yes --remote="$PROJECT_REF" --password "$DB_PASSWORD" < /dev/null';
 
 interface WorkflowStep {
   name?: string;
@@ -160,13 +162,24 @@ describe("migrations.yml: orden", () => {
     expect(findPushStep(PROD_JOB).run?.trim()).toBe(PUSH_COMMAND);
   });
 
+  // Sin `supabase link`, la CLI no lee la contraseña de SUPABASE_DB_PASSWORD:
+  // el secreto quedaría sin usar y nadie lo notaría.
+  it("la contraseña llega por --password y no por la variable que la CLI ignora", () => {
+    const steps = [findPushStep(DEV_JOB), findPushStep(PROD_JOB)];
+
+    for (const step of steps) {
+      expect(step.run).toContain('--password "$DB_PASSWORD"');
+      expect(Object.keys(step.env ?? {})).not.toContain("SUPABASE_DB_PASSWORD");
+    }
+  });
+
   it("pruebas apunta a volleytip-dev y no conoce los secretos de producción", () => {
     const step = findPushStep(DEV_JOB);
 
     expect(step.env).toEqual({
       SUPABASE_ACCESS_TOKEN: secretExpression(ACCESS_TOKEN_SECRET),
       PROJECT_REF: secretExpression("SUPABASE_DEV_PROJECT_REF"),
-      SUPABASE_DB_PASSWORD: secretExpression("SUPABASE_DEV_DB_PASSWORD"),
+      DB_PASSWORD: secretExpression("SUPABASE_DEV_DB_PASSWORD"),
     });
     expect(secretsReferencedIn(JSON.stringify(readJob(DEV_JOB)))).not.toEqual(
       expect.arrayContaining(PROD_SECRETS),
@@ -179,7 +192,7 @@ describe("migrations.yml: orden", () => {
     expect(step.env).toEqual({
       SUPABASE_ACCESS_TOKEN: secretExpression(ACCESS_TOKEN_SECRET),
       PROJECT_REF: secretExpression("SUPABASE_PROD_PROJECT_REF"),
-      SUPABASE_DB_PASSWORD: secretExpression("SUPABASE_PROD_DB_PASSWORD"),
+      DB_PASSWORD: secretExpression("SUPABASE_PROD_DB_PASSWORD"),
     });
     expect(secretsReferencedIn(JSON.stringify(readJob(PROD_JOB)))).not.toEqual(
       expect.arrayContaining(DEV_SECRETS),
