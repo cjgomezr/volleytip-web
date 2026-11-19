@@ -161,6 +161,30 @@ Rules:
 - A long label wraps to a second line. It is never cut with an ellipsis,
   which would hide translated text.
 
+**Text field states** (ticket #33; `src/components/text-field.tsx`)
+
+The field itself is the same on both zones: white background, `brand-night`
+text. Its label takes the text color of the zone.
+
+| State    | On dark zones                                       | On light zones                                       |
+| -------- | --------------------------------------------------- | ---------------------------------------------------- |
+| Hover    | Border `brand-lime`                                 | Border `brand-indigo`                                |
+| Focus    | 3px `brand-lime` ring, 3px offset                   | 3px `brand-night` ring, 3px offset                   |
+| Disabled | Same field at 50% opacity, `not-allowed` cursor     | Same                                                 |
+| Error    | Border `brand-red`; message in `brand-red` 600 14px | Border `brand-red-deep`; message in `brand-red-deep` |
+
+Rules:
+
+- A field always has a label. The component cannot be used without one.
+- The error message goes under the field, 8px below, with an icon before the
+  text. A field with an error keeps its error border on hover.
+- Help text goes under the field, 8px below, at 13px in the muted text color
+  of the zone (`ink-muted` on dark, `ink-subtle` on light). With help and
+  error at once, help comes first.
+- A required field shows an asterisk after its label, in the label color.
+- Placeholder text is `ink-subtle`.
+- A long label or a long error message wraps; it is never cut.
+
 ## Mandatory component states
 
 Every interactive component ships with ALL of: default, hover, focus-visible

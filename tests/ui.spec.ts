@@ -171,6 +171,7 @@ const BRAND_LIME = "rgb(205, 249, 128)";
 const BRAND_NIGHT = "rgb(20, 10, 53)";
 const BRAND_RED = "rgb(252, 0, 53)";
 const BRAND_MIST = "rgb(217, 230, 232)";
+const BRAND_RED_DEEP = "rgb(176, 0, 42)";
 const FOCUS_RING_COLOR = { dark: BRAND_LIME, light: BRAND_NIGHT } as const;
 const FOCUS_RING_WIDTH = "3px";
 const MIN_TOUCH_TARGET_PX = 44;
@@ -292,7 +293,7 @@ test.describe("estados de foco", () => {
   }) => {
     await openComponentsPage(page);
     const focusable = page.locator(
-      "[data-zone] a[href], [data-zone] button:not([disabled])",
+      "[data-zone] a[href], [data-zone] button:not([disabled]), [data-zone] input:not([disabled])",
     );
     const expectedStops = await focusable.count();
     const seenZones = new Set<string>();
@@ -315,6 +316,102 @@ test.describe("estados de foco", () => {
     }
 
     expect([...seenZones].sort()).toEqual(["dark", "light"]);
+  });
+});
+
+test.describe("Campo de texto", () => {
+  test("mide lo que dice la tabla y la etiqueta queda a 6 px", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const field = page
+      .locator('[data-zone="light"]')
+      .getByLabel("Correo electrónico")
+      .first();
+
+    const measured = await field.evaluate((input) => {
+      const styles = getComputedStyle(input);
+      const label = document.querySelector(`label[for="${input.id}"]`);
+      if (label === null) {
+        throw new Error("El campo no tiene etiqueta");
+      }
+      const labelStyles = getComputedStyle(label);
+      return {
+        height: input.getBoundingClientRect().height,
+        radius: styles.borderRadius,
+        borderWidth: styles.borderTopWidth,
+        borderColor: styles.borderTopColor,
+        background: styles.backgroundColor,
+        fontSize: styles.fontSize,
+        paddingLeft: styles.paddingLeft,
+        paddingRight: styles.paddingRight,
+        labelDisplay: labelStyles.display,
+        labelFontSize: labelStyles.fontSize,
+        labelFontWeight: labelStyles.fontWeight,
+        gap:
+          input.getBoundingClientRect().top -
+          label.getBoundingClientRect().bottom,
+      };
+    });
+
+    expect(measured).toEqual({
+      height: 52,
+      radius: "12px",
+      borderWidth: "2px",
+      borderColor: BRAND_NIGHT,
+      background: "rgb(255, 255, 255)",
+      fontSize: "16px",
+      paddingLeft: "16px",
+      paddingRight: "16px",
+      labelDisplay: "block",
+      labelFontSize: "14px",
+      labelFontWeight: "700",
+      gap: 6,
+    });
+  });
+
+  test("hacer clic en la etiqueta enfoca el campo", async ({ page }) => {
+    await openComponentsPage(page);
+    const zone = page.locator('[data-zone="dark"]');
+    const field = zone.getByLabel("Correo electrónico").first();
+
+    await zone.locator("label").first().click();
+
+    await expect(field).toBeFocused();
+  });
+
+  test("con error se anuncia inválido y describe su mensaje", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const field = page.locator('[data-zone="light"] input[name="error"]');
+
+    await expect(field).toHaveAttribute("aria-invalid", "true");
+    await expect(field).toHaveAccessibleDescription("Escribe un correo válido");
+  });
+
+  test("con ayuda y error describe los dos", async ({ page }) => {
+    await openComponentsPage(page);
+    const field = page.locator('[data-zone="light"] input[name="hint-error"]');
+
+    await expect(field).toHaveAccessibleDescription(
+      "Ahí te enviamos la confirmación Escribe un correo válido",
+    );
+  });
+
+  test("en zona clara el error va en rojo profundo; en oscura, en rojo", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const readErrorColor = (zone: string): Promise<string> =>
+      page
+        .locator(`[data-zone="${zone}"]`)
+        .getByText("Escribe un correo válido")
+        .first()
+        .evaluate((message) => getComputedStyle(message).color);
+
+    expect(await readErrorColor("light")).toBe(BRAND_RED_DEEP);
+    expect(await readErrorColor("dark")).toBe(BRAND_RED);
   });
 });
 
