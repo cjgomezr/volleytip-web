@@ -1,10 +1,9 @@
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
-
 import type { ServerEnv } from "~/lib/env.server";
 import { createServiceSupabaseClient } from "~/lib/supabase/service-client.server";
+import type { TypedSupabaseClient } from "~/lib/supabase/typed-client";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SUPABASE_CLI = fileURLToPath(
@@ -64,7 +63,7 @@ function readLocalSupabaseStatus(): LocalSupabaseStatus {
  * Cliente de Supabase con la llave de servicio de la base local. Es para las
  * pruebas de integración de las funciones de servidor que la necesitan.
  */
-export function createLocalServiceClient(): SupabaseClient {
+export function createLocalServiceClient(): TypedSupabaseClient {
   const status = readLocalSupabaseStatus();
   const localEnv: ServerEnv = {
     appEnv: "test",

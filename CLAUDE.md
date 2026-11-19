@@ -32,6 +32,10 @@ es el único backend: su configuración y sus migraciones viven en `supabase/`.
 - Base local: `npm run db:start` levanta Supabase en Docker (Docker Desktop
   abierto), `npm run db:reset` la reconstruye desde `supabase/migrations/` y
   `npm run db:stop` la apaga. No la dejes corriendo al terminar un ticket.
+- Tipos de la base: `npm run db:types` regenera `src/lib/database.types.ts`
+  desde la base local. Córrelo después de cada migración y sube el archivo
+  en el mismo PR: el CI falla si quedó viejo (`npm run db:types:check`).
+  Es código generado, no se edita a mano.
 - Tests de integración: `RUN_INTEGRATION_TESTS=1 npm test`, con la base
   local arriba. Sin la variable se saltan; con ella y la base apagada, fallan.
   Se escriben con `describeIntegration` (`src/testing/describe-integration.ts`)

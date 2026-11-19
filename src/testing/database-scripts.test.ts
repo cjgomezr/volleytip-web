@@ -5,6 +5,9 @@ const DATABASE_SCRIPTS = {
   "db:start": "supabase start",
   "db:stop": "supabase stop",
   "db:reset": "supabase db reset",
+  "db:types": "node --experimental-strip-types scripts/db-types.ts",
+  "db:types:check":
+    "node --experimental-strip-types scripts/db-types.ts --check",
 } as const;
 
 interface PackageManifest {

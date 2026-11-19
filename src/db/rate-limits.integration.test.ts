@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterAll, beforeAll, expect, it } from "vitest";
 
 import { createAnonSupabaseClient } from "~/lib/supabase/anon-client.server";
@@ -17,6 +16,7 @@ import {
 } from "~/testing/database";
 import { describeIntegration } from "~/testing/describe-integration";
 import { createLocalServiceClient } from "~/testing/local-supabase.server";
+import type { TypedSupabaseClient } from "~/lib/supabase/typed-client";
 
 interface RateLimitRow {
   readonly count: number;
@@ -49,7 +49,7 @@ const CLEANUP_JOB_NAME = "purge-expired-rate-limits";
 const DAILY_SCHEDULE = /^\d{1,2} \d{1,2} \* \* \*$/;
 
 let database: Database;
-let service: SupabaseClient;
+let service: TypedSupabaseClient;
 
 function signedInAs(user: TestUser): Session {
   return { kind: "signedIn", userId: user.id };
