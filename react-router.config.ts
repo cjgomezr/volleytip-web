@@ -16,5 +16,8 @@ export default {
     "volleytip.com",
     "www.volleytip.com",
     "staging.volleytip.com",
+    // Dirección provisional de producción. Sale de aquí cuando producción
+    // reciba volleytip.com (W13, #8).
+    "production-volleytip.up.railway.app",
   ],
 } satisfies Config;

@@ -324,9 +324,9 @@ function submitBehindProxy(host: string, origin: string): number {
     const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
     const handle = createRequestHandler(build, "production");
     const response = await handle(
-      new Request("http://${host}/dev/componentes.data", {
+      new Request(${JSON.stringify(`http://${host}/dev/componentes.data`)}, {
         method: "POST",
-        headers: { Origin: "${origin}" },
+        headers: { Origin: ${JSON.stringify(origin)} },
         body: new FormData(),
       }),
     );
@@ -356,20 +356,40 @@ function submitBehindProxy(host: string, origin: string): number {
 }
 
 describe("envíos de formulario detrás del proxy", () => {
-  it.each(["staging.volleytip.com", "volleytip.com", "www.volleytip.com"])(
-    "un envío desde https://%s llega al action",
-    (host) => {
-      const status = submitBehindProxy(host, `https://${host}`);
+  it.each([
+    "staging.volleytip.com",
+    "volleytip.com",
+    "www.volleytip.com",
+    "production-volleytip.up.railway.app",
+  ])("un envío desde https://%s llega al action", (host) => {
+    const status = submitBehindProxy(host, `https://${host}`);
 
-      expect(status).not.toBe(BAD_REQUEST_STATUS);
-    },
-  );
+    expect(status).not.toBe(BAD_REQUEST_STATUS);
+  });
 
   it("un envío desde un sitio ajeno se rechaza antes del action", () => {
     const status = submitBehindProxy(
       "staging.volleytip.com",
       "https://sitio-ajeno.test",
     );
+
+    expect(status).toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("un dominio propio puede enviar a otro dominio propio", () => {
+    // Todos sirven la misma app: se acepta a propósito.
+    const status = submitBehindProxy(
+      "staging.volleytip.com",
+      "https://www.volleytip.com",
+    );
+
+    expect(status).not.toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("la otra dirección que Railway le dio a staging no está en la lista", () => {
+    const host = "volleytip-web-staging.up.railway.app";
+
+    const status = submitBehindProxy(host, `https://${host}`);
 
     expect(status).toBe(BAD_REQUEST_STATUS);
   });
