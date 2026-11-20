@@ -6,6 +6,7 @@ import { Button, type ButtonVariant } from "~/components/button";
 import { Eyebrow } from "~/components/eyebrow";
 import { IconButton } from "~/components/icon-button";
 import type { PreviewState, Zone } from "~/components/pressable";
+import { TextField } from "~/components/text-field";
 import { serverEnv } from "~/lib/env.server";
 
 // Página de muestra de los componentes base (RF-12). Enseña cada uno en cada
@@ -76,6 +77,11 @@ const BAR_MESSAGES = [
   "Camp de enero: cupos abiertos",
 ];
 
+const FIELD_LABEL = "Correo electrónico";
+const FIELD_HINT = "Ahí te enviamos la confirmación";
+const FIELD_ERROR = "Escribe un correo válido";
+const FIELD_VALUE = "ana@ejemplo.co";
+
 // El triple de largo de lo que se espera en cada componente.
 const LONG_BUTTON_TEXT =
   "Agregar al carrito todos los productos seleccionados para el próximo camp de voleibol";
@@ -85,6 +91,11 @@ const LONG_BAR_MESSAGES = [
   "Envíos a toda Colombia con seguimiento y entrega en la puerta de tu casa en cinco días hábiles",
   "Camp de enero: cupos abiertos para las categorías infantil, juvenil y mayores hasta agotar existencias",
 ];
+
+const LONG_FIELD_LABEL =
+  "Correo electrónico de la persona que va a recibir la confirmación y el tiquete del camp";
+const LONG_FIELD_ERROR =
+  "Escribe un correo válido, con un nombre, una arroba y un dominio, por ejemplo ana@ejemplo.co, para poder enviarte la confirmación";
 
 function CloseIcon(): ReactElement {
   return (
@@ -113,9 +124,11 @@ function Specimen({
   children,
 }: ZoneProps & { name: string; children: ReactNode }): ReactElement {
   return (
-    <figure className="flex min-w-0 flex-col items-start gap-2">
+    <figure className="flex min-w-0 flex-col items-start gap-3">
       {children}
-      <figcaption className={`text-[13px] ${CAPTION_STYLES[zone]}`}>
+      <figcaption
+        className={`text-[11px] font-bold tracking-[0.08em] uppercase ${CAPTION_STYLES[zone]}`}
+      >
         {name}
       </figcaption>
     </figure>
@@ -206,6 +219,72 @@ function IconButtonShowcase({ zone }: ZoneProps): ReactElement {
   );
 }
 
+const FIELD_GRID = "grid-cols-[repeat(auto-fill,minmax(260px,1fr))]";
+
+function TextFieldShowcase({ zone }: ZoneProps): ReactElement {
+  return (
+    <Showcase title="Campo de texto">
+      <SpecimenGrid minColumnStyles={FIELD_GRID}>
+        <Specimen name="Normal" zone={zone}>
+          <TextField zone={zone} label={FIELD_LABEL} name="normal" />
+        </Specimen>
+        <Specimen name="Hover" zone={zone}>
+          <TextField
+            zone={zone}
+            label={FIELD_LABEL}
+            name="hover"
+            previewState="hover"
+          />
+        </Specimen>
+        <Specimen name="Foco" zone={zone}>
+          <TextField
+            zone={zone}
+            label={FIELD_LABEL}
+            name="focus"
+            previewState="focus"
+            defaultValue={FIELD_VALUE}
+          />
+        </Specimen>
+        <Specimen name="Deshabilitado" zone={zone}>
+          <TextField
+            zone={zone}
+            label={FIELD_LABEL}
+            name="disabled"
+            defaultValue={FIELD_VALUE}
+            isDisabled
+          />
+        </Specimen>
+        <Specimen name="Con error" zone={zone}>
+          <TextField
+            zone={zone}
+            label={FIELD_LABEL}
+            name="error"
+            error={FIELD_ERROR}
+          />
+        </Specimen>
+        <Specimen name="Obligatorio, con ayuda" zone={zone}>
+          <TextField
+            zone={zone}
+            label={FIELD_LABEL}
+            name="required"
+            hint={FIELD_HINT}
+            isRequired
+          />
+        </Specimen>
+        <Specimen name="Con ayuda y error" zone={zone}>
+          <TextField
+            zone={zone}
+            label={FIELD_LABEL}
+            name="hint-error"
+            hint={FIELD_HINT}
+            error={FIELD_ERROR}
+          />
+        </Specimen>
+      </SpecimenGrid>
+    </Showcase>
+  );
+}
+
 // Cada muestra va en una caja angosta marcada con `data-long-text`:
 // Playwright comprueba que nada se sale de ella.
 function LongTextShowcase({ zone }: ZoneProps): ReactElement {
@@ -225,6 +304,15 @@ function LongTextShowcase({ zone }: ZoneProps): ReactElement {
       </div>
       <div data-long-text className={boxStyles}>
         <AnnouncementBar messages={LONG_BAR_MESSAGES} />
+      </div>
+      <div data-long-text className={boxStyles}>
+        <TextField
+          zone={zone}
+          label={LONG_FIELD_LABEL}
+          name="long"
+          error={LONG_FIELD_ERROR}
+          isRequired
+        />
       </div>
     </Showcase>
   );
@@ -250,6 +338,7 @@ function ZoneShowcase({
           />
         ))}
         <IconButtonShowcase zone={zone} />
+        <TextFieldShowcase zone={zone} />
         <Showcase title="Eyebrow">
           <Eyebrow text={EYEBROW_TEXT} />
         </Showcase>
