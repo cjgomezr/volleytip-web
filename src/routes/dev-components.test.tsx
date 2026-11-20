@@ -1,13 +1,14 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { AppEnvironment } from "~/lib/env.server";
+import { stubAppEnv } from "~/testing/stub-app-env";
 
 const NOT_FOUND_STATUS = 404;
 
 /** Carga la ruta con otro `APP_ENV`, como en un servidor recién arrancado. */
 async function loadSamplePageIn(appEnv: AppEnvironment): Promise<unknown> {
   vi.resetModules();
-  vi.stubEnv("APP_ENV", appEnv);
+  stubAppEnv(appEnv);
   const route = await import("./dev-components");
   return route.loader();
 }

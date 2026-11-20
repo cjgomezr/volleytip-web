@@ -13,6 +13,11 @@ const SERVER_ENV_NAMES = Object.keys({
   SUPABASE_URL: true,
   SUPABASE_ANON_KEY: true,
   SUPABASE_SERVICE_ROLE_KEY: true,
+  TURNSTILE_SITE_KEY: true,
+  TURNSTILE_SECRET_KEY: true,
+  FORM_PROTECTION_SECRET: true,
+  CLIENT_IP_HEADER: true,
+  CLIENT_IP_TRUSTED_HOPS: true,
 });
 const REACT_ROUTER_CLI = path.join(
   REPO_ROOT,
@@ -30,11 +35,19 @@ const SENTINEL_ENV = {
   SUPABASE_URL: "https://centinela-url-7f3a9c.supabase.test",
   SUPABASE_ANON_KEY: "centinela-llave-publica-2b8e41",
   SUPABASE_SERVICE_ROLE_KEY: "centinela-llave-de-servicio-9d05c7",
+  // No son las llaves de prueba de Cloudflare: en producción se rechazan.
+  TURNSTILE_SITE_KEY: "centinela-llave-de-sitio-turnstile-51c2",
+  TURNSTILE_SECRET_KEY: "centinela-llave-secreta-turnstile-a7e3",
+  FORM_PROTECTION_SECRET: "centinela-secreto-de-formularios-4d19f0b6",
+  CLIENT_IP_HEADER: "X-Forwarded-For",
+  CLIENT_IP_TRUSTED_HOPS: "1",
 } as const;
 const SECRET_SENTINELS = [
   SENTINEL_ENV.SUPABASE_URL,
   SENTINEL_ENV.SUPABASE_ANON_KEY,
   SENTINEL_ENV.SUPABASE_SERVICE_ROLE_KEY,
+  SENTINEL_ENV.TURNSTILE_SECRET_KEY,
+  SENTINEL_ENV.FORM_PROTECTION_SECRET,
 ];
 
 interface ClientAsset {

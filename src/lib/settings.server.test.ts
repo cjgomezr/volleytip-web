@@ -11,6 +11,7 @@ import {
 import { connectToLocalDatabase, type Database } from "~/testing/database";
 import { describeIntegration } from "~/testing/describe-integration";
 import { createLocalServiceClient } from "~/testing/local-supabase.server";
+import { buildTestServerEnv } from "~/testing/test-server-env";
 
 import type { ServerEnv } from "./env.server";
 import {
@@ -30,12 +31,7 @@ interface AnnouncementBar {
 const TEST_KEY_PREFIX = "prueba.lector.";
 const FALLBACK_BAR: AnnouncementBar = { text: "", isVisible: false };
 
-const FAKE_ENV: ServerEnv = {
-  appEnv: "test",
-  supabaseUrl: "https://proyecto-de-prueba.supabase.test",
-  supabaseAnonKey: "llave-publica-falsa",
-  supabaseServiceRoleKey: "llave-de-servicio-falsa",
-};
+const FAKE_ENV: ServerEnv = buildTestServerEnv();
 const DATABASE_ERROR_STATUS = 500;
 
 /** Un cliente cuya base responde siempre con un error, sin tocar la red. */

@@ -45,7 +45,7 @@ Ninguna llave se comparte entre staging y producción. `.env.example` lista los 
 
 ### Cómo se validan
 
-`src/lib/env.server.ts` valida las cuatro variables cuando el servidor carga. Si falta alguna, está vacía o `APP_ENV` no es uno de los cuatro valores, el servidor no arranca y el mensaje nombra cada variable con problema. Nunca imprime un valor.
+`src/lib/env.server.ts` valida todas las variables cuando el servidor carga. Si falta alguna, está vacía o `APP_ENV` no es uno de los cuatro valores, el servidor no arranca y el mensaje nombra cada variable con problema. Nunca imprime un valor.
 
 - **En local:** `npm run dev` lee `.env.local`. Sin ese archivo, el servidor de desarrollo falla al arrancar. Se crea copiando `.env.example` y llenando los valores de la base local (`npm run db:start` y luego `npx supabase status`).
 - **En pruebas:** Vitest y el servidor que levanta Playwright reciben `APP_ENV=test` desde `tests/support/test-env.ts`. No dependen del `.env.local` de nadie.
@@ -124,18 +124,24 @@ Para saber a qué entorno apunta un servicio, se abre su dirección con `/health
 
 ### Variables de cada servicio
 
-Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación, y ninguna llave se repite entre los dos.
+Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación y las cinco de la protección de formularios. Ninguna llave ni secreto se repite entre los dos.
 
-| Variable                    | Servicio `staging` | Servicio `production` |
-| --------------------------- | ------------------ | --------------------- |
-| `APP_ENV`                   | `staging`          | `production`          |
-| `SUPABASE_URL`              | De `volleytip-dev` | De `volleytip-prod`   |
-| `SUPABASE_ANON_KEY`         | De `volleytip-dev` | De `volleytip-prod`   |
-| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev` | De `volleytip-prod`   |
+| Variable                    | Servicio `staging`    | Servicio `production`    |
+| --------------------------- | --------------------- | ------------------------ |
+| `APP_ENV`                   | `staging`             | `production`             |
+| `SUPABASE_URL`              | De `volleytip-dev`    | De `volleytip-prod`      |
+| `SUPABASE_ANON_KEY`         | De `volleytip-dev`    | De `volleytip-prod`      |
+| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev`    | De `volleytip-prod`      |
+| `TURNSTILE_SITE_KEY`        | Del widget de staging | Del widget de producción |
+| `TURNSTILE_SECRET_KEY`      | Del widget de staging | Del widget de producción |
+| `FORM_PROTECTION_SECRET`    | Generado para staging | Generado para producción |
+| `CLIENT_IP_HEADER`          | Pendiente de medir    | El mismo que staging     |
+| `CLIENT_IP_TRUSTED_HOPS`    | Pendiente de medir    | El mismo que staging     |
 
-De dónde sale cada valor está arriba, en "Variables de la aplicación".
+De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios".
 
 - **`SUPABASE_SERVICE_ROLE_KEY` va sellada** (menú de la variable, Seal). Sellada no se puede leer desde el panel ni desde la API de Railway; el servidor la recibe igual. No se puede quitar el sello: para cambiarla se reemplaza el valor. El original sigue en el gestor de contraseñas.
+- **`TURNSTILE_SECRET_KEY` y `FORM_PROTECTION_SECRET` también van selladas.**
 - **`PORT` no se pone.** Railway la define sola y `npm run start` la lee.
 - **Si falta una variable, el servidor no arranca.** El despliegue falla y el registro nombra la variable, sin imprimir ningún valor.
 
@@ -178,7 +184,55 @@ La cuenta está en el periodo de prueba. Ese plan permite un solo dominio propio
 
 ## Protección de formularios
 
-Pendiente: lo completa el ticket #34, con las variables de Turnstile, el secreto de firma y la cabecera de IP.
+Todo formulario público pasa por cinco capas (FR-135). Cuatro necesitan configuración, y son estas cinco variables. Las piezas viven en `src/lib/forms/` y las construyó el ticket #34.
+
+| Variable                 | Qué es                                                                                     | Dónde se obtiene                                      |
+| ------------------------ | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| `TURNSTILE_SITE_KEY`     | Llave pública del widget de Turnstile. Llega al navegador                                  | Panel de Cloudflare, Turnstile, el widget del entorno |
+| `TURNSTILE_SECRET_KEY`   | Llave secreta del mismo widget. Con ella el servidor le pregunta a Cloudflare              | Panel de Cloudflare, Turnstile, el widget del entorno |
+| `FORM_PROTECTION_SECRET` | Secreto propio. Firma la marca de tiempo de los formularios y deriva la sal del hash de IP | Se genera al azar. No sale de ningún servicio         |
+| `CLIENT_IP_HEADER`       | Nombre de la cabecera donde el proxy del hosting anota la IP del visitante                 | Se mide en el entorno, con `/dev/cabeceras`           |
+| `CLIENT_IP_TRUSTED_HOPS` | Cuántos proxies de confianza anotan en esa cabecera. Un entero, 1 o más                    | Se mide en el entorno, con `/dev/cabeceras`           |
+
+### Turnstile
+
+- **Un widget por entorno.** En Cloudflare se crean dos: uno para staging, con el dominio `staging.volleytip.com`, y otro para producción, con `volleytip.com` y la dirección provisional de Railway. Así ninguna llave se comparte.
+- **En local y en pruebas van las llaves de prueba que publica Cloudflare.** Son públicas, siempre pasan y sirven en cualquier dominio. Están en `src/lib/forms/turnstile-test-keys.ts`, con el enlace a la página de Cloudflare de donde salen. Con ellas la verificación no llama a la red.
+- **Las llaves de prueba no sirven en staging ni en producción.** El servidor no arranca si las encuentra ahí: dejarían los formularios sin protección.
+- **Si Cloudflare no responde en 5 segundos o responde algo raro, el envío no pasa.** Nunca se acepta sin verificación.
+
+### El secreto de formularios
+
+`FORM_PROTECTION_SECRET` debe tener 32 caracteres o más y ser distinto en cada entorno. Se genera en la terminal de quien lo va a guardar:
+
+```
+node -e "console.log(require(crypto).randomBytes(32).toString(base64url))"
+```
+
+Se guarda en el gestor de contraseñas y se pega en Railway. No se escribe en ningún archivo del repo ni en un chat.
+
+Cambiarlo no rompe datos. Las marcas de tiempo de los formularios que estaban abiertos dejan de valer y esas personas tienen que recargar. Los hashes de IP del día cambian, así que el conteo del límite de envíos de ese día vuelve a empezar.
+
+### La IP del visitante
+
+El servidor no ve la conexión del visitante: la ve el proxy de Railway, que la anota en una cabecera. Si se lee la cabecera equivocada, un visitante puede escribir en ella la IP que quiera y saltarse el límite de envíos. Por eso la cabecera y el número de saltos son configuración y no van escritos en el código.
+
+- **Cómo se lee.** El valor de la cabecera se divide por comas y se toma la entrada número `CLIENT_IP_TRUSTED_HOPS` contando desde la derecha. Con 1 es la última. Lo que el visitante haya escrito queda a la izquierda y no se lee.
+- **Si no hay una IP utilizable, es un error.** No hay IP por defecto: todos los visitantes compartirían el mismo límite.
+- **La IP no se guarda.** Solo se guarda su hash, con una sal que cambia cada día (UTC). Ninguna pieza la escribe en un registro.
+
+**Pendiente de medir (#34):** qué cabecera pone el proxy de Railway y cuántos saltos hay. Es la pregunta abierta 6 del PRD. Se mide abriendo `https://staging.volleytip.com/dev/cabeceras`, una ruta de diagnóstico que devuelve solo las cabeceras de proxy de la propia petición y que en producción responde 404. Hasta entonces, los valores de las dos variables en Railway son provisionales.
+
+### Dónde se pone cada valor
+
+| Entorno    | Llaves de Turnstile                | `FORM_PROTECTION_SECRET`               | Cabecera de IP                     |
+| ---------- | ---------------------------------- | -------------------------------------- | ---------------------------------- |
+| Local      | Las de prueba, en `.env.local`     | Cualquier texto de 32 caracteres o más | Cualquier nombre de cabecera y `1` |
+| Pruebas    | Las de prueba, las pone la corrida | Lo pone la corrida                     | Lo pone la corrida                 |
+| Staging    | Las del widget de staging          | Generado, sellado en Railway           | Lo que se mida en Railway          |
+| Producción | Las del widget de producción       | Generado, sellado en Railway           | Lo que se mida en Railway          |
+
+En local no hay proxy delante, así que la cabecera de IP no llega y la IP del visitante sale como error. Qué hace un formulario con ese error lo decide el ticket #35.
 
 ## Imágenes
 
