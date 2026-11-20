@@ -178,7 +178,48 @@ const MIN_TOUCH_TARGET_PX = 44;
 // Los navegadores redondean posiciones a fracciones de píxel.
 const SUBPIXEL_TOLERANCE_PX = 0.5;
 
+const TURNSTILE_SCRIPT = "https://challenges.cloudflare.com/**";
+const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+
+interface TurnstileCall {
+  readonly method: string;
+  readonly sitekey?: string;
+}
+
+/**
+ * Reemplaza el script de Cloudflare por uno propio que anota cómo lo llama
+ * la página. Así ninguna prueba depende de la red, y la captura no cambia
+ * con lo que Cloudflare decida dibujar ese día.
+ */
+async function stubTurnstile(page: Page): Promise<void> {
+  await page.route(TURNSTILE_SCRIPT, (route) =>
+    route.fulfill({
+      contentType: "text/javascript",
+      body: `
+        window.turnstileCalls = [];
+        window.turnstile = {
+          render(container, options) {
+            window.turnstileCalls.push({ method: "render", sitekey: options.sitekey });
+            return "widget-de-prueba";
+          },
+          reset() { window.turnstileCalls.push({ method: "reset" }); },
+          remove() { window.turnstileCalls.push({ method: "remove" }); },
+        };
+      `,
+    }),
+  );
+}
+
+async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
+  return page.evaluate(
+    () =>
+      (window as unknown as { turnstileCalls?: TurnstileCall[] })
+        .turnstileCalls ?? [],
+  );
+}
+
 async function openComponentsPage(page: Page): Promise<void> {
+  await stubTurnstile(page);
   await page.goto(COMPONENTS_URL);
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -527,5 +568,69 @@ test.describe("Botón", () => {
     await expect(
       page.getByRole("status").filter({ hasText: "Enviando" }).first(),
     ).toBeAttached();
+  });
+});
+
+test.describe("Formulario protegido", () => {
+  const HONEYPOT = 'input[name="website"]';
+  const TAB_PRESSES_LIMIT = 200;
+
+  test("pinta el widget de Turnstile con la llave de sitio", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+
+    await expect
+      .poll(() => readTurnstileCalls(page))
+      .toEqual([{ method: "render", sitekey: TURNSTILE_TEST_SITE_KEY }]);
+  });
+
+  test("lleva la marca de tiempo firmada en un campo oculto", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+
+    const timestamp = page.locator('input[name="form_started_at"]');
+    await expect(timestamp).toHaveAttribute("type", "hidden");
+    await expect(timestamp).toHaveValue(/^\d+\.[\w-]+$/);
+  });
+
+  test("el campo trampa existe pero no se ve", async ({ page }) => {
+    await openComponentsPage(page);
+
+    const honeypot = page.locator(HONEYPOT);
+    await expect(honeypot).toHaveCount(1);
+    await expect(honeypot).not.toBeInViewport();
+    const box = await honeypot.boundingBox();
+    expect(box === null || box.x + box.width < 0).toBe(true);
+  });
+
+  test("los lectores de pantalla solo encuentran el campo del correo", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+
+    const form = page.locator("form", { has: page.locator(HONEYPOT) });
+    await expect(form.getByRole("textbox")).toHaveCount(1);
+    await expect(form.getByRole("textbox")).toHaveAttribute("name", "email");
+  });
+
+  test("con el teclado nunca se llega al campo trampa", async ({ page }) => {
+    await openComponentsPage(page);
+    const visited: string[] = [];
+
+    for (let press = 0; press < TAB_PRESSES_LIMIT; press += 1) {
+      await page.keyboard.press("Tab");
+      const name = await page.evaluate(
+        () => document.activeElement?.getAttribute("name") ?? "",
+      );
+      visited.push(name);
+      if (visited.filter((seen) => seen === "email").length > 1) {
+        break;
+      }
+    }
+
+    expect(visited, "el recorrido pasa por el formulario").toContain("email");
+    expect(visited).not.toContain("website");
   });
 });

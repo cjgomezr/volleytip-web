@@ -4,8 +4,9 @@
  * llena, y ese envío se descarta.
  */
 
-/** Nombre de campo que parece real: uno que se llamara "trampa" no engaña. */
-export const HONEYPOT_FIELD = "website";
+import { HONEYPOT_FIELD } from "./field-names";
+
+export { HONEYPOT_FIELD };
 
 /**
  * Dice si el campo trampa llegó con algo. Vacío o ausente es lo normal.
