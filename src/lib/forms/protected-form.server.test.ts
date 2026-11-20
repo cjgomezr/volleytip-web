@@ -598,6 +598,23 @@ describe("validación", () => {
     ).toBeLessThan(HUGE_INPUT_LENGTH);
   });
 
+  it("un campo con nombre de propiedad heredada llega al esquema", async () => {
+    const form = defineProtectedForm({
+      id: "prueba_heredada",
+      schema: z.object({ constructor: z.string().min(1) }),
+    });
+
+    const result = await submit({
+      form: form as unknown as ProtectedForm<Contact>,
+      fields: { constructor: "Ana" },
+    });
+
+    expect(result).toMatchObject({
+      status: "accepted",
+      data: { constructor: "Ana" },
+    });
+  });
+
   it("los valores devueltos no traen los campos de la protección", async () => {
     const result = await submit({ fields: { email: "malo" } });
 

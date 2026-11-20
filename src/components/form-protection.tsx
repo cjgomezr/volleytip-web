@@ -46,6 +46,7 @@ function requestTurnstileScript(): Promise<TurnstileApi> {
     script.async = true;
     script.addEventListener("load", () => {
       if (window.turnstile === undefined) {
+        script.remove();
         reject(new Error("El script de Turnstile cargó sin su API"));
         return;
       }

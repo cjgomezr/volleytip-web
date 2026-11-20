@@ -234,14 +234,16 @@ function buildRateLimitKey(
 /** Los campos de texto del formulario, sin los de la protección. Un archivo
  * donde iba un texto se ignora, y el esquema lo verá como ausente. */
 function readTextFields(formData: FormData): Record<string, string> {
-  const fields: Record<string, string> = {};
+  // Un Map y no un objeto: un campo llamado `constructor` o `toString` es
+  // un campo como cualquier otro.
+  const fields = new Map<string, string>();
   for (const [name, value] of formData) {
-    const isOwnField = !PROTECTION_FIELDS.includes(name) && !(name in fields);
+    const isOwnField = !PROTECTION_FIELDS.includes(name) && !fields.has(name);
     if (isOwnField && typeof value === "string") {
-      fields[name] = value;
+      fields.set(name, value);
     }
   }
-  return fields;
+  return Object.fromEntries(fields);
 }
 
 function describeInvalid<Data>(

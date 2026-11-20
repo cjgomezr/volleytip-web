@@ -227,6 +227,7 @@ Cosas que conviene saber:
 - **El límite cuenta intentos, no envíos aceptados.** Todo envío que pasa Turnstile gasta cupo, también el que después falla la validación. Con el límite por defecto, quien se equivoca cinco veces en diez minutos tiene que esperar.
 - **Cada respuesta del servidor trae una marca de tiempo nueva.** Quien corrige un error y reenvía en menos de 3 segundos recibe `too_fast`.
 - **En `local` y `test` no hay proxy**, así que no llega la cabecera de IP: todos los envíos cuentan como de la propia máquina. En `staging` y `production`, si la cabecera falta el envío falla con un error, porque el entorno está mal configurado.
+- **El tamaño del cuerpo no lo limita esta función.** El servidor lee el envío completo antes de la primera capa. El tope de tamaño de una petición lo pone el hosting.
 - **Para verlo funcionar**: el formulario de ejemplo de `/dev/componentes` muestra el resultado que devuelve el servidor. En producción esa página no existe.
 
 ### La IP del visitante
