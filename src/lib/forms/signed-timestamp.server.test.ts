@@ -66,6 +66,26 @@ describe("marca de tiempo firmada", () => {
     expect(verifyAfter(4 * SECOND_MS, tampered)).toBe("invalid");
   });
 
+  // base64url tolera basura: sin esta regla, varias cadenas distintas
+  // valdrían como la misma firma.
+  it.each([
+    [
+      "con un carácter que no es base64url al final",
+      (signature: string) => `${signature}=`,
+    ],
+    [
+      "con un espacio en medio",
+      (signature: string) => `${signature.slice(0, 10)} ${signature.slice(10)}`,
+    ],
+    ["con un carácter de más", (signature: string) => `${signature}A`],
+  ])("la firma correcta %s: inválida", (_name, alter) => {
+    const { issuedAt, signature } = splitToken(issueAt(ISSUED_AT));
+
+    expect(verifyAfter(4 * SECOND_MS, `${issuedAt}.${alter(signature)}`)).toBe(
+      "invalid",
+    );
+  });
+
   it("con el tiempo alterado para parecer más vieja: inválida", () => {
     const { issuedAt, signature } = splitToken(issueAt(ISSUED_AT));
     const olderIssuedAt = String(Number(issuedAt) - 10 * SECOND_MS);

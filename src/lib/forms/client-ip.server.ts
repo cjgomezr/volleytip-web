@@ -35,6 +35,29 @@ export type ClientIpResult =
 
 const ENTRY_SEPARATOR = ",";
 const NOT_AN_IP = 0;
+const ZONE_SEPARATOR = "%";
+// Una IPv4 que un proxy escribe en formato IPv6: `::ffff:203.0.113.7`.
+const MAPPED_IPV4_PREFIX = "::ffff:";
+const IPV4 = 4;
+
+/**
+ * Deja una sola forma de escribir cada IP, para que la misma persona dé
+ * siempre el mismo hash: minúsculas, y una IPv4 mapeada queda como IPv4.
+ */
+function normalizeIp(ip: string): string {
+  const lowercased = ip.toLowerCase();
+  if (!lowercased.startsWith(MAPPED_IPV4_PREFIX)) {
+    return lowercased;
+  }
+  const embedded = lowercased.slice(MAPPED_IPV4_PREFIX.length);
+  return isIP(embedded) === IPV4 ? embedded : lowercased;
+}
+
+function isUsableIp(candidate: string): boolean {
+  // Una dirección con zona (`fe80::1%eth0`) solo vale dentro de una red
+  // local: no identifica a un visitante.
+  return isIP(candidate) !== NOT_AN_IP && !candidate.includes(ZONE_SEPARATOR);
+}
 
 /**
  * Lee la IP del visitante de la cabecera configurada.
@@ -48,6 +71,13 @@ export function readClientIp(
   headers: Headers,
   { header, trustedHops }: ClientIpSettings,
 ): ClientIpResult {
+  // Con 0 saltos, `at(-0)` leería la primera entrada, que es la que escribe
+  // el cliente. Es un error de configuración y se dice fuerte.
+  if (!Number.isInteger(trustedHops) || trustedHops < 1) {
+    throw new Error(
+      "CLIENT_IP_TRUSTED_HOPS debe ser un entero de 1 en adelante.",
+    );
+  }
   const value = headers.get(header)?.trim();
   if (value === undefined || value === "") {
     return { ok: false, reason: "missing_header" };
@@ -57,8 +87,8 @@ export function readClientIp(
   if (candidate === undefined) {
     return { ok: false, reason: "not_enough_hops" };
   }
-  if (isIP(candidate) === NOT_AN_IP) {
+  if (!isUsableIp(candidate)) {
     return { ok: false, reason: "not_an_ip" };
   }
-  return { ok: true, ip: candidate };
+  return { ok: true, ip: normalizeIp(candidate) };
 }

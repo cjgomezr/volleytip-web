@@ -45,10 +45,13 @@ function sign(formId: string, issuedAt: string, secret: string): Buffer {
 /** Compara en tiempo constante, para que el tiempo de respuesta no delate
  * cuántos caracteres de una firma falsa iban bien. */
 function isSameSignature(received: string, expected: Buffer): boolean {
-  const receivedBytes = Buffer.from(received, "base64url");
+  // Se comparan los textos y no los bytes decodificados: `base64url` ignora
+  // caracteres inválidos, y así varias cadenas valdrían como la misma firma.
+  const receivedText = Buffer.from(received, "utf8");
+  const expectedText = Buffer.from(expected.toString("base64url"), "utf8");
   return (
-    receivedBytes.length === expected.length &&
-    timingSafeEqual(receivedBytes, expected)
+    receivedText.length === expectedText.length &&
+    timingSafeEqual(receivedText, expectedText)
   );
 }
 

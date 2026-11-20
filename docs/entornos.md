@@ -198,6 +198,7 @@ Todo formulario público pasa por cinco capas (FR-135). Cuatro necesitan configu
 
 - **Un widget por entorno.** En Cloudflare se crean dos: uno para staging, con el dominio `staging.volleytip.com`, y otro para producción, con `volleytip.com` y la dirección provisional de Railway. Así ninguna llave se comparte.
 - **En local y en pruebas van las llaves de prueba que publica Cloudflare.** Son públicas, siempre pasan y sirven en cualquier dominio. Están en `src/lib/forms/turnstile-test-keys.ts`, con el enlace a la página de Cloudflare de donde salen. Con ellas la verificación no llama a la red.
+- **En local no sirven las llaves reales.** Con `APP_ENV` en `local` o `test` la verificación no llama a Cloudflare y solo acepta la llave secreta de prueba. Con una llave real en `.env.local`, todos los envíos fallan.
 - **Las llaves de prueba no sirven en staging ni en producción.** El servidor no arranca si las encuentra ahí: dejarían los formularios sin protección.
 - **Si Cloudflare no responde en 5 segundos o responde algo raro, el envío no pasa.** Nunca se acepta sin verificación.
 

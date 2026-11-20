@@ -17,14 +17,25 @@ const PROXY_HEADER_PREFIXES = [
   "x-real-",
   "x-railway-",
   "x-envoy-",
-  "cf-",
-  "forwarded",
-  "true-client-ip",
   "x-request-",
 ] as const;
 
+// De Cloudflare van por nombre exacto y no por el prefijo `cf-`: bajo ese
+// prefijo también viajan credenciales (`cf-access-jwt-assertion`).
+const PROXY_HEADER_NAMES: readonly string[] = [
+  "forwarded",
+  "true-client-ip",
+  "cf-connecting-ip",
+  "cf-connecting-ipv6",
+  "cf-ray",
+  "cf-visitor",
+];
+
 function isProxyHeader(name: string): boolean {
-  return PROXY_HEADER_PREFIXES.some((prefix) => name.startsWith(prefix));
+  return (
+    PROXY_HEADER_NAMES.includes(name) ||
+    PROXY_HEADER_PREFIXES.some((prefix) => name.startsWith(prefix))
+  );
 }
 
 export function loader({ request }: { request: Request }): Response {

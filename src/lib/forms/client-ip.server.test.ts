@@ -140,3 +140,70 @@ describe("IP del visitante", () => {
     expect(JSON.stringify(result)).not.toContain(SPOOFED_IP);
   });
 });
+
+describe("IP del visitante: saltos mal configurados", () => {
+  // Con 0, `at(-0)` leería la primera entrada, que es la que escribe el
+  // cliente. Un valor así es un error de configuración, no una IP.
+  it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY])(
+    "con %s saltos lanza un error y no lee la entrada del cliente",
+    (trustedHops) => {
+      const headers = buildHeaders({
+        [PROXY_HEADER]: `${SPOOFED_IP}, ${VISITOR_IP}`,
+      });
+
+      expect(() =>
+        readClientIp(headers, { header: PROXY_HEADER, trustedHops }),
+      ).toThrow("CLIENT_IP_TRUSTED_HOPS");
+    },
+  );
+
+  it("el error de configuración no trae ninguna IP", () => {
+    const headers = buildHeaders({
+      [PROXY_HEADER]: `${SPOOFED_IP}, ${VISITOR_IP}`,
+    });
+    let message = "";
+    try {
+      readClientIp(headers, { header: PROXY_HEADER, trustedHops: 0 });
+    } catch (error) {
+      message = error instanceof Error ? error.message : "";
+    }
+
+    expect(message).not.toBe("");
+    expect(message).not.toContain(SPOOFED_IP);
+    expect(message).not.toContain(VISITOR_IP);
+  });
+});
+
+describe("IP del visitante: una sola forma de escribirla", () => {
+  // La misma persona debe dar siempre el mismo hash, escriba como escriba el
+  // proxy su dirección.
+  it("pasa a minúsculas una IPv6", () => {
+    const result = readClientIp(
+      buildHeaders({ [PROXY_HEADER]: "2001:DB8::AB12" }),
+      ONE_HOP,
+    );
+
+    expect(result).toEqual({ ok: true, ip: "2001:db8::ab12" });
+  });
+
+  it.each(["::ffff:203.0.113.7", "::FFFF:203.0.113.7"])(
+    "una IPv4 escrita como IPv6 (%s) queda como IPv4",
+    (mapped) => {
+      const result = readClientIp(
+        buildHeaders({ [PROXY_HEADER]: mapped }),
+        ONE_HOP,
+      );
+
+      expect(result).toEqual({ ok: true, ip: VISITOR_IP });
+    },
+  );
+
+  it("una IPv6 con zona no es una IP utilizable", () => {
+    const result = readClientIp(
+      buildHeaders({ [PROXY_HEADER]: "fe80::1%eth0" }),
+      ONE_HOP,
+    );
+
+    expect(result).toEqual({ ok: false, reason: "not_an_ip" });
+  });
+});

@@ -86,6 +86,8 @@ describe("cabeceras de diagnóstico", () => {
       "User-Agent": "centinela-navegador",
       Accept: "text/html",
       "X-Api-Key": "centinela-llave",
+      // Una credencial que Cloudflare Access pondría con prefijo `cf-`.
+      "CF-Access-Jwt-Assertion": "centinela-credencial",
       "X-Forwarded-For": "203.0.113.7",
     });
     const text = await response.text();
