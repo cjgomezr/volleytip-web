@@ -8,6 +8,8 @@ import {
   vi,
 } from "vitest";
 
+import { buildTestServerEnv } from "~/testing/test-server-env";
+
 import type { ServerEnv } from "../env.server";
 import { createAnonSupabaseClient } from "./anon-client.server";
 import { createServiceSupabaseClient } from "./service-client.server";
@@ -20,12 +22,7 @@ import { createServiceSupabaseClient } from "./service-client.server";
  *
  * `fetch` está sustituido: ninguna consulta sale a la red.
  */
-const FAKE_ENV: ServerEnv = {
-  appEnv: "test",
-  supabaseUrl: "https://proyecto-de-prueba.supabase.test",
-  supabaseAnonKey: "llave-publica-falsa",
-  supabaseServiceRoleKey: "llave-de-servicio-falsa",
-};
+const FAKE_ENV: ServerEnv = buildTestServerEnv();
 
 const CLIENT_FACTORIES = [
   ["público", createAnonSupabaseClient],

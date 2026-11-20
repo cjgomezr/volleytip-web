@@ -5,6 +5,8 @@ import type { ServerEnv } from "~/lib/env.server";
 import { createServiceSupabaseClient } from "~/lib/supabase/service-client.server";
 import type { TypedSupabaseClient } from "~/lib/supabase/typed-client";
 
+import { buildTestServerEnv } from "./test-server-env";
+
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const SUPABASE_CLI = fileURLToPath(
   new URL("../../node_modules/supabase/dist/supabase.js", import.meta.url),
@@ -65,11 +67,10 @@ function readLocalSupabaseStatus(): LocalSupabaseStatus {
  */
 export function createLocalServiceClient(): TypedSupabaseClient {
   const status = readLocalSupabaseStatus();
-  const localEnv: ServerEnv = {
-    appEnv: "test",
+  const localEnv: ServerEnv = buildTestServerEnv({
     supabaseUrl: status.API_URL,
     supabaseAnonKey: status.PUBLISHABLE_KEY,
     supabaseServiceRoleKey: status.SECRET_KEY,
-  };
+  });
   return createServiceSupabaseClient(localEnv);
 }

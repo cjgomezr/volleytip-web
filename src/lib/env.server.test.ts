@@ -9,11 +9,22 @@ import {
 
 const SECRET_SENTINEL = "valor-secreto-que-no-debe-salir-en-ningun-mensaje";
 
+const FORM_SECRET = "secreto-de-formularios-de-al-menos-32-caracteres";
+const MIN_FORM_SECRET_LENGTH = 32;
+// Las llaves de prueba que publica Cloudflare. Sirven en cualquier dominio.
+const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+const TURNSTILE_TEST_SECRET_KEY = "1x0000000000000000000000000000000AA";
+
 const VALID_SOURCE: EnvSource = {
   APP_ENV: "staging",
   SUPABASE_URL: "https://ejemplo.supabase.test",
   SUPABASE_ANON_KEY: "llave-publica",
   SUPABASE_SERVICE_ROLE_KEY: SECRET_SENTINEL,
+  TURNSTILE_SITE_KEY: "0x4AAAAAAA-llave-de-sitio",
+  TURNSTILE_SECRET_KEY: "0x4AAAAAAA-llave-secreta",
+  FORM_PROTECTION_SECRET: FORM_SECRET,
+  CLIENT_IP_HEADER: "X-Forwarded-For",
+  CLIENT_IP_TRUSTED_HOPS: "1",
 };
 
 function withOverrides(overrides: EnvSource): EnvSource {
@@ -39,6 +50,11 @@ describe("env del servidor", () => {
         supabaseUrl: "https://ejemplo.supabase.test",
         supabaseAnonKey: "llave-publica",
         supabaseServiceRoleKey: SECRET_SENTINEL,
+        turnstileSiteKey: "0x4AAAAAAA-llave-de-sitio",
+        turnstileSecretKey: "0x4AAAAAAA-llave-secreta",
+        formProtectionSecret: FORM_SECRET,
+        clientIpHeader: "X-Forwarded-For",
+        clientIpTrustedHops: 1,
       },
     });
   });
@@ -109,6 +125,14 @@ describe("env del servidor", () => {
     ["falta otra variable", { SUPABASE_URL: undefined }],
     ["APP_ENV es inválido", { APP_ENV: SECRET_SENTINEL }],
     ["SUPABASE_URL es inválida", { SUPABASE_URL: SECRET_SENTINEL }],
+    [
+      "CLIENT_IP_HEADER es inválida",
+      { CLIENT_IP_HEADER: SECRET_SENTINEL + " x" },
+    ],
+    [
+      "CLIENT_IP_TRUSTED_HOPS es inválida",
+      { CLIENT_IP_TRUSTED_HOPS: SECRET_SENTINEL },
+    ],
   ])(
     "no imprime el valor de ninguna variable cuando %s",
     (_case, overrides) => {
@@ -117,6 +141,111 @@ describe("env del servidor", () => {
       expect(message).not.toContain(SECRET_SENTINEL);
       expect(message).not.toContain("llave-publica");
       expect(message).not.toContain("ejemplo.supabase.test");
+    },
+  );
+});
+
+describe("env del servidor: protección de formularios", () => {
+  it("rechaza un FORM_PROTECTION_SECRET corto, sin imprimirlo", () => {
+    const shortSecret = "x".repeat(MIN_FORM_SECRET_LENGTH - 1);
+
+    const message = expectFailure(
+      withOverrides({ FORM_PROTECTION_SECRET: shortSecret }),
+    );
+
+    expect(message).toContain("FORM_PROTECTION_SECRET");
+    expect(message).toContain(String(MIN_FORM_SECRET_LENGTH));
+    expect(message).not.toContain(shortSecret);
+  });
+
+  it("acepta un FORM_PROTECTION_SECRET del largo mínimo", () => {
+    const result = parseServerEnv(
+      withOverrides({
+        FORM_PROTECTION_SECRET: "x".repeat(MIN_FORM_SECRET_LENGTH),
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+  });
+
+  it.each(["0", "-1", "1.5", "uno", "1e3", " "])(
+    "rechaza CLIENT_IP_TRUSTED_HOPS=%j",
+    (hops) => {
+      const message = expectFailure(
+        withOverrides({ CLIENT_IP_TRUSTED_HOPS: hops }),
+      );
+
+      expect(message).toContain("CLIENT_IP_TRUSTED_HOPS");
+    },
+  );
+
+  it("acepta CLIENT_IP_TRUSTED_HOPS de dos cifras", () => {
+    const result = parseServerEnv(
+      withOverrides({ CLIENT_IP_TRUSTED_HOPS: "10" }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      env: { clientIpTrustedHops: 10 },
+    });
+  });
+
+  it("convierte CLIENT_IP_TRUSTED_HOPS a número", () => {
+    const result = parseServerEnv(
+      withOverrides({ CLIENT_IP_TRUSTED_HOPS: "2" }),
+    );
+
+    expect(result).toMatchObject({ ok: true, env: { clientIpTrustedHops: 2 } });
+  });
+
+  it.each(["X Forwarded For", "X-Forwarded-For:", "cabecera,otra"])(
+    "rechaza CLIENT_IP_HEADER=%j, que no es un nombre de cabecera",
+    (header) => {
+      const message = expectFailure(
+        withOverrides({ CLIENT_IP_HEADER: header }),
+      );
+
+      expect(message).toContain("CLIENT_IP_HEADER");
+    },
+  );
+
+  it.each(["staging", "production"])(
+    "en %s rechaza las llaves de prueba de Turnstile",
+    (appEnv) => {
+      const message = expectFailure(
+        withOverrides({
+          APP_ENV: appEnv,
+          TURNSTILE_SITE_KEY: TURNSTILE_TEST_SITE_KEY,
+          TURNSTILE_SECRET_KEY: TURNSTILE_TEST_SECRET_KEY,
+        }),
+      );
+
+      expect(message).toContain("TURNSTILE_SITE_KEY");
+      expect(message).toContain("TURNSTILE_SECRET_KEY");
+    },
+  );
+
+  it("en staging rechaza una sola llave de prueba y nombra esa", () => {
+    const message = expectFailure(
+      withOverrides({ TURNSTILE_SECRET_KEY: TURNSTILE_TEST_SECRET_KEY }),
+    );
+
+    expect(message).toContain("TURNSTILE_SECRET_KEY");
+    expect(message).not.toContain("TURNSTILE_SITE_KEY");
+  });
+
+  it.each(["local", "test"])(
+    "en %s acepta las llaves de prueba de Turnstile",
+    (appEnv) => {
+      const result = parseServerEnv(
+        withOverrides({
+          APP_ENV: appEnv,
+          TURNSTILE_SITE_KEY: TURNSTILE_TEST_SITE_KEY,
+          TURNSTILE_SECRET_KEY: TURNSTILE_TEST_SECRET_KEY,
+        }),
+      );
+
+      expect(result.ok).toBe(true);
     },
   );
 });

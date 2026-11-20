@@ -9,6 +9,7 @@ import {
 } from "~/testing/database";
 import { describeIntegration } from "~/testing/describe-integration";
 import { createLocalServiceClient } from "~/testing/local-supabase.server";
+import { buildTestServerEnv } from "~/testing/test-server-env";
 
 import { recordAuditEntry } from "./audit-log.server";
 import type { ServerEnv } from "./env.server";
@@ -24,12 +25,9 @@ interface StoredEntry {
 }
 
 // El puerto 1 no lo escucha nadie: la conexión se rechaza siempre.
-const UNREACHABLE_ENV: ServerEnv = {
-  appEnv: "test",
+const UNREACHABLE_ENV: ServerEnv = buildTestServerEnv({
   supabaseUrl: "http://127.0.0.1:1",
-  supabaseAnonKey: "llave-publica-falsa",
-  supabaseServiceRoleKey: "llave-de-servicio-falsa",
-};
+});
 
 describe("registro de auditoría: fallo de la base", () => {
   it("lanza con la acción en el mensaje, no falla en silencio", async () => {

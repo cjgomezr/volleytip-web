@@ -6,6 +6,11 @@
  * arranca. Los mensajes nombran variables, nunca valores.
  */
 
+import {
+  isTurnstileTestSecretKey,
+  isTurnstileTestSiteKey,
+} from "./forms/turnstile-test-keys";
+
 export const APP_ENVIRONMENTS = [
   "local",
   "test",
@@ -20,6 +25,11 @@ export const SERVER_ENV_VARIABLES = [
   "SUPABASE_URL",
   "SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
+  "TURNSTILE_SITE_KEY",
+  "TURNSTILE_SECRET_KEY",
+  "FORM_PROTECTION_SECRET",
+  "CLIENT_IP_HEADER",
+  "CLIENT_IP_TRUSTED_HOPS",
 ] as const;
 
 type ServerEnvVariable = (typeof SERVER_ENV_VARIABLES)[number];
@@ -29,6 +39,14 @@ export interface ServerEnv {
   readonly supabaseUrl: string;
   readonly supabaseAnonKey: string;
   readonly supabaseServiceRoleKey: string;
+  readonly turnstileSiteKey: string;
+  readonly turnstileSecretKey: string;
+  /** Firma la marca de tiempo de los formularios y deriva la sal del hash de IP. */
+  readonly formProtectionSecret: string;
+  /** Cabecera donde el proxy del hosting anota la IP del visitante. */
+  readonly clientIpHeader: string;
+  /** Cuántos proxies de confianza anotan en esa cabecera. */
+  readonly clientIpTrustedHops: number;
 }
 
 export type EnvSource = Readonly<Record<string, string | undefined>>;
@@ -39,6 +57,13 @@ export type ServerEnvResult =
 
 const LINE_BREAK = "\n";
 const HTTP_PROTOCOLS: readonly string[] = ["http:", "https:"];
+const MIN_FORM_PROTECTION_SECRET_LENGTH = 32;
+// Los caracteres que admite el nombre de una cabecera HTTP.
+const HEADER_NAME = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/;
+// Hasta tres cifras: sobra para una cadena de proxies.
+const POSITIVE_INTEGER = /^[1-9]\d{0,2}$/;
+// Fuera de estos entornos Turnstile tiene que proteger de verdad.
+const ENVIRONMENTS_FOR_TEST_KEYS: readonly string[] = ["local", "test"];
 
 function isAppEnvironment(value: string): value is AppEnvironment {
   return (APP_ENVIRONMENTS as readonly string[]).includes(value);
@@ -63,7 +88,7 @@ function readPresentValues(source: EnvSource): PresentValues {
   return present;
 }
 
-function findInvalidValues(values: PresentValues): string[] {
+function findInvalidSupabaseValues(values: PresentValues): string[] {
   const invalid: string[] = [];
   if (values.APP_ENV !== undefined && !isAppEnvironment(values.APP_ENV)) {
     invalid.push(
@@ -74,6 +99,56 @@ function findInvalidValues(values: PresentValues): string[] {
     invalid.push("SUPABASE_URL no es una URL http o https.");
   }
   return invalid;
+}
+
+/** Las llaves de prueba de Cloudflare siempre dejan pasar: en un entorno
+ * público dejarían los formularios sin protección. */
+function findTurnstileTestKeys(values: PresentValues): string[] {
+  const { APP_ENV: appEnv } = values;
+  if (appEnv === undefined || ENVIRONMENTS_FOR_TEST_KEYS.includes(appEnv)) {
+    return [];
+  }
+  const invalid: string[] = [];
+  const explanation = `es una llave de prueba de Cloudflare. Solo se permite con APP_ENV en ${ENVIRONMENTS_FOR_TEST_KEYS.join(" o ")}.`;
+  if (isTurnstileTestSiteKey(values.TURNSTILE_SITE_KEY ?? "")) {
+    invalid.push(`TURNSTILE_SITE_KEY ${explanation}`);
+  }
+  if (isTurnstileTestSecretKey(values.TURNSTILE_SECRET_KEY ?? "")) {
+    invalid.push(`TURNSTILE_SECRET_KEY ${explanation}`);
+  }
+  return invalid;
+}
+
+function findInvalidFormProtectionValues(values: PresentValues): string[] {
+  const {
+    FORM_PROTECTION_SECRET: secret,
+    CLIENT_IP_HEADER: header,
+    CLIENT_IP_TRUSTED_HOPS: hops,
+  } = values;
+  const invalid: string[] = [];
+  if (
+    secret !== undefined &&
+    secret.length < MIN_FORM_PROTECTION_SECRET_LENGTH
+  ) {
+    invalid.push(
+      `FORM_PROTECTION_SECRET es muy corto. Debe tener ${String(MIN_FORM_PROTECTION_SECRET_LENGTH)} caracteres o más.`,
+    );
+  }
+  if (header !== undefined && !HEADER_NAME.test(header)) {
+    invalid.push("CLIENT_IP_HEADER no es un nombre de cabecera HTTP.");
+  }
+  if (hops !== undefined && !POSITIVE_INTEGER.test(hops)) {
+    invalid.push("CLIENT_IP_TRUSTED_HOPS debe ser un número entero, 1 o más.");
+  }
+  return invalid;
+}
+
+function findInvalidValues(values: PresentValues): string[] {
+  return [
+    ...findInvalidSupabaseValues(values),
+    ...findTurnstileTestKeys(values),
+    ...findInvalidFormProtectionValues(values),
+  ];
 }
 
 function describeProblems(
@@ -88,23 +163,30 @@ function describeProblems(
   ].join(LINE_BREAK);
 }
 
-function buildServerEnv(values: PresentValues): ServerEnv | undefined {
-  const {
-    APP_ENV: appEnv,
-    SUPABASE_URL: supabaseUrl,
-    SUPABASE_ANON_KEY: supabaseAnonKey,
-    SUPABASE_SERVICE_ROLE_KEY: supabaseServiceRoleKey,
-  } = values;
-  if (
-    appEnv === undefined ||
-    !isAppEnvironment(appEnv) ||
-    supabaseUrl === undefined ||
-    supabaseAnonKey === undefined ||
-    supabaseServiceRoleKey === undefined
-  ) {
+function hasEveryValue(
+  values: PresentValues,
+): values is Record<ServerEnvVariable, string> {
+  return SERVER_ENV_VARIABLES.every((name) => values[name] !== undefined);
+}
+
+/** Arma el entorno tipado. Solo se llama con valores presentes y válidos. */
+function buildServerEnv(
+  values: Record<ServerEnvVariable, string>,
+): ServerEnv | undefined {
+  if (!isAppEnvironment(values.APP_ENV)) {
     return undefined;
   }
-  return { appEnv, supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey };
+  return {
+    appEnv: values.APP_ENV,
+    supabaseUrl: values.SUPABASE_URL,
+    supabaseAnonKey: values.SUPABASE_ANON_KEY,
+    supabaseServiceRoleKey: values.SUPABASE_SERVICE_ROLE_KEY,
+    turnstileSiteKey: values.TURNSTILE_SITE_KEY,
+    turnstileSecretKey: values.TURNSTILE_SECRET_KEY,
+    formProtectionSecret: values.FORM_PROTECTION_SECRET,
+    clientIpHeader: values.CLIENT_IP_HEADER,
+    clientIpTrustedHops: Number(values.CLIENT_IP_TRUSTED_HOPS),
+  };
 }
 
 /**
@@ -117,9 +199,12 @@ export function parseServerEnv(source: EnvSource): ServerEnvResult {
     (name) => values[name] === undefined,
   );
   const invalid = findInvalidValues(values);
-  const env = buildServerEnv(values);
+  const env =
+    hasEveryValue(values) && invalid.length === 0
+      ? buildServerEnv(values)
+      : undefined;
 
-  if (env === undefined || missing.length > 0 || invalid.length > 0) {
+  if (env === undefined) {
     return { ok: false, message: describeProblems(missing, invalid) };
   }
   return { ok: true, env };

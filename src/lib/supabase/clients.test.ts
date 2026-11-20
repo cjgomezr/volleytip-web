@@ -1,15 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { buildTestServerEnv } from "~/testing/test-server-env";
+
 import type { ServerEnv } from "../env.server";
 import { createAnonSupabaseClient } from "./anon-client.server";
 import { createServiceSupabaseClient } from "./service-client.server";
 
-const FAKE_ENV: ServerEnv = {
-  appEnv: "test",
-  supabaseUrl: "https://proyecto-de-prueba.supabase.test",
-  supabaseAnonKey: "llave-publica-falsa",
-  supabaseServiceRoleKey: "llave-de-servicio-falsa",
-};
+const FAKE_ENV: ServerEnv = buildTestServerEnv();
 // El SUPABASE_URL con el que corren las pruebas (tests/support/test-env.ts).
 const TEST_RUN_SUPABASE_HOST = "127.0.0.1:54321";
 

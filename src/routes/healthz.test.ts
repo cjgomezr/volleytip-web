@@ -4,6 +4,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { APP_ENVIRONMENTS, type AppEnvironment } from "~/lib/env.server";
 
+import { stubAppEnv } from "~/testing/stub-app-env";
+
 import { loader } from "./healthz";
 
 const HEALTHZ_SOURCE = fileURLToPath(new URL("./healthz.ts", import.meta.url));
@@ -14,7 +16,7 @@ const ENV_MODULE = "~/lib/env.server";
  * arrancado: el entorno se valida una sola vez, al cargar el módulo. */
 async function loadHealthzIn(appEnv: AppEnvironment): Promise<Response> {
   vi.resetModules();
-  vi.stubEnv("APP_ENV", appEnv);
+  stubAppEnv(appEnv);
   const route = await import("./healthz");
   return route.loader();
 }
