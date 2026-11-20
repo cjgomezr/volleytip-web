@@ -307,3 +307,99 @@ describe("página de muestra en el servidor construido", () => {
     expect(response.contentType).toContain("text/html");
   });
 });
+
+const BAD_REQUEST_STATUS = 400;
+// Nadie escucha en ese puerto: el action falla rápido al buscar la base, y
+// eso basta para saber que la petición llegó hasta él.
+const UNREACHABLE_SUPABASE_URL = "http://127.0.0.1:9";
+
+/**
+ * Envía el formulario de la página de muestra como llega detrás del proxy
+ * del hosting: el proxy termina el HTTPS, así que el servidor ve la petición
+ * por http, pero el navegador manda su origen con https.
+ */
+function submitBehindProxy(host: string, origin: string): number {
+  const script = `
+    import { createRequestHandler } from "react-router";
+    const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
+    const handle = createRequestHandler(build, "production");
+    const response = await handle(
+      new Request(${JSON.stringify(`http://${host}/dev/componentes.data`)}, {
+        method: "POST",
+        headers: { Origin: ${JSON.stringify(origin)} },
+        body: new FormData(),
+      }),
+    );
+    await response.arrayBuffer();
+    process.stdout.write("${RESULT_MARKER}" + String(response.status));
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--eval", script],
+    {
+      cwd: REPO_ROOT,
+      env: {
+        ...process.env,
+        ...SENTINEL_ENV,
+        APP_ENV: "staging",
+        SUPABASE_URL: UNREACHABLE_SUPABASE_URL,
+      },
+      encoding: "utf8",
+      timeout: BUILD_TIMEOUT_MS,
+    },
+  );
+  const [, status] = result.stdout.split(RESULT_MARKER);
+  if (result.status !== 0 || status === undefined) {
+    throw new Error(`El servidor no respondió:\n${result.stderr}`);
+  }
+  return Number(status);
+}
+
+describe("envíos de formulario detrás del proxy", () => {
+  it.each([
+    "staging.volleytip.com",
+    "volleytip.com",
+    "www.volleytip.com",
+    "production-volleytip.up.railway.app",
+  ])("un envío desde https://%s llega al action", (host) => {
+    const status = submitBehindProxy(host, `https://${host}`);
+
+    expect(status).not.toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("un envío desde un sitio ajeno se rechaza antes del action", () => {
+    const status = submitBehindProxy(
+      "staging.volleytip.com",
+      "https://sitio-ajeno.test",
+    );
+
+    expect(status).toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("un dominio propio puede enviar a otro dominio propio", () => {
+    // Todos sirven la misma app: se acepta a propósito.
+    const status = submitBehindProxy(
+      "staging.volleytip.com",
+      "https://www.volleytip.com",
+    );
+
+    expect(status).not.toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("la otra dirección que Railway le dio a staging no está en la lista", () => {
+    const host = "volleytip-web-staging.up.railway.app";
+
+    const status = submitBehindProxy(host, `https://${host}`);
+
+    expect(status).toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("un dominio que solo termina parecido no pasa por propio", () => {
+    const status = submitBehindProxy(
+      "staging.volleytip.com",
+      "https://staging.volleytip.com.sitio-ajeno.test",
+    );
+
+    expect(status).toBe(BAD_REQUEST_STATUS);
+  });
+});
