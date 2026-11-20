@@ -214,6 +214,22 @@ Se guarda en el gestor de contraseñas y se pega en Railway. No se escribe en ni
 
 Cambiarlo no rompe datos. Las marcas de tiempo de los formularios que estaban abiertos dejan de valer y esas personas tienen que recargar. Los hashes de IP del día cambian, así que el conteo del límite de envíos de ese día vuelve a empezar.
 
+### Cómo se protege un formulario
+
+Las piezas se usan juntas por `src/lib/forms/protected-form.server.ts` (#35). Un formulario público hace tres cosas:
+
+1. Se define una vez con `defineProtectedForm({ id, schema })`, en un módulo `*.server.ts`. El `id` es el nombre con el que aparece en `form_rejections`. El esquema de `zod` fija formato y longitud de cada campo, y sus mensajes son los que ve la persona.
+2. El `loader` llama a `issueFormProtection(form)` y la página pasa el resultado a `<FormProtection>`, dentro del `<Form>`.
+3. El `action` llama a `processProtectedForm(request, form)`. Los datos solo existen cuando el resultado es `accepted`.
+
+Cosas que conviene saber:
+
+- **El límite cuenta intentos, no envíos aceptados.** Todo envío que pasa Turnstile gasta cupo, también el que después falla la validación. Con el límite por defecto, quien se equivoca cinco veces en diez minutos tiene que esperar.
+- **Cada respuesta del servidor trae una marca de tiempo nueva.** Quien corrige un error y reenvía en menos de 3 segundos recibe `too_fast`.
+- **En `local` y `test` no hay proxy**, así que no llega la cabecera de IP: todos los envíos cuentan como de la propia máquina. En `staging` y `production`, si la cabecera falta el envío falla con un error, porque el entorno está mal configurado.
+- **El tamaño del cuerpo no lo limita esta función.** El servidor lee el envío completo antes de la primera capa. El tope de tamaño de una petición lo pone el hosting.
+- **Para verlo funcionar**: el formulario de ejemplo de `/dev/componentes` muestra el resultado que devuelve el servidor. En producción esa página no existe.
+
 ### La IP del visitante
 
 El servidor no ve la conexión del visitante: la ve el proxy de Railway, que la anota en una cabecera. Si se lee la cabecera equivocada, un visitante puede escribir en ella la IP que quiera y saltarse el límite de envíos. Por eso la cabecera y el número de saltos son configuración y no van escritos en el código.

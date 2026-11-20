@@ -1,28 +1,84 @@
 import { useState, type ReactElement, type ReactNode } from "react";
-import { data } from "react-router";
+import { data, Form, useNavigation } from "react-router";
 
 import { AnnouncementBar } from "~/components/announcement-bar";
 import { Button, type ButtonVariant } from "~/components/button";
 import { Eyebrow } from "~/components/eyebrow";
+import { FormProtection } from "~/components/form-protection";
 import { IconButton } from "~/components/icon-button";
 import type { PreviewState, Zone } from "~/components/pressable";
 import { TextField } from "~/components/text-field";
 import { serverEnv } from "~/lib/env.server";
+import {
+  issueFormProtection,
+  processProtectedForm,
+  type FormProtectionFields,
+  type ProtectedFormResult,
+} from "~/lib/forms/protected-form.server";
+import { SAMPLE_FORM } from "~/lib/forms/sample-form.server";
+
+import type { Route } from "./+types/dev-components";
 
 // Página de muestra de los componentes base (RF-12). Enseña cada uno en cada
 // estado y es lo que Playwright captura como línea base visual. Los textos
 // son datos de prueba, no contenido del sitio: por eso van escritos aquí y no
 // en los archivos de traducción.
 
+const OK_STATUS = 200;
+const BAD_REQUEST_STATUS = 400;
 const NOT_FOUND_STATUS = 404;
+const TOO_MANY_REQUESTS_STATUS = 429;
 
-export function loader(): null {
-  // No existe en producción. Un 404 y no una redirección: para un visitante,
-  // la página no está.
+type SampleStatus = ProtectedFormResult<unknown>["status"];
+
+/** Lo que el formulario de ejemplo le devuelve a la página. */
+interface SampleOutcome {
+  readonly status: SampleStatus;
+  readonly fieldErrors: Readonly<Record<string, string>>;
+  readonly values: Readonly<Record<string, string>>;
+}
+
+interface SampleLoaderData {
+  readonly protection: FormProtectionFields;
+}
+
+const HTTP_STATUS: Record<SampleStatus, number> = {
+  accepted: OK_STATUS,
+  // A quien llenó el campo trampa se le responde como a un envío exitoso.
+  discarded: OK_STATUS,
+  too_fast: BAD_REQUEST_STATUS,
+  verification_failed: BAD_REQUEST_STATUS,
+  rate_limited: TOO_MANY_REQUESTS_STATUS,
+  invalid: BAD_REQUEST_STATUS,
+};
+
+// No existe en producción. Un 404 y no una redirección: para un visitante,
+// la página no está.
+function rejectInProduction(): void {
   if (serverEnv.appEnv === "production") {
     throw data(null, { status: NOT_FOUND_STATUS });
   }
-  return null;
+}
+
+export function loader(): SampleLoaderData {
+  rejectInProduction();
+  return { protection: issueFormProtection(SAMPLE_FORM) };
+}
+
+export async function action({
+  request,
+}: Route.ActionArgs): Promise<ReturnType<typeof data<SampleOutcome>>> {
+  rejectInProduction();
+  const result = await processProtectedForm(request, SAMPLE_FORM);
+  const outcome: SampleOutcome =
+    result.status === "invalid"
+      ? {
+          status: result.status,
+          fieldErrors: result.fieldErrors,
+          values: result.values,
+        }
+      : { status: result.status, fieldErrors: {}, values: {} };
+  return data(outcome, { status: HTTP_STATUS[result.status] });
 }
 
 export function meta(): { title: string }[] {
@@ -380,7 +436,58 @@ function ClickCounter(): ReactElement {
   );
 }
 
-export default function DevComponents(): ReactElement {
+// Para ver las cinco capas de la protección en un entorno real. El
+// resultado se muestra tal cual lo devuelve el servidor.
+function ProtectedFormSample({
+  protection,
+  outcome,
+}: {
+  protection: FormProtectionFields;
+  outcome: SampleOutcome | undefined;
+}): ReactElement {
+  const navigation = useNavigation();
+  const isSending = navigation.state !== "idle";
+  return (
+    <section className="mx-auto max-w-[1280px] px-4 pb-16 min-[390px]:px-6">
+      <h2 className="font-display text-[36px] leading-[0.95] uppercase">
+        Formulario protegido
+      </h2>
+      <Form
+        method="post"
+        noValidate
+        className="mt-6 flex max-w-[420px] flex-col items-start gap-6"
+      >
+        <TextField
+          label={FIELD_LABEL}
+          name="email"
+          type="email"
+          autoComplete="email"
+          isRequired
+          defaultValue={outcome?.values.email}
+          error={outcome?.fieldErrors.email}
+        />
+        <FormProtection
+          siteKey={protection.siteKey}
+          timestamp={protection.timestamp}
+        />
+        <Button
+          type="submit"
+          submittingLabel={isSending ? "Enviando" : undefined}
+        >
+          Enviar
+        </Button>
+      </Form>
+      <p className="mt-6 text-[16px]" role="status" data-testid="form-result">
+        Resultado: {outcome?.status ?? "sin enviar"}
+      </p>
+    </section>
+  );
+}
+
+export default function DevComponents({
+  loaderData,
+  actionData,
+}: Route.ComponentProps): ReactElement {
   return (
     <main>
       <header className="mx-auto max-w-[1280px] px-4 pt-12 pb-12 min-[390px]:px-6">
@@ -396,6 +503,10 @@ export default function DevComponents(): ReactElement {
         <ZoneShowcase key={zone} zone={zone} title={title} styles={styles} />
       ))}
       <div className="pt-12">
+        <ProtectedFormSample
+          protection={loaderData.protection}
+          outcome={actionData}
+        />
         <ClickCounter />
       </div>
     </main>
