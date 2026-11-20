@@ -135,8 +135,8 @@ Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación
 | `TURNSTILE_SITE_KEY`        | Del widget de staging | Del widget de producción |
 | `TURNSTILE_SECRET_KEY`      | Del widget de staging | Del widget de producción |
 | `FORM_PROTECTION_SECRET`    | Generado para staging | Generado para producción |
-| `CLIENT_IP_HEADER`          | Pendiente de medir    | El mismo que staging     |
-| `CLIENT_IP_TRUSTED_HOPS`    | Pendiente de medir    | El mismo que staging     |
+| `CLIENT_IP_HEADER`          | `X-Real-IP`           | El mismo que staging     |
+| `CLIENT_IP_TRUSTED_HOPS`    | `1`                   | El mismo que staging     |
 
 De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios".
 
@@ -222,7 +222,13 @@ El servidor no ve la conexión del visitante: la ve el proxy de Railway, que la 
 - **Si no hay una IP utilizable, es un error.** No hay IP por defecto: todos los visitantes compartirían el mismo límite.
 - **La IP no se guarda.** Solo se guarda su hash, con una sal que cambia cada día (UTC). Ninguna pieza la escribe en un registro.
 
-**Pendiente de medir (#34):** qué cabecera pone el proxy de Railway y cuántos saltos hay. Es la pregunta abierta 6 del PRD. Se mide abriendo `https://staging.volleytip.com/dev/cabeceras`, una ruta de diagnóstico que devuelve solo las cabeceras de proxy de la propia petición y que en producción responde 404. Hasta entonces, los valores de las dos variables en Railway son provisionales.
+**Medido en Railway el 2026-11-20 (#34):** `CLIENT_IP_HEADER` es `X-Real-IP` y `CLIENT_IP_TRUSTED_HOPS` es `1`. Se midió con `https://staging.volleytip.com/dev/cabeceras`, una ruta de diagnóstico que devuelve solo las cabeceras de proxy de la propia petición y que en producción responde 404.
+
+- Railway escribe `X-Real-IP` con la dirección del visitante. Una petición que traía su propio `X-Real-IP` llegó con el valor de Railway, no con el del cliente.
+- `X-Forwarded-For` llega con dos entradas: el visitante y, a su derecha, un servidor intermedio de Railway cuya dirección cambia entre peticiones. Railway también descarta lo que el cliente escriba ahí. Con 1 salto esa cabecera daría la dirección de Railway, no la del visitante; por eso no se usa.
+- Si algún día se pone otro proxy delante de Railway (por ejemplo Cloudflare), hay que medir de nuevo: `X-Real-IP` pasaría a ser la dirección de ese proxy.
+
+**Un arranque fallido tumba el servicio.** El 2026-11-20, tras el merge del #34, el despliegue de los dos servicios quedó en CRASHED y Railway ya había retirado la versión anterior: respondieron 502 hasta que se volvió a desplegar a mano, sin cambiar nada. La causa de esa caída no se investigó. No hay que contar con que Railway conserve la versión anterior. Se revisa junto a las pruebas de fallo de Railway pendientes para W13.
 
 ### Dónde se pone cada valor
 
