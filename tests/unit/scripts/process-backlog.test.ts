@@ -135,7 +135,7 @@ if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
     echo "$PR_LIST_JSON"
     exit 0
   fi
-  echo "\${PR_LIST_COUNT:-0}"
+  echo "[]"
   exit 0
 fi
 
@@ -328,6 +328,21 @@ const OPEN_IN_PROGRESS_ISSUE = JSON.stringify({
   state: "OPEN",
   labels: [{ name: "in-progress" }],
 });
+
+/**
+ * Lo que `gh pr list --search "Closes #N in:body"` devuelve: un PR cuyo cuerpo
+ * cierra el issue `issue`. La búsqueda de GitHub es difusa, así que el número
+ * del cuerpo no siempre es el que se buscó.
+ */
+function prListClosing(issue: number, createdAt = new Date()): string {
+  return JSON.stringify([
+    {
+      number: 7,
+      body: `Closes #${issue}\n\nAlgo.`,
+      createdAt: createdAt.toISOString().replace(/\.\d+Z$/, "Z"),
+    },
+  ]);
+}
 
 describe("cleanup de process-backlog", () => {
   let workDir = "";
@@ -1117,7 +1132,6 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1147,7 +1161,93 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "1",
+          PR_LIST_JSON: prListClosing(42),
+        },
+      );
+
+      const log = await readLog(logFile);
+      expect(log).not.toMatch(/needs-human/);
+      expect(log).not.toMatch(/issue comment 42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    ["otro issue cuyo número empieza igual", "Closes #420"],
+    ["otro issue cualquiera", "Closes #7"],
+    ["el issue sin la palabra que lo cierra", "Relacionado con #42"],
+  ])(
+    "etiqueta needs-human si el único PR que devuelve la búsqueda es de %s",
+    async (_case, body) => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      await runBash(
+        "source scripts/process-backlog.sh; ME=tester; check_worker_left_no_pr 42",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
+          PR_LIST_JSON: JSON.stringify([{ number: 9, body }]),
+        },
+      );
+
+      const log = await readLog(logFile);
+      expect(log).toMatch(/issue edit 42 --add-label needs-human/);
+      expect(log).toMatch(/issue comment 42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    ["en minúsculas", "closes #42"],
+    ["seguido de un punto", "Arregla el menú. Closes #42."],
+    ["entre PR de otros issues", "Closes #42"],
+  ])(
+    "no toca nada si un PR cierra el issue %s",
+    async (_case, body) => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      await runBash(
+        "source scripts/process-backlog.sh; ME=tester; check_worker_left_no_pr 42",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
+          PR_LIST_JSON: JSON.stringify([
+            { number: 8, body: "Closes #420" },
+            { number: 9, body },
+          ]),
+        },
+      );
+
+      const log = await readLog(logFile);
+      expect(log).not.toMatch(/needs-human/);
+      expect(log).not.toMatch(/issue comment 42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no toca nada si la respuesta de gh no se puede leer",
+    async () => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      await runBash(
+        "source scripts/process-backlog.sh; ME=tester; check_worker_left_no_pr 42",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
+          PR_LIST_JSON: "esto no es JSON",
         },
       );
 
@@ -1198,7 +1298,6 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: JSON.stringify({ state: "CLOSED", labels: [] }),
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1239,7 +1338,6 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1270,7 +1368,6 @@ handle_worker_exit "$N" "$EXIT_CODE"`,
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1535,7 +1632,6 @@ false`,
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1627,9 +1723,8 @@ describe("worker que no termina después de abrir su PR", () => {
   const minutesAgo = (minutes: number): Date =>
     new Date(Date.now() - minutes * 60 * 1000);
 
-  /** Lo que `gh pr list --json createdAt` devuelve: un PR abierto en `at`. */
-  const openPrCreatedAt = (at: Date): string =>
-    JSON.stringify([{ createdAt: at.toISOString().replace(/\.\d+Z$/, "Z") }]);
+  /** Un PR abierto en `at` que cierra el #42, el issue del worker. */
+  const openPrCreatedAt = (at: Date): string => prListClosing(42, at);
 
   /** Un HOME con la sesión del worker de #42, tocada por última vez en `at`. */
   async function writeWorkerSession(at: Date | null): Promise<string> {
@@ -1733,6 +1828,22 @@ describe("worker que no termina después de abrir su PR", () => {
   );
 
   it(
+    "no lo da por colgado si el PR que devuelve la búsqueda cierra otro issue",
+    async () => {
+      workDir = await setupWorkDir();
+      const home = await writeWorkerSession(minutesAgo(40));
+
+      const { verdict } = await checkLingering({
+        HOME: home,
+        PR_LIST_JSON: prListClosing(420, minutesAgo(45)),
+      });
+
+      expect(verdict).toBe("SIGUE");
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
     "no lo da por colgado si gh no puede decir si hay PR",
     async () => {
       workDir = await setupWorkDir();
@@ -1781,7 +1892,7 @@ handle_worker_exit 42 "$(worker_exit_status 143)"`,
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "1",
+          PR_LIST_JSON: prListClosing(42),
         },
       );
 

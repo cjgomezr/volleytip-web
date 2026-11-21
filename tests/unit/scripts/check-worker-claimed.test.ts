@@ -73,7 +73,7 @@ if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
     echo "gh: API rate limit exceeded" >&2
     exit 1
   fi
-  echo "\${PR_LIST_COUNT:-0}"
+  echo "\${PR_LIST_JSON:-[]}"
   exit 0
 fi
 
@@ -158,7 +158,38 @@ describe("scripts/check-worker-claimed.sh", () => {
     async () => {
       const result = await run({
         ISSUE_VIEW_JSON: issueJson("OPEN", []),
-        PR_LIST_COUNT: "1",
+        PR_LIST_JSON: JSON.stringify([{ number: 7, body: "Closes #140" }]),
+      });
+
+      expect(result.code).toBe(0);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "falla cuando el único PR que devuelve la búsqueda cierra otro issue",
+    async () => {
+      // La búsqueda de GitHub es difusa: "Closes #140" también trae los PR
+      // que dicen "Closes #1400" o "Closes #14".
+      const result = await run({
+        ISSUE_VIEW_JSON: issueJson("OPEN", []),
+        PR_LIST_JSON: JSON.stringify([
+          { number: 7, body: "Closes #1400" },
+          { number: 8, body: "Closes #14" },
+        ]),
+      });
+
+      expect(result.code).toBe(1);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no culpa al worker cuando la respuesta de gh no se puede leer",
+    async () => {
+      const result = await run({
+        ISSUE_VIEW_JSON: issueJson("OPEN", []),
+        PR_LIST_JSON: "esto no es JSON",
       });
 
       expect(result.code).toBe(0);

@@ -181,12 +181,35 @@ bash scripts/process-backlog.sh
 # head produces false negatives for work that is already sitting in an open
 # PR.
 pr_declares_closes() {  # issue number
-  local n="$1" count
-  if ! count=$(gh pr list --state all --search "Closes #$n in:body" --json number --jq length 2>/dev/null); then
+  local n="$1" prs
+  if ! prs=$(prs_closing_issue all "$n"); then
     echo "⚠ no pude comprobar si #$n ya tiene PR (falla de gh); no lo marco needs-human por si acaso" >&2
     return 0
   fi
-  [ "${count:-0}" != "0" ]
+  [ "$prs" != "[]" ]
+}
+
+# How many search results to read before filtering. GitHub's default is 30,
+# and the search below returns far more than the PRs it was asked for.
+CLOSING_PR_SEARCH_LIMIT=100
+
+# Prints, as a compact JSON array, the PRs whose body really closes #N.
+# Fails when `gh` could not be asked or its answer could not be read, and each
+# caller decides what that means for it.
+#
+# GitHub's search is fuzzy: "Closes #6 in:body" also returns the PRs that say
+# "Closes #60", and plenty that close something else entirely. Counting its
+# results answers "is there a PR" with yes for almost any number, so every
+# result is checked here against the exact issue. A prose mention of the same
+# words ("see Closes #6") still counts: telling it from a real closing line
+# would take a Markdown parser.
+prs_closing_issue() {  # state (open|all), issue number
+  local state="$1" n="$2" prs
+  prs=$(gh pr list --state "$state" --search "Closes #$n in:body" \
+    --limit "$CLOSING_PR_SEARCH_LIMIT" --json number,body,createdAt 2>/dev/null) || return 1
+  echo "$prs" | jq -c --arg n "$n" \
+    '[.[] | select((.body // "") | test("closes #" + $n + "([^0-9]|$)"; "i"))]' \
+    2>/dev/null | tr -d '\r'
 }
 
 # Single source of truth for where a worker's branch/worktree lives, so the
@@ -267,7 +290,7 @@ IDLE_AFTER_PR_MINUTES="${IDLE_AFTER_PR_MINUTES:-30}"
 # pr_declares_closes, here it must not end a worker that may still be working.
 worker_has_open_pr() {  # issue number, epoch the worker started
   local n="$1" since="$2" prs count
-  prs=$(gh pr list --state open --search "Closes #$n in:body" --json createdAt 2>/dev/null) || return 1
+  prs=$(prs_closing_issue open "$n") || return 1
   count=$(echo "$prs" | jq --argjson since "$since" \
     '[.[] | select((.createdAt | fromdateiso8601) >= $since)] | length' 2>/dev/null) || return 1
   [ "${count:-0}" != "0" ]
@@ -393,13 +416,10 @@ WORKER_RECORD_MARKER="<!-- constancia-worker -->"
 check_worker_left_record() {  # issue number
   local n="$1" prs pr pr_number pr_body issue_json issue_body previous
   local -a missing=()
-  prs=$(gh pr list --state open --search "Closes #$n in:body" --json number,body 2>/dev/null) || return 0
-  # GitHub's search is fuzzy: "Closes #4" also returns PRs that say
-  # "Closes #40". Reading the body of whichever came first would judge, and
-  # comment on, somebody else's PR. Keep only the ones that really close #N.
-  pr=$(echo "$prs" | jq -c --arg n "$n" \
-    '[.[] | select((.body // "") | test("closes #" + $n + "([^0-9]|$)"; "i"))][0] // empty' \
-    2>/dev/null | tr -d '\r') || return 0
+  # Only the PRs that really close #N: reading the body of whichever the
+  # search listed first would judge, and comment on, somebody else's PR.
+  prs=$(prs_closing_issue open "$n") || return 0
+  pr=$(echo "$prs" | jq -c '.[0] // empty' 2>/dev/null | tr -d '\r') || return 0
   [ -n "$pr" ] || return 0
   pr_number=$(echo "$pr" | jq -r '.number' 2>/dev/null | tr -d '\r') || return 0
   [ -n "$pr_number" ] || return 0

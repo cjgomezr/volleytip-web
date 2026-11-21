@@ -79,13 +79,25 @@ done <<< "$labels"
 # Último recurso, y el más caro, por eso va al final: un PR que declare cerrarlo
 # significa que el trabajo existe aunque las etiquetas digan otra cosa. Buscar
 # por rama no serviría, porque `impl-N` y `worktree-impl-N` conviven.
-if prs=$(gh pr list ${repo_args[@]+"${repo_args[@]}"} --state all --search "Closes #$NUM in:body" --json number --jq length 2>/dev/null); then
-  if [ "${prs:-0}" != "0" ]; then
+#
+# La búsqueda de GitHub es difusa: "Closes #6" también trae los PR que dicen
+# "Closes #60" y muchos que cierran otra cosa. Contar sus resultados respondía
+# "sí hay PR" para casi cualquier número, así que cada resultado se comprueba
+# contra el número exacto. Es el mismo filtro que `prs_closing_issue` en
+# `scripts/process-backlog.sh`. El límite sube de los 30 que trae `gh` por
+# defecto porque la búsqueda devuelve bastante más de lo que se le pide.
+CLOSING_PR_SEARCH_LIMIT=100
+if prs=$(gh pr list ${repo_args[@]+"${repo_args[@]}"} --state all --search "Closes #$NUM in:body" \
+    --limit "$CLOSING_PR_SEARCH_LIMIT" --json number,body 2>/dev/null) \
+  && closing=$(printf '%s' "$prs" | jq --arg n "$NUM" \
+    '[.[] | select((.body // "") | test("closes #" + $n + "([^0-9]|$)"; "i"))] | length' \
+    2>/dev/null | tr -d '\r'); then
+  if [ "${closing:-0}" != "0" ]; then
     echo "✅ #$NUM ya tiene un PR que declara cerrarlo"
     exit 0
   fi
 else
-  echo "::warning title=No pude buscar PRs de #$NUM::gh falló, así que no marco la corrida en rojo por eso"
+  echo "::warning title=No pude buscar PRs de #$NUM::gh falló o su respuesta no se pudo leer, así que no marco la corrida en rojo por eso"
   exit 0
 fi
 
