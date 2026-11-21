@@ -9,6 +9,8 @@ import {
 } from "react-router";
 
 import { serverEnv } from "~/lib/env.server";
+import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
+import { useLanguage } from "~/lib/i18n/use-language";
 import { markAsNotIndexable } from "~/lib/indexing.server";
 
 import type { Route } from "./+types/root";
@@ -21,9 +23,12 @@ const NOT_FOUND_STATUS = 404;
 // errores. Queda fuera lo que React Router rechaza antes de buscar una ruta
 // (un método como OPTIONS), que no es contenido que un buscador indexe.
 const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
-  _args,
+  { request },
   next,
-) => markAsNotIndexable(await next(), serverEnv.appEnv);
+) => {
+  const redirect = redirectFromDefaultPrefix(new URL(request.url));
+  return markAsNotIndexable(redirect ?? (await next()), serverEnv.appEnv);
+};
 
 export const middleware: Route.MiddlewareFunction[] = [
   markResponseAsNotIndexable,
@@ -34,8 +39,10 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export function Layout({ children }: { children: ReactNode }): ReactElement {
+  const language = useLanguage();
+
   return (
-    <html lang="es">
+    <html lang={language}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
