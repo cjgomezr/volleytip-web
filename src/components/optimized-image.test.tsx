@@ -70,6 +70,12 @@ describe("Imagen optimizada", () => {
     expect(srcSet).toBe(`${BASE}?width=3000 3000w, ${BASE}?width=4096 4096w`);
   });
 
+  it("en el ancho máximo no repite el mismo candidato", () => {
+    const srcSet = readAttribute(renderImage({ width: 4096 }), "srcSet");
+
+    expect(srcSet).toBe(`${BASE}?width=4096 4096w`);
+  });
+
   it("pasa las clases al <img>", () => {
     const html = renderImage({ className: "rounded-card" });
 

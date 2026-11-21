@@ -44,7 +44,9 @@ export function OptimizedImage({
     width * HIGH_DENSITY_FACTOR,
     MAX_IMAGE_WIDTH,
   );
-  const candidates = [width, highDensityWidth].map(
+  // En el tope los dos anchos coinciden: el Set evita ofrecer dos veces el
+  // mismo candidato.
+  const candidates = [...new Set([width, highDensityWidth])].map(
     (candidate) =>
       `${buildImageUrl({ cdnHost, path: src, width: candidate })} ${String(candidate)}w`,
   );
