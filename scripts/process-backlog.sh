@@ -373,6 +373,55 @@ check_worker_left_no_pr() {  # issue number
 Revisa el worktree \`impl-$n\` antes de decidir cómo retomarlo: puede que el trabajo esté casi terminado y solo falte abrir el PR, o que se haya detenido a mitad de camino."
 }
 
+# A worker can open its PR and still skip the two lifecycle steps nobody else
+# checks: writing down what the reviewer said (CLAUDE.md step 7) and checking
+# the issue's acceptance boxes (step 6). It happened twice in a row: the
+# review HAD run, but the PR did not say so, and a finding the reviewer rated
+# Low turned out to be a real defect nobody saw until a human re-reviewed.
+# An instruction can be skipped, so this is checked here, where it cannot.
+#
+# Deliberately NOT needs-human: the work may be fine and the PR is already
+# there for a person to read. What is missing is the trail, and the place a
+# reviewer will see that is the PR itself.
+# Every `gh` failure is a silent return: this is a courtesy check and must
+# never take the run down or accuse a worker because GitHub hiccuped.
+check_worker_left_record() {  # issue number
+  local n="$1" prs pr_number pr_body issue_json issue_body
+  local -a missing=()
+  prs=$(gh pr list --state open --search "Closes #$n in:body" --json number,body 2>/dev/null) || return 0
+  pr_number=$(echo "$prs" | jq -r '.[0].number // empty' 2>/dev/null | tr -d '\r') || return 0
+  [ -n "$pr_number" ] || return 0
+  pr_body=$(echo "$prs" | jq -r '.[0].body // ""' 2>/dev/null | tr -d '\r') || return 0
+
+  # A heading, not the bare word: "queda pendiente una revisión" in a
+  # paragraph is not a record of one. `.{1,2}` covers the accented ó as one
+  # character or as two bytes, whatever locale grep runs under.
+  if ! echo "$pr_body" | grep -qiE '^#{2,} *(Revisi.{1,2}n|Review)'; then
+    missing+=("la sección **Revisión** en esta descripción: qué revisor corrió, cuántas rondas, su veredicto, qué hallazgos se aplicaron y cuáles no (con la razón)")
+  fi
+
+  issue_json=$(gh issue view "$n" --json body 2>/dev/null) || return 0
+  issue_body=$(echo "$issue_json" | jq -r '.body // ""' 2>/dev/null | tr -d '\r') || return 0
+  if echo "$issue_body" | grep -qE '^- \[ \]' && ! echo "$issue_body" | grep -qiE '^- \[x\]'; then
+    missing+=("ninguna casilla marcada en el issue #$n: se marcan las que una prueba demuestra, y las demás llevan un comentario que diga por qué no")
+  fi
+
+  [ "${#missing[@]}" -gt 0 ] || return 0
+
+  echo "⚠ El worker abrió el PR #$pr_number de #$n sin dejar constancia completa: lo aviso en el PR"
+  local body="🤖 **El worker abrió este PR sin dejar constancia de todo el ciclo.** No significa que el trabajo esté mal: significa que no se puede saber desde aquí. Falta:
+"
+  local item
+  for item in "${missing[@]}"; do
+    body+="
+- $item"
+  done
+  body+="
+
+Antes de mezclar conviene revisar el PR a mano o pedirle al worker que lo complete (CLAUDE.md, pasos 5 a 7)."
+  gh pr comment "$pr_number" --body "$body" || true
+}
+
 # Single decision point for what happens after the worker process ends, so a
 # crash (exit != 0) and a silent success (exit 0, no PR) share the same
 # needs-human path and never both fire for the same run.
@@ -394,6 +443,7 @@ bash scripts/process-backlog.sh
 El nuevo worker puede continuar desde la rama existente."
   else
     check_worker_left_no_pr "$n"
+    check_worker_left_record "$n"
   fi
 }
 
@@ -412,7 +462,12 @@ run_worker() {
   read the issue with 'gh issue view $n', label it in-progress, work on branch impl-$n,
   TDD until the Definition of Done is met, run the code-reviewer (and the ui-reviewer
   only when the UI-review policy in factory-models.json applies to this issue) until
-  APPROVED, then open a draft PR with 'Closes #$n'.
+  APPROVED. Brief the reviewer with the requirements and the changed files, never with
+  your own conclusions ('tests pass'): it has to check by itself.
+  Then check in the issue the acceptance criteria a passing test proves, and comment on
+  the ones you leave unchecked. Then open a draft PR with 'Closes #$n' whose body has a
+  '## Revisión' section: which reviewer ran, how many rounds, the verdict, the findings
+  you fixed and every finding you did NOT apply, with the reason.
   Commit as you go: every time a piece is green (tests passing, lint and types clean),
   commit it before starting the next one. Your turn budget can run out without warning,
   and uncommitted work is lost work.

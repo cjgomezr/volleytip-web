@@ -1824,3 +1824,314 @@ echo "SOLTADO=$WORKER_RELEASED"`,
     REAL_PROCESS_TEST_TIMEOUT_MS,
   );
 });
+
+/**
+ * Un worker puede abrir su PR y aun así saltarse lo que nadie más comprueba:
+ * dejar escrito qué dijo el revisor y marcar las casillas del issue. Pasó con
+ * dos tickets seguidos: la revisión había corrido, pero el PR no lo decía, y
+ * un hallazgo que el revisor dejó como menor resultó ser un defecto real que
+ * nadie vio hasta revisar a mano. Como una instrucción se puede saltar, el
+ * script lo comprueba al terminar y lo dice en el PR.
+ */
+describe("constancia que deja el worker", () => {
+  let workDir = "";
+
+  afterEach(async () => {
+    if (workDir) {
+      await rm(workDir, REMOVE_TEMP_DIR_OPTIONS);
+      workDir = "";
+    }
+  });
+
+  const PR_NUMBER = 7;
+  const BODY_WITH_REVIEW =
+    "Closes #42\n\n## Qué hace\n\nAlgo.\n\n## Revisión\n\ncode-reviewer: APPROVED en la primera ronda.";
+  const BODY_WITHOUT_REVIEW = "Closes #42\n\n## Qué hace\n\nAlgo.";
+  const CHECKED_BOXES = "- [x] **Dado** uno\n- [ ] **Dado** dos";
+  const UNCHECKED_BOXES = "- [ ] **Dado** uno\n- [ ] **Dado** dos";
+
+  function prList(body: string): string {
+    return JSON.stringify([{ number: PR_NUMBER, body }]);
+  }
+
+  function issueWith(body: string): string {
+    return JSON.stringify({
+      state: "OPEN",
+      labels: [{ name: "in-progress" }],
+      body,
+    });
+  }
+
+  async function checkRecord(
+    env: Record<string, string>,
+    command = "check_worker_left_record 42",
+  ): Promise<{ code: number | null; log: string; stdout: string }> {
+    workDir = await setupWorkDir();
+    await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+    const { binDir, logFile } = await installFakeGh(workDir);
+    const { code, stdout } = await runBash(
+      `source scripts/process-backlog.sh; ME=tester; ${command}`,
+      workDir,
+      {
+        ...process.env,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+        ...env,
+      },
+    );
+    return { code, log: await readLog(logFile), stdout };
+  }
+
+  it(
+    "comenta en el PR cuando su descripción no tiene la sección Revisión",
+    async () => {
+      const { code, log, stdout } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(code).toBe(0);
+      expect(log).toMatch(
+        new RegExp(`pr comment ${String(PR_NUMBER)} --body [\\s\\S]*Revisión`),
+      );
+      expect(log).not.toMatch(/casilla/);
+      expect(stdout).toMatch(/#42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "comenta en el PR cuando el issue tiene casillas y ninguna está marcada",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log).toMatch(
+        new RegExp(`pr comment ${String(PR_NUMBER)} --body [\\s\\S]*casilla`),
+      );
+      expect(log).not.toMatch(/sección/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "nombra las dos cosas en un solo comentario cuando faltan las dos",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log.match(/pr comment/g)).toHaveLength(1);
+      expect(log).toMatch(/Revisión/);
+      expect(log).toMatch(/casilla/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no comenta cuando el PR tiene la sección y el issue tiene casillas marcadas",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["## Review", "### Revisión y cambios posteriores", "## revisión"])(
+    "acepta el título %j como sección de revisión",
+    async (heading) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(`Closes #42\n\n${heading}\n\nAPPROVED.`),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "la palabra revisión suelta en un párrafo no cuenta como sección",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList("Closes #42\n\nQueda pendiente una revisión."),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no se queja de las casillas si el issue no tiene ninguna",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith("Un issue sin lista de criterios."),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no hace nada si el worker no dejó ningún PR abierto",
+    async () => {
+      const { code, log } = await checkRecord({
+        PR_LIST_JSON: "[]",
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no hace nada, ni falla, si gh no responde",
+    async () => {
+      const { code, log } = await checkRecord({ FAIL_PR_LIST: "1" });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no etiqueta needs-human: el trabajo puede estar bien, lo que falta es el rastro",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "corre cuando el worker termina con salida 0",
+    async () => {
+      const { log } = await checkRecord(
+        {
+          PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+          ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+        },
+        "handle_worker_exit 42 0",
+      );
+
+      expect(log).toMatch(new RegExp(`pr comment ${PR_NUMBER}`));
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no corre cuando el worker terminó mal: ese camino ya avisa por su cuenta",
+    async () => {
+      const { log } = await checkRecord(
+        {
+          PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+          ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+        },
+        "handle_worker_exit 42 1",
+      );
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+});
+
+describe("lo que se le pide al worker", () => {
+  let workDir = "";
+
+  afterEach(async () => {
+    if (workDir) {
+      await rm(workDir, REMOVE_TEMP_DIR_OPTIONS);
+      workDir = "";
+    }
+  });
+
+  it(
+    "la orden de arranque local nombra las casillas y la sección Revisión",
+    async () => {
+      workDir = await setupWorkDir();
+      const { binDir, logFile } = await installFakeClaude(workDir);
+
+      await runBash(
+        'source scripts/process-backlog.sh; run_worker 77; wait "$WORKER_PID"',
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          PERMISSION_MODE: "auto",
+          MAX_TURNS: "5",
+          WORKER_MODEL: "sonnet",
+        },
+      );
+
+      const invocation = await readLog(logFile);
+      expect(invocation).toMatch(/acceptance criteria/i);
+      expect(invocation).toMatch(/Revisión/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it("la orden de arranque de la nube nombra lo mismo", async () => {
+    const workflow = await readFile(
+      path.join(REPO_ROOT, ".github/workflows/claude-backlog.yml"),
+      "utf8",
+    );
+    const prompts = workflow
+      .split("\n")
+      .filter((line) => /Process (GitHub issue|up to)/.test(line));
+
+    expect(prompts).toHaveLength(2);
+    for (const prompt of prompts) {
+      expect(prompt).toMatch(/acceptance criteria/i);
+      expect(prompt).toMatch(/Revisión/);
+    }
+  });
+
+  it("CLAUDE.md exige la sección Revisión en la descripción del PR", async () => {
+    const claudeMd = await readFile(path.join(REPO_ROOT, "CLAUDE.md"), "utf8");
+    const prStep = claudeMd.slice(
+      claudeMd.indexOf("7. **PR**"),
+      claudeMd.indexOf("8. **Blockers.**"),
+    );
+
+    expect(prStep).toMatch(/## Revisión/);
+    expect(prStep).toMatch(/not apply/i);
+  });
+
+  it("CLAUDE.md prohíbe pasarle conclusiones al revisor", async () => {
+    const claudeMd = await readFile(path.join(REPO_ROOT, "CLAUDE.md"), "utf8");
+    const reviewStep = claudeMd.slice(
+      claudeMd.indexOf("5. **Review**"),
+      claudeMd.indexOf("6. **Check the boxes**"),
+    );
+
+    expect(reviewStep).toMatch(/never.*conclusions/is);
+  });
+
+  it("el revisor de código tiene que comprobar por su cuenta", async () => {
+    const reviewer = await readFile(
+      path.join(REPO_ROOT, ".claude/agents/code-reviewer.md"),
+      "utf8",
+    );
+
+    expect(reviewer).toMatch(/## Verify, do not trust/);
+    expect(reviewer).toMatch(/Not verified/);
+  });
+});
