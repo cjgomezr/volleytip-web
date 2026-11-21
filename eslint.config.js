@@ -3,6 +3,8 @@ import reactHooks from "eslint-plugin-react-hooks";
 import globals from "globals";
 import tseslint from "typescript-eslint";
 
+import { volleytipPlugin } from "./eslint-rules/index.ts";
+
 export default tseslint.config(
   {
     // La fábrica deja un checkout completo por ticket en .claude/worktrees/ y
@@ -53,5 +55,13 @@ export default tseslint.config(
         { allowExpressions: true },
       ],
     },
+  },
+  {
+    // Guardia de textos (AC-002). La página de muestra de /dev/ y las pruebas
+    // llevan datos de prueba escritos a mano a propósito.
+    files: ["src/**/*.tsx"],
+    ignores: ["src/routes/dev-*", "src/**/*.test.tsx"],
+    plugins: { volleytip: volleytipPlugin },
+    rules: { "volleytip/no-hardcoded-text": "error" },
   },
 );
