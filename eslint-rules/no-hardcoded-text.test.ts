@@ -1,5 +1,5 @@
 import tseslint from "typescript-eslint";
-import { RuleTester } from "eslint";
+import { ESLint, RuleTester } from "eslint";
 import { describe, expect, it } from "vitest";
 
 import { noHardcodedText } from "./no-hardcoded-text.ts";
@@ -18,6 +18,8 @@ const tester = new RuleTester({
 describe("guardia de textos: lint", () => {
   tester.run("no-hardcoded-text", noHardcodedText, {
     valid: [
+      { code: 'const a = <p>{ok ? t("a") : null}</p>;' },
+      { code: "const a = <p>{`${n}`}</p>;" },
       { code: `const a = <div className="flex mt-4">{t("x")}</div>;` },
       {
         code: `const a = <input type="email" name="email" data-testid="mail" />;`,
@@ -63,32 +65,54 @@ describe("guardia de textos: lint", () => {
         code: "const a = <input placeholder={'Tu correo'} />;",
         errors: [{ messageId: "attribute" }],
       },
+      { code: "const a = <p>{`Hola`}</p>;", errors: [{ messageId: "text" }] },
+      {
+        code: `const a = <p>{ok ? "Hola" : "Adiós"}</p>;`,
+        errors: [{ messageId: "text" }],
+      },
+      {
+        code: `const a = <p>{ok && "Hola"}</p>;`,
+        errors: [{ messageId: "text" }],
+      },
+      {
+        code: "const a = <img alt={`Logo`} />;",
+        errors: [{ messageId: "attribute" }],
+      },
     ],
   });
 });
 
-describe("guardia de textos: dónde aplica la regla", () => {
-  const SOURCE = `export const A = () => <p>Hola</p>;`;
+// Cargar la configuración (parser y plugin) tarda: con toda la suite en
+// paralelo el límite por defecto de 5 s no alcanza.
+const LINT_TIMEOUT_MS = 30_000;
 
-  async function lintAt(filePath: string): Promise<number> {
-    const { ESLint } = await import("eslint");
-    const [result] = await new ESLint().lintText(SOURCE, { filePath });
-    return (
-      result?.messages.filter(
-        (message) => message.ruleId === "volleytip/no-hardcoded-text",
-      ).length ?? 0
-    );
-  }
+describe(
+  "guardia de textos: dónde aplica la regla",
+  { timeout: LINT_TIMEOUT_MS },
+  () => {
+    const SOURCE = `export const A = () => <p>Hola</p>;`;
 
-  it("aplica a un componente de src", async () => {
-    expect(await lintAt("src/components/ejemplo.tsx")).toBe(1);
-  });
+    const eslint = new ESLint();
 
-  it("no aplica a las rutas de /dev/", async () => {
-    expect(await lintAt("src/routes/dev-ejemplo.tsx")).toBe(0);
-  });
+    async function lintAt(filePath: string): Promise<number> {
+      const [result] = await eslint.lintText(SOURCE, { filePath });
+      return (
+        result?.messages.filter(
+          (message) => message.ruleId === "volleytip/no-hardcoded-text",
+        ).length ?? 0
+      );
+    }
 
-  it("no aplica a los archivos de prueba", async () => {
-    expect(await lintAt("src/components/ejemplo.test.tsx")).toBe(0);
-  });
-});
+    it("aplica a un componente de src", async () => {
+      expect(await lintAt("src/components/ejemplo.tsx")).toBe(1);
+    });
+
+    it("no aplica a las rutas de /dev/", async () => {
+      expect(await lintAt("src/routes/dev-ejemplo.tsx")).toBe(0);
+    });
+
+    it("no aplica a los archivos de prueba", async () => {
+      expect(await lintAt("src/components/ejemplo.test.tsx")).toBe(0);
+    });
+  },
+);

@@ -119,6 +119,8 @@ export function checkCatalogs(catalogs: CatalogSet): string[] {
  * Una clave se usa si algún archivo la escribe entre comillas. Una clave
  * armada en tiempo de ejecución no se puede comprobar, y el tipo de las claves
  * ya impide armarlas.
+ * Es una búsqueda de texto: una clave que solo aparece en un comentario o en
+ * una cadena cualquiera también cuenta como usada.
  */
 export function findUnusedKeys(
   keys: readonly string[],

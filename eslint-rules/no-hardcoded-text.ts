@@ -16,36 +16,61 @@ const WATCHED_ATTRIBUTES: ReadonlySet<string> = new Set([
 // una letra o un número.
 const HAS_WORDS = /[\p{L}\p{N}]/u;
 
-interface LiteralNode {
-  readonly type: "Literal";
-  readonly value: unknown;
-}
-
 interface TextNode {
   readonly value: string;
   readonly loc: { readonly start: { readonly line: number } };
 }
 
+interface ExpressionNode {
+  readonly type: string;
+  readonly value?: unknown;
+  readonly quasis?: readonly {
+    readonly value: { readonly cooked?: string | null };
+  }[];
+  readonly expressions?: readonly unknown[];
+  readonly consequent?: ExpressionNode;
+  readonly alternate?: ExpressionNode;
+  readonly left?: ExpressionNode;
+  readonly right?: ExpressionNode;
+}
+
 interface ExpressionContainerNode {
   readonly parent: { readonly type: string };
-  readonly expression: { readonly type: string; readonly value?: unknown };
+  readonly expression: ExpressionNode;
 }
 
 interface AttributeNode {
   readonly name: { readonly name?: unknown };
-  readonly value:
-    LiteralNode | ({ readonly type: string } & ExpressionContainerNode) | null;
+  readonly value: (ExpressionNode & Partial<ExpressionContainerNode>) | null;
 }
 
 function hasWords(value: unknown): value is string {
   return typeof value === "string" && HAS_WORDS.test(value);
 }
 
-function readStringValue(value: AttributeNode["value"]): unknown {
-  if (value === null) return undefined;
-  if (value.type === "Literal") return (value as LiteralNode).value;
-  const { expression } = value as ExpressionContainerNode;
-  return expression.type === "Literal" ? expression.value : undefined;
+// Busca un texto escrito a mano dentro de una expresión: una cadena, una
+// plantilla sin variables, o cualquiera de ellas en una condición o en un
+// `&&` / `||`. Lo que se calcula (llamadas, variables) no se mira.
+function containsWords(node: ExpressionNode | undefined): boolean {
+  if (node === undefined) return false;
+  switch (node.type) {
+    case "Literal":
+      return hasWords(node.value);
+    case "TemplateLiteral":
+      return (node.quasis ?? []).some(({ value }) => hasWords(value.cooked));
+    case "ConditionalExpression":
+      return containsWords(node.consequent) || containsWords(node.alternate);
+    case "LogicalExpression":
+      return containsWords(node.left) || containsWords(node.right);
+    default:
+      return false;
+  }
+}
+
+function readsHandwrittenText(value: AttributeNode["value"]): boolean {
+  if (value === null) return false;
+  if (value.type === "Literal") return hasWords(value.value);
+  return containsWords(value.expression);
 }
 
 export const noHardcodedText: Rule.RuleModule = {
@@ -76,11 +101,7 @@ export const noHardcodedText: Rule.RuleModule = {
         const { expression, parent } =
           node as unknown as ExpressionContainerNode;
         const isChild = parent.type !== "JSXAttribute";
-        if (
-          isChild &&
-          expression.type === "Literal" &&
-          hasWords(expression.value)
-        ) {
+        if (isChild && containsWords(expression)) {
           context.report({ node, messageId: "text" });
         }
       },
@@ -88,7 +109,7 @@ export const noHardcodedText: Rule.RuleModule = {
         const attribute = node as unknown as AttributeNode;
         const name = attribute.name.name;
         if (typeof name !== "string" || !WATCHED_ATTRIBUTES.has(name)) return;
-        if (hasWords(readStringValue(attribute.value))) {
+        if (readsHandwrittenText(attribute.value)) {
           context.report({ node, messageId: "attribute", data: { name } });
         }
       },
