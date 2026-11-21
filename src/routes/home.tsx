@@ -21,9 +21,7 @@ export function loader({ request }: Route.LoaderArgs): {
   };
 }
 
-export function meta({
-  loaderData,
-}: Route.MetaArgs): { title: string }[] | Record<string, string>[] {
+export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
   return [
     { title: loaderData.title },
     { name: "description", content: loaderData.description },
