@@ -22,7 +22,7 @@ export default defineConfig({
     tsconfigPaths: true,
   },
   test: {
-    include: ["src/**/*.test.{ts,tsx}"],
+    include: ["src/**/*.test.{ts,tsx}", "eslint-rules/**/*.test.ts"],
     environment: "node",
     // El módulo de entorno valida al cargarse. Las pruebas corren con
     // APP_ENV=test y no dependen del .env.local de nadie.
