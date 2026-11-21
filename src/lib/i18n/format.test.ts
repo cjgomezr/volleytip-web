@@ -42,6 +42,10 @@ describe("dinero", () => {
     );
   });
 
+  it("formatea -0 como cero sin signo", () => {
+    expect(formatMoney({ amount: -0, currency: "COP" }, "es")).toBe("$0");
+  });
+
   it("usa los separadores del idioma en un monto grande", () => {
     expect(
       formatMoney({ amount: 123_456_789_000, currency: "COP" }, "es"),
@@ -115,6 +119,7 @@ describe("fechas", () => {
       const inLosAngeles = formatDate(instant, "es", { withTime: true });
 
       expect(inAuckland).toBe(inLosAngeles);
+      expect(plain(inAuckland)).toMatch(/10:00/);
     } finally {
       if (original === undefined) delete process.env.TZ;
       else process.env.TZ = original;
