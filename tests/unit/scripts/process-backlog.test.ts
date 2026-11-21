@@ -113,6 +113,19 @@ if [ "$1" = "issue" ]; then
   exit 0
 fi
 
+if [ "$1" = "pr" ] && [ "$2" = "view" ]; then
+  if [ -n "\${FAIL_PR_VIEW:-}" ]; then
+    echo "gh: API rate limit exceeded" >&2
+    exit 1
+  fi
+  if [ -n "\${PR_VIEW_JSON:-}" ]; then
+    echo "$PR_VIEW_JSON"
+  else
+    echo '{"comments":[]}'
+  fi
+  exit 0
+fi
+
 if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
   if [ -n "\${FAIL_PR_LIST:-}" ]; then
     echo "gh: API rate limit exceeded" >&2
@@ -2003,6 +2016,124 @@ describe("constancia que deja el worker", () => {
 
       expect(code).toBe(0);
       expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "comenta en el PR de este issue, no en el de otro que la búsqueda también devuelve",
+    async () => {
+      // La búsqueda de GitHub es difusa: pedir "Closes #42" también trae el
+      // PR que dice "Closes #420", y aquí llega primero.
+      const { log } = await checkRecord({
+        PR_LIST_JSON: JSON.stringify([
+          { number: 99, body: "Closes #420\n\nOtro ticket, sin revisión." },
+          { number: PR_NUMBER, body: BODY_WITHOUT_REVIEW },
+        ]),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toMatch(new RegExp(`pr comment ${String(PR_NUMBER)} `));
+      expect(log).not.toMatch(/pr comment 99/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no hace nada si ningún PR devuelto cierra de verdad este issue",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: JSON.stringify([
+          { number: 99, body: "Closes #420\n\nOtro ticket." },
+          { number: 98, body: null },
+        ]),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no repite el aviso si el PR ya lo tiene",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+        PR_VIEW_JSON: JSON.stringify({
+          comments: [{ body: "<!-- constancia-worker -->\nAviso anterior." }],
+        }),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "si no puede leer los comentarios anteriores, calla en vez de repetir",
+    async () => {
+      const { code, log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+        FAIL_PR_VIEW: "1",
+      });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "el aviso lleva la marca que evita repetirlo",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toContain("<!-- constancia-worker -->");
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["* [ ] uno\n* [ ] dos", "  - [ ] uno\n    - [ ] dos", "+ [ ] uno"])(
+    "reconoce como casillas sin marcar la lista %j",
+    async (boxes) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(boxes),
+      });
+
+      expect(log).toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["* [X] uno\n* [ ] dos", "  - [x] uno\n  - [ ] dos"])(
+    "reconoce como marcada una casilla de la lista %j",
+    async (boxes) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(boxes),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["## Reviewers", "## Revisiones pendientes"])(
+    "el título %j no cuenta como sección de revisión",
+    async (heading) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(`Closes #42\n\n${heading}\n\nAlgo.`),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toMatch(/pr comment/);
     },
     REAL_PROCESS_TEST_TIMEOUT_MS,
   );

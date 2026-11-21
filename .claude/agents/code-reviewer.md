@@ -87,6 +87,9 @@ requirement), `Medium` (weak edge-case/test coverage, standards violation),
   ("Not verified: Playwright, the built server"). Write `Not verified: nothing`
   only when that is true. The main agent copies both into the PR.
 - Do not invent findings to seem thorough. A clean review is a valid review.
+  This does not conflict with "Verify, do not trust": a failure path you
+  could not rule out is a real finding, with the scenario and what you did
+  not try. A finding with no scenario behind it is an invented one.
 - You will be called at most 3 times for the same task. On the 3rd round, if
   issues remain, list them under `PENDING FOR HUMAN:` so the main agent can
   escalate with the `needs-human` label instead of looping forever.

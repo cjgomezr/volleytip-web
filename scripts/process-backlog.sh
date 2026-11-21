@@ -385,31 +385,57 @@ Revisa el worktree \`impl-$n\` antes de decidir cómo retomarlo: puede que el tr
 # reviewer will see that is the PR itself.
 # Every `gh` failure is a silent return: this is a courtesy check and must
 # never take the run down or accuse a worker because GitHub hiccuped.
+#
+# Only OPEN PRs are looked at. A ticket with `auto-merge` whose PR already
+# merged by the time the worker exits is not checked: there is no PR left to
+# warn on.
+WORKER_RECORD_MARKER="<!-- constancia-worker -->"
 check_worker_left_record() {  # issue number
-  local n="$1" prs pr_number pr_body issue_json issue_body
+  local n="$1" prs pr pr_number pr_body issue_json issue_body previous
   local -a missing=()
   prs=$(gh pr list --state open --search "Closes #$n in:body" --json number,body 2>/dev/null) || return 0
-  pr_number=$(echo "$prs" | jq -r '.[0].number // empty' 2>/dev/null | tr -d '\r') || return 0
+  # GitHub's search is fuzzy: "Closes #4" also returns PRs that say
+  # "Closes #40". Reading the body of whichever came first would judge, and
+  # comment on, somebody else's PR. Keep only the ones that really close #N.
+  pr=$(echo "$prs" | jq -c --arg n "$n" \
+    '[.[] | select((.body // "") | test("closes #" + $n + "([^0-9]|$)"; "i"))][0] // empty' \
+    2>/dev/null | tr -d '\r') || return 0
+  [ -n "$pr" ] || return 0
+  pr_number=$(echo "$pr" | jq -r '.number' 2>/dev/null | tr -d '\r') || return 0
   [ -n "$pr_number" ] || return 0
-  pr_body=$(echo "$prs" | jq -r '.[0].body // ""' 2>/dev/null | tr -d '\r') || return 0
+  pr_body=$(echo "$pr" | jq -r '.body // ""' 2>/dev/null | tr -d '\r') || return 0
 
   # A heading, not the bare word: "queda pendiente una revisión" in a
   # paragraph is not a record of one. `.{1,2}` covers the accented ó as one
-  # character or as two bytes, whatever locale grep runs under.
-  if ! echo "$pr_body" | grep -qiE '^#{2,} *(Revisi.{1,2}n|Review)'; then
+  # character or as two bytes, whatever locale grep runs under. The trailing
+  # class keeps "## Reviewers" or "## Revisiones pendientes" from passing.
+  if ! echo "$pr_body" | grep -qiE '^#{2,} *(Revisi.{1,2}n|Review)([^[:alnum:]]|$)'; then
     missing+=("la sección **Revisión** en esta descripción: qué revisor corrió, cuántas rondas, su veredicto, qué hallazgos se aplicaron y cuáles no (con la razón)")
   fi
 
   issue_json=$(gh issue view "$n" --json body 2>/dev/null) || return 0
   issue_body=$(echo "$issue_json" | jq -r '.body // ""' 2>/dev/null | tr -d '\r') || return 0
-  if echo "$issue_body" | grep -qE '^- \[ \]' && ! echo "$issue_body" | grep -qiE '^- \[x\]'; then
+  # Any list marker, indented or not: `* [ ]` and a nested `  - [ ]` are
+  # checkboxes too.
+  if echo "$issue_body" | grep -qE '^[[:space:]]*[-*+] \[ \]' \
+    && ! echo "$issue_body" | grep -qE '^[[:space:]]*[-*+] \[[xX]\]'; then
     missing+=("ninguna casilla marcada en el issue #$n: se marcan las que una prueba demuestra, y las demás llevan un comentario que diga por qué no")
   fi
 
   [ "${#missing[@]}" -gt 0 ] || return 0
 
+  # Say it once per PR. A ticket can come back through here with the same PR
+  # still open (a retry, a re-queue), and a second identical comment is
+  # noise. If the earlier comments cannot be read, stay quiet rather than
+  # repeat.
+  previous=$(gh pr view "$pr_number" --json comments 2>/dev/null) || return 0
+  if echo "$previous" | grep -qF -- "$WORKER_RECORD_MARKER"; then
+    return 0
+  fi
+
   echo "⚠ El worker abrió el PR #$pr_number de #$n sin dejar constancia completa: lo aviso en el PR"
-  local body="🤖 **El worker abrió este PR sin dejar constancia de todo el ciclo.** No significa que el trabajo esté mal: significa que no se puede saber desde aquí. Falta:
+  local body="$WORKER_RECORD_MARKER
+🤖 **El worker abrió este PR sin dejar constancia de todo el ciclo.** No significa que el trabajo esté mal: significa que no se puede saber desde aquí. Falta:
 "
   local item
   for item in "${missing[@]}"; do
