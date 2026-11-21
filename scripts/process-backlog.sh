@@ -292,7 +292,7 @@ worker_has_open_pr() {  # issue number, epoch the worker started
   local n="$1" since="$2" prs count
   prs=$(prs_closing_issue open "$n") || return 1
   count=$(echo "$prs" | jq --argjson since "$since" \
-    '[.[] | select((.createdAt | fromdateiso8601) >= $since)] | length' 2>/dev/null) || return 1
+    '[.[] | select((.createdAt | fromdateiso8601) >= $since)] | length' 2>/dev/null | tr -d '\r') || return 1
   [ "${count:-0}" != "0" ]
 }
 

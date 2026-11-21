@@ -185,6 +185,22 @@ describe("scripts/check-worker-claimed.sh", () => {
   );
 
   it(
+    "rechaza un número de issue que no es un número",
+    async () => {
+      const result = await run(
+        {
+          ISSUE_VIEW_JSON: issueJson("OPEN", []),
+          PR_LIST_JSON: JSON.stringify([{ number: 7, body: "Closes #999" }]),
+        },
+        "9.*",
+      );
+
+      expect(result.code).toBe(2);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
     "no culpa al worker cuando la respuesta de gh no se puede leer",
     async () => {
       const result = await run({

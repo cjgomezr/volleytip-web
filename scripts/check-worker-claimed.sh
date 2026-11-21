@@ -27,7 +27,9 @@
 set -uo pipefail
 
 NUM="${1:-}"
-[ -n "$NUM" ] || { echo "uso: $0 <número de issue>" >&2; exit 2; }
+# Solo dígitos: el número entra más abajo en una expresión regular, y un valor
+# como "1.*" haría pasar por suyo el PR de cualquier otro issue.
+[[ "$NUM" =~ ^[0-9]+$ ]] || { echo "uso: $0 <número de issue>" >&2; exit 2; }
 
 # Sin `set -e`, un `jq` ausente dejaría las variables vacías, el script no se
 # enteraría y acabaría acusando al worker de algo que no hizo. Es el mismo
