@@ -126,17 +126,18 @@ Para saber a qué entorno apunta un servicio, se abre su dirección con `/health
 
 Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación y las cinco de la protección de formularios. Ninguna llave ni secreto se repite entre los dos.
 
-| Variable                    | Servicio `staging`    | Servicio `production`    |
-| --------------------------- | --------------------- | ------------------------ |
-| `APP_ENV`                   | `staging`             | `production`             |
-| `SUPABASE_URL`              | De `volleytip-dev`    | De `volleytip-prod`      |
-| `SUPABASE_ANON_KEY`         | De `volleytip-dev`    | De `volleytip-prod`      |
-| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev`    | De `volleytip-prod`      |
-| `TURNSTILE_SITE_KEY`        | Del widget de staging | Del widget de producción |
-| `TURNSTILE_SECRET_KEY`      | Del widget de staging | Del widget de producción |
-| `FORM_PROTECTION_SECRET`    | Generado para staging | Generado para producción |
-| `CLIENT_IP_HEADER`          | `X-Real-IP`           | El mismo que staging     |
-| `CLIENT_IP_TRUSTED_HOPS`    | `1`                   | El mismo que staging     |
+| Variable                    | Servicio `staging`          | Servicio `production`    |
+| --------------------------- | --------------------------- | ------------------------ |
+| `APP_ENV`                   | `staging`                   | `production`             |
+| `SUPABASE_URL`              | De `volleytip-dev`          | De `volleytip-prod`      |
+| `SUPABASE_ANON_KEY`         | De `volleytip-dev`          | De `volleytip-prod`      |
+| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev`          | De `volleytip-prod`      |
+| `TURNSTILE_SITE_KEY`        | Del widget de staging       | Del widget de producción |
+| `TURNSTILE_SECRET_KEY`      | Del widget de staging       | Del widget de producción |
+| `FORM_PROTECTION_SECRET`    | Generado para staging       | Generado para producción |
+| `CLIENT_IP_HEADER`          | `X-Real-IP`                 | El mismo que staging     |
+| `CLIENT_IP_TRUSTED_HOPS`    | `1`                         | El mismo que staging     |
+| `IMAGE_CDN_HOST`            | Dominio de la zona de Bunny | El mismo que staging     |
 
 De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios".
 
@@ -260,4 +261,27 @@ En local no hay proxy delante, así que la cabecera de IP no llega y la IP del v
 
 ## Imágenes
 
-Pendiente: lo completa el ticket #36, con el dominio del CDN de imágenes.
+Las fotos de productos, camps y tips se sirven por Bunny Optimizer, que las entrega en el ancho que cada pantalla pide (FR-123). El código que arma las direcciones lo construyó el ticket #36: `src/lib/images/image-url.ts` y el componente `src/components/optimized-image.tsx`.
+
+| Variable         | Qué es                                                    | Dónde se obtiene                                |
+| ---------------- | --------------------------------------------------------- | ----------------------------------------------- |
+| `IMAGE_CDN_HOST` | Dominio de la zona de Bunny, sin `https://` ni ruta final | Panel de Bunny, la Pull Zone, campo "Hostnames" |
+
+No es un secreto: llega al navegador en la dirección de cada imagen. Staging y producción usan la misma zona. En local y en las pruebas basta cualquier dominio con forma válida, porque nada pide una imagen de verdad.
+
+### Cómo está armado en Bunny
+
+- **Una Storage Zone** guarda los archivos originales.
+- **Una Pull Zone** los sirve. Su origen es esa Storage Zone y su dominio es `<nombre>.b-cdn.net`.
+- **Bunny Optimizer** va activado en la Pull Zone, con dos ajustes encendidos:
+  - "Dynamic Image API": deja pedir un ancho con `?width=`.
+  - "WebP Image Compression": entrega WebP a los navegadores que lo aceptan, sin cambiar la dirección.
+
+Optimizer cuesta US$9,50 al mes por zona, más el tráfico. Fuente, consultada el 21 de noviembre de 2026: <https://bunny.net/pricing/optimizer/>.
+
+### Cómo se usa en el código
+
+- La página recibe el dominio de su `loader` (`serverEnv.imageCdnHost`) y se lo pasa a `<OptimizedImage>`, con la ruta de la imagen dentro del almacenamiento, el texto alternativo, el ancho y el alto.
+- El componente pide dos anchos, el normal y el doble para pantallas de alta densidad, y siempre lleva `width` y `height` para que la página no salte al cargar.
+- **Los logos no pasan por aquí.** Viven en `public/brand/` y se pintan con `<img>`. El constructor rechaza una ruta que empiece por `brand/`.
+- **El formato no va en la dirección.** Lo negocia Bunny con el navegador. La documentación de Bunny solo describe esa negociación automática para WebP, no para AVIF.

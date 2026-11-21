@@ -18,6 +18,7 @@ const SERVER_ENV_NAMES = Object.keys({
   FORM_PROTECTION_SECRET: true,
   CLIENT_IP_HEADER: true,
   CLIENT_IP_TRUSTED_HOPS: true,
+  IMAGE_CDN_HOST: true,
 });
 const REACT_ROUTER_CLI = path.join(
   REPO_ROOT,
@@ -41,6 +42,7 @@ const SENTINEL_ENV = {
   FORM_PROTECTION_SECRET: "centinela-secreto-de-formularios-4d19f0b6",
   CLIENT_IP_HEADER: "X-Forwarded-For",
   CLIENT_IP_TRUSTED_HOPS: "1",
+  IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
 } as const;
 const SECRET_SENTINELS = [
   SENTINEL_ENV.SUPABASE_URL,

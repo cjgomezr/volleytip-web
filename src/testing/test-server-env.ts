@@ -14,6 +14,7 @@ const TEST_SERVER_ENV: ServerEnv = {
     "secreto-solo-para-pruebas-no-usar-en-ningun-entorno-real",
   clientIpHeader: "X-Forwarded-For",
   clientIpTrustedHops: 1,
+  imageCdnHost: "imagenes-de-prueba.b-cdn.net",
 };
 
 /**
