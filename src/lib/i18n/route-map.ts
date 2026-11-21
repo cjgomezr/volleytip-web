@@ -16,9 +16,16 @@ export interface PageDeclaration {
 }
 
 function pathInLanguage(page: PageDeclaration, language: string): string {
-  return typeof page.path === "string"
-    ? page.path
-    : (page.path[language] ?? "");
+  if (typeof page.path === "string") return page.path;
+  const name = page.path[language];
+  // Sin nombre en un idioma, la página quedaría en la raíz de ese idioma sin
+  // avisar. La raíz es solo de la home, que se declara con `path: ""`.
+  if (name === undefined || name === "") {
+    throw new Error(
+      `A la página "${page.id}" le falta el nombre de su sección en "${language}".`,
+    );
+  }
+  return name;
 }
 
 function joinPrefix(language: LanguageDefinition, path: string): string {

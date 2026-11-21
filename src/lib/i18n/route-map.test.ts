@@ -52,6 +52,30 @@ describe("mapa de rutas", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
+  it("rechaza una página a la que le falta el nombre en un idioma", () => {
+    const onlySpanish: PageDeclaration = {
+      id: "shop",
+      file: "routes/shop.tsx",
+      path: { es: "tienda" },
+    };
+
+    expect(() =>
+      buildLocalizedRoutes([onlySpanish], SUPPORTED_LANGUAGES),
+    ).toThrow(/"shop".*"en"/);
+  });
+
+  it("rechaza un nombre vacío en un idioma: solo la home va en la raíz", () => {
+    const emptyEnglish: PageDeclaration = {
+      id: "shop",
+      file: "routes/shop.tsx",
+      path: { es: "tienda", en: "" },
+    };
+
+    expect(() =>
+      buildLocalizedRoutes([emptyEnglish], SUPPORTED_LANGUAGES),
+    ).toThrow(/"shop".*"en"/);
+  });
+
   it("rechaza dos páginas con la misma dirección en un idioma", () => {
     const clash: PageDeclaration = { id: "other", file: "x.tsx", path: "tips" };
 
