@@ -428,7 +428,10 @@ check_worker_left_record() {  # issue number
   # still open (a retry, a re-queue), and a second identical comment is
   # noise. If the earlier comments cannot be read, stay quiet rather than
   # repeat.
+  # Through jq, not on the raw JSON: `gh` may print `<` as `<`, and the
+  # marker would never match.
   previous=$(gh pr view "$pr_number" --json comments 2>/dev/null) || return 0
+  previous=$(echo "$previous" | jq -r '.comments[]?.body // ""' 2>/dev/null) || return 0
   if echo "$previous" | grep -qF -- "$WORKER_RECORD_MARKER"; then
     return 0
   fi
