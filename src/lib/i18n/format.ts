@@ -29,7 +29,7 @@ const WHOLE_UNIT_CURRENCIES: ReadonlySet<Currency> = new Set(["COP"]);
 
 // El español separa el símbolo de la cifra con un espacio duro; el sitio lo
 // muestra pegado (`$120.000`).
-const SPACE_AFTER_SYMBOL = /(\D) (?=\d)/;
+const SPACE_AFTER_SYMBOL = /(\D)\u00a0(?=\d)/;
 
 function isSupportedCurrency(code: string): code is Currency {
   return (SUPPORTED_CURRENCIES as readonly string[]).includes(code);

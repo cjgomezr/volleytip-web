@@ -8,7 +8,7 @@ import {
   type Money,
 } from "./format";
 
-const plain = (text: string): string => text.replace(/ /g, " ");
+const plain = (text: string): string => text.replace(/\u00a0/g, " ");
 
 describe("dinero", () => {
   it("formatea COP en español sin decimales", () => {
