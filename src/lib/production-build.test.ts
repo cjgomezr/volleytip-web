@@ -146,6 +146,8 @@ interface ServedResponse extends ServedRequest {
   readonly status: number;
   readonly contentType: string | null;
   readonly robots: string | null;
+  readonly location: string | null;
+  readonly lang: string | null;
 }
 
 const HOME_PAGE = { method: "GET", path: "/" };
@@ -155,8 +157,23 @@ const MISSING_PAGE = { method: "GET", path: "/esta-pagina-no-existe" };
 const REJECTED_SUBMISSION = { method: "POST", path: "/healthz" };
 // La página de muestra de los componentes no existe en producción.
 const SAMPLE_PAGE = { method: "GET", path: "/dev/componentes" };
+const ENGLISH_HOME = { method: "GET", path: "/en/" };
+const SPANISH_PREFIX = { method: "GET", path: "/es/?utm=1" };
+const UNSUPPORTED_PREFIX = { method: "GET", path: "/fr/" };
+const MISSING_ENGLISH_PAGE = { method: "GET", path: "/en/no-existe" };
+// El router decodifica el prefijo, así que esta dirección sirve la home en
+// inglés. Su `lang` tiene que coincidir con lo que se pinta.
+const ENCODED_ENGLISH_HOME = { method: "GET", path: "/%65n/" };
+const UPPERCASE_PREFIX = { method: "GET", path: "/EN/" };
 const SERVED_REQUESTS: readonly ServedRequest[] = [
   HOME_PAGE,
+  ENGLISH_HOME,
+  { method: "GET", path: "/en" },
+  ENCODED_ENGLISH_HOME,
+  SPANISH_PREFIX,
+  UNSUPPORTED_PREFIX,
+  MISSING_ENGLISH_PAGE,
+  UPPERCASE_PREFIX,
   { method: "HEAD", path: "/" },
   { method: "GET", path: "/healthz" },
   // Las navegaciones del navegador piden los datos de la ruta con `.data`.
@@ -177,18 +194,20 @@ function requestFromBuiltServer(appEnv: string): ServedResponse[] {
     const served = [];
     for (const { method, path } of ${JSON.stringify(SERVED_REQUESTS)}) {
       const response = await handle(
-        new Request("http://localhost" + path, { method }),
+        new Request("http://localhost" + path, { method, redirect: "manual" }),
       );
+      // Se lee el cuerpo entero, como haría un navegador. Una página grande
+      // sin leer deja el envío a medias y el proceso espera a que venza.
+      const body = await response.text();
       served.push({
         method,
         path,
+        location: response.headers.get("Location"),
+        lang: /<html lang="([^"]*)"/.exec(body)?.[1] ?? null,
         status: response.status,
         contentType: response.headers.get("Content-Type"),
         robots: response.headers.get("X-Robots-Tag"),
       });
-      // Se lee el cuerpo entero, como haría un navegador. Una página grande
-      // sin leer deja el envío a medias y el proceso espera a que venza.
-      await response.arrayBuffer();
     }
     process.stdout.write("${RESULT_MARKER}" + JSON.stringify(served));
   `;
@@ -265,6 +284,59 @@ describe("X-Robots-Tag en el servidor construido", () => {
     const served = requestFromBuiltServer("staging");
 
     expect(findServed(served, MISSING_PAGE).contentType).toContain("text/html");
+  });
+});
+
+describe("rutas en el servidor construido", () => {
+  const served = (): ServedResponse[] => requestFromBuiltServer("staging");
+
+  it("/ responde 200 en español", () => {
+    const response = findServed(served(), HOME_PAGE);
+
+    expect([response.status, response.lang]).toEqual([200, "es"]);
+  });
+
+  it("/%65n/, con el prefijo codificado, declara el idioma que sirve", () => {
+    const response = findServed(served(), ENCODED_ENGLISH_HOME);
+
+    expect([response.status, response.lang]).toEqual([200, "en"]);
+  });
+
+  it.each(["/en/", "/en"])("%s responde 200 en inglés", (path) => {
+    const response = findServed(served(), { method: "GET", path });
+
+    expect([response.status, response.lang]).toEqual([200, "en"]);
+  });
+
+  it("/es/ redirige 301 sin el prefijo y conserva la búsqueda", () => {
+    const response = findServed(served(), SPANISH_PREFIX);
+
+    expect([response.status, response.location]).toEqual([301, "/?utm=1"]);
+  });
+
+  it("un prefijo no soportado da 404 en español", () => {
+    const response = findServed(served(), UNSUPPORTED_PREFIX);
+
+    expect([response.status, response.lang]).toEqual([404, "es"]);
+  });
+
+  it("una dirección inexistente bajo /en/ da 404 en inglés", () => {
+    const response = findServed(served(), MISSING_ENGLISH_PAGE);
+
+    expect([response.status, response.lang]).toEqual([404, "en"]);
+  });
+
+  it("el prefijo en mayúsculas da 404", () => {
+    expect(findServed(served(), UPPERCASE_PREFIX).status).toBe(404);
+  });
+
+  it("/healthz y /dev/componentes siguen en su dirección", () => {
+    const all = served();
+
+    expect(findServed(all, { method: "GET", path: "/healthz" }).status).toBe(
+      200,
+    );
+    expect(findServed(all, SAMPLE_PAGE).status).toBe(200);
   });
 });
 
