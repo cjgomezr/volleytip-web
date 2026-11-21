@@ -634,3 +634,61 @@ test.describe("Formulario protegido", () => {
     expect(visited).not.toContain("website");
   });
 });
+
+// ---------------------------------------------------------------------------
+// Home en inglés (/en/): misma página, textos de otro idioma.
+// ---------------------------------------------------------------------------
+
+const ENGLISH_HOME_URL = `${APP_URL}/en/`;
+
+for (const vp of viewports) {
+  test.describe(`home en inglés @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    test("coincide con la línea base aprobada", async ({ page }) => {
+      await page.goto(ENGLISH_HOME_URL);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+      });
+      const name = `home-en-${vp.name}.png`;
+      await createMissingLocalBaseline(name, () =>
+        page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+      );
+      await expect(page).toHaveScreenshot(name, {
+        ...SCREENSHOT_OPTIONS,
+        fullPage: true,
+        maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+      });
+    });
+  });
+}
+
+test.describe("home en inglés", () => {
+  test("axe no reporta violaciones", async ({ page }) => {
+    await page.goto(ENGLISH_HOME_URL);
+    const results = await new AxeBuilder({ page })
+      .withTags(["wcag2a", "wcag2aa"])
+      .analyze();
+    expect(
+      results.violations,
+      JSON.stringify(results.violations, null, 2),
+    ).toEqual([]);
+  });
+
+  test("el navegador retoma el texto del servidor sin advertencias de hidratación", async ({
+    page,
+  }) => {
+    const warnings: string[] = [];
+    page.on("console", (message) => {
+      if (/hydrat/i.test(message.text())) warnings.push(message.text());
+    });
+    await page.goto(ENGLISH_HOME_URL);
+    await page.waitForLoadState("networkidle");
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Learn volleyball in",
+    );
+    expect(warnings).toEqual([]);
+  });
+});

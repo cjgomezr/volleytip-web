@@ -148,6 +148,7 @@ interface ServedResponse extends ServedRequest {
   readonly robots: string | null;
   readonly location: string | null;
   readonly lang: string | null;
+  readonly body: string;
 }
 
 const HOME_PAGE = { method: "GET", path: "/" };
@@ -204,6 +205,7 @@ function requestFromBuiltServer(appEnv: string): ServedResponse[] {
         path,
         location: response.headers.get("Location"),
         lang: /<html lang="([^"]*)"/.exec(body)?.[1] ?? null,
+        body,
         status: response.status,
         contentType: response.headers.get("Content-Type"),
         robots: response.headers.get("X-Robots-Tag"),
@@ -475,5 +477,36 @@ describe("envíos de formulario detrás del proxy", () => {
     );
 
     expect(status).toBe(BAD_REQUEST_STATUS);
+  });
+});
+
+describe("textos por idioma en el servidor construido", () => {
+  let served: ServedResponse[] = [];
+  beforeAll(() => {
+    served = requestFromBuiltServer("production");
+  }, BUILD_TIMEOUT_MS);
+
+  it("la home en inglés no contiene frases que solo existen en español", () => {
+    const { body } = findServed(served, ENGLISH_HOME);
+
+    expect(body).toContain("Learn volleyball in");
+    expect(body).not.toContain("Aprende voley");
+    expect(body).not.toContain("Sitio en construcción");
+  });
+
+  it("la home en español no contiene los textos en inglés", () => {
+    const { body } = findServed(served, HOME_PAGE);
+
+    expect(body).toContain("Aprende voley en");
+    expect(body).not.toContain("Learn volleyball");
+  });
+
+  it("la página 404 sale en el idioma de la dirección", () => {
+    expect(findServed(served, MISSING_PAGE).body).toContain(
+      "Esta página no existe.",
+    );
+    expect(findServed(served, MISSING_ENGLISH_PAGE).body).toContain(
+      "This page does not exist.",
+    );
   });
 });
