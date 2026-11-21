@@ -243,12 +243,12 @@ Carril de migraciones: los tickets 7, 8 y 9 van uno tras otro, nunca en paralelo
 | 6   | Formatear fechas, números y dinero según el idioma                                             | RF-6  | S      | 1          | No                               | Sí: funciones puras cubiertas por pruebas, sin datos ni permisos |
 | 7   | Crear `languages` y `markets` con Colombia como único mercado activo                           | RF-7  | M      | 1          | No                               | No: permisos (RLS)                                               |
 | 8   | Crear `site_texts` y el respaldo en español del contenido traducible                           | RF-8  | M      | 7          | No                               | No: permisos (RLS)                                               |
-| 9   | Crear `catalog_items` y `prices` con el lector de precio por mercado                           | RF-9  | M      | 8          | No                               | No: permisos (RLS) y dinero                                      |
+| 9   | Crear `catalog_items` y `prices` con el lector de precio por mercado                           | RF-9  | M      | 6, 8       | No                               | No: permisos (RLS) y dinero                                      |
 | 10  | Mostrar el precio aproximado en dólares con la tasa manual                                     | RF-10 | S      | 2, 6       | No                               | No: lógica de dinero nueva                                       |
 
 Orden sugerido: 1 primero. Después dos carriles: textos (2, 3, 4, 5) y base de datos (7, 8, 9). El 6 entra en cualquier momento después del 1, y el 10 cierra.
 
-Sugerencia de `ui-review`: tickets 5 y 10. Son los únicos con algo que se ve: el aviso de idioma y el precio aproximado.
+Sugerencia de `ui-review`: tickets 4, 5 y 10. Son los únicos con algo que se ve: el selector de idioma, el aviso de idioma y el precio aproximado.
 
 Lo que W2 deja sin cerrar a propósito: AC-004 (el pedido conserva el precio del momento de la compra) se comprueba en W6b, y FR-008 para correos en W11a.
 
