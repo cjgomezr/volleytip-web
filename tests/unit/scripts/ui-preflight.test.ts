@@ -9,7 +9,7 @@ import {
   rm,
   writeFile,
 } from "node:fs/promises";
-import { connect } from "node:net";
+import { connect, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -235,11 +235,64 @@ const TWO_BOOTS_DEADLINE_MS = sequenceDeadlineMs(TWO_BOOTS_COMMANDS, {
 // un cliente cualquiera de esta misma suite en el instante justo, y entonces
 // el dev server no logra bindear, nadie responde y `up` agota su plazo. No
 // falla siempre, que es lo peor que puede hacer un test.
+//
+// El offset aleatorio reduce los choques, pero no los impide: otro programa
+// de la máquina puede tener ya uno de esos puertos, y entonces `up` se niega
+// a arrancar ("something already answers") y el test falla sin que haya un
+// defecto. Por eso cada candidato se comprueba antes de entregarlo.
 const PORT_BASE = 20_000 + Math.floor(Math.random() * 10_000);
+// Cuántos candidatos seguidos se prueban antes de rendirse. Que haya tantos
+// puertos contiguos ocupados no es mala suerte: es otra cosa, y se dice.
+const MAX_PORT_CANDIDATES = 50;
 let nextPortOffset = 0;
-function nextPort(): number {
-  nextPortOffset += 1;
-  return PORT_BASE + nextPortOffset;
+
+/** Dice si un servidor nuevo podría escuchar en el puerto, de la misma forma
+ * en que lo hacen los servidores de estos tests: sin fijar la dirección. */
+function canBindPort(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = createServer();
+    server.once("error", () => {
+      resolve(false);
+    });
+    server.listen(port, () => {
+      server.close(() => {
+        resolve(true);
+      });
+    });
+  });
+}
+
+/**
+ * Un puerto está libre si nadie acepta conexiones en `localhost` y además se
+ * puede escuchar en él. Hacen falta las dos comprobaciones: un proceso que
+ * escucha solo en 127.0.0.1 deja escuchar en la dirección general, pero es
+ * el que respondería a `http://localhost:<puerto>`.
+ */
+async function isPortFree(port: number): Promise<boolean> {
+  if ((await probePort(port)).accepted) {
+    return false;
+  }
+  return canBindPort(port);
+}
+
+/** Entrega un puerto que este proceso no ha usado y que nadie más ocupa. */
+async function nextPort(): Promise<number> {
+  for (let attempt = 0; attempt < MAX_PORT_CANDIDATES; attempt += 1) {
+    nextPortOffset += 1;
+    const candidate = PORT_BASE + nextPortOffset;
+    if (await isPortFree(candidate)) {
+      return candidate;
+    }
+  }
+  throw new Error(
+    `ningún puerto libre entre ${String(MAX_PORT_CANDIDATES)} candidatos seguidos, hasta el ${String(PORT_BASE + nextPortOffset)}`,
+  );
+}
+
+/** El próximo puerto que `nextPort` va a considerar. Solo para los tests del
+ * andamiaje, que necesitan ocuparlo antes. */
+function peekNextPort(): number {
+  return PORT_BASE + nextPortOffset + 1;
 }
 
 interface RunResult {
@@ -786,9 +839,7 @@ async function startMuteServer(port: number): Promise<ChildProcess> {
 }
 
 async function setupWorkDir(): Promise<string> {
-  const workDir = await mkdtemp(
-    path.join(tmpdir(), "fabrica-ui-preflight-"),
-  );
+  const workDir = await mkdtemp(path.join(tmpdir(), "fabrica-ui-preflight-"));
   await mkdir(path.join(workDir, "scripts"), { recursive: true });
   await copyFile(
     UI_PREFLIGHT_SCRIPT,
@@ -866,7 +917,7 @@ describe("ui-preflight.sh", () => {
     "arranca aunque el proceso lanzador termine antes de que el servidor real escuche",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, { START_DELAY_MS: "2000" });
       cleanupEnv = env;
       const { code, stdout, stderr } = await runPreflight(["up"], workDir, env);
@@ -883,7 +934,7 @@ describe("ui-preflight.sh", () => {
     "responds sigue reconociendo un servidor vivo aunque curl no pueda escribir en -o /dev/null",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const fakeBinDir = await installFakeCurlThatFailsToWriteDevNull(workDir);
       const env = baseEnv(workDir, port, { START_DELAY_MS: "500" });
       env.PATH = `${fakeBinDir}${path.delimiter}${env.PATH}`;
@@ -902,7 +953,7 @@ describe("ui-preflight.sh", () => {
     "up sigue arrancando cuando netstat/lsof no encuentran todavía al dueño real del puerto",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const fakeBinDir =
         await installFakePidLookupToolsThatFindNothing(workDir);
       // Sin el wrapper que se desliga: $! ya es el proceso real, así que
@@ -931,7 +982,7 @@ describe("ui-preflight.sh", () => {
     "up corrige el PID_FILE con el dueño real aunque netstat/lsof tarden unas vueltas en verlo, y down lo apaga de verdad",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       // Falla las primeras 3 veces (dentro del presupuesto de 5 reintentos
       // de port_owner_pid) para probar que el propio reintento resuelve la
       // demora, no una segunda llamada externa (down también llama a
@@ -965,7 +1016,7 @@ describe("ui-preflight.sh", () => {
     "check reconoce como propio un servidor cuyo proceso lanzador ya murió",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, { START_DELAY_MS: "500" });
       cleanupEnv = env;
 
@@ -983,7 +1034,7 @@ describe("ui-preflight.sh", () => {
     "dos arranques seguidos con servidores distintos terminan ambos con éxito",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, { START_DELAY_MS: "500" });
       cleanupEnv = env;
       const url = `http://localhost:${port}`;
@@ -1036,7 +1087,7 @@ describe("ui-preflight.sh", () => {
     "up no se muere en silencio cuando el puerto tiene muchísimos dueños listados",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const fakeBinDir = await installNoisyPidLookupTools(workDir, port);
       const env = baseEnv(workDir, port, {
         DEV_SERVER_CMD: `node ${toBashPath(workDir)}/dummy-server.js ${port}`,
@@ -1065,7 +1116,7 @@ describe("ui-preflight.sh", () => {
     "up no se muere cuando ps lista miles de líneas para el mismo proceso",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const fakeBinDir = await installWindowsPidTranslationFakes(
         workDir,
         port,
@@ -1098,7 +1149,7 @@ describe("ui-preflight.sh", () => {
     "down no se muere cuando ps lista miles de líneas, y deja el puerto libre",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, {
         DEV_SERVER_CMD: `node ${toBashPath(workDir)}/dummy-server.js ${port}`,
         START_DELAY_MS: "200",
@@ -1138,7 +1189,7 @@ describe("ui-preflight.sh", () => {
     "down sigue apagando cuando ps no admite la opción -W",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, {
         DEV_SERVER_CMD: `node ${toBashPath(workDir)}/dummy-server.js ${port}`,
         START_DELAY_MS: "200",
@@ -1192,7 +1243,7 @@ describe("ui-preflight.sh", () => {
     "up sigue arrancando cuando ps no admite la opción -W",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const fakeBinDir = await installWindowsPidTranslationFakes(
         workDir,
         port,
@@ -1223,7 +1274,7 @@ describe("ui-preflight.sh", () => {
     "up sigue arrancando cuando ps no encuentra a nadie",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const fakeBinDir = await installWindowsPidTranslationFakes(
         workDir,
         port,
@@ -1268,7 +1319,7 @@ describe("ui-preflight.sh", () => {
     "un puerto que acepta y no contesta no se lee como libre",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       client = await startMuteServer(port);
       const env = baseEnv(workDir, port, {});
       cleanupEnv = env;
@@ -1288,7 +1339,7 @@ describe("ui-preflight.sh", () => {
     "un puerto donde de verdad no hay nadie sigue leyéndose como libre",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, {});
       cleanupEnv = env;
 
@@ -1306,7 +1357,7 @@ describe("ui-preflight.sh", () => {
     "sigue abortando por timeout cuando el servidor de verdad nunca escucha",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const env = baseEnv(workDir, port, {
         FABRICA_SERVER_TIMEOUT: "2",
         DEV_SERVER_CMD: `bash ${toBashPath(workDir)}/never-starts.sh`,
@@ -1326,7 +1377,7 @@ describe("ui-preflight.sh", () => {
     "sigue abortando cuando el proceso muere sin haber levantado nada",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       const dieImmediately = path.join(workDir, "dies-immediately.sh");
       await writeFile(dieImmediately, "#!/usr/bin/env bash\nexit 1\n");
       await chmod(dieImmediately, 0o755);
@@ -1349,7 +1400,7 @@ describe("ui-preflight.sh", () => {
     "se sigue negando a arrancar sobre un servidor que esta fábrica no inició",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       intruder = await startIntruder(port);
 
       const env = baseEnv(workDir, port, {});
@@ -1366,7 +1417,7 @@ describe("ui-preflight.sh", () => {
     "down mata al servidor que escucha, no al cliente conectado a ese puerto",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       intruder = await startIntruder(port);
       client = startSacrificialProcess();
       const fakeBinDir = await installPidLookupToolsThatAlsoSeeTheClient(
@@ -1403,7 +1454,7 @@ describe("ui-preflight.sh", () => {
     "se sigue negando cuando un PID_FILE de una sesión anterior sin cerrar coincide con un servidor ajeno más nuevo",
     async () => {
       workDir = await setupWorkDir();
-      const port = nextPort();
+      const port = await nextPort();
       // Simula una sesión previa que llamó a 'up' y nunca llegó a 'down'
       // (por ejemplo, el worker se quedó sin turnos a mitad de camino): el
       // PID_FILE sobrevive apuntando a un proceso que ya no existe.
@@ -1443,11 +1494,28 @@ describe("andamiaje de los tests de ui-preflight.sh", () => {
   });
 
   it("startMuteServer no vuelve hasta que el puerto acepta conexiones", async () => {
-    const port = nextPort();
+    const port = await nextPort();
 
     muteServer = await startMuteServer(port);
 
     expect((await probePort(port)).accepted).toBe(true);
+  });
+
+  it("nextPort se salta un puerto que ya ocupa otro proceso", async () => {
+    const occupied = peekNextPort();
+    muteServer = await startMuteServer(occupied);
+
+    const port = await nextPort();
+
+    expect(port).toBeGreaterThan(occupied);
+    expect((await probePort(port)).accepted).toBe(false);
+  });
+
+  it("nextPort nunca entrega dos veces el mismo puerto", async () => {
+    const first = await nextPort();
+    const second = await nextPort();
+
+    expect(second).toBeGreaterThan(first);
   });
 
   it("el motivo sobrevive al AggregateError que agrupa los intentos por familia", () => {
@@ -1466,7 +1534,7 @@ describe("andamiaje de los tests de ui-preflight.sh", () => {
   });
 
   it("esperar a un puerto que nadie ocupa falla nombrando el puerto, lo esperado y el motivo", async () => {
-    const port = nextPort();
+    const port = await nextPort();
 
     // El motivo se comprueba como "algo, no vacío", a propósito. Exigir aquí
     // el ECONNREFUSED que da un puerto libre ataría el test al errno de una
