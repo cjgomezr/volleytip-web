@@ -1,6 +1,10 @@
 import { index, route, type RouteConfigEntry } from "@react-router/dev/routes";
 
-import { SUPPORTED_LANGUAGES, type LanguageDefinition } from "./languages";
+import {
+  SUPPORTED_LANGUAGES,
+  findDefaultLanguage,
+  type LanguageDefinition,
+} from "./languages";
 
 // Una página se declara una sola vez. `path` es una cadena cuando la sección
 // se llama igual en todos los idiomas, o un nombre por idioma cuando se
@@ -39,6 +43,7 @@ export function buildLocalizedRoutes(
   pages: readonly PageDeclaration[],
   languages: readonly LanguageDefinition[] = SUPPORTED_LANGUAGES,
 ): RouteConfigEntry[] {
+  findDefaultLanguage(languages);
   const seen = new Set<string>();
   return languages.flatMap((language) =>
     pages.map((page) => {

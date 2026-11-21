@@ -13,6 +13,9 @@ describe("redirección del prefijo /es", () => {
     ["/es/", "/"],
     ["/es/tips?page=2&q=a", "/tips?page=2&q=a"],
     ["/es?x=1", "/?x=1"],
+    ["/es//evil.com", "/evil.com"],
+    ["/es///x", "/x"],
+    ["/es/%5Cevil.com", "/%5Cevil.com"],
   ])("%s lleva a %s con 301", (from, to) => {
     const response = redirectFromDefaultPrefix(new URL(`http://x.test${from}`));
 

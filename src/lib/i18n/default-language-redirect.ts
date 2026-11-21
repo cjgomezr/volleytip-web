@@ -9,7 +9,10 @@ export function redirectFromDefaultPrefix(url: URL): Response | null {
   const { pathname } = url;
   if (pathname !== prefix && !pathname.startsWith(`${prefix}/`)) return null;
 
-  const target = `${pathname.slice(prefix.length) || "/"}${url.search}`;
+  // `/es//evil.com` dejaría `//evil.com`, que el navegador toma por otro
+  // sitio. Se colapsan las barras (y las barras invertidas) iniciales.
+  const rest = pathname.slice(prefix.length).replace(/^[/\\]+/, "/");
+  const target = `${rest || "/"}${url.search}`;
   return new Response(null, {
     status: MOVED_PERMANENTLY,
     headers: { Location: target },

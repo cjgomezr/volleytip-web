@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   DEFAULT_LANGUAGE,
   SUPPORTED_LANGUAGES,
+  findDefaultLanguage,
   getLanguageFromPath,
+  getRequestLanguage,
   isSupportedLanguage,
 } from "./languages";
 
@@ -49,5 +51,31 @@ describe("idioma de una dirección", () => {
     ];
 
     expect(getLanguageFromPath("/pt/x", languages)).toBe("pt");
+  });
+});
+
+describe("idioma por defecto", () => {
+  it("falla si la lista no tiene ninguno", () => {
+    expect(() =>
+      findDefaultLanguage([{ code: "en", isDefault: false }]),
+    ).toThrow(/exactamente un idioma/);
+  });
+
+  it("falla si la lista tiene dos", () => {
+    expect(() =>
+      findDefaultLanguage([
+        { code: "es", isDefault: true },
+        { code: "en", isDefault: true },
+      ]),
+    ).toThrow(/exactamente un idioma/);
+  });
+});
+
+describe("idioma de una petición", () => {
+  it.each([
+    ["http://x.test/", "es"],
+    ["http://x.test/en/algo?a=1", "en"],
+  ])("%s es %s", (url, expected) => {
+    expect(getRequestLanguage(new Request(url))).toBe(expected);
   });
 });

@@ -13,7 +13,23 @@ export const SUPPORTED_LANGUAGES = [
 
 export type Language = (typeof SUPPORTED_LANGUAGES)[number]["code"];
 
-export const DEFAULT_LANGUAGE: Language = "es";
+/** Falla pronto si la lista no tiene exactamente un idioma por defecto. */
+export function findDefaultLanguage(
+  languages: readonly LanguageDefinition[],
+): string {
+  const defaults = languages.filter(({ isDefault }) => isDefault);
+  const [only, ...extra] = defaults;
+  if (only === undefined || extra.length > 0) {
+    throw new Error(
+      `Debe haber exactamente un idioma por defecto, hay ${defaults.length}.`,
+    );
+  }
+  return only.code;
+}
+
+export const DEFAULT_LANGUAGE = findDefaultLanguage(
+  SUPPORTED_LANGUAGES,
+) as Language;
 
 export function isSupportedLanguage(code: string): code is Language {
   return SUPPORTED_LANGUAGES.some((language) => language.code === code);
@@ -34,9 +50,10 @@ export function getLanguageFromPath(
   const prefixed = languages.find(
     (language) => !language.isDefault && language.code === firstSegment,
   );
-  return (
-    prefixed?.code ??
-    languages.find((language) => language.isDefault)?.code ??
-    DEFAULT_LANGUAGE
-  );
+  return prefixed?.code ?? findDefaultLanguage(languages);
+}
+
+/** El idioma de la página que atiende un loader o un action. */
+export function getRequestLanguage(request: Request): Language {
+  return getLanguageFromPath(new URL(request.url).pathname);
 }
