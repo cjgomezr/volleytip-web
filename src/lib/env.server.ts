@@ -10,6 +10,7 @@ import {
   isTurnstileTestSecretKey,
   isTurnstileTestSiteKey,
 } from "./forms/turnstile-test-keys";
+import { isImageCdnHost } from "./images/image-url";
 
 export const APP_ENVIRONMENTS = [
   "local",
@@ -30,6 +31,7 @@ export const SERVER_ENV_VARIABLES = [
   "FORM_PROTECTION_SECRET",
   "CLIENT_IP_HEADER",
   "CLIENT_IP_TRUSTED_HOPS",
+  "IMAGE_CDN_HOST",
 ] as const;
 
 type ServerEnvVariable = (typeof SERVER_ENV_VARIABLES)[number];
@@ -47,6 +49,8 @@ export interface ServerEnv {
   readonly clientIpHeader: string;
   /** Cuántos proxies de confianza anotan en esa cabecera. */
   readonly clientIpTrustedHops: number;
+  /** Dominio del CDN de imágenes (Bunny Optimizer), sin protocolo ni ruta. */
+  readonly imageCdnHost: string;
 }
 
 export type EnvSource = Readonly<Record<string, string | undefined>>;
@@ -143,11 +147,22 @@ function findInvalidFormProtectionValues(values: PresentValues): string[] {
   return invalid;
 }
 
+function findInvalidImageValues(values: PresentValues): string[] {
+  const { IMAGE_CDN_HOST: host } = values;
+  if (host === undefined || isImageCdnHost(host)) {
+    return [];
+  }
+  return [
+    "IMAGE_CDN_HOST no es un dominio. Va sin protocolo ni ruta, por ejemplo nombre.b-cdn.net.",
+  ];
+}
+
 function findInvalidValues(values: PresentValues): string[] {
   return [
     ...findInvalidSupabaseValues(values),
     ...findTurnstileTestKeys(values),
     ...findInvalidFormProtectionValues(values),
+    ...findInvalidImageValues(values),
   ];
 }
 
@@ -186,6 +201,7 @@ function buildServerEnv(
     formProtectionSecret: values.FORM_PROTECTION_SECRET,
     clientIpHeader: values.CLIENT_IP_HEADER,
     clientIpTrustedHops: Number(values.CLIENT_IP_TRUSTED_HOPS),
+    imageCdnHost: values.IMAGE_CDN_HOST,
   };
 }
 

@@ -24,4 +24,6 @@ export const TEST_ENV = {
     "secreto-solo-para-pruebas-no-usar-en-ningun-entorno-real",
   CLIENT_IP_HEADER: "X-Forwarded-For",
   CLIENT_IP_TRUSTED_HOPS: "1",
+  // No existe: ninguna prueba pide una imagen al CDN.
+  IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
 } as const;

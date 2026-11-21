@@ -25,6 +25,7 @@ const VALID_SOURCE: EnvSource = {
   FORM_PROTECTION_SECRET: FORM_SECRET,
   CLIENT_IP_HEADER: "X-Forwarded-For",
   CLIENT_IP_TRUSTED_HOPS: "1",
+  IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
 };
 
 function withOverrides(overrides: EnvSource): EnvSource {
@@ -55,6 +56,7 @@ describe("env del servidor", () => {
         formProtectionSecret: FORM_SECRET,
         clientIpHeader: "X-Forwarded-For",
         clientIpTrustedHops: 1,
+        imageCdnHost: "imagenes-de-prueba.b-cdn.net",
       },
     });
   });
@@ -132,6 +134,10 @@ describe("env del servidor", () => {
     [
       "CLIENT_IP_TRUSTED_HOPS es inválida",
       { CLIENT_IP_TRUSTED_HOPS: SECRET_SENTINEL },
+    ],
+    [
+      "IMAGE_CDN_HOST es inválida",
+      { IMAGE_CDN_HOST: "https://" + SECRET_SENTINEL },
     ],
   ])(
     "no imprime el valor de ninguna variable cuando %s",
@@ -248,4 +254,36 @@ describe("env del servidor: protección de formularios", () => {
       expect(result.ok).toBe(true);
     },
   );
+});
+
+describe("dominio del CDN", () => {
+  it("sale del módulo de entorno", () => {
+    const result = parseServerEnv(
+      withOverrides({ IMAGE_CDN_HOST: "volleytip.b-cdn.net" }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      env: { imageCdnHost: "volleytip.b-cdn.net" },
+    });
+  });
+
+  it("si falta, el entorno es inválido y nombra la variable", () => {
+    const message = expectFailure(withOverrides({ IMAGE_CDN_HOST: undefined }));
+
+    expect(message).toContain("Falta IMAGE_CDN_HOST");
+  });
+
+  it.each([
+    "https://volleytip.b-cdn.net",
+    "volleytip.b-cdn.net/",
+    "volleytip.b-cdn.net/fotos",
+    "volleytip.b-cdn.net:443",
+    "sin-punto",
+  ])("rechaza IMAGE_CDN_HOST=%j: va sin protocolo ni ruta", (host) => {
+    const message = expectFailure(withOverrides({ IMAGE_CDN_HOST: host }));
+
+    expect(message).toContain("IMAGE_CDN_HOST");
+    expect(message).not.toContain(host);
+  });
 });
