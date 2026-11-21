@@ -16,6 +16,11 @@ describe("redirección del prefijo /es", () => {
     ["/es//evil.com", "/evil.com"],
     ["/es///x", "/x"],
     ["/es/%5Cevil.com", "/%5Cevil.com"],
+    ["/es/%2Fevil.com", "/%2Fevil.com"],
+    ["/es/%2F%2Fevil.com", "/%2F%2Fevil.com"],
+    ["/es\\evil.com", "/evil.com"],
+    ["/es/a%20b", "/a%20b"],
+    ["/es/es/tips", "/es/tips"],
   ])("%s lleva a %s con 301", (from, to) => {
     const response = redirectFromDefaultPrefix(new URL(`http://x.test${from}`));
 
@@ -23,7 +28,9 @@ describe("redirección del prefijo /es", () => {
     expect(redirectOf(from)).toBe(to);
   });
 
-  it.each(["/", "/en/", "/espanol", "/esto", "/ES/"])(
+  // El analizador de URL resuelve `..` antes de llegar aquí: la dirección ya
+  // no empieza por `/es`.
+  it.each(["/", "/en/", "/espanol", "/esto", "/ES/", "/es/..//evil.com"])(
     "%s no se redirige",
     (path) => {
       expect(redirectOf(path)).toBeNull();

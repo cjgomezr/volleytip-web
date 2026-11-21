@@ -37,6 +37,22 @@ describe("idioma de una dirección", () => {
     expect(getLanguageFromPath(path)).toBe("en");
   });
 
+  // El router decodifica cada segmento antes de comparar: `/%65n/` es la
+  // misma página que `/en/`, así que tiene que dar el mismo idioma.
+  it.each(["/%65n", "/%65n/", "/%65%6E/algo"])(
+    "%s, con el prefijo codificado, es inglés",
+    (path) => {
+      expect(getLanguageFromPath(path)).toBe("en");
+    },
+  );
+
+  it.each(["/%45N/", "/%65nglish", "/%E0%A4%A/", "/%/"])(
+    "%s no es un idioma y no lanza",
+    (path) => {
+      expect(getLanguageFromPath(path)).toBe("es");
+    },
+  );
+
   it.each(["/english", "/EN/", "/fr/", "/es/algo", "/healthz"])(
     "%s es español por defecto",
     (path) => {

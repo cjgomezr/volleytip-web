@@ -35,6 +35,18 @@ export function isSupportedLanguage(code: string): code is Language {
   return SUPPORTED_LANGUAGES.some((language) => language.code === code);
 }
 
+// React Router decodifica cada segmento antes de buscar la ruta, así que
+// `/%65n/` sirve la misma página que `/en/`. El idioma se decide igual, o el
+// `lang` contradiría lo que se pinta. Un segmento mal codificado se deja tal
+// cual: no es un idioma.
+function decodeSegment(segment: string): string {
+  try {
+    return decodeURIComponent(segment);
+  } catch {
+    return segment;
+  }
+}
+
 // Los prefijos van en minúsculas y exactos: `/EN/` o `/english` no cuentan.
 // `/es/...` tampoco: se redirige antes de llegar aquí.
 export function getLanguageFromPath(pathname: string): Language;
@@ -46,7 +58,8 @@ export function getLanguageFromPath(
   pathname: string,
   languages: readonly LanguageDefinition[] = SUPPORTED_LANGUAGES,
 ): string {
-  const [, firstSegment = ""] = pathname.split("/");
+  const [, rawSegment = ""] = pathname.split("/");
+  const firstSegment = decodeSegment(rawSegment);
   const prefixed = languages.find(
     (language) => !language.isDefault && language.code === firstSegment,
   );

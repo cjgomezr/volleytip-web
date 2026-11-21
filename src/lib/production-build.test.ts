@@ -161,11 +161,15 @@ const ENGLISH_HOME = { method: "GET", path: "/en/" };
 const SPANISH_PREFIX = { method: "GET", path: "/es/?utm=1" };
 const UNSUPPORTED_PREFIX = { method: "GET", path: "/fr/" };
 const MISSING_ENGLISH_PAGE = { method: "GET", path: "/en/no-existe" };
+// El router decodifica el prefijo, así que esta dirección sirve la home en
+// inglés. Su `lang` tiene que coincidir con lo que se pinta.
+const ENCODED_ENGLISH_HOME = { method: "GET", path: "/%65n/" };
 const UPPERCASE_PREFIX = { method: "GET", path: "/EN/" };
 const SERVED_REQUESTS: readonly ServedRequest[] = [
   HOME_PAGE,
   ENGLISH_HOME,
   { method: "GET", path: "/en" },
+  ENCODED_ENGLISH_HOME,
   SPANISH_PREFIX,
   UNSUPPORTED_PREFIX,
   MISSING_ENGLISH_PAGE,
@@ -290,6 +294,12 @@ describe("rutas en el servidor construido", () => {
     const response = findServed(served(), HOME_PAGE);
 
     expect([response.status, response.lang]).toEqual([200, "es"]);
+  });
+
+  it("/%65n/, con el prefijo codificado, declara el idioma que sirve", () => {
+    const response = findServed(served(), ENCODED_ENGLISH_HOME);
+
+    expect([response.status, response.lang]).toEqual([200, "en"]);
   });
 
   it.each(["/en/", "/en"])("%s responde 200 en inglés", (path) => {
