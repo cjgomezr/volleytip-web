@@ -1,5 +1,7 @@
 import type { Messages } from "../translate";
 
+import { errorsEn } from "./errors";
+
 export const en = {
   "site.name": "VolleyTip",
   "home.title": "VolleyTip",
@@ -12,8 +14,5 @@ export const en = {
   "home.intro":
     "We are rebuilding volleytip.com. This page is the foundation of the new site.",
   "home.healthLink": "Check service status",
-  "error.notFoundTitle": "404",
-  "error.notFoundDetails": "This page does not exist.",
-  "error.genericTitle": "Error",
-  "error.genericDetails": "Something went wrong. Please try again.",
+  ...errorsEn,
 } as const satisfies Messages;

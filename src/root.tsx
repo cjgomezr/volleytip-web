@@ -13,11 +13,9 @@ import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getMessages } from "~/lib/i18n/messages.server";
+import { ERROR_MESSAGES } from "~/lib/i18n/messages/errors";
 import type { Messages } from "~/lib/i18n/translate";
-import {
-  TranslationsProvider,
-  useTranslate,
-} from "~/lib/i18n/translations-context";
+import { TranslationsProvider } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { markAsNotIndexable } from "~/lib/indexing.server";
 
@@ -46,7 +44,10 @@ export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/brand/mark.png" },
 ];
 
-// Al navegador solo llegan los textos del idioma de la página.
+// Al navegador solo llegan los textos del idioma de la página. En modo
+// framework con SSR, React Router vuelve a pedir este loader en cada
+// navegación, así que al pasar de `/` a `/en/` los textos cambian con el
+// idioma. Lo vigila una prueba de Playwright.
 export function loader({ request }: Route.LoaderArgs): {
   readonly messages: Messages;
 } {
@@ -92,20 +93,24 @@ interface ErrorSummary {
   readonly details: string;
 }
 
+// No usa `useTranslate`: los textos de la raíz pueden faltar justo cuando
+// hay que pintar un error (un fallo en el middleware o en el loader de la
+// raíz, un método que React Router rechaza). Los de la página de error
+// viajan siempre con el código.
 function useErrorSummary(error: unknown): ErrorSummary {
-  const translate = useTranslate();
+  const messages = ERROR_MESSAGES[useLanguage()];
   if (isRouteErrorResponse(error) && error.status === NOT_FOUND_STATUS) {
     return {
-      title: translate("error.notFoundTitle"),
-      details: translate("error.notFoundDetails"),
+      title: messages["error.notFoundTitle"],
+      details: messages["error.notFoundDetails"],
     };
   }
   if (import.meta.env.DEV && error instanceof Error) {
-    return { title: translate("error.genericTitle"), details: error.message };
+    return { title: messages["error.genericTitle"], details: error.message };
   }
   return {
-    title: translate("error.genericTitle"),
-    details: translate("error.genericDetails"),
+    title: messages["error.genericTitle"],
+    details: messages["error.genericDetails"],
   };
 }
 

@@ -39,6 +39,20 @@ describe("textos", () => {
     expect(t("home.title", { name: "Ana" })).toBe("Hola Ana");
   });
 
+  it("no vuelve a expandir un valor que trae llaves", () => {
+    const t = translateOf(testMessages, "es");
+
+    expect(t("home.title", { name: "{name} {otra}" })).toBe(
+      "Hola {name} {otra}",
+    );
+  });
+
+  it("falla con un error claro si falta el valor de una variable", () => {
+    const t = translateOf(testMessages, "es");
+
+    expect(() => t("home.title", {})).toThrow(/"name"/);
+  });
+
   it("deja un valor con script o ampersand como texto literal al pintarlo", () => {
     const t = translateOf(testMessages, "es");
     const text = t("home.title", { name: "<script>x</script> & Cía" });

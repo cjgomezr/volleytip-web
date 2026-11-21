@@ -675,6 +675,32 @@ test.describe("home en inglés", () => {
     ).toEqual([]);
   });
 
+  test("al navegar de español a inglés sin recargar, cambian el idioma y los textos", async ({
+    page,
+  }) => {
+    await page.goto(APP_URL);
+    await page.waitForLoadState("networkidle");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Aprende voley en",
+    );
+
+    // Navegación dentro de la app, como la que hará el selector de idioma:
+    // sin pedir el documento de nuevo.
+    await page.evaluate(() => {
+      const { __reactRouterDataRouter: router } = window as unknown as {
+        __reactRouterDataRouter: { navigate: (to: string) => Promise<void> };
+      };
+      return router.navigate("/en/");
+    });
+
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Learn volleyball in",
+    );
+    await expect(page).toHaveTitle("VolleyTip");
+  });
+
   test("el navegador retoma el texto del servidor sin advertencias de hidratación", async ({
     page,
   }) => {
