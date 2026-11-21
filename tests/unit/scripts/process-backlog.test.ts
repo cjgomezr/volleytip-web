@@ -113,6 +113,19 @@ if [ "$1" = "issue" ]; then
   exit 0
 fi
 
+if [ "$1" = "pr" ] && [ "$2" = "view" ]; then
+  if [ -n "\${FAIL_PR_VIEW:-}" ]; then
+    echo "gh: API rate limit exceeded" >&2
+    exit 1
+  fi
+  if [ -n "\${PR_VIEW_JSON:-}" ]; then
+    echo "$PR_VIEW_JSON"
+  else
+    echo '{"comments":[]}'
+  fi
+  exit 0
+fi
+
 if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
   if [ -n "\${FAIL_PR_LIST:-}" ]; then
     echo "gh: API rate limit exceeded" >&2
@@ -122,7 +135,7 @@ if [ "$1" = "pr" ] && [ "$2" = "list" ]; then
     echo "$PR_LIST_JSON"
     exit 0
   fi
-  echo "\${PR_LIST_COUNT:-0}"
+  echo "[]"
   exit 0
 fi
 
@@ -315,6 +328,21 @@ const OPEN_IN_PROGRESS_ISSUE = JSON.stringify({
   state: "OPEN",
   labels: [{ name: "in-progress" }],
 });
+
+/**
+ * Lo que `gh pr list --search "Closes #N in:body"` devuelve: un PR cuyo cuerpo
+ * cierra el issue `issue`. La búsqueda de GitHub es difusa, así que el número
+ * del cuerpo no siempre es el que se buscó.
+ */
+function prListClosing(issue: number, createdAt = new Date()): string {
+  return JSON.stringify([
+    {
+      number: 7,
+      body: `Closes #${issue}\n\nAlgo.`,
+      createdAt: createdAt.toISOString().replace(/\.\d+Z$/, "Z"),
+    },
+  ]);
+}
 
 describe("cleanup de process-backlog", () => {
   let workDir = "";
@@ -1104,7 +1132,6 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1134,7 +1161,93 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "1",
+          PR_LIST_JSON: prListClosing(42),
+        },
+      );
+
+      const log = await readLog(logFile);
+      expect(log).not.toMatch(/needs-human/);
+      expect(log).not.toMatch(/issue comment 42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    ["otro issue cuyo número empieza igual", "Closes #420"],
+    ["otro issue cualquiera", "Closes #7"],
+    ["el issue sin la palabra que lo cierra", "Relacionado con #42"],
+  ])(
+    "etiqueta needs-human si el único PR que devuelve la búsqueda es de %s",
+    async (_case, body) => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      await runBash(
+        "source scripts/process-backlog.sh; ME=tester; check_worker_left_no_pr 42",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
+          PR_LIST_JSON: JSON.stringify([{ number: 9, body }]),
+        },
+      );
+
+      const log = await readLog(logFile);
+      expect(log).toMatch(/issue edit 42 --add-label needs-human/);
+      expect(log).toMatch(/issue comment 42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    ["en minúsculas", "closes #42"],
+    ["seguido de un punto", "Arregla el menú. Closes #42."],
+    ["entre PR de otros issues", "Closes #42"],
+  ])(
+    "no toca nada si un PR cierra el issue %s",
+    async (_case, body) => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      await runBash(
+        "source scripts/process-backlog.sh; ME=tester; check_worker_left_no_pr 42",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
+          PR_LIST_JSON: JSON.stringify([
+            { number: 8, body: "Closes #420" },
+            { number: 9, body },
+          ]),
+        },
+      );
+
+      const log = await readLog(logFile);
+      expect(log).not.toMatch(/needs-human/);
+      expect(log).not.toMatch(/issue comment 42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no toca nada si la respuesta de gh no se puede leer",
+    async () => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      await runBash(
+        "source scripts/process-backlog.sh; ME=tester; check_worker_left_no_pr 42",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
+          PR_LIST_JSON: "esto no es JSON",
         },
       );
 
@@ -1185,7 +1298,6 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: JSON.stringify({ state: "CLOSED", labels: [] }),
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1226,7 +1338,6 @@ describe("worker sin PR", () => {
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1257,7 +1368,6 @@ handle_worker_exit "$N" "$EXIT_CODE"`,
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1522,7 +1632,6 @@ false`,
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "0",
         },
       );
 
@@ -1614,9 +1723,8 @@ describe("worker que no termina después de abrir su PR", () => {
   const minutesAgo = (minutes: number): Date =>
     new Date(Date.now() - minutes * 60 * 1000);
 
-  /** Lo que `gh pr list --json createdAt` devuelve: un PR abierto en `at`. */
-  const openPrCreatedAt = (at: Date): string =>
-    JSON.stringify([{ createdAt: at.toISOString().replace(/\.\d+Z$/, "Z") }]);
+  /** Un PR abierto en `at` que cierra el #42, el issue del worker. */
+  const openPrCreatedAt = (at: Date): string => prListClosing(42, at);
 
   /** Un HOME con la sesión del worker de #42, tocada por última vez en `at`. */
   async function writeWorkerSession(at: Date | null): Promise<string> {
@@ -1720,6 +1828,22 @@ describe("worker que no termina después de abrir su PR", () => {
   );
 
   it(
+    "no lo da por colgado si el PR que devuelve la búsqueda cierra otro issue",
+    async () => {
+      workDir = await setupWorkDir();
+      const home = await writeWorkerSession(minutesAgo(40));
+
+      const { verdict } = await checkLingering({
+        HOME: home,
+        PR_LIST_JSON: prListClosing(420, minutesAgo(45)),
+      });
+
+      expect(verdict).toBe("SIGUE");
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
     "no lo da por colgado si gh no puede decir si hay PR",
     async () => {
       workDir = await setupWorkDir();
@@ -1768,7 +1892,7 @@ handle_worker_exit 42 "$(worker_exit_status 143)"`,
           ...process.env,
           PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
           ISSUE_VIEW_JSON: OPEN_IN_PROGRESS_ISSUE,
-          PR_LIST_COUNT: "1",
+          PR_LIST_JSON: prListClosing(42),
         },
       );
 
@@ -1823,4 +1947,433 @@ echo "SOLTADO=$WORKER_RELEASED"`,
     },
     REAL_PROCESS_TEST_TIMEOUT_MS,
   );
+});
+
+/**
+ * Un worker puede abrir su PR y aun así saltarse lo que nadie más comprueba:
+ * dejar escrito qué dijo el revisor y marcar las casillas del issue. Pasó con
+ * dos tickets seguidos: la revisión había corrido, pero el PR no lo decía, y
+ * un hallazgo que el revisor dejó como menor resultó ser un defecto real que
+ * nadie vio hasta revisar a mano. Como una instrucción se puede saltar, el
+ * script lo comprueba al terminar y lo dice en el PR.
+ */
+describe("constancia que deja el worker", () => {
+  let workDir = "";
+
+  afterEach(async () => {
+    if (workDir) {
+      await rm(workDir, REMOVE_TEMP_DIR_OPTIONS);
+      workDir = "";
+    }
+  });
+
+  const PR_NUMBER = 7;
+  const BODY_WITH_REVIEW =
+    "Closes #42\n\n## Qué hace\n\nAlgo.\n\n## Revisión\n\ncode-reviewer: APPROVED en la primera ronda.";
+  const BODY_WITHOUT_REVIEW = "Closes #42\n\n## Qué hace\n\nAlgo.";
+  const CHECKED_BOXES = "- [x] **Dado** uno\n- [ ] **Dado** dos";
+  const UNCHECKED_BOXES = "- [ ] **Dado** uno\n- [ ] **Dado** dos";
+
+  function prList(body: string): string {
+    return JSON.stringify([{ number: PR_NUMBER, body }]);
+  }
+
+  function issueWith(body: string): string {
+    return JSON.stringify({
+      state: "OPEN",
+      labels: [{ name: "in-progress" }],
+      body,
+    });
+  }
+
+  async function checkRecord(
+    env: Record<string, string>,
+    command = "check_worker_left_record 42",
+  ): Promise<{ code: number | null; log: string; stdout: string }> {
+    workDir = await setupWorkDir();
+    await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+    const { binDir, logFile } = await installFakeGh(workDir);
+    const { code, stdout } = await runBash(
+      `source scripts/process-backlog.sh; ME=tester; ${command}`,
+      workDir,
+      {
+        ...process.env,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+        ...env,
+      },
+    );
+    return { code, log: await readLog(logFile), stdout };
+  }
+
+  it(
+    "comenta en el PR cuando su descripción no tiene la sección Revisión",
+    async () => {
+      const { code, log, stdout } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(code).toBe(0);
+      expect(log).toMatch(
+        new RegExp(`pr comment ${String(PR_NUMBER)} --body [\\s\\S]*Revisión`),
+      );
+      expect(log).not.toMatch(/casilla/);
+      expect(stdout).toMatch(/#42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "comenta en el PR cuando el issue tiene casillas y ninguna está marcada",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log).toMatch(
+        new RegExp(`pr comment ${String(PR_NUMBER)} --body [\\s\\S]*casilla`),
+      );
+      expect(log).not.toMatch(/sección/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "nombra las dos cosas en un solo comentario cuando faltan las dos",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log.match(/pr comment/g)).toHaveLength(1);
+      expect(log).toMatch(/Revisión/);
+      expect(log).toMatch(/casilla/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no comenta cuando el PR tiene la sección y el issue tiene casillas marcadas",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["## Review", "### Revisión y cambios posteriores", "## revisión"])(
+    "acepta el título %j como sección de revisión",
+    async (heading) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(`Closes #42\n\n${heading}\n\nAPPROVED.`),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "la palabra revisión suelta en un párrafo no cuenta como sección",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList("Closes #42\n\nQueda pendiente una revisión."),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no se queja de las casillas si el issue no tiene ninguna",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith("Un issue sin lista de criterios."),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no hace nada si el worker no dejó ningún PR abierto",
+    async () => {
+      const { code, log } = await checkRecord({
+        PR_LIST_JSON: "[]",
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no hace nada, ni falla, si gh no responde",
+    async () => {
+      const { code, log } = await checkRecord({ FAIL_PR_LIST: "1" });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "comenta en el PR de este issue, no en el de otro que la búsqueda también devuelve",
+    async () => {
+      // La búsqueda de GitHub es difusa: pedir "Closes #42" también trae el
+      // PR que dice "Closes #420", y aquí llega primero.
+      const { log } = await checkRecord({
+        PR_LIST_JSON: JSON.stringify([
+          { number: 99, body: "Closes #420\n\nOtro ticket, sin revisión." },
+          { number: PR_NUMBER, body: BODY_WITHOUT_REVIEW },
+        ]),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toMatch(new RegExp(`pr comment ${String(PR_NUMBER)} `));
+      expect(log).not.toMatch(/pr comment 99/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no hace nada si ningún PR devuelto cierra de verdad este issue",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: JSON.stringify([
+          { number: 99, body: "Closes #420\n\nOtro ticket." },
+          { number: 98, body: null },
+        ]),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no repite el aviso si el PR ya lo tiene",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+        PR_VIEW_JSON: JSON.stringify({
+          comments: [{ body: "<!-- constancia-worker -->\nAviso anterior." }],
+        }),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "si no puede leer los comentarios anteriores, calla en vez de repetir",
+    async () => {
+      const { code, log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+        FAIL_PR_VIEW: "1",
+      });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "el aviso lleva la marca que evita repetirlo",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toContain("<!-- constancia-worker -->");
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["* [ ] uno\n* [ ] dos", "  - [ ] uno\n    - [ ] dos", "+ [ ] uno"])(
+    "reconoce como casillas sin marcar la lista %j",
+    async (boxes) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(boxes),
+      });
+
+      expect(log).toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["* [X] uno\n* [ ] dos", "  - [x] uno\n  - [ ] dos"])(
+    "reconoce como marcada una casilla de la lista %j",
+    async (boxes) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITH_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(boxes),
+      });
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each(["## Reviewers", "## Revisiones pendientes"])(
+    "el título %j no cuenta como sección de revisión",
+    async (heading) => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(`Closes #42\n\n${heading}\n\nAlgo.`),
+        ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+      });
+
+      expect(log).toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no etiqueta needs-human: el trabajo puede estar bien, lo que falta es el rastro",
+    async () => {
+      const { log } = await checkRecord({
+        PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+        ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+      });
+
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "corre cuando el worker termina con salida 0",
+    async () => {
+      const { log } = await checkRecord(
+        {
+          PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+          ISSUE_VIEW_JSON: issueWith(CHECKED_BOXES),
+        },
+        "handle_worker_exit 42 0",
+      );
+
+      expect(log).toMatch(new RegExp(`pr comment ${PR_NUMBER}`));
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no corre cuando el worker terminó mal: ese camino ya avisa por su cuenta",
+    async () => {
+      const { log } = await checkRecord(
+        {
+          PR_LIST_JSON: prList(BODY_WITHOUT_REVIEW),
+          ISSUE_VIEW_JSON: issueWith(UNCHECKED_BOXES),
+        },
+        "handle_worker_exit 42 1",
+      );
+
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+});
+
+describe("lo que se le pide al worker", () => {
+  let workDir = "";
+
+  afterEach(async () => {
+    if (workDir) {
+      await rm(workDir, REMOVE_TEMP_DIR_OPTIONS);
+      workDir = "";
+    }
+  });
+
+  it(
+    "la orden de arranque local nombra las casillas y la sección Revisión",
+    async () => {
+      workDir = await setupWorkDir();
+      const { binDir, logFile } = await installFakeClaude(workDir);
+
+      await runBash(
+        'source scripts/process-backlog.sh; run_worker 77; wait "$WORKER_PID"',
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          PERMISSION_MODE: "auto",
+          MAX_TURNS: "5",
+          WORKER_MODEL: "sonnet",
+        },
+      );
+
+      const invocation = await readLog(logFile);
+      expect(invocation).toMatch(/acceptance criteria/i);
+      expect(invocation).toMatch(/Revisión/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it("la orden de arranque de la nube nombra lo mismo", async () => {
+    const workflow = await readFile(
+      path.join(REPO_ROOT, ".github/workflows/claude-backlog.yml"),
+      "utf8",
+    );
+    const prompts = workflow
+      .split("\n")
+      .filter((line) => /Process (GitHub issue|up to)/.test(line));
+
+    expect(prompts).toHaveLength(2);
+    for (const prompt of prompts) {
+      expect(prompt).toMatch(/acceptance criteria/i);
+      expect(prompt).toMatch(/Revisión/);
+    }
+  });
+
+  it("CLAUDE.md exige la sección Revisión en la descripción del PR", async () => {
+    const claudeMd = await readFile(path.join(REPO_ROOT, "CLAUDE.md"), "utf8");
+    const prStep = claudeMd.slice(
+      claudeMd.indexOf("7. **PR**"),
+      claudeMd.indexOf("8. **Blockers.**"),
+    );
+
+    expect(prStep).toMatch(/## Revisión/);
+    expect(prStep).toMatch(/not apply/i);
+  });
+
+  it("CLAUDE.md prohíbe pasarle conclusiones al revisor", async () => {
+    const claudeMd = await readFile(path.join(REPO_ROOT, "CLAUDE.md"), "utf8");
+    const reviewStep = claudeMd.slice(
+      claudeMd.indexOf("5. **Review**"),
+      claudeMd.indexOf("6. **Check the boxes**"),
+    );
+
+    expect(reviewStep).toMatch(/never.*conclusions/is);
+  });
+
+  it("el revisor de código tiene que comprobar por su cuenta", async () => {
+    const reviewer = await readFile(
+      path.join(REPO_ROOT, ".claude/agents/code-reviewer.md"),
+      "utf8",
+    );
+
+    expect(reviewer).toMatch(/## Verify, do not trust/);
+    expect(reviewer).toMatch(/Not verified/);
+  });
 });

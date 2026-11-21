@@ -215,7 +215,11 @@ Execute these steps IN ORDER:
 
 5. **Review**: launch `code-reviewer` (and `ui-reviewer` ONLY when the UI-review
    policy in `factory-models.json` applies; see Definition of Done item 4) →
-   fix findings → re-review, until `APPROVED` or 3 rounds.
+   fix findings → re-review, until `APPROVED` or 3 rounds. Brief the reviewer
+   with the requirements, the changed files and where the risk is. Never hand
+   it your conclusions ("tests already pass"): a reviewer told the answer
+   stops checking. A finding rated `Low` is still a finding: fix it or carry
+   it to the PR with the reason you did not (step 7).
 
 6. **Check the boxes**: update the issue body marking each acceptance criterion
    `[x]`, ONLY those a passing test actually proves (`gh issue view N --json
@@ -225,8 +229,13 @@ body -q .body` → edit → `gh issue edit N --body-file`). A box you cannot bac
 7. **PR**: write the description to a file and open it as draft:
    `gh pr create --draft --body-file /tmp/pr-N.md`. The body MUST contain
    `Closes #N`, a summary of what was implemented, a one-line justification for
-   any new runtime dependency, and a loud **⚠ Not verified** section if anything
-   could not be checked. A human merges; never merge yourself.
+   any new runtime dependency, a `## Revisión` section, and a loud
+   **⚠ Not verified** section if anything could not be checked. The
+   `## Revisión` section says which reviewer ran, how many rounds, the
+   verdict, the findings you fixed and every finding you did not apply, with
+   the reason. A review nobody can read did not happen as far as the human is
+   concerned, and `process-backlog.sh` comments on any PR that lacks it. A
+   human merges; never merge yourself.
    EXCEPTION: if the issue carries the `auto-merge` label (a human put it there
    on purpose), once the PR is green run `gh pr ready && gh pr merge --auto
 --squash`. If that command fails or the PR stays `BLOCKED` (auto-merge not

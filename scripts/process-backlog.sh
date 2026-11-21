@@ -181,12 +181,35 @@ bash scripts/process-backlog.sh
 # head produces false negatives for work that is already sitting in an open
 # PR.
 pr_declares_closes() {  # issue number
-  local n="$1" count
-  if ! count=$(gh pr list --state all --search "Closes #$n in:body" --json number --jq length 2>/dev/null); then
+  local n="$1" prs
+  if ! prs=$(prs_closing_issue all "$n"); then
     echo "⚠ no pude comprobar si #$n ya tiene PR (falla de gh); no lo marco needs-human por si acaso" >&2
     return 0
   fi
-  [ "${count:-0}" != "0" ]
+  [ "$prs" != "[]" ]
+}
+
+# How many search results to read before filtering. GitHub's default is 30,
+# and the search below returns far more than the PRs it was asked for.
+CLOSING_PR_SEARCH_LIMIT=100
+
+# Prints, as a compact JSON array, the PRs whose body really closes #N.
+# Fails when `gh` could not be asked or its answer could not be read, and each
+# caller decides what that means for it.
+#
+# GitHub's search is fuzzy: "Closes #6 in:body" also returns the PRs that say
+# "Closes #60", and plenty that close something else entirely. Counting its
+# results answers "is there a PR" with yes for almost any number, so every
+# result is checked here against the exact issue. A prose mention of the same
+# words ("see Closes #6") still counts: telling it from a real closing line
+# would take a Markdown parser.
+prs_closing_issue() {  # state (open|all), issue number
+  local state="$1" n="$2" prs
+  prs=$(gh pr list --state "$state" --search "Closes #$n in:body" \
+    --limit "$CLOSING_PR_SEARCH_LIMIT" --json number,body,createdAt 2>/dev/null) || return 1
+  echo "$prs" | jq -c --arg n "$n" \
+    '[.[] | select((.body // "") | test("closes #" + $n + "([^0-9]|$)"; "i"))]' \
+    2>/dev/null | tr -d '\r'
 }
 
 # Single source of truth for where a worker's branch/worktree lives, so the
@@ -267,9 +290,9 @@ IDLE_AFTER_PR_MINUTES="${IDLE_AFTER_PR_MINUTES:-30}"
 # pr_declares_closes, here it must not end a worker that may still be working.
 worker_has_open_pr() {  # issue number, epoch the worker started
   local n="$1" since="$2" prs count
-  prs=$(gh pr list --state open --search "Closes #$n in:body" --json createdAt 2>/dev/null) || return 1
+  prs=$(prs_closing_issue open "$n") || return 1
   count=$(echo "$prs" | jq --argjson since "$since" \
-    '[.[] | select((.createdAt | fromdateiso8601) >= $since)] | length' 2>/dev/null) || return 1
+    '[.[] | select((.createdAt | fromdateiso8601) >= $since)] | length' 2>/dev/null | tr -d '\r') || return 1
   [ "${count:-0}" != "0" ]
 }
 
@@ -373,6 +396,81 @@ check_worker_left_no_pr() {  # issue number
 Revisa el worktree \`impl-$n\` antes de decidir cómo retomarlo: puede que el trabajo esté casi terminado y solo falte abrir el PR, o que se haya detenido a mitad de camino."
 }
 
+# A worker can open its PR and still skip the two lifecycle steps nobody else
+# checks: writing down what the reviewer said (CLAUDE.md step 7) and checking
+# the issue's acceptance boxes (step 6). It happened twice in a row: the
+# review HAD run, but the PR did not say so, and a finding the reviewer rated
+# Low turned out to be a real defect nobody saw until a human re-reviewed.
+# An instruction can be skipped, so this is checked here, where it cannot.
+#
+# Deliberately NOT needs-human: the work may be fine and the PR is already
+# there for a person to read. What is missing is the trail, and the place a
+# reviewer will see that is the PR itself.
+# Every `gh` failure is a silent return: this is a courtesy check and must
+# never take the run down or accuse a worker because GitHub hiccuped.
+#
+# Only OPEN PRs are looked at. A ticket with `auto-merge` whose PR already
+# merged by the time the worker exits is not checked: there is no PR left to
+# warn on.
+WORKER_RECORD_MARKER="<!-- constancia-worker -->"
+check_worker_left_record() {  # issue number
+  local n="$1" prs pr pr_number pr_body issue_json issue_body previous
+  local -a missing=()
+  # Only the PRs that really close #N: reading the body of whichever the
+  # search listed first would judge, and comment on, somebody else's PR.
+  prs=$(prs_closing_issue open "$n") || return 0
+  pr=$(echo "$prs" | jq -c '.[0] // empty' 2>/dev/null | tr -d '\r') || return 0
+  [ -n "$pr" ] || return 0
+  pr_number=$(echo "$pr" | jq -r '.number' 2>/dev/null | tr -d '\r') || return 0
+  [ -n "$pr_number" ] || return 0
+  pr_body=$(echo "$pr" | jq -r '.body // ""' 2>/dev/null | tr -d '\r') || return 0
+
+  # A heading, not the bare word: "queda pendiente una revisión" in a
+  # paragraph is not a record of one. `.{1,2}` covers the accented ó as one
+  # character or as two bytes, whatever locale grep runs under. The trailing
+  # class keeps "## Reviewers" or "## Revisiones pendientes" from passing.
+  if ! echo "$pr_body" | grep -qiE '^#{2,} *(Revisi.{1,2}n|Review)([^[:alnum:]]|$)'; then
+    missing+=("la sección **Revisión** en esta descripción: qué revisor corrió, cuántas rondas, su veredicto, qué hallazgos se aplicaron y cuáles no (con la razón)")
+  fi
+
+  issue_json=$(gh issue view "$n" --json body 2>/dev/null) || return 0
+  issue_body=$(echo "$issue_json" | jq -r '.body // ""' 2>/dev/null | tr -d '\r') || return 0
+  # Any list marker, indented or not: `* [ ]` and a nested `  - [ ]` are
+  # checkboxes too.
+  if echo "$issue_body" | grep -qE '^[[:space:]]*[-*+] \[ \]' \
+    && ! echo "$issue_body" | grep -qE '^[[:space:]]*[-*+] \[[xX]\]'; then
+    missing+=("ninguna casilla marcada en el issue #$n: se marcan las que una prueba demuestra, y las demás llevan un comentario que diga por qué no")
+  fi
+
+  [ "${#missing[@]}" -gt 0 ] || return 0
+
+  # Say it once per PR. A ticket can come back through here with the same PR
+  # still open (a retry, a re-queue), and a second identical comment is
+  # noise. If the earlier comments cannot be read, stay quiet rather than
+  # repeat.
+  # Through jq, not on the raw JSON: `gh` may print `<` as `<`, and the
+  # marker would never match.
+  previous=$(gh pr view "$pr_number" --json comments 2>/dev/null) || return 0
+  previous=$(echo "$previous" | jq -r '.comments[]?.body // ""' 2>/dev/null) || return 0
+  if echo "$previous" | grep -qF -- "$WORKER_RECORD_MARKER"; then
+    return 0
+  fi
+
+  echo "⚠ El worker abrió el PR #$pr_number de #$n sin dejar constancia completa: lo aviso en el PR"
+  local body="$WORKER_RECORD_MARKER
+🤖 **El worker abrió este PR sin dejar constancia de todo el ciclo.** No significa que el trabajo esté mal: significa que no se puede saber desde aquí. Falta:
+"
+  local item
+  for item in "${missing[@]}"; do
+    body+="
+- $item"
+  done
+  body+="
+
+Antes de mezclar conviene revisar el PR a mano o pedirle al worker que lo complete (CLAUDE.md, pasos 5 a 7)."
+  gh pr comment "$pr_number" --body "$body" || true
+}
+
 # Single decision point for what happens after the worker process ends, so a
 # crash (exit != 0) and a silent success (exit 0, no PR) share the same
 # needs-human path and never both fire for the same run.
@@ -394,6 +492,7 @@ bash scripts/process-backlog.sh
 El nuevo worker puede continuar desde la rama existente."
   else
     check_worker_left_no_pr "$n"
+    check_worker_left_record "$n"
   fi
 }
 
@@ -412,7 +511,12 @@ run_worker() {
   read the issue with 'gh issue view $n', label it in-progress, work on branch impl-$n,
   TDD until the Definition of Done is met, run the code-reviewer (and the ui-reviewer
   only when the UI-review policy in factory-models.json applies to this issue) until
-  APPROVED, then open a draft PR with 'Closes #$n'.
+  APPROVED. Brief the reviewer with the requirements and the changed files, never with
+  your own conclusions ('tests pass'): it has to check by itself.
+  Then check in the issue the acceptance criteria a passing test proves, and comment on
+  the ones you leave unchecked. Then open a draft PR with 'Closes #$n' whose body has a
+  '## Revisión' section: which reviewer ran, how many rounds, the verdict, the findings
+  you fixed and every finding you did NOT apply, with the reason.
   Commit as you go: every time a piece is green (tests passing, lint and types clean),
   commit it before starting the next one. Your turn budget can run out without warning,
   and uncommitted work is lost work.
