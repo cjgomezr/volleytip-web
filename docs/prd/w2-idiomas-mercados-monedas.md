@@ -1,6 +1,6 @@
 # PRD: W2 · Idiomas, mercados y monedas
 
-**Estado:** borrador · **Fecha:** 21 de noviembre de 2026 · **Autor:** Camilo, con Claude · **Épica:** #2
+**Estado:** aprobado · **Fecha:** 21 de noviembre de 2026 · **Autor:** Camilo, con Claude · **Épica:** #2
 
 Fuentes: `docs/SRD-volleytip-web-v1.4.md` (FR-004 a FR-011, FR-122, AC-001 a AC-004, US-08), `docs/plan-maestro.md` y `docs/modelo-de-datos.md` (secciones 1, 3, 4 y 6).
 
@@ -217,14 +217,14 @@ Debajo de un precio en pesos se puede mostrar un aproximado en dólares, calcula
 
 ## 9. Decisiones y preguntas abiertas
 
-Ninguna impide aprobar el PRD. Cada una trae la propuesta con la que se escribirán los tickets si no dices otra cosa.
+Camilo aprobó las propuestas 1, 2, 3, 4 y 6 el 21 de noviembre de 2026, al aprobar el PRD y sus tickets. La 5 y la 7 se terminan de decidir al construir.
 
-- [ ] **1. Librería de traducciones.** Propuesta: una capa propia y pequeña (archivos por idioma, claves tipadas, variables y plurales con `Intl`), sin dependencia nueva. Son dos idiomas con textos cortos, y así el tipo de cada clave lo revisa el compilador. La alternativa es `i18next`, que trae más funciones de las que hacen falta y un paquete más en el navegador. (Camilo)
-- [ ] **2. Proponer el idioma, sin redirigir.** FR-005 dice "propondrá". Propuesta: un aviso, y nunca una redirección automática en la primera visita. Una redirección por idioma del navegador confunde a los buscadores y a quien comparte un enlace. La única redirección es la de la raíz, y solo cuando ya hay una elección guardada. (Camilo)
-- [ ] **3. Direcciones traducidas.** Propuesta: los nombres de sección se traducen (`/tienda` y `/en/shop`, `/nosotros` y `/en/about`), definidos en un solo mapa de rutas. Los identificadores de contenido (un tip, un producto) tienen uno solo para todos los idiomas, como dice el modelo de datos. La alternativa, dejar `/en/tienda`, es más simple pero deja direcciones en español a quien lee en inglés, y cambiarlo después cuesta porque los buscadores ya las guardaron. (Camilo)
-- [ ] **4. Los pesos se guardan en centavos.** DR-001 pide la unidad menor de la moneda y Wompi cobra en centavos. Propuesta: `$120.000` se guarda como `12000000` y se muestra sin decimales. Consecuencia: un `integer` de Postgres tope en unos 21 millones de pesos. Los montos de `prices` y de todo lo que venga después usan `bigint`, y `docs/modelo-de-datos.md` se corrige en el mismo ticket. (Camilo)
+- [x] **1. Librería de traducciones.** Propuesta: una capa propia y pequeña (archivos por idioma, claves tipadas, variables y plurales con `Intl`), sin dependencia nueva. Son dos idiomas con textos cortos, y así el tipo de cada clave lo revisa el compilador. La alternativa es `i18next`, que trae más funciones de las que hacen falta y un paquete más en el navegador. (Camilo)
+- [x] **2. Proponer el idioma, sin redirigir.** FR-005 dice "propondrá". Propuesta: un aviso, y nunca una redirección automática en la primera visita. Una redirección por idioma del navegador confunde a los buscadores y a quien comparte un enlace. La única redirección es la de la raíz, y solo cuando ya hay una elección guardada. (Camilo)
+- [x] **3. Direcciones traducidas.** Propuesta: los nombres de sección se traducen (`/tienda` y `/en/shop`, `/nosotros` y `/en/about`), definidos en un solo mapa de rutas. Los identificadores de contenido (un tip, un producto) tienen uno solo para todos los idiomas, como dice el modelo de datos. La alternativa, dejar `/en/tienda`, es más simple pero deja direcciones en español a quien lee en inglés, y cambiarlo después cuesta porque los buscadores ya las guardaron. (Camilo)
+- [x] **4. Los pesos se guardan en centavos.** DR-001 pide la unidad menor de la moneda y Wompi cobra en centavos. Propuesta: `$120.000` se guarda como `12000000` y se muestra sin decimales. Consecuencia: un `integer` de Postgres tope en unos 21 millones de pesos. Los montos de `prices` y de todo lo que venga después usan `bigint`, y `docs/modelo-de-datos.md` se corrige en el mismo ticket. (Camilo)
 - [ ] **5. Qué idiomas sirve el sitio lo decide el código.** Las traducciones son archivos del repo, así que activar un idioma siempre pide un despliegue. Propuesta: la lista vive en el código y la tabla `languages` es el catálogo que usan las tablas de traducciones y el admin. Una prueba impide que se desalineen. (Se decide al construir, salvo objeción)
-- [ ] **6. Variable nueva `SITE_ORIGIN`.** Las direcciones canónicas y los `hreflang` tienen que ser absolutas y con `https`, y detrás de Railway el servidor ve las peticiones por `http`. Propuesta: una variable por entorno con el dominio público (`https://staging.volleytip.com`). Camilo la pone en Railway antes del merge del ticket que la estrena. No resuelve las cookies de sesión del admin, que siguen pendientes para W10a. (Camilo)
+- [x] **6. Variable nueva `SITE_ORIGIN`.** Las direcciones canónicas y los `hreflang` tienen que ser absolutas y con `https`, y detrás de Railway el servidor ve las peticiones por `http`. Propuesta: una variable por entorno con el dominio público (`https://staging.volleytip.com`). Camilo la pone en Railway antes del merge del ticket que la estrena. No resuelve las cookies de sesión del admin, que siguen pendientes para W10a. (Camilo)
 - [ ] **7. Cookie de idioma.** Propuesta: nombre `vt_locale`, un año, `SameSite=Lax`, `Secure` fuera de local. (Se decide al construir)
 
 ## 10. Descomposición en tickets (para write-ticket)
@@ -232,6 +232,8 @@ Ninguna impide aprobar el PRD. Cada una trae la propuesta con la que se escribir
 Los 10 tickets cuelgan de la épica #2. A diferencia de W1, casi todos se pueden trabajar con la fábrica: solo el ticket 4 necesita que Camilo ponga una variable en Railway.
 
 Carril de migraciones: los tickets 7, 8 y 9 van uno tras otro, nunca en paralelo.
+
+Creados el 21 de noviembre de 2026 como #59 a #68, en el mismo orden de la tabla (el ticket 1 es el #59 y el 10 es el #68). El #62 es el acompañado: nació sin `pending` y con su tarjeta en `Blocked`. El #64 lleva `auto-merge`, ratificado por Camilo. Los #62, #63 y #68 llevan `ui-review`.
 
 | #   | Título propuesto                                                                               | RF    | Tamaño | Depende de | Acompañado                       | Auto-merge sugerido                                              |
 | --- | ---------------------------------------------------------------------------------------------- | ----- | ------ | ---------- | -------------------------------- | ---------------------------------------------------------------- |
