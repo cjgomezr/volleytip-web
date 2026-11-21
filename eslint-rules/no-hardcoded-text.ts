@@ -57,6 +57,7 @@ interface ExpressionNode {
   readonly alternate?: ExpressionNode;
   readonly left?: ExpressionNode;
   readonly right?: ExpressionNode;
+  readonly expression?: ExpressionNode;
 }
 
 interface ExpressionContainerNode {
@@ -84,9 +85,10 @@ function hasWords(value: unknown): value is string {
 }
 
 // Busca un texto escrito a mano dentro de una expresión: una cadena, una
-// plantilla sin variables, o cualquiera de ellas en una condición, en un
-// `&&` / `||` o pegada con `+`. Lo que se calcula (llamadas, variables) no
-// se mira.
+// plantilla con texto fijo, o cualquiera de ellas en una condición, en un
+// `&&` / `||`, pegada con `+`, como valor por defecto (`{ title = "x" }`) o
+// envuelta en un `as` de TypeScript. Lo que se calcula (llamadas, variables)
+// no se mira.
 function containsWords(node: ExpressionNode | undefined): boolean {
   if (node === undefined) return false;
   switch (node.type) {
@@ -103,6 +105,12 @@ function containsWords(node: ExpressionNode | undefined): boolean {
         node.operator === "+" &&
         (containsWords(node.left) || containsWords(node.right))
       );
+    case "AssignmentPattern":
+      return containsWords(node.right);
+    case "TSAsExpression":
+    case "TSSatisfiesExpression":
+    case "TSNonNullExpression":
+      return containsWords(node.expression);
     default:
       return false;
   }

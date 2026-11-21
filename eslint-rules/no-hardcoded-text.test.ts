@@ -43,6 +43,7 @@ describe("guardia de textos: lint", () => {
         code: `const a = { variant: "primary", type: "text", name: "email" };`,
       },
       { code: `const a = { title: "" };` },
+      { code: `function F({ label = "", size = "md" }) { return label; }` },
       { code: `interface Props { readonly label: string; title?: "a" | "b" }` },
     ],
     invalid: [
@@ -132,6 +133,18 @@ describe("guardia de textos: lint", () => {
       {
         code: `const a = <img alt={"Foto de " + name} />;`,
         errors: [{ messageId: "attribute" }],
+      },
+      {
+        code: `const a = <p>{"Hola" as string}</p>;`,
+        errors: [{ messageId: "text" }],
+      },
+      {
+        code: `const a = <img alt={"Logo" satisfies string} />;`,
+        errors: [{ messageId: "attribute" }],
+      },
+      {
+        code: `function F({ label = "Enviar" }) { return label; }`,
+        errors: [{ messageId: "property" }],
       },
       // Las listas de configuración y `meta()` guardan texto visible en
       // objetos, no en etiquetas.
