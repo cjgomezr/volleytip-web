@@ -31,6 +31,19 @@ describe("guardia de textos: lint", () => {
       { code: `const a = <img src="/a.png" alt="" />;` },
       { code: `const a = <img alt={t("site.name")} />;` },
       { code: `const a = <button aria-label={t("x")} title={label} />;` },
+      { code: `const a = <TextField label={t("x")} hint={hint} />;` },
+      { code: `const a = <p>{n + 1}</p>;` },
+      { code: `const a = <p>{t("a") + t("b")}</p>;` },
+      { code: `const a = <input type="hidden" value="dev_sample" />;` },
+      { code: `const a = <input type="submit" value={t("x")} />;` },
+      { code: `const a = <option value="colombia">{t("x")}</option>;` },
+      { code: `const NAV = [{ label: t("nav.shop"), to: "/tienda" }];` },
+      { code: `const meta = () => [{ title: data.title }];` },
+      {
+        code: `const a = { variant: "primary", type: "text", name: "email" };`,
+      },
+      { code: `const a = { title: "" };` },
+      { code: `interface Props { readonly label: string; title?: "a" | "b" }` },
     ],
     invalid: [
       {
@@ -77,6 +90,66 @@ describe("guardia de textos: lint", () => {
       {
         code: "const a = <img alt={`Logo`} />;",
         errors: [{ messageId: "attribute" }],
+      },
+      // Los componentes propios reciben su texto por props: es por donde se
+      // escribe un formulario entero sin pasar por las traducciones.
+      {
+        code: `const a = <TextField label="Nombre completo" />;`,
+        errors: [{ messageId: "attribute", data: { name: "label" } }],
+      },
+      {
+        code: `const a = <TextField label={t("x")} hint="Como en tu documento" />;`,
+        errors: [{ messageId: "attribute", data: { name: "hint" } }],
+      },
+      {
+        code: `const a = <Eyebrow text="Nuevo" />;`,
+        errors: [{ messageId: "attribute" }],
+      },
+      {
+        code: `const a = <Card heading="Camps" description="Entrena con nosotros" />;`,
+        errors: [{ messageId: "attribute" }, { messageId: "attribute" }],
+      },
+      {
+        code: `const a = <div aria-description="Lo que se lee en voz alta" />;`,
+        errors: [{ messageId: "attribute" }],
+      },
+      {
+        code: `const a = <div aria-valuetext="Tres de cinco" />;`,
+        errors: [{ messageId: "attribute" }],
+      },
+      {
+        code: `const a = <input type="submit" value="Enviar pedido" />;`,
+        errors: [{ messageId: "attribute", data: { name: "value" } }],
+      },
+      {
+        code: `const a = <input value="Enviar" type="button" />;`,
+        errors: [{ messageId: "attribute" }],
+      },
+      {
+        code: `const a = <p>{"Total: " + n}</p>;`,
+        errors: [{ messageId: "text" }],
+      },
+      {
+        code: `const a = <img alt={"Foto de " + name} />;`,
+        errors: [{ messageId: "attribute" }],
+      },
+      // Las listas de configuración y `meta()` guardan texto visible en
+      // objetos, no en etiquetas.
+      {
+        code: `const NAV = [{ label: "Tienda", to: "/tienda" }];`,
+        errors: [{ messageId: "property", data: { name: "label" }, line: 1 }],
+      },
+      {
+        code: `const meta = () => [{ title: "Tienda · VolleyTip" }];`,
+        errors: [{ messageId: "property", data: { name: "title" } }],
+      },
+      {
+        code: `const a = { "aria-label": "Cerrar" };`,
+        errors: [{ messageId: "property" }],
+      },
+      {
+        code: `const a = { description: ok ? "Abierto" : "Cerrado" };`,
+        errors: [{ messageId: "property" }],
       },
     ],
   });
