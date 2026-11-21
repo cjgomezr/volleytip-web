@@ -148,6 +148,7 @@ interface ServedResponse extends ServedRequest {
   readonly robots: string | null;
   readonly location: string | null;
   readonly lang: string | null;
+  readonly body: string;
 }
 
 const HOME_PAGE = { method: "GET", path: "/" };
@@ -186,13 +187,16 @@ const SERVED_REQUESTS: readonly ServedRequest[] = [
 
 /** Pide cada ruta al servidor ya construido, en un proceso aparte y con el
  * `APP_ENV` que se le pase. Es el mismo manejador que usa `npm run start`. */
-function requestFromBuiltServer(appEnv: string): ServedResponse[] {
+function requestFromBuiltServer(
+  appEnv: string,
+  requests: readonly ServedRequest[] = SERVED_REQUESTS,
+): ServedResponse[] {
   const script = `
     import { createRequestHandler } from "react-router";
     const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
     const handle = createRequestHandler(build, "production");
     const served = [];
-    for (const { method, path } of ${JSON.stringify(SERVED_REQUESTS)}) {
+    for (const { method, path } of ${JSON.stringify(requests)}) {
       const response = await handle(
         new Request("http://localhost" + path, { method, redirect: "manual" }),
       );
@@ -204,6 +208,7 @@ function requestFromBuiltServer(appEnv: string): ServedResponse[] {
         path,
         location: response.headers.get("Location"),
         lang: /<html lang="([^"]*)"/.exec(body)?.[1] ?? null,
+        body,
         status: response.status,
         contentType: response.headers.get("Content-Type"),
         robots: response.headers.get("X-Robots-Tag"),
@@ -475,5 +480,65 @@ describe("envíos de formulario detrás del proxy", () => {
     );
 
     expect(status).toBe(BAD_REQUEST_STATUS);
+  });
+});
+
+describe("textos por idioma en el servidor construido", () => {
+  let served: ServedResponse[] = [];
+  beforeAll(() => {
+    served = requestFromBuiltServer("production");
+  }, BUILD_TIMEOUT_MS);
+
+  it("la home en inglés no contiene frases que solo existen en español", () => {
+    const { body } = findServed(served, ENGLISH_HOME);
+
+    expect(body).toContain("Learn volleyball in");
+    expect(body).not.toContain("Aprende voley");
+    expect(body).not.toContain("Sitio en construcción");
+  });
+
+  it("la home en español no contiene los textos en inglés", () => {
+    const { body } = findServed(served, HOME_PAGE);
+
+    expect(body).toContain("Aprende voley en");
+    expect(body).not.toContain("Learn volleyball");
+  });
+
+  it("la página 404 sale en el idioma de la dirección", () => {
+    expect(findServed(served, MISSING_PAGE).body).toContain(
+      "Esta página no existe.",
+    );
+    expect(findServed(served, MISSING_ENGLISH_PAGE).body).toContain(
+      "This page does not exist.",
+    );
+  });
+});
+
+// React Router rechaza un método como OPTIONS antes de correr ningún loader,
+// así que la página de error se pinta sin los datos de la raíz. Tiene que
+// salir igual, y en el idioma de la dirección.
+describe("página de error cuando la raíz no tiene datos", () => {
+  const REJECTED_METHOD = { method: "OPTIONS", path: "/" };
+  const REJECTED_METHOD_IN_ENGLISH = { method: "OPTIONS", path: "/en/" };
+  const served = (): ServedResponse[] =>
+    requestFromBuiltServer("staging", [
+      REJECTED_METHOD,
+      REJECTED_METHOD_IN_ENGLISH,
+    ]);
+
+  it("sale como página en español, no como un error sin formato", () => {
+    const response = findServed(served(), REJECTED_METHOD);
+
+    expect(response.lang).toBe("es");
+    expect(response.body).toContain("Algo salió mal. Intenta de nuevo.");
+    expect(response.body).not.toContain("Unexpected Server Error");
+  });
+
+  it("bajo /en/ sale en inglés", () => {
+    const response = findServed(served(), REJECTED_METHOD_IN_ENGLISH);
+
+    expect(response.lang).toBe("en");
+    expect(response.body).toContain("Something went wrong. Please try again.");
+    expect(response.body).not.toContain("Unexpected Server Error");
   });
 });

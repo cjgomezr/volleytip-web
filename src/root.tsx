@@ -6,10 +6,16 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useRouteLoaderData,
 } from "react-router";
 
 import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
+import { getRequestLanguage } from "~/lib/i18n/languages";
+import { getMessages } from "~/lib/i18n/messages.server";
+import { ERROR_MESSAGES } from "~/lib/i18n/messages/errors";
+import type { Messages } from "~/lib/i18n/translate";
+import { TranslationsProvider } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { markAsNotIndexable } from "~/lib/indexing.server";
 
@@ -38,8 +44,19 @@ export const links: Route.LinksFunction = () => [
   { rel: "icon", type: "image/png", href: "/brand/mark.png" },
 ];
 
+// Al navegador solo llegan los textos del idioma de la página. En modo
+// framework con SSR, React Router vuelve a pedir este loader en cada
+// navegación, así que al pasar de `/` a `/en/` los textos cambian con el
+// idioma. Lo vigila una prueba de Playwright.
+export function loader({ request }: Route.LoaderArgs): {
+  readonly messages: Messages;
+} {
+  return { messages: getMessages(getRequestLanguage(request)) };
+}
+
 export function Layout({ children }: { children: ReactNode }): ReactElement {
   const language = useLanguage();
+  const rootData = useRouteLoaderData<typeof loader>("root");
 
   return (
     <html lang={language}>
@@ -50,7 +67,16 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
         <Links />
       </head>
       <body>
-        {children}
+        {rootData === undefined ? (
+          children
+        ) : (
+          <TranslationsProvider
+            language={language}
+            messages={rootData.messages}
+          >
+            {children}
+          </TranslationsProvider>
+        )}
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -67,14 +93,25 @@ interface ErrorSummary {
   readonly details: string;
 }
 
-function summarizeError(error: unknown): ErrorSummary {
+// No usa `useTranslate`: los textos de la raíz pueden faltar justo cuando
+// hay que pintar un error (un fallo en el middleware o en el loader de la
+// raíz, un método que React Router rechaza). Los de la página de error
+// viajan siempre con el código.
+function useErrorSummary(error: unknown): ErrorSummary {
+  const messages = ERROR_MESSAGES[useLanguage()];
   if (isRouteErrorResponse(error) && error.status === NOT_FOUND_STATUS) {
-    return { title: "404", details: "Esta página no existe." };
+    return {
+      title: messages["error.notFoundTitle"],
+      details: messages["error.notFoundDetails"],
+    };
   }
   if (import.meta.env.DEV && error instanceof Error) {
-    return { title: "Error", details: error.message };
+    return { title: messages["error.genericTitle"], details: error.message };
   }
-  return { title: "Error", details: "Algo salió mal. Intenta de nuevo." };
+  return {
+    title: messages["error.genericTitle"],
+    details: messages["error.genericDetails"],
+  };
 }
 
 // Límite de error provisional. Las páginas 404, 500 y mantenimiento del
@@ -82,7 +119,7 @@ function summarizeError(error: unknown): ErrorSummary {
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
-  const { title, details } = summarizeError(error);
+  const { title, details } = useErrorSummary(error);
 
   return (
     <main className="mx-auto max-w-[1280px] px-6 pt-12 pb-24">
