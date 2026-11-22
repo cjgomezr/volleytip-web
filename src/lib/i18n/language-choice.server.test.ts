@@ -263,7 +263,12 @@ describe("caché", () => {
     },
   );
 
-  it.each(["public, max-age=3600", "max-age=60", "s-maxage=600"])(
+  it.each([
+    "public, max-age=3600",
+    "max-age=60",
+    "s-maxage=600",
+    'private="set-cookie", max-age=60',
+  ])(
     "reemplaza una regla que dejaría guardar en caché compartida: %s",
     (cacheControl) => {
       const response = addVaryHeaders(

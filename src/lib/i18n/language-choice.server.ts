@@ -31,7 +31,9 @@ const VARYING_HEADERS = [
   "Sec-Fetch-Site",
 ];
 // Directivas de `Cache-Control` que ya impiden guardar en una caché compartida.
-const ALREADY_PRIVATE = /(^|[\s,])(private|no-store)(?=$|[\s,=])/i;
+// Sin `=`: `private="set-cookie"` solo protege las cabeceras que nombra, y
+// una caché compartida podría guardar el resto.
+const ALREADY_PRIVATE = /(^|[\s,])(private|no-store)(?=$|[\s,])/i;
 
 function createLanguageCookie(
   appEnv: AppEnvironment,
