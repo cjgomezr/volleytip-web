@@ -888,23 +888,32 @@ for (const vp of viewports) {
         });
         // Si algo se sale, el mensaje dice qué: la captura no lo muestra,
         // porque se toma al ancho de la ventana.
-        const overflowing = await page.evaluate(() => {
-          const viewportWidth = document.documentElement.clientWidth;
-          if (document.documentElement.scrollWidth <= viewportWidth) {
-            return [];
-          }
-          return [...document.querySelectorAll("body *")]
-            .filter(
-              (element) =>
-                element.getBoundingClientRect().right > viewportWidth,
-            )
-            .map((element) => {
-              const { right, width } = element.getBoundingClientRect();
-              const text = (element.textContent ?? "").trim().slice(0, 40);
-              return `${element.tagName.toLowerCase()} derecha=${right.toFixed(1)} ancho=${width.toFixed(1)} "${text}"`;
-            });
+        const overflow = await page.evaluate(() => {
+          const root = document.documentElement;
+          const viewportWidth = root.clientWidth;
+          const describe = (element: Element): string => {
+            const { right, width } = element.getBoundingClientRect();
+            const text = (element.textContent ?? "").trim().slice(0, 40);
+            return `${element.tagName.toLowerCase()} derecha=${right.toFixed(1)} ancho=${width.toFixed(1)} propio=${String(element.scrollWidth)}/${String(element.clientWidth)} "${text}"`;
+          };
+          const elements = [...document.querySelectorAll("body *")];
+          return {
+            scrollWidth: root.scrollWidth,
+            viewportWidth,
+            // Lo que pasa del borde, y lo que no cabe en su propia caja.
+            suspects: elements
+              .filter(
+                (element) =>
+                  element.getBoundingClientRect().right > viewportWidth ||
+                  element.scrollWidth > element.clientWidth + 1,
+              )
+              .map(describe),
+          };
         });
-        expect(overflowing, `scroll horizontal a ${vp.width}px`).toEqual([]);
+        expect(
+          overflow.scrollWidth,
+          `scroll horizontal a ${vp.width}px: ${overflow.suspects.join(" | ")}`,
+        ).toBeLessThanOrEqual(overflow.viewportWidth);
         await context.close();
       });
     }
