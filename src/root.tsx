@@ -39,7 +39,7 @@ const NOT_FOUND_STATUS = 404;
 // Las páginas dependen de la cookie de idioma y de `Accept-Language`
 // (el aviso de idioma), y la raíz redirige según la cookie. Las demás
 // respuestas no cambian con eso. Vale también para los datos que React Router
-// pide al navegar (`/_root.data`), que llevan el mismo aviso.
+// pide al navegar (`/_.data`), que llevan el mismo aviso.
 function declareLanguageVariation(
   request: Request,
   response: Response,

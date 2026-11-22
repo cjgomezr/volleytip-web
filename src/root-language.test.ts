@@ -99,7 +99,7 @@ describe("raíz: elección de idioma", () => {
     expect(response.status).toBe(200);
   });
 
-  it.each(["/_root.data", "/en/_.data", "/en.data"])(
+  it.each(["/_.data", "/en/_.data", "/en.data"])(
     "la petición de datos %s también declara Vary y Cache-Control privado",
     async (path) => {
       const response = await runMiddleware(
@@ -111,9 +111,9 @@ describe("raíz: elección de idioma", () => {
     },
   );
 
-  it("la raíz con inglés guardado redirige también al navegar (/_root.data)", async () => {
+  it("la raíz con inglés guardado redirige también al navegar (/_.data)", async () => {
     const response = await runMiddleware(
-      requestFor("/_root.data", { cookie: ENGLISH_CHOICE }),
+      requestFor("/_.data", { cookie: ENGLISH_CHOICE }),
     );
 
     expect(response.status).toBe(302);

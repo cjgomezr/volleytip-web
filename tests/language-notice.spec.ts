@@ -74,6 +74,8 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
   }) => {
     await page.goto(APP_URL);
     await page.getByRole("button", { name: "Stay on this page" }).click();
+    // Espera a que termine el envío antes de volver a navegar.
+    await expect(languageNotice(page)).toHaveCount(0);
     await page.goto(APP_URL);
 
     expect(new URL(page.url()).pathname).toBe("/");
