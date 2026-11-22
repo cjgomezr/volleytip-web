@@ -68,6 +68,10 @@ describe("dinero", () => {
     },
   );
 
+  it("conserva el signo de un dólar negativo", () => {
+    expect(formatMoney({ amount: -1, currency: "USD" }, "en")).toBe("-$0.01");
+  });
+
   it("no pinta signo en un dólar que queda en cero", () => {
     expect(formatMoney({ amount: -0, currency: "USD" }, "en")).toBe("$0.00");
   });
