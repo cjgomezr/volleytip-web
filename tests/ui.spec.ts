@@ -1142,4 +1142,18 @@ test.describe("pie: salto", () => {
 
     expect(Math.round(footerBottom)).toBe(TALL_VIEWPORT.height);
   });
+
+  test("dentro de la columna el header conserva su ancho completo", async ({
+    page,
+  }) => {
+    const HEADER_MAX_WIDTH = 1280;
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(APP_URL);
+
+    const headerWidth = await page
+      .locator("header")
+      .evaluate((header) => header.getBoundingClientRect().width);
+
+    expect(Math.round(headerWidth)).toBe(HEADER_MAX_WIDTH);
+  });
 });
