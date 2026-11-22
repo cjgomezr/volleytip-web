@@ -196,6 +196,13 @@ function requestFromBuiltServer(
   appEnv: string,
   requests: readonly ServedRequest[] = SERVED_REQUESTS,
 ): ServedResponse[] {
+  return runBuiltServer(appEnv, requests).served;
+}
+
+function runBuiltServer(
+  appEnv: string,
+  requests: readonly ServedRequest[],
+): { readonly served: ServedResponse[]; readonly serverLog: string } {
   const script = `
     import { createRequestHandler } from "react-router";
     const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
@@ -242,7 +249,10 @@ function requestFromBuiltServer(
   if (result.status !== 0 || json === undefined) {
     throw new Error(`El servidor no respondió:\n${result.stderr}`);
   }
-  return JSON.parse(json) as ServedResponse[];
+  return {
+    served: JSON.parse(json) as ServedResponse[],
+    serverLog: result.stderr,
+  };
 }
 
 function findServed(
@@ -517,11 +527,9 @@ describe("textos por idioma en el servidor construido", () => {
   });
 
   it("la página 404 sale en el idioma de la dirección", () => {
-    expect(findServed(served, MISSING_PAGE).body).toContain(
-      "Esta página no existe.",
-    );
+    expect(findServed(served, MISSING_PAGE).body).toContain("Balón fuera");
     expect(findServed(served, MISSING_ENGLISH_PAGE).body).toContain(
-      "This page does not exist.",
+      "Out of bounds",
     );
   });
 });
@@ -542,7 +550,7 @@ describe("página de error cuando la raíz no tiene datos", () => {
     const response = findServed(served(), REJECTED_METHOD);
 
     expect(response.lang).toBe("es");
-    expect(response.body).toContain("Algo salió mal. Intenta de nuevo.");
+    expect(response.body).toContain("No pudimos mostrar esta página");
     expect(response.body).not.toContain("Unexpected Server Error");
   });
 
@@ -550,8 +558,62 @@ describe("página de error cuando la raíz no tiene datos", () => {
     const response = findServed(served(), REJECTED_METHOD_IN_ENGLISH);
 
     expect(response.lang).toBe("en");
-    expect(response.body).toContain("Something went wrong. Please try again.");
+    expect(response.body).toContain("We could not show this page");
     expect(response.body).not.toContain("Unexpected Server Error");
+  });
+});
+
+describe("página 500 en el servidor construido", () => {
+  const FAILING_PAGE = { method: "GET", path: "/dev/fallo" };
+  const FORBIDDEN_PAGE = { method: "GET", path: "/dev/fallo?estado=403" };
+  const ENGLISH_FAILING_PAGE = { method: "GET", path: "/en/dev/fallo" };
+  const SECRET_MESSAGE = "detalle-tecnico-secreto";
+  const run = (): ReturnType<typeof runBuiltServer> =>
+    runBuiltServer("staging", [
+      FAILING_PAGE,
+      FORBIDDEN_PAGE,
+      ENGLISH_FAILING_PAGE,
+    ]);
+
+  it("un loader que lanza responde 500 con 'Pedimos tiempo' y sin la cáscara", () => {
+    const response = findServed(run().served, FAILING_PAGE);
+
+    expect(response.status).toBe(500);
+    expect(response.body).toMatch(/<h1[^>]*>Pedimos tiempo/);
+    expect(response.body).not.toContain("<header");
+  });
+
+  it("el código de referencia del HTML es el que quedó en el registro", () => {
+    const { served, serverLog } = run();
+    const body = findServed(served, FAILING_PAGE).body;
+
+    const code = /Código de referencia(?:[\s:]|<[^>]*>)*([0-9A-F]{8})/.exec(
+      body,
+    )?.[1];
+
+    expect(code).toBeDefined();
+    expect(serverLog).toContain(`referencia ${code}`);
+  });
+
+  it("no muestra el mensaje del error ni la traza, tampoco en el HTML", () => {
+    const { body } = findServed(run().served, FAILING_PAGE);
+
+    expect(body).not.toContain(SECRET_MESSAGE);
+    expect(body).not.toMatch(/\n\s+at /);
+  });
+
+  it("sale en inglés bajo /en/ y no se indexa", () => {
+    const response = findServed(run().served, ENGLISH_FAILING_PAGE);
+
+    expect(response.body).toMatch(/<h1[^>]*>Timeout called/);
+    expect(response.robots).toContain("noindex");
+  });
+
+  it("un 403 controlado conserva su estado y no dice 500", () => {
+    const response = findServed(run().served, FORBIDDEN_PAGE);
+
+    expect(response.status).toBe(403);
+    expect(response.body).toMatch(/<h1[^>]*>No pudimos mostrar esta página/);
   });
 });
 

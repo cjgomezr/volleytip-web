@@ -1,15 +1,27 @@
 import type { ReactElement } from "react";
-import { Outlet, useRouteLoaderData } from "react-router";
+import { Link, Outlet, useRouteLoaderData } from "react-router";
 
-import { ErrorContent } from "~/components/error-content";
+import {
+  ErrorContent,
+  isServerError,
+  ServerErrorPage,
+} from "~/components/error-content";
 import { LanguageSuggestion } from "~/components/language-suggestion";
 import { SiteShell } from "~/components/site-shell";
 import { loadAnnouncementMessages } from "~/lib/announcement-bar.server";
 import { getRequestLanguage } from "~/lib/i18n/languages";
+import { PAGES } from "~/lib/i18n/pages";
+import { useTranslate } from "~/lib/i18n/translations-context";
+import { useLanguage } from "~/lib/i18n/use-language";
+import { getMenuEntries } from "~/lib/site-menu";
 
 import type { loader as rootLoader } from "../root";
 
 import type { Route } from "./+types/site-layout";
+
+// 44 px de alto como mínimo: zona de toque en celular.
+const SECTION_LINK_STYLES =
+  "inline-flex min-h-11 items-center px-3 text-[14px] font-bold no-underline hovered:text-brand-lime transition-colors motion-reduce:transition-none";
 
 function useCurrentYear(): number {
   const year = useRouteLoaderData<typeof rootLoader>("root")?.currentYear;
@@ -58,10 +70,23 @@ export default function SiteLayout({
   );
 }
 
-// Un error de una página (el 404 incluido) sigue llevando la cáscara.
-export function ErrorBoundary({
-  error,
-}: Route.ErrorBoundaryProps): ReactElement {
+// Los enlaces del 404 a las secciones que ya existen en el mapa de páginas.
+// Una sección que todavía no tiene página no se pinta.
+function SectionLinks(): ReactElement {
+  const translate = useTranslate();
+  const entries = getMenuEntries(PAGES, useLanguage());
+  return (
+    <>
+      {entries.map((entry) => (
+        <Link key={entry.id} to={entry.href} className={SECTION_LINK_STYLES}>
+          {translate(entry.labelKey)}
+        </Link>
+      ))}
+    </>
+  );
+}
+
+function ErrorInShell({ error }: { readonly error: unknown }): ReactElement {
   const year = useCurrentYear();
   const announcements =
     useRouteLoaderData<typeof loader>("routes/site-layout")?.announcements;
@@ -71,7 +96,21 @@ export function ErrorBoundary({
       notice={<LanguageNotice />}
       year={year}
     >
-      <ErrorContent error={error} />
+      <ErrorContent error={error}>
+        <SectionLinks />
+      </ErrorContent>
     </SiteShell>
+  );
+}
+
+// El 404 y las respuestas de error controladas siguen llevando la cáscara.
+// El 500 no: lo pinta la misma página que usa la raíz, sin leer ajustes.
+export function ErrorBoundary({
+  error,
+}: Route.ErrorBoundaryProps): ReactElement {
+  return isServerError(error) ? (
+    <ServerErrorPage />
+  ) : (
+    <ErrorInShell error={error} />
   );
 }

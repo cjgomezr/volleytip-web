@@ -18,6 +18,10 @@ export default [
   route("healthz", "routes/healthz.ts"),
   // Página de muestra de los componentes. En producción responde 404.
   route("dev/componentes", "routes/dev-components.tsx"),
+  // Falla a propósito para ver las páginas de error. En producción responde
+  // 404. La versión en inglés existe para ver la página en ese idioma.
+  route("dev/fallo", "routes/dev-failure.ts"),
+  route("en/dev/fallo", "routes/dev-failure.ts", { id: "dev-failure-en" }),
   // Guarda el idioma elegido y lleva a la misma página en ese idioma.
   route("idioma", "routes/language-choice.ts"),
   // Diagnóstico de las cabeceras del proxy. En producción responde 404.
