@@ -158,8 +158,10 @@ export function ServerErrorPage(): ReactElement {
         </div>
         {/* El navegador no conoce el código, pero la estructura tiene que ser
             la misma que pintó el servidor: el texto del código se deja como
-            vino. En una navegación del lado del cliente no hay código y el
-            párrafo se oculta. */}
+            vino. Una navegación sin recargar que falla vuelve a cargar el
+            documento (`sendFailedNavigationToDocument`) y trae su código.
+            Queda sin código un envío que falla sin recargar: ahí el párrafo
+            se oculta. */}
         <p className="mt-8 text-[14px] text-ink-muted has-[strong:empty]:hidden">
           {messages["error.serverReference"]}:{" "}
           <strong suppressHydrationWarning>{referenceCode ?? ""}</strong>

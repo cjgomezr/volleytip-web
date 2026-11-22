@@ -1316,3 +1316,27 @@ test.describe("página 500", () => {
     await expect(page.locator("h1")).not.toHaveText(/Pedimos tiempo/i);
   });
 });
+
+test.describe("página 500 al navegar sin recargar", () => {
+  test("un loader que falla también muestra el código de referencia", async ({
+    page,
+  }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => "__reactRouterDataRouter" in window);
+
+    await page.evaluate(() => {
+      const router = (
+        window as unknown as {
+          __reactRouterDataRouter: { navigate: (to: string) => Promise<void> };
+        }
+      ).__reactRouterDataRouter;
+      void router.navigate("/dev/fallo");
+    });
+
+    await expect(page.locator("h1")).toHaveText(/Pedimos tiempo/i);
+    await expect(page).toHaveURL(`${APP_URL}/dev/fallo`);
+    await expect(page.locator("p:has(strong) strong")).toHaveText(
+      /^[0-9A-F]{8}$/,
+    );
+  });
+});

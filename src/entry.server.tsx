@@ -1,6 +1,10 @@
 import { PassThrough } from "node:stream";
 
-import type { EntryContext, HandleErrorFunction } from "react-router";
+import type {
+  EntryContext,
+  HandleDataRequestFunction,
+  HandleErrorFunction,
+} from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";
 import { ServerRouter } from "react-router";
 import { isbot } from "isbot";
@@ -11,6 +15,7 @@ import { ReferenceCodeContext } from "~/lib/error-reference";
 import {
   findRequestReferenceCode,
   reportServerError,
+  sendFailedNavigationToDocument,
 } from "~/lib/server-error-report.server";
 
 export const streamTimeout = 5_000;
@@ -99,3 +104,10 @@ export default function handleRequest(
 export const handleError: HandleErrorFunction = (error, { request }) => {
   reportServerError(error, request);
 };
+
+// Las peticiones de datos de una navegación sin recargar. Si una falló, el
+// navegador carga el documento para que la página 500 lleve su código.
+export const handleDataRequest: HandleDataRequestFunction = (
+  response,
+  { request },
+) => sendFailedNavigationToDocument(response, request);

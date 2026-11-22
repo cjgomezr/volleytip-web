@@ -1,5 +1,9 @@
 import { randomBytes } from "node:crypto";
 
+import { redirectDocument } from "react-router";
+
+import { getDocumentPath } from "./i18n/document-path";
+
 const REFERENCE_CODE_BYTES = 4;
 
 // Un código por petición: si fallan dos loaders de la misma petición, la
@@ -25,4 +29,32 @@ export function reportServerError(error: unknown, request: Request): void {
   const code = codesByRequest.get(request) ?? createReferenceCode();
   codesByRequest.set(request, code);
   console.error(`Error del servidor, referencia ${code}`, error);
+}
+
+const ROUTES_PARAM = "_routes";
+
+// La dirección del documento de una petición de datos: sin el sufijo `.data`
+// y sin el parámetro con el que React Router dice qué rutas pide.
+function getDocumentLocation(request: Request): string {
+  const url = new URL(request.url);
+  url.searchParams.delete(ROUTES_PARAM);
+  return `${getDocumentPath(url)}${url.search}`;
+}
+
+/**
+ * Al navegar sin recargar, React Router pide solo los datos, y el error le
+ * llega al navegador ya saneado: sin el código de referencia. Si esa petición
+ * falló, se le pide al navegador que cargue el documento. Ahí la página 500
+ * la pinta el servidor, con su código.
+ *
+ * Solo las lecturas. Recargar tras un envío fallido perdería lo enviado y
+ * podría mostrar la página como si nada hubiera pasado.
+ */
+export function sendFailedNavigationToDocument(
+  response: Response,
+  request: Request,
+): Response {
+  if (request.method !== "GET") return response;
+  if (findRequestReferenceCode(request) === undefined) return response;
+  return redirectDocument(getDocumentLocation(request));
 }
