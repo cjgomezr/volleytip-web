@@ -21,7 +21,7 @@ import type { Route } from "./+types/site-layout";
 
 // 44 px de alto como mínimo: zona de toque en celular.
 const SECTION_LINK_STYLES =
-  "inline-flex min-h-11 items-center px-3 text-[14px] font-bold no-underline hovered:text-brand-lime transition-colors motion-reduce:transition-none";
+  "inline-flex min-h-11 items-center px-1 text-[14px] font-bold underline hovered:text-brand-lime transition-colors motion-reduce:transition-none";
 
 function useCurrentYear(): number {
   const year = useRouteLoaderData<typeof rootLoader>("root")?.currentYear;

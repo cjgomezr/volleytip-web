@@ -7,22 +7,31 @@ import { ERROR_MESSAGES } from "~/lib/i18n/messages/errors";
 import { useLanguage } from "~/lib/i18n/use-language";
 
 import { Button } from "./button";
-import {
-  OUTLINE_INTERACTIVE_STYLES,
-  OUTLINE_ZONE_STYLES,
-  TRANSITION_STYLES,
-} from "./pressable-styles";
+import { LocalizedLink } from "./localized-link";
+import { TRANSITION_STYLES } from "./pressable-styles";
 
 const NOT_FOUND_STATUS = 404;
 const WORDMARK_WIDTH = 312;
 const WORDMARK_HEIGHT = 59;
 
-const PAGE_STYLES = "mx-auto max-w-[1280px] px-6 pt-12 pb-24";
+const SERVER_ERROR_STATUS = 500;
+
+const PAGE_STYLES = "mx-auto max-w-[1280px] px-6";
+// El bloque se centra en el alto que deja la cáscara, como en el mockup.
+const CENTERED_STYLES = `${PAGE_STYLES} flex min-h-[60vh] flex-col justify-center py-12`;
+// El número es decoración: sale de un pseudo-elemento para que no cuente como
+// texto (el lector de pantalla ya oye el h1 y axe no mide su contraste).
+const CODE_STYLES =
+  "m-0 before:content-[attr(data-code)] font-display text-[clamp(120px,20vw,260px)] leading-[0.85] uppercase";
+const SOLID_CODE_STYLES = `${CODE_STYLES} text-brand-red`;
+// Relleno índigo y contorno rojo, como el 500 del mockup.
+const OUTLINED_CODE_STYLES = `${CODE_STYLES} text-brand-indigo [-webkit-text-stroke:3px_var(--color-brand-red)]`;
 const TITLE_STYLES =
-  "font-display text-[56px] leading-[0.95] uppercase md:text-[88px]";
+  "mt-4 font-display text-[40px] leading-[1.05] uppercase md:text-[56px]";
 const DETAILS_STYLES = "mt-6 max-w-[56ch] text-[16px] leading-[1.5]";
 const ACTIONS_STYLES = "mt-8 flex flex-wrap items-center gap-4";
-const RETRY_STYLES = `inline-flex min-h-[50px] max-w-full items-center justify-center rounded-pill border-2 bg-transparent px-6 py-2 text-center text-[16px] leading-tight font-bold no-underline ${OUTLINE_ZONE_STYLES.dark} ${OUTLINE_INTERACTIVE_STYLES.dark} ${TRANSITION_STYLES}`;
+const PAGE_LINK_STYLES = `inline-flex min-h-11 items-center px-1 text-[14px] font-bold underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
+const RETRY_STYLES = `inline-flex min-h-[54px] max-w-full items-center justify-center gap-2 rounded-pill bg-brand-red px-7 py-2 text-center text-[17px] leading-tight font-bold text-brand-night no-underline hovered:bg-brand-lime pressed:bg-brand-mist ${TRANSITION_STYLES}`;
 
 type ErrorKind = "notFound" | "server" | "other";
 
@@ -74,16 +83,32 @@ export function ErrorContent({
   const details = isNotFound
     ? messages["error.notFoundDetails"]
     : messages["error.genericDetails"];
+  const status = isRouteErrorResponse(error) ? error.status : undefined;
   return (
-    <div className={PAGE_STYLES}>
+    <div className={CENTERED_STYLES}>
       <title>{title}</title>
       <NoIndex />
+      {status === undefined ? null : (
+        <p
+          aria-hidden="true"
+          data-code={status}
+          className={SOLID_CODE_STYLES}
+        />
+      )}
       <h1 className={TITLE_STYLES}>{title}</h1>
       <p className={`${DETAILS_STYLES} text-ink-muted`}>{details}</p>
-      <div className={ACTIONS_STYLES}>
-        <Button to="home">{messages["error.homeLink"]}</Button>
-        {children}
-      </div>
+      {isNotFound ? (
+        <nav className={ACTIONS_STYLES}>
+          <LocalizedLink page="home" className={PAGE_LINK_STYLES}>
+            {messages["error.homeShort"]}
+          </LocalizedLink>
+          {children}
+        </nav>
+      ) : (
+        <div className={ACTIONS_STYLES}>
+          <Button to="home">{messages["error.homeLink"]}</Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -99,34 +124,46 @@ export function ServerErrorPage(): ReactElement {
   const { pathname, search } = useLocation();
   const referenceCode = useReferenceCode();
   return (
-    <main className={PAGE_STYLES}>
+    <main className={`${PAGE_STYLES} flex min-h-screen flex-col pt-5 pb-12`}>
       <title>{messages["error.serverTitle"]}</title>
       <NoIndex />
       <a
         href={getPagePath("home", language)}
         aria-label={messages["error.homeLinkLabel"]}
+        className="self-start"
       >
         <img
           src="/brand/wordmark.png"
           alt=""
           width={WORDMARK_WIDTH}
           height={WORDMARK_HEIGHT}
-          className="mb-12 h-[30px] w-auto"
+          className="h-[30px] w-auto"
         />
       </a>
-      <h1 className={TITLE_STYLES}>{messages["error.serverTitle"]}</h1>
-      <p className={DETAILS_STYLES}>{messages["error.serverDetails"]}</p>
-      {/* El navegador no conoce el código, pero la estructura tiene que ser la
-          misma que pintó el servidor: el texto del código se deja como vino. */}
-      <p className="mt-6 text-[14px] text-ink-muted">
-        {messages["error.serverReference"]}:{" "}
-        <strong suppressHydrationWarning>{referenceCode ?? ""}</strong>
-      </p>
-      <div className={ACTIONS_STYLES}>
-        <a href={`${pathname}${search}`} className={RETRY_STYLES}>
-          {messages["error.serverRetry"]}
-        </a>
-        <Button to="home">{messages["error.homeLink"]}</Button>
+      <div className="my-auto py-12">
+        <p
+          aria-hidden="true"
+          data-code={SERVER_ERROR_STATUS}
+          className={OUTLINED_CODE_STYLES}
+        />
+        <h1 className={TITLE_STYLES}>{messages["error.serverTitle"]}</h1>
+        <p className={DETAILS_STYLES}>{messages["error.serverDetails"]}</p>
+        <div className={ACTIONS_STYLES}>
+          <a href={`${pathname}${search}`} className={RETRY_STYLES}>
+            {messages["error.serverRetry"]}
+          </a>
+          <Button to="home" variant="secondary">
+            {messages["error.homeLink"]}
+          </Button>
+        </div>
+        {/* El navegador no conoce el código, pero la estructura tiene que ser
+            la misma que pintó el servidor: el texto del código se deja como
+            vino. En una navegación del lado del cliente no hay código y el
+            párrafo se oculta. */}
+        <p className="mt-8 text-[14px] text-ink-muted has-[strong:empty]:hidden">
+          {messages["error.serverReference"]}:{" "}
+          <strong suppressHydrationWarning>{referenceCode ?? ""}</strong>
+        </p>
       </div>
     </main>
   );

@@ -50,6 +50,13 @@ describe("404", () => {
     expect(html).toContain('href="/tips"');
   });
 
+  it("lleva el código 404 como elemento decorativo y el enlace Inicio", () => {
+    const html = render("/nada", <ErrorContent error={NOT_FOUND} />);
+
+    expect(html).toContain('data-code="404"');
+    expect(html).toContain(">Inicio<");
+  });
+
   it("no se indexa y tiene un solo h1", () => {
     const html = render("/nada", <ErrorContent error={NOT_FOUND} />);
 
@@ -75,6 +82,12 @@ describe("500", () => {
     expect(html).toContain("Pedimos tiempo");
     expect(html).toContain('href="/camps?pagina=2"');
     expect(html).toContain("Reintentar");
+  });
+
+  it("lleva el código 500 como elemento decorativo", () => {
+    const html = render("/", <ServerErrorPage />);
+
+    expect(html).toContain('data-code="500"');
   });
 
   it("ofrece ir a la home y lleva el logo con enlace a la home", () => {

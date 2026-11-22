@@ -8,8 +8,7 @@ import type { Language } from "../languages";
 // únicos que lo hacen.
 export const errorsEs = {
   "error.notFoundTitle": "Balón fuera",
-  "error.notFoundDetails":
-    "Esta página no existe o se movió. Vuelve al juego desde alguno de estos enlaces.",
+  "error.notFoundDetails": "Esta página no existe o se movió.",
   "error.serverTitle": "Pedimos tiempo",
   "error.serverDetails":
     "Algo falló de nuestro lado y ya quedó registrado. Intenta de nuevo en un momento.",
@@ -19,6 +18,7 @@ export const errorsEs = {
   "error.genericDetails":
     "La solicitud no se pudo completar. Vuelve al inicio e intenta de nuevo.",
   "error.homeLink": "Ir al inicio",
+  "error.homeShort": "Inicio",
   "error.homeLinkLabel": "VolleyTip, ir al inicio",
 } as const;
 
@@ -28,8 +28,7 @@ export type ErrorMessages = {
 
 export const errorsEn = {
   "error.notFoundTitle": "Out of bounds",
-  "error.notFoundDetails":
-    "This page does not exist or it moved. Get back in the game from one of these links.",
+  "error.notFoundDetails": "This page does not exist or it moved.",
   "error.serverTitle": "Timeout called",
   "error.serverDetails":
     "Something broke on our side and it has been logged. Please try again in a moment.",
@@ -39,6 +38,7 @@ export const errorsEn = {
   "error.genericDetails":
     "The request could not be completed. Go back to the home page and try again.",
   "error.homeLink": "Go to the home page",
+  "error.homeShort": "Home",
   "error.homeLinkLabel": "VolleyTip, go home",
 } as const satisfies ErrorMessages;
 
