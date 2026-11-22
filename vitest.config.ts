@@ -1,6 +1,7 @@
 import { defineConfig } from "vitest/config";
 
 import {
+  allowsParallelFiles,
   resolveIntegrationMode,
   type IntegrationMode,
 } from "./src/testing/integration-mode.ts";
@@ -17,6 +18,10 @@ declare module "vitest" {
 // es de Playwright. Va aparte de vite.config.ts a propósito: el plugin de
 // React Router espera un servidor de desarrollo y no hace falta para probar
 // loaders y componentes sueltos.
+const integrationMode = resolveIntegrationMode(
+  process.env.RUN_INTEGRATION_TESTS,
+);
+
 export default defineConfig({
   resolve: {
     tsconfigPaths: true,
@@ -30,10 +35,9 @@ export default defineConfig({
     // Las pruebas de integración (src/testing/describe-integration.ts) corren
     // solo con RUN_INTEGRATION_TESTS=1. Se lee aquí y no en src/, donde el
     // único archivo que lee process.env es env.server.ts.
-    provide: {
-      integrationMode: resolveIntegrationMode(
-        process.env.RUN_INTEGRATION_TESTS,
-      ),
-    },
+    provide: { integrationMode },
+    // Con la base encendida los archivos corren de uno en uno: los de
+    // integración comparten una sola base y en paralelo se pisan.
+    fileParallelism: allowsParallelFiles(integrationMode),
   },
 });
