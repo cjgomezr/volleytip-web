@@ -15,7 +15,9 @@ export interface LocalSupabaseStatus {
   readonly SECRET_KEY: string;
 }
 
-function isLocalSupabaseStatus(value: unknown): value is LocalSupabaseStatus {
+export function isLocalSupabaseStatus(
+  value: unknown,
+): value is LocalSupabaseStatus {
   if (typeof value !== "object" || value === null) {
     return false;
   }

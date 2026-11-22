@@ -33,8 +33,10 @@ export async function loader({
   };
 }
 
-// La barra se lee de la base en cada petición y también en cada navegación,
-// para que un cambio del ajuste y el cambio de idioma se vean al momento.
+// La barra se vuelve a leer en cada navegación, no solo al cargar la página.
+// Sin esto, pasar de `/` a `/en/` dejaría la barra en español: esta ruta
+// no tiene parámetros y React Router no la revalidaría. El costo aceptado es
+// una consulta por navegación, con el mismo límite de espera.
 export function shouldRevalidate(): boolean {
   return true;
 }

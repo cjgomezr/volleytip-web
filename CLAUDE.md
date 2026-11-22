@@ -40,7 +40,7 @@ es el único backend: su configuración y sus migraciones viven en `supabase/`.
   local arriba. Sin la variable se saltan; con ella y la base apagada, fallan.
   Se escriben con `describeIntegration` (`src/testing/describe-integration.ts`)
   y solo se conectan a la base local.
-- E2E / visual: `npx playwright test`, con la base local arriba (`npm run db:start`). Las páginas leen de la base, así que sin ella Playwright no arranca. Antes de cada corrida deja en la base los datos que las pruebas esperan (`tests/support/site-fixtures.ts`).
+- E2E / visual: `npx playwright test`, con la base local arriba (`npm run db:start`). Las páginas leen de la base, así que sin ella Playwright no arranca. Antes de cada corrida deja en la base los datos que las pruebas esperan (`tests/support/site-fixtures.ts`). No lo corras a la vez que los tests de integración: comparten la base local y se pisan las filas.
 - Lint: `npm run lint`
 - Types: `npm run typecheck` (regenera los tipos de rutas y corre `tsc`. Si
   `npx tsc --noEmit` falla con un `./+types/...` que no encuentra, es que

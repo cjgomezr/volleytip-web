@@ -37,9 +37,9 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test, expect, type Page } from "@playwright/test";
+import AxeBuilder from "@axe-core/playwright";
 
 import { ANNOUNCEMENT_FIXTURES } from "./support/site-fixtures";
-import AxeBuilder from "@axe-core/playwright";
 import { shouldCreateMissingSnapshot } from "./support/missing-snapshot-policy";
 import { snapshotCreatedNotice } from "./support/visual-baseline-notice";
 import { TEST_ENV } from "./support/test-env";
@@ -1186,6 +1186,9 @@ for (const vp of viewports) {
         ).toBeVisible();
         for (const message of OTHER_ANNOUNCEMENTS) {
           const item = page.getByText(message[language], { exact: true });
+          // Está en la página aunque no se vea: en celular se oculta, no se
+          // quita.
+          await expect(item).toHaveCount(1);
           await (vp.width < PHONE_MAX_WIDTH
             ? expect(item).toBeHidden()
             : expect(item).toBeVisible());

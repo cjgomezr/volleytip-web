@@ -28,6 +28,32 @@ const SETTINGS_FIXTURES = [
   },
 ] as const;
 
+function buildHeaders(status: LocalSupabaseStatus): Record<string, string> {
+  return {
+    apikey: status.SECRET_KEY,
+    Authorization: `Bearer ${status.SECRET_KEY}`,
+    "Content-Type": "application/json",
+  };
+}
+
+/** Quita de la base local los ajustes que sembró la corrida. La base queda
+ * como la dejan las migraciones, que es lo que esperan las pruebas de
+ * integración. */
+export async function removeSiteFixtures(
+  status: LocalSupabaseStatus,
+): Promise<void> {
+  const keys = SETTINGS_FIXTURES.map(({ key }) => key).join(",");
+  const response = await fetch(
+    `${status.API_URL}/rest/v1/settings?key=in.(${keys})`,
+    { method: "DELETE", headers: buildHeaders(status) },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `No se pudieron quitar los datos de las pruebas (${response.status}): ${await response.text()}`,
+    );
+  }
+}
+
 /** Deja en la base local los ajustes que las pruebas esperan. Si la base no
  * los acepta, falla: una corrida sin sus datos no comprueba nada. */
 export async function seedSiteFixtures(
@@ -38,9 +64,7 @@ export async function seedSiteFixtures(
     {
       method: "POST",
       headers: {
-        apikey: status.SECRET_KEY,
-        Authorization: `Bearer ${status.SECRET_KEY}`,
-        "Content-Type": "application/json",
+        ...buildHeaders(status),
         Prefer: "resolution=merge-duplicates",
       },
       body: JSON.stringify(SETTINGS_FIXTURES),
