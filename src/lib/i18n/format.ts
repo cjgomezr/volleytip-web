@@ -44,6 +44,20 @@ function getDisplayDigits(currency: Currency): number {
   return maximumFractionDigits ?? 0;
 }
 
+// El monto en la unidad mayor, ya redondeado a los decimales que se
+// muestran. Se redondea aquí, con enteros, y no dentro de `Intl`: así unos
+// centavos negativos que el peso redondea a nada dan un 0 limpio y no salen
+// como `-$0`, igual que el `-0`. La mitad se aleja del cero (50 centavos
+// suben al peso siguiente).
+function roundToShownDigits(amount: number, shownDigits: number): number {
+  const hiddenDigits = STORED_MINOR_UNIT_DIGITS - shownDigits;
+  const shownUnits = Math.round(
+    Math.abs(amount) / DECIMAL_BASE ** hiddenDigits,
+  );
+  if (shownUnits === 0) return 0;
+  return (Math.sign(amount) * shownUnits) / DECIMAL_BASE ** shownDigits;
+}
+
 /** `$120.000` en español, `COP 120,000` en inglés. Falla si el monto no es
  * un entero seguro o si el sitio no conoce la moneda. */
 export function formatMoney(money: Money, language: Language): string {
@@ -60,10 +74,7 @@ export function formatMoney(money: Money, language: Language): string {
     currency,
     minimumFractionDigits: shownDigits,
     maximumFractionDigits: shownDigits,
-    // Sin signo cuando lo que se muestra es cero: ni `-0` ni unos centavos
-    // negativos que el peso redondea a nada deben salir como `-$0`.
-    signDisplay: "negative",
-  }).format(amount / DECIMAL_BASE ** STORED_MINOR_UNIT_DIGITS);
+  }).format(roundToShownDigits(amount, shownDigits));
   return language === "es"
     ? formatted.replace(SPACE_AFTER_SYMBOL, "$1")
     : formatted;

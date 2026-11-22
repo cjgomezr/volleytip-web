@@ -60,7 +60,10 @@ describe("dinero", () => {
     "redondea %i centavos de peso en %s a %s, sin signo si queda en cero",
     (amount, language, expected) => {
       expect(
-        formatMoney({ amount, currency: "COP" }, language).replace(/ /g, " "),
+        formatMoney({ amount, currency: "COP" }, language).replace(
+          /\u00a0/g,
+          " ",
+        ),
       ).toBe(expected);
     },
   );
