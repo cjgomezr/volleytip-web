@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { resolveIntegrationMode } from "./integration-mode";
+import {
+  resolveIntegrationMode,
+  allowsParallelFiles,
+} from "./integration-mode";
 
 describe("pruebas de integración", () => {
   it("se saltan cuando RUN_INTEGRATION_TESTS no está definida", () => {
@@ -23,4 +26,17 @@ describe("pruebas de integración", () => {
       );
     },
   );
+});
+
+// Los archivos de integración comparten una sola base. En paralelo se pisan:
+// uno afirma que un admin ve exactamente dos mercados mientras otro crea los
+// suyos de prueba, o que un idioma no existe mientras otro lo inserta.
+describe("archivos de prueba en paralelo", () => {
+  it("corren en paralelo cuando las pruebas de integración se saltan", () => {
+    expect(allowsParallelFiles("skip")).toBe(true);
+  });
+
+  it("corren de uno en uno cuando hay base, para que no se pisen", () => {
+    expect(allowsParallelFiles("run")).toBe(false);
+  });
 });
