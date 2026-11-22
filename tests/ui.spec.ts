@@ -96,10 +96,28 @@ async function createMissingLocalBaseline(
 // every factory on the machine would fight over it and test each other's app.
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 
-// Playwright pide inglés por defecto, y con eso la home mostraría el aviso de
-// idioma. Estas pruebas corren como una persona con el navegador en español;
-// las del aviso (language-notice.spec.ts) piden inglés a propósito.
-test.use({ locale: "es-CO" });
+// Playwright pide inglés por defecto, y sin elección guardada el aviso de
+// idioma saldría en la home y en sus capturas. Estas pruebas corren como una
+// persona que ya eligió español (valor que escribe `serializeLanguageChoice`:
+// el JSON "es" en base64); las del aviso (language-notice.spec.ts) parten de
+// una primera visita.
+test.use({
+  storageState: {
+    cookies: [
+      {
+        name: "vt_locale",
+        value: "ImVzIg%3D%3D",
+        domain: new URL(APP_URL).hostname,
+        path: "/",
+        expires: -1,
+        httpOnly: false,
+        secure: false,
+        sameSite: "Lax",
+      },
+    ],
+    origins: [],
+  },
+});
 
 // Presupuesto ABSOLUTO, no un ratio. Un `maxDiffPixelRatio` crece con el alto
 // de la página, así que en una página larga un componente pequeño puede
@@ -815,3 +833,56 @@ test.describe("Selector de idioma", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Aviso de idioma (lo demás está en language-notice.spec.ts)
+// ---------------------------------------------------------------------------
+
+// Playwright anuncia "HeadlessChrome", que isbot reconoce como robot: sin un
+// agente de navegador normal el aviso nunca saldría.
+const BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+for (const vp of viewports) {
+  test.describe(`aviso de idioma @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    const cases = [
+      { label: "es", locale: "en-US", url: APP_URL },
+      { label: "en", locale: "es-CO", url: ENGLISH_HOME_URL },
+    ] as const;
+
+    for (const { label, locale, url } of cases) {
+      test(`página en ${label} coincide con la línea base`, async ({
+        browser,
+      }) => {
+        const context = await browser.newContext({
+          locale,
+          userAgent: BROWSER_USER_AGENT,
+          viewport: { width: vp.width, height: vp.height },
+        });
+        const page = await context.newPage();
+        await page.goto(url);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        const name = `aviso-idioma-${label}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth >
+            document.documentElement.clientWidth,
+        );
+        expect(overflow, `scroll horizontal a ${vp.width}px`).toBe(false);
+        await context.close();
+      });
+    }
+  });
+}

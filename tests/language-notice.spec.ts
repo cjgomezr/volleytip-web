@@ -1,55 +1,21 @@
 /**
  * Aviso de idioma (FR-005, AC-001): con el navegador en inglés aparece, se
- * acepta o se rechaza, y la elección se recuerda. Las capturas siguen las
- * mismas reglas que `ui.spec.ts`: solo la línea base de Linux obliga.
+ * acepta o se rechaza, y la elección se recuerda. Las capturas del
+ * aviso viven en `ui.spec.ts`, junto a las demás.
  */
-import { existsSync } from "node:fs";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
-import { shouldCreateMissingSnapshot } from "./support/missing-snapshot-policy";
-import { snapshotCreatedNotice } from "./support/visual-baseline-notice";
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 const ENGLISH_HOME_URL = `${APP_URL}/en/`;
 const COMPONENTS_URL = `${APP_URL}/dev/componentes`;
 const LANGUAGE_COOKIE = "vt_locale";
-const PAGE_MAX_DIFF_PIXELS = 20;
 // Playwright anuncia "HeadlessChrome", que isbot reconoce como robot: sin un
 // agente de navegador normal el aviso nunca saldría.
 const BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const GOOGLEBOT =
   "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)";
-
-const SCREENSHOT_OPTIONS = {
-  animations: "disabled",
-  caret: "hide",
-  scale: "css",
-} as const;
-
-const viewports = [
-  { name: "small", width: 360, height: 800 },
-  { name: "mobile", width: 390, height: 844 },
-  { name: "tablet", width: 768, height: 1024 },
-  { name: "desktop", width: 1440, height: 900 },
-] as const;
-
-async function createMissingLocalBaseline(
-  name: string,
-  capture: () => Promise<Buffer>,
-): Promise<void> {
-  const expectedPath = test.info().snapshotPath(name, { kind: "screenshot" });
-  if (
-    !shouldCreateMissingSnapshot(process.platform, existsSync(expectedPath))
-  ) {
-    return;
-  }
-  await mkdir(path.dirname(expectedPath), { recursive: true });
-  await writeFile(expectedPath, await capture());
-  console.log(snapshotCreatedNotice(name));
-}
 
 async function readLanguageCookie(page: Page): Promise<string | undefined> {
   const cookies = await page.context().cookies(APP_URL);
@@ -60,14 +26,6 @@ function languageNotice(page: Page): ReturnType<Page["getByRole"]> {
   return page.getByRole("region", {
     name: /Language suggestion|Sugerencia de idioma/,
   });
-}
-
-async function hasHorizontalScroll(page: Page): Promise<boolean> {
-  return page.evaluate(
-    () =>
-      document.documentElement.scrollWidth >
-      document.documentElement.clientWidth,
-  );
 }
 
 test.describe("aviso de idioma con el navegador en inglés", () => {
@@ -206,42 +164,3 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     ).toEqual([]);
   });
 });
-
-for (const vp of viewports) {
-  test.describe(`aviso de idioma @ ${vp.name}`, () => {
-    test.use({ viewport: { width: vp.width, height: vp.height } });
-
-    const cases = [
-      { label: "es", locale: "en-US", url: APP_URL },
-      { label: "en", locale: "es-CO", url: ENGLISH_HOME_URL },
-    ] as const;
-
-    for (const { label, locale, url } of cases) {
-      test(`página en ${label} coincide con la línea base`, async ({
-        browser,
-      }) => {
-        const context = await browser.newContext({
-          locale,
-          userAgent: BROWSER_USER_AGENT,
-          viewport: { width: vp.width, height: vp.height },
-        });
-        const page = await context.newPage();
-        await page.goto(url);
-        await page.evaluate(async () => {
-          await document.fonts.ready;
-        });
-        const name = `aviso-idioma-${label}-${vp.name}.png`;
-        await createMissingLocalBaseline(name, () =>
-          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
-        );
-        await expect(page).toHaveScreenshot(name, {
-          ...SCREENSHOT_OPTIONS,
-          fullPage: true,
-          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
-        });
-        expect(await hasHorizontalScroll(page)).toBe(false);
-        await context.close();
-      });
-    }
-  });
-}
