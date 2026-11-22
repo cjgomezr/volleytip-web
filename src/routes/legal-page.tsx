@@ -14,6 +14,8 @@ import { getLegalText } from "~/lib/legal/legal-texts";
 // Las fechas de vigencia se declaran sin hora; se leen al mediodía de Colombia
 // para que ninguna zona horaria las corra de día.
 const COLOMBIA_NOON_SUFFIX = "T12:00:00-05:00";
+// Meta en la página y no la cabecera de `indexing.server.ts`: depende del dato
+// del documento, que el middleware de la raíz no conoce.
 const NO_INDEX = "noindex";
 
 export interface LegalPageData {
@@ -70,8 +72,8 @@ function Block({ block }: { readonly block: LegalBlock }): ReactElement {
     case "list":
       return (
         <ul className="mt-4 list-disc space-y-2 pl-6">
-          {block.items.map((item) => (
-            <li key={item}>{item}</li>
+          {block.items.map((item, index) => (
+            <li key={`${index}-${item}`}>{item}</li>
           ))}
         </ul>
       );
