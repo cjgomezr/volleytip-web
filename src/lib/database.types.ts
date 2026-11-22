@@ -72,6 +72,79 @@ export type Database = {
         };
         Relationships: [];
       };
+      languages: {
+        Row: {
+          code: string;
+          created_at: string;
+          is_active: boolean;
+          is_default: boolean;
+          name: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          code: string;
+          created_at?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name: string;
+          updated_at?: string;
+        };
+        Update: {
+          code?: string;
+          created_at?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          name?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      markets: {
+        Row: {
+          country_code: string;
+          created_at: string;
+          currency: string;
+          default_locale: string;
+          id: string;
+          is_active: boolean;
+          payment_methods: string[];
+          ships_physical: boolean;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          country_code: string;
+          created_at?: string;
+          currency: string;
+          default_locale: string;
+          id?: string;
+          is_active?: boolean;
+          payment_methods?: string[];
+          ships_physical?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          country_code?: string;
+          created_at?: string;
+          currency?: string;
+          default_locale?: string;
+          id?: string;
+          is_active?: boolean;
+          payment_methods?: string[];
+          ships_physical?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "markets_default_locale_fkey";
+            columns: ["default_locale"];
+            isOneToOne: false;
+            referencedRelation: "languages";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
