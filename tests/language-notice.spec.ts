@@ -166,3 +166,56 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     ).toEqual([]);
   });
 });
+
+// El selector vive por ahora solo en la página de muestra (W3 lo pone en el
+// header). Ahí se comprueba de punta a punta que cambiar de idioma guarda la
+// elección.
+test.describe("selector de idioma: guarda la elección", () => {
+  test.use({ locale: "es-CO", userAgent: BROWSER_USER_AGENT });
+
+  // El valor que escribe la cookie: el JSON del idioma, en base64.
+  function decodeChoice(value: string | undefined): unknown {
+    if (value === undefined) return undefined;
+    return JSON.parse(
+      Buffer.from(decodeURIComponent(value), "base64").toString("utf8"),
+    );
+  }
+
+  test("al elegir inglés, la elección guardada pasa a ser inglés", async ({
+    page,
+  }) => {
+    await page.goto(COMPONENTS_URL);
+    expect(await readLanguageCookie(page)).toBeUndefined();
+
+    await page.locator('[data-zone="dark"] nav a[lang="en"]').click();
+
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+    expect(decodeChoice(await readLanguageCookie(page))).toBe("en");
+  });
+
+  test("al volver a español, la elección guardada pasa a ser español y la raíz ya no redirige", async ({
+    page,
+  }) => {
+    await page.goto(COMPONENTS_URL);
+    await page.locator('[data-zone="dark"] nav a[lang="en"]').click();
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+
+    await page.goto(COMPONENTS_URL);
+    await page.locator('[data-zone="dark"] nav a[lang="es"]').click();
+
+    await expect(page).toHaveURL(`${APP_URL}/`);
+    expect(decodeChoice(await readLanguageCookie(page))).toBe("es");
+  });
+
+  test("abrir el otro idioma en una pestaña nueva no cambia la elección", async ({
+    page,
+  }) => {
+    await page.goto(COMPONENTS_URL);
+
+    await page
+      .locator('[data-zone="dark"] nav a[lang="en"]')
+      .click({ modifiers: ["ControlOrMeta"] });
+
+    expect(await readLanguageCookie(page)).toBeUndefined();
+  });
+});

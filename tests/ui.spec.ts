@@ -843,6 +843,9 @@ test.describe("Selector de idioma", () => {
 const BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
+const FIRST_VISIT = { cookies: [], origins: [] };
+const LANGUAGE_NOTICE_NAME = /Language suggestion|Sugerencia de idioma/;
+
 for (const vp of viewports) {
   test.describe(`aviso de idioma @ ${vp.name}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
@@ -856,16 +859,24 @@ for (const vp of viewports) {
       test(`página en ${label} coincide con la línea base`, async ({
         browser,
       }) => {
+        // Un contexto nuevo hereda la cookie de "ya elegí español" que este
+        // archivo pone para las demás pruebas, y con ella el aviso no sale.
+        // Estas parten de una primera visita.
         const context = await browser.newContext({
           locale,
           userAgent: BROWSER_USER_AGENT,
           viewport: { width: vp.width, height: vp.height },
+          storageState: FIRST_VISIT,
         });
         const page = await context.newPage();
         await page.goto(url);
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        // Sin esto la captura podría ser la de la home sin aviso y pasar.
+        await expect(
+          page.getByRole("region", { name: LANGUAGE_NOTICE_NAME }),
+        ).toBeVisible();
         const name = `aviso-idioma-${label}-${vp.name}.png`;
         await createMissingLocalBaseline(name, () =>
           page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),

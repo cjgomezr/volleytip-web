@@ -25,6 +25,8 @@ const ROOT_PATH = "/";
 // La respuesta cambia con lo que la persona guardó y con lo que su navegador
 // dice, así que una caché compartida no puede servírsela a otra.
 const VARYING_HEADERS = ["Cookie", "Accept-Language", "User-Agent"];
+// Directivas de `Cache-Control` que ya impiden guardar en una caché compartida.
+const ALREADY_PRIVATE = /(^|[\s,])(private|no-store)(?=$|[\s,=])/i;
 
 function createLanguageCookie(
   appEnv: AppEnvironment,
@@ -112,7 +114,12 @@ export function addVaryHeaders(response: Response): Response {
   );
   for (const name of VARYING_HEADERS) vary.add(name);
   headers.set("Vary", [...vary].join(", "));
-  headers.set("Cache-Control", "private");
+  // Una ruta que ya impide la caché compartida (`private`, `no-store`) se
+  // respeta: su regla puede ser más estricta que esta y no se afloja aquí.
+  const routeRule = headers.get("Cache-Control") ?? "";
+  if (!ALREADY_PRIVATE.test(routeRule)) {
+    headers.set("Cache-Control", "private");
+  }
   return new Response(response.body, {
     status: response.status,
     statusText: response.statusText,

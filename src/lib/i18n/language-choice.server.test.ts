@@ -214,6 +214,31 @@ describe("caché", () => {
     expect(response.headers.get("Cache-Control")).toBe("private");
   });
 
+  // Una página con datos de una persona (un pedido, el admin) pedirá que no
+  // se guarde nunca. Esa regla es más estricta y no se puede aflojar aquí.
+  it.each(["no-store", "private, no-store", "private, max-age=60"])(
+    "respeta la regla de una ruta que ya impide la caché compartida: %s",
+    (cacheControl) => {
+      const response = addVaryHeaders(
+        new Response("x", { headers: { "Cache-Control": cacheControl } }),
+      );
+
+      expect(response.headers.get("Cache-Control")).toBe(cacheControl);
+      expect(response.headers.get("Vary")).toContain("Cookie");
+    },
+  );
+
+  it.each(["public, max-age=3600", "max-age=60", "s-maxage=600"])(
+    "reemplaza una regla que dejaría guardar en caché compartida: %s",
+    (cacheControl) => {
+      const response = addVaryHeaders(
+        new Response("x", { headers: { "Cache-Control": cacheControl } }),
+      );
+
+      expect(response.headers.get("Cache-Control")).toBe("private");
+    },
+  );
+
   it("también vale para una redirección con cabeceras inmutables", () => {
     const response = addVaryHeaders(
       Response.redirect("http://localhost/en/", 302),
