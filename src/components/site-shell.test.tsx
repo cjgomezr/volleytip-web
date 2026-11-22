@@ -36,7 +36,8 @@ describe("cáscara", () => {
     const html = renderShell("/");
 
     expect(html.lastIndexOf("</main>")).toBeLessThan(html.indexOf("<footer"));
-    expect(html.trimEnd()).toMatch(/<\/footer>$/);
+    // Después del pie solo cierra la columna que envuelve la cáscara.
+    expect(html.trimEnd()).toMatch(/<\/footer><\/div>$/);
   });
 
   it("puts the skip link before everything else, pointing at the main", () => {
@@ -47,8 +48,9 @@ describe("cáscara", () => {
     expect(html).toMatch(
       new RegExp(`<a[^>]+href="#${target}"[^>]*>Saltar al contenido</a>`),
     );
-    // Lo único que puede ir antes son los <link> que React sube al <head>.
-    expect(html.replace(/<link[^>]*>/g, "")).toMatch(/^<a /);
+    // Lo único que puede ir antes son los <link> que React sube al <head> y
+    // la columna que envuelve la cáscara: el enlace es su primer hijo.
+    expect(html.replace(/<link[^>]*>/g, "")).toMatch(/^<div [^>]*><a /);
   });
 
   it("writes the skip link in English under /en/", () => {

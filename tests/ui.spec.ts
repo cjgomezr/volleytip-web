@@ -1128,4 +1128,18 @@ test.describe("pie: salto", () => {
       await expect(page.locator("footer#pie")).toHaveCount(1);
     }
   });
+
+  test("en una página corta el pie queda pegado al fondo de la pantalla", async ({
+    page,
+  }) => {
+    const TALL_VIEWPORT = { width: 1440, height: 1600 };
+    await page.setViewportSize(TALL_VIEWPORT);
+    await page.goto(`${APP_URL}/no-existe`);
+
+    const footerBottom = await page
+      .locator("footer#pie")
+      .evaluate((footer) => footer.getBoundingClientRect().bottom);
+
+    expect(Math.round(footerBottom)).toBe(TALL_VIEWPORT.height);
+  });
 });

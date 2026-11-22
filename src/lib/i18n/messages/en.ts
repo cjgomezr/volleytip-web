@@ -40,7 +40,7 @@ export const en = {
   "footer.social.facebook": "Facebook",
   "footer.social.whatsapp": "WhatsApp",
   "footer.languageLabel": "Site language",
-  "footer.legalLine": "© {year} VolleyTip. All rights reserved.",
+  "footer.legalLine": "© {year} VolleyTip. Made in Colombia.",
   "languageSwitcher.label": "Language",
   "languageSuggestion.label": "Language suggestion",
   "languageSuggestion.message": "This page is also available in English.",

@@ -26,16 +26,18 @@ export function SiteShell({
 }): ReactElement {
   const translate = useTranslate();
   return (
-    <>
+    // Columna del alto de la pantalla: en una página corta el contenido
+    // crece y el pie queda abajo, no flotando a media pantalla.
+    <div className="flex min-h-screen flex-col">
       <a href={`#${MAIN_ID}`} className={SKIP_LINK_STYLES}>
         {translate("header.skipLink")}
       </a>
       {notice}
       <SiteHeader />
-      <main id={MAIN_ID} tabIndex={-1} className="outline-none">
+      <main id={MAIN_ID} tabIndex={-1} className="flex-1 outline-none">
         {children}
       </main>
       <SiteFooter year={year} />
-    </>
+    </div>
   );
 }

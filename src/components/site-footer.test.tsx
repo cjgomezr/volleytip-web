@@ -136,6 +136,6 @@ describe("pie: idioma", () => {
 
 describe("pie: textos", () => {
   it("writes the legal line in English under /en/", () => {
-    expect(renderFooter({ at: "/en/" })).toContain("All rights reserved");
+    expect(renderFooter({ at: "/en/" })).toContain("Made in Colombia");
   });
 });
