@@ -96,6 +96,11 @@ async function createMissingLocalBaseline(
 // every factory on the machine would fight over it and test each other's app.
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 
+// Playwright pide inglés por defecto, y con eso la home mostraría el aviso de
+// idioma. Estas pruebas corren como una persona con el navegador en español;
+// las del aviso (language-notice.spec.ts) piden inglés a propósito.
+test.use({ locale: "es-CO" });
+
 // Presupuesto ABSOLUTO, no un ratio. Un `maxDiffPixelRatio` crece con el alto
 // de la página, así que en una página larga un componente pequeño puede
 // cambiar por completo sin llegar al umbral: un botón desalineado, un color de
