@@ -16,6 +16,9 @@ import { SocialIcon } from "./social-icons";
 /** El ancla a la que salta el botón de menú sin JavaScript. */
 export const FOOTER_ID = "pie";
 
+const WORDMARK_WIDTH = 312;
+const WORDMARK_HEIGHT = 59;
+
 // 44 px de alto como mínimo: zona de toque en celular.
 const LINK_STYLES = `inline-flex min-h-11 items-center text-[14px] font-bold no-underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
 const SOCIAL_LINK_STYLES = `inline-flex size-11 items-center justify-center rounded-pill text-brand-mist no-underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
@@ -70,40 +73,59 @@ export function SiteFooter({
   const columns = getFooterColumns(pages, language);
 
   return (
-    <footer id={FOOTER_ID} className="bg-brand-night text-brand-mist">
+    <footer
+      id={FOOTER_ID}
+      className="border-t-2 border-brand-red bg-brand-indigo text-brand-mist"
+    >
       <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-4 py-10 md:px-6">
-        <ul
-          aria-label={translate("footer.social.label")}
-          className="m-0 flex list-none flex-wrap gap-2 p-0"
-        >
-          {SOCIAL_NETWORKS.map(({ id, href }) => (
-            <li key={id}>
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={translate(SOCIAL_LABEL_KEYS[id])}
-                className={SOCIAL_LINK_STYLES}
-              >
-                <SocialIcon network={id} />
-              </a>
-            </li>
-          ))}
-        </ul>
-        {columns.length === 0 ? null : (
-          <nav
-            aria-label={translate("footer.navLabel")}
-            className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
-          >
-            {columns.map((column) => (
-              <FooterColumnLinks key={column.id} column={column} />
-            ))}
-          </nav>
-        )}
-        <LanguageSwitcher label={translate("footer.languageLabel")} />
-        <p className="m-0 text-[14px]">
-          {translate("footer.legalLine", { year })}
-        </p>
+        <div className="flex flex-col gap-6 md:flex-row md:justify-between">
+          <div className="flex flex-col gap-4">
+            <img
+              src="/brand/wordmark.png"
+              alt=""
+              width={WORDMARK_WIDTH}
+              height={WORDMARK_HEIGHT}
+              className="h-[30px] w-auto self-start"
+            />
+            <p className="m-0 font-display text-[20px] uppercase">
+              {translate("footer.tagline")}
+            </p>
+            <ul
+              aria-label={translate("footer.social.label")}
+              className="m-0 flex list-none flex-wrap gap-2 p-0"
+            >
+              {SOCIAL_NETWORKS.map(({ id, href }) => (
+                <li key={id}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={translate(SOCIAL_LABEL_KEYS[id])}
+                    className={SOCIAL_LINK_STYLES}
+                  >
+                    <SocialIcon network={id} />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+          {columns.length === 0 ? null : (
+            <nav
+              aria-label={translate("footer.navLabel")}
+              className="grid gap-6 sm:grid-cols-2 md:grid-cols-3"
+            >
+              {columns.map((column) => (
+                <FooterColumnLinks key={column.id} column={column} />
+              ))}
+            </nav>
+          )}
+        </div>
+        <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <p className="m-0 text-[14px]">
+            {translate("footer.legalLine", { year })}
+          </p>
+          <LanguageSwitcher label={translate("footer.languageLabel")} />
+        </div>
       </div>
     </footer>
   );

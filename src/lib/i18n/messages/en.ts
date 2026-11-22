@@ -22,6 +22,7 @@ export const en = {
   "header.menu.shop": "Shop",
   "header.menu.app": "App",
   "header.menu.about": "About",
+  "footer.tagline": "Let's keep playing!",
   "footer.navLabel": "Site links",
   "footer.column.explore": "Explore",
   "footer.column.volleytip": "VolleyTip",

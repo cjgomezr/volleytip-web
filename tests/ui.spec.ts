@@ -1066,7 +1066,6 @@ test.describe("cáscara: rutas sin ella", () => {
 // Pie del sitio
 // ---------------------------------------------------------------------------
 
-
 for (const vp of viewports) {
   test.describe(`pie @ ${vp.name}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
@@ -1083,6 +1082,10 @@ for (const vp of viewports) {
           await document.fonts.ready;
         });
         const footer = page.locator("footer");
+        // El logo del pie carga aparte: sin esperarlo, la captura sale a medias.
+        await footer
+          .locator("img")
+          .evaluate((image: HTMLImageElement) => image.decode());
         const name = `pie-${footerPage.language}-${vp.name}.png`;
         await createMissingLocalBaseline(name, () =>
           footer.screenshot(SCREENSHOT_OPTIONS),
@@ -1117,7 +1120,7 @@ for (const vp of viewports) {
 }
 
 test.describe("pie: salto", () => {
-  test("termina cada página con el pie, al que lleva el ancla", async ({
+  test("termina cada página con el pie, que lleva el ancla", async ({
     page,
   }) => {
     for (const { url } of SHELL_PAGES) {

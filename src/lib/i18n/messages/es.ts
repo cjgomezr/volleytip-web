@@ -23,6 +23,7 @@ export const es = {
   "header.menu.shop": "Tienda",
   "header.menu.app": "App",
   "header.menu.about": "Nosotros",
+  "footer.tagline": "¡Sigamos jugando!",
   "footer.navLabel": "Enlaces del sitio",
   "footer.column.explore": "Explora",
   "footer.column.volleytip": "VolleyTip",
