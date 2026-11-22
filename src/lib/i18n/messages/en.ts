@@ -3,7 +3,6 @@ import type { Messages } from "../translate";
 import { errorsEn } from "./errors";
 
 export const en = {
-  "site.name": "VolleyTip",
   "home.title": "VolleyTip",
   "home.description":
     "Volleyball tips in 60 seconds, plus the VolleyTip shop and camps.",
@@ -14,6 +13,15 @@ export const en = {
   "home.intro":
     "We are rebuilding volleytip.com. This page is the foundation of the new site.",
   "home.healthLink": "Check service status",
+  "header.skipLink": "Skip to content",
+  "header.homeLink": "VolleyTip, go home",
+  "header.menuLabel": "Main menu",
+  "header.menu.tips": "Tips",
+  "header.menu.camps": "Camps",
+  "header.menu.vballTour": "VBall Tour",
+  "header.menu.shop": "Shop",
+  "header.menu.app": "App",
+  "header.menu.about": "About",
   "languageSwitcher.label": "Language",
   "languageSuggestion.label": "Language suggestion",
   "languageSuggestion.message": "This page is also available in English.",

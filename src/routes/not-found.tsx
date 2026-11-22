@@ -5,7 +5,7 @@ const NOT_FOUND_STATUS = 404;
 // Ruta comodín: recibe toda dirección que no coincide con ninguna otra.
 // Sin ella, React Router responde el 404 sin pasar por el middleware de la
 // raíz, y esa respuesta saldría sin las cabeceras que pone el servidor
-// (`X-Robots-Tag`). Lo que se ve lo pinta el `ErrorBoundary` de la raíz.
+// (`X-Robots-Tag`). Lo que se ve lo pinta el `ErrorBoundary` de `site-layout.tsx`, con la cáscara.
 
 export function loader(): never {
   throw data(null, { status: NOT_FOUND_STATUS });

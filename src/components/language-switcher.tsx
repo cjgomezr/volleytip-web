@@ -20,6 +20,10 @@ import { TRANSITION_STYLES } from "./pressable-styles";
 
 interface LanguageSwitcherProps {
   readonly zone?: Zone;
+  /** Muestra el código ("ES") en vez del nombre. Es la forma del header,
+   * donde el nombre completo no cabe junto al logo a 360 px. El lector de
+   * pantalla sigue oyendo el nombre. */
+  readonly isCompact?: boolean;
 }
 
 const FALLBACK_PAGE: CurrentPage = { page: "home", params: {} };
@@ -34,7 +38,10 @@ const LIST_ZONE_STYLES: Record<Zone, string> = {
 
 // 44 px de alto: es la zona de toque mínima en celular.
 const LINK_STYLES =
-  "inline-flex min-h-11 items-center rounded-pill px-4 text-[14px] font-bold no-underline";
+  "inline-flex min-h-11 items-center rounded-pill text-[14px] font-bold no-underline";
+const FULL_PADDING = "px-4";
+// 44 px de ancho como mínimo: el código es corto y la zona de toque no.
+const COMPACT_PADDING = "min-w-11 justify-center px-3";
 
 const CURRENT_STYLES: Record<Zone, string> = {
   dark: "bg-brand-mist text-brand-night",
@@ -57,6 +64,7 @@ const OTHER_STYLES: Record<Zone, string> = {
  */
 export function LanguageSwitcher({
   zone = "dark",
+  isCompact = false,
 }: LanguageSwitcherProps): ReactElement {
   const translate = useTranslate();
   const currentLanguage = useLanguage();
@@ -90,9 +98,16 @@ export function LanguageSwitcher({
           lang={language}
           hrefLang={language}
           aria-current={isCurrent ? "true" : undefined}
-          className={`${LINK_STYLES} ${TRANSITION_STYLES} ${stateStyles}`}
+          className={`${LINK_STYLES} ${isCompact ? COMPACT_PADDING : FULL_PADDING} ${TRANSITION_STYLES} ${stateStyles}`}
         >
-          {LANGUAGE_NAMES[language]}
+          {isCompact ? (
+            <>
+              <span aria-hidden="true">{language.toUpperCase()}</span>
+              <span className="sr-only">{LANGUAGE_NAMES[language]}</span>
+            </>
+          ) : (
+            LANGUAGE_NAMES[language]
+          )}
         </Link>
       </li>
     );

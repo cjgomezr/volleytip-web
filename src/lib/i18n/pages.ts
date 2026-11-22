@@ -23,7 +23,9 @@ function findPage(id: PageId): PageDeclaration {
   return page;
 }
 
-function findLanguage(code: Language): (typeof SUPPORTED_LANGUAGES)[number] {
+export function findLanguage(
+  code: Language,
+): (typeof SUPPORTED_LANGUAGES)[number] {
   const language = SUPPORTED_LANGUAGES.find(
     (candidate) => candidate.code === code,
   );
