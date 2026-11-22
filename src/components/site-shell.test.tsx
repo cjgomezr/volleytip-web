@@ -57,3 +57,36 @@ describe("cáscara", () => {
     expect(renderShell("/en/")).toContain("Skip to content");
   });
 });
+
+describe("cáscara: barra de anuncios", () => {
+  function renderWith(announcements: readonly string[] | undefined): string {
+    return renderToStaticMarkup(
+      <MemoryRouter>
+        <TranslationsProvider language="es" messages={getMessages("es")}>
+          <SiteShell announcements={announcements} year={2026}>
+            <p>página</p>
+          </SiteShell>
+        </TranslationsProvider>
+      </MemoryRouter>,
+    );
+  }
+
+  it("pinta la barra con los mensajes antes del header", () => {
+    const html = renderWith(["Envío gratis"]);
+
+    expect(html).toContain("Envío gratis");
+    expect(html.indexOf("Envío gratis")).toBeLessThan(html.indexOf("<header"));
+  });
+
+  it("no deja ningún elemento sin mensajes", () => {
+    expect(renderWith([])).not.toContain("bg-brand-lime text-brand-night");
+    expect(renderWith(undefined)).not.toContain('<ul class="mx-auto flex');
+  });
+
+  it("pinta como texto un mensaje con etiquetas HTML", () => {
+    const html = renderWith(["<script>alert(1)</script>"]);
+
+    expect(html).not.toContain("<script>");
+    expect(html).toContain("&lt;script&gt;");
+  });
+});

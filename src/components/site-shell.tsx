@@ -2,6 +2,7 @@ import type { ReactElement, ReactNode } from "react";
 
 import { useTranslate } from "~/lib/i18n/translations-context";
 
+import { AnnouncementBar } from "./announcement-bar";
 import { SiteFooter } from "./site-footer";
 import { SiteHeader } from "./site-header";
 
@@ -13,10 +14,13 @@ const SKIP_LINK_STYLES =
 
 /** Lo que comparten las páginas públicas: salto, header, el único `<main>` y el pie. */
 export function SiteShell({
+  announcements = [],
   notice = null,
   year,
   children,
 }: {
+  /** Los mensajes de la barra de anuncios, ya en el idioma de la página. */
+  readonly announcements?: readonly string[];
   /** Un aviso sobre el header (el de idioma). Va después del enlace de salto
    * para que este siga siendo el primer foco. */
   readonly notice?: ReactNode;
@@ -32,6 +36,7 @@ export function SiteShell({
       <a href={`#${MAIN_ID}`} className={SKIP_LINK_STYLES}>
         {translate("header.skipLink")}
       </a>
+      <AnnouncementBar messages={announcements} />
       {notice}
       <SiteHeader />
       <main id={MAIN_ID} tabIndex={-1} className="flex-1 outline-none">

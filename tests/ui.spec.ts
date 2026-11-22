@@ -38,6 +38,8 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
+
+import { ANNOUNCEMENT_FIXTURES } from "./support/site-fixtures";
 import { shouldCreateMissingSnapshot } from "./support/missing-snapshot-policy";
 import { snapshotCreatedNotice } from "./support/visual-baseline-notice";
 import { TEST_ENV } from "./support/test-env";
@@ -321,6 +323,9 @@ for (const vp of viewports) {
           const limit = box.getBoundingClientRect();
           const overflowing = [...box.querySelectorAll("*")].filter(
             (element) => {
+              // Un elemento que no se pinta (los avisos 2 y 3 de la barra en
+              // celular) no tiene caja: no puede salirse de la suya.
+              if (element.getClientRects().length === 0) return false;
               const rect = element.getBoundingClientRect();
               return (
                 rect.right > limit.right + tolerance ||
@@ -1157,3 +1162,72 @@ test.describe("pie: salto", () => {
     expect(Math.round(headerWidth)).toBe(HEADER_MAX_WIDTH);
   });
 });
+// Barra de anuncios (#85). Playwright corre contra la base local, y antes de
+// cada corrida deja en ella estos mensajes (tests/support/site-fixtures.ts).
+// Si la barra no sale, la prueba falla: una página sin barra no es un caso
+// que se pueda saltar.
+const [FIRST_ANNOUNCEMENT, ...OTHER_ANNOUNCEMENTS] = ANNOUNCEMENT_FIXTURES;
+const PHONE_MAX_WIDTH = 768;
+
+for (const vp of viewports) {
+  test.describe(`barra de anuncios @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    for (const [language, url] of [
+      ["es", APP_URL],
+      ["en", `${APP_URL}/en/`],
+    ] as const) {
+      test(`${language}: muestra un mensaje en celular y los tres desde 768 px`, async ({
+        page,
+      }) => {
+        await page.goto(url);
+        await expect(
+          page.getByText(FIRST_ANNOUNCEMENT[language], { exact: true }),
+        ).toBeVisible();
+        for (const message of OTHER_ANNOUNCEMENTS) {
+          const item = page.getByText(message[language], { exact: true });
+          // Está en la página aunque no se vea: en celular se oculta, no se
+          // quita.
+          await expect(item).toHaveCount(1);
+          await (vp.width < PHONE_MAX_WIDTH
+            ? expect(item).toBeHidden()
+            : expect(item).toBeVisible());
+        }
+      });
+    }
+
+    test("va arriba del header", async ({ page }) => {
+      await page.goto(APP_URL);
+      const barBottom = await page
+        .getByText(FIRST_ANNOUNCEMENT.es, { exact: true })
+        .evaluate((item) => item.getBoundingClientRect().bottom);
+      const headerTop = await page
+        .locator("header")
+        .evaluate((header) => header.getBoundingClientRect().top);
+
+      expect(barBottom).toBeLessThanOrEqual(headerTop);
+    });
+
+    test("mide un número entero de píxeles de alto", async ({ page }) => {
+      // Con medio píxel de alto, todo lo que va debajo se pinta corrido y
+      // borroso, empezando por el header.
+      await page.goto(APP_URL);
+      const barHeight = await page
+        .getByText(FIRST_ANNOUNCEMENT.es, { exact: true })
+        .evaluate(
+          (item) => item.closest("div")?.getBoundingClientRect().height ?? 0,
+        );
+
+      expect(barHeight).toBeGreaterThan(0);
+      expect(Number.isInteger(barHeight)).toBe(true);
+    });
+
+    test("la 404 también la lleva", async ({ page }) => {
+      await page.goto(`${APP_URL}/no-existe`);
+
+      await expect(
+        page.getByText(FIRST_ANNOUNCEMENT.es, { exact: true }),
+      ).toBeVisible();
+    });
+  });
+}

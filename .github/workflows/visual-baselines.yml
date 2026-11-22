@@ -65,6 +65,7 @@ on:
       - "vite.config.ts"
       - "react-router.config.ts"
       - "public/**"
+      - "supabase/**"
       - ".nvmrc"
       - "package.json"
       - "package-lock.json"
@@ -87,6 +88,7 @@ on:
       - "vite.config.ts"
       - "react-router.config.ts"
       - "public/**"
+      - "supabase/**"
       - ".nvmrc"
       - "package.json"
       - "package-lock.json"
@@ -162,6 +164,12 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/playwright-browsers
+      # Las páginas leen de la base (la barra de anuncios, las cifras, las
+      # preguntas): sin ella las capturas saldrían a medias. `supabase start`
+      # aplica las migraciones y vuelve cuando la base responde. Playwright
+      # le pide la llave de servicio a Supabase CLI al arrancar.
+      - name: Levanta la base local de Supabase
+        run: npm run db:start
       - name: Compara contra la línea base vinculante
         run: npx playwright test
       - name: Guarda el diff para que alguien lo mire
@@ -214,6 +222,12 @@ jobs:
           cache: npm
       - run: npm ci
       - uses: ./.github/actions/playwright-browsers
+      # Las páginas leen de la base (la barra de anuncios, las cifras, las
+      # preguntas): sin ella las capturas saldrían a medias. `supabase start`
+      # aplica las migraciones y vuelve cuando la base responde. Playwright
+      # le pide la llave de servicio a Supabase CLI al arrancar.
+      - name: Levanta la base local de Supabase
+        run: npm run db:start
       - name: Deja constancia de qué diff se revisó
         run: |
           echo "Línea base aceptada tras revisar:" >> "$GITHUB_STEP_SUMMARY"
