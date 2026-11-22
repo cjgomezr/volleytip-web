@@ -16,5 +16,9 @@ export const es = {
     "Estamos reconstruyendo volleytip.com. Esta página es la base del sitio nuevo.",
   "home.healthLink": "Ver estado del servicio",
   "languageSwitcher.label": "Idioma",
+  "languageSuggestion.label": "Sugerencia de idioma",
+  "languageSuggestion.message": "Esta página también está disponible en español.",
+  "languageSuggestion.accept": "Ver en español",
+  "languageSuggestion.stay": "Quedarme en esta página",
   ...errorsEs,
 } as const;

@@ -96,6 +96,29 @@ async function createMissingLocalBaseline(
 // every factory on the machine would fight over it and test each other's app.
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 
+// Playwright pide inglés por defecto, y sin elección guardada el aviso de
+// idioma saldría en la home y en sus capturas. Estas pruebas corren como una
+// persona que ya eligió español (valor que escribe `serializeLanguageChoice`:
+// el JSON "es" en base64); las del aviso (language-notice.spec.ts) parten de
+// una primera visita.
+test.use({
+  storageState: {
+    cookies: [
+      {
+        name: "vt_locale",
+        value: "ImVzIg%3D%3D",
+        domain: new URL(APP_URL).hostname,
+        path: "/",
+        expires: -1,
+        httpOnly: false,
+        secure: false,
+        sameSite: "Lax",
+      },
+    ],
+    origins: [],
+  },
+});
+
 // Presupuesto ABSOLUTO, no un ratio. Un `maxDiffPixelRatio` crece con el alto
 // de la página, así que en una página larga un componente pequeño puede
 // cambiar por completo sin llegar al umbral: un botón desalineado, un color de
@@ -810,3 +833,97 @@ test.describe("Selector de idioma", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Aviso de idioma (lo demás está en language-notice.spec.ts)
+// ---------------------------------------------------------------------------
+
+// Playwright anuncia "HeadlessChrome", que isbot reconoce como robot: sin un
+// agente de navegador normal el aviso nunca saldría.
+const BROWSER_USER_AGENT =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+
+const FIRST_VISIT = { cookies: [], origins: [] };
+const OVERFLOW_SETTLE_MS = 5_000;
+const LANGUAGE_NOTICE_NAME = /Language suggestion|Sugerencia de idioma/;
+
+for (const vp of viewports) {
+  test.describe(`aviso de idioma @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    const cases = [
+      { label: "es", locale: "en-US", url: APP_URL },
+      { label: "en", locale: "es-CO", url: ENGLISH_HOME_URL },
+    ] as const;
+
+    for (const { label, locale, url } of cases) {
+      test(`página en ${label} coincide con la línea base`, async ({
+        browser,
+      }) => {
+        // Un contexto nuevo hereda la cookie de "ya elegí español" que este
+        // archivo pone para las demás pruebas, y con ella el aviso no sale.
+        // Estas parten de una primera visita.
+        const context = await browser.newContext({
+          locale,
+          userAgent: BROWSER_USER_AGENT,
+          viewport: { width: vp.width, height: vp.height },
+          storageState: FIRST_VISIT,
+        });
+        const page = await context.newPage();
+        await page.goto(url);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        // Sin esto la captura podría ser la de la home sin aviso y pasar.
+        await expect(
+          page.getByRole("region", { name: LANGUAGE_NOTICE_NAME }),
+        ).toBeVisible();
+        const name = `aviso-idioma-${label}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+        // Si algo se sale, el mensaje dice qué: la captura no lo muestra,
+        // porque se toma al ancho de la ventana.
+        // Se reintenta unos segundos. En Linux, una corrida de cada tres, el
+        // título de la home en inglés midió 353 px en una caja de 312 justo
+        // después de una captura que sí coincidía con la línea base: la
+        // página estaba bien pintada y la medida no. Un scroll horizontal
+        // que se queda sigue fallando.
+        await expect(async () => {
+          const overflow = await page.evaluate(() => {
+            const root = document.documentElement;
+            const viewportWidth = root.clientWidth;
+            const describe = (element: Element): string => {
+              const { right, width } = element.getBoundingClientRect();
+              const text = (element.textContent ?? "").trim().slice(0, 40);
+              return `${element.tagName.toLowerCase()} derecha=${right.toFixed(1)} ancho=${width.toFixed(1)} propio=${String(element.scrollWidth)}/${String(element.clientWidth)} "${text}"`;
+            };
+            const elements = [...document.querySelectorAll("body *")];
+            return {
+              scrollWidth: root.scrollWidth,
+              viewportWidth,
+              // Lo que pasa del borde, y lo que no cabe en su propia caja.
+              suspects: elements
+                .filter(
+                  (element) =>
+                    element.getBoundingClientRect().right > viewportWidth ||
+                    element.scrollWidth > element.clientWidth + 1,
+                )
+                .map(describe),
+            };
+          });
+          expect(
+            overflow.scrollWidth,
+            `scroll horizontal a ${vp.width}px: ${overflow.suspects.join(" | ")}`,
+          ).toBeLessThanOrEqual(overflow.viewportWidth);
+        }).toPass({ timeout: OVERFLOW_SETTLE_MS });
+        await context.close();
+      });
+    }
+  });
+}
