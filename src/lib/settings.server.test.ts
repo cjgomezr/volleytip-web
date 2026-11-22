@@ -17,6 +17,7 @@ import type { ServerEnv } from "./env.server";
 import {
   InvalidSettingError,
   readSetting,
+  readSettings,
   type SettingDefinition,
 } from "./settings.server";
 import { createServiceSupabaseClient } from "./supabase/service-client.server";
@@ -157,5 +158,35 @@ describeIntegration("lector de ajustes", () => {
     );
 
     expect(isEnabled).toBe(true);
+  });
+});
+
+describe("lector de ajustes: varias claves", () => {
+  function clientReturning(rows: unknown): { client: TypedSupabaseClient; inCalls: unknown[][] } {
+    const inCalls: unknown[][] = [];
+    const query = {
+      select: () => query,
+      in: (...args: unknown[]) => {
+        inCalls.push(args);
+        return Promise.resolve({ data: rows, error: null });
+      },
+    };
+    return { client: { from: () => query } as unknown as TypedSupabaseClient, inCalls };
+  }
+  const isText = (value: unknown): value is string => typeof value === "string";
+
+  it("lee todas las claves en una sola consulta y usa el valor por defecto de la que falta", async () => {
+    const { client, inCalls } = clientReturning([{ key: "a", value: "uno" }]);
+
+    const result = await readSettings(
+      {
+        a: { key: "a", isValid: isText, fallback: "" },
+        b: { key: "b", isValid: isText, fallback: "defecto" },
+      },
+      client,
+    );
+
+    expect(result).toEqual({ a: "uno", b: "defecto" });
+    expect(inCalls).toEqual([["key", ["a", "b"]]]);
   });
 });

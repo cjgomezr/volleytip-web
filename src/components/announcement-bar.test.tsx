@@ -53,3 +53,16 @@ describe("Barra de anuncios", () => {
     },
   );
 });
+
+describe("Barra de anuncios en celular", () => {
+  it("oculta bajo 768 px todos los mensajes menos el primero", () => {
+    const html = renderToStaticMarkup(
+      <AnnouncementBar messages={["Uno", "Dos", "Tres"]} />,
+    );
+    const items = html.match(/<li[^>]*>/g) ?? [];
+
+    expect(items[0]).not.toContain("max-md:hidden");
+    expect(items[1]).toContain("max-md:hidden");
+    expect(items[2]).toContain("max-md:hidden");
+  });
+});

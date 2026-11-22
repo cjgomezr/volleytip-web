@@ -19,23 +19,77 @@ export class InvalidSettingError extends Error {
   }
 }
 
+type SettingDefinitions = Readonly<Record<string, SettingDefinition<unknown>>>;
+
+/** Los valores leídos, con la misma forma que las definiciones pedidas. */
+type SettingValues<Definitions extends SettingDefinitions> = {
+  readonly [Name in keyof Definitions]: Definitions[Name] extends SettingDefinition<
+    infer Value
+  >
+    ? Value
+    : never;
+};
+
+function resolveSetting(
+  definition: SettingDefinition<unknown>,
+  rows: readonly { key: string; value: unknown }[],
+): unknown {
+  const row = rows.find(({ key }) => key === definition.key);
+  if (row === undefined) {
+    return definition.fallback;
+  }
+  if (!definition.isValid(row.value)) {
+    throw new InvalidSettingError(definition.key);
+  }
+  return row.value;
+}
+
 /**
- * Lee un ajuste de la tabla `settings` y lo devuelve tipado.
+ * Lee varios ajustes de la tabla `settings` en una sola consulta y los
+ * devuelve tipados, con el nombre que cada definición tiene en `definitions`.
  *
- * - Si la clave no existe, devuelve `fallback`.
+ * - Si una clave no existe, esa entrada es su `fallback`.
  * - Si existe pero su valor no cumple `isValid`, lanza `InvalidSettingError`.
  *   No cae al valor por defecto: un ajuste mal guardado tiene que verse.
- * - Si la base falla, lanza el error con la clave en el mensaje.
+ * - Si la base falla, lanza el error con las claves en el mensaje.
  *
  * Usa la llave de servicio porque el sitio público necesita ajustes (modo
  * mantenimiento, barra de anuncios) que RLS solo muestra al admin. El
  * segundo argumento existe para las pruebas.
  */
+export async function readSettings<Definitions extends SettingDefinitions>(
+  definitions: Definitions,
+  client: TypedSupabaseClient = createServiceSupabaseClient(),
+): Promise<SettingValues<Definitions>> {
+  const entries = Object.entries(definitions);
+  const keys = entries.map(([, { key }]) => key);
+  const { data, error } = await client
+    .from("settings")
+    .select("key, value")
+    .in("key", keys);
+
+  if (error !== null) {
+    throw new Error(
+      `No se pudo leer el ajuste "${keys.join(", ")}": ${error.message}`,
+      { cause: error },
+    );
+  }
+
+  return Object.fromEntries(
+    entries.map(([name, definition]) => [
+      name,
+      resolveSetting(definition, data),
+    ]),
+  ) as SettingValues<Definitions>;
+}
+
+/** Lee un solo ajuste, con una consulta por clave. Mismas reglas que
+ * `readSettings`. */
 export async function readSetting<Value>(
   definition: SettingDefinition<Value>,
   client: TypedSupabaseClient = createServiceSupabaseClient(),
 ): Promise<Value> {
-  const { key, isValid, fallback } = definition;
+  const { key } = definition;
   const { data, error } = await client
     .from("settings")
     .select("value")
@@ -47,13 +101,8 @@ export async function readSetting<Value>(
       cause: error,
     });
   }
-  if (data === null) {
-    return fallback;
-  }
-
-  const value: unknown = data.value;
-  if (!isValid(value)) {
-    throw new InvalidSettingError(key);
-  }
-  return value;
+  return resolveSetting(
+    definition,
+    data === null ? [] : [{ key, value: data.value }],
+  ) as Value;
 }
