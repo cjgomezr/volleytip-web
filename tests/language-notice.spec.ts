@@ -214,6 +214,19 @@ async function saveEnglishChoice(page: Page): Promise<void> {
     ]);
 }
 
+/** Retiene el guardado de la elección hasta que se llame lo que devuelve. */
+async function holdLanguageSave(page: Page): Promise<() => void> {
+  let releaseSave = (): void => undefined;
+  const saveIsHeld = new Promise<void>((resolve) => {
+    releaseSave = resolve;
+  });
+  await page.route("**/idioma", async (route) => {
+    await saveIsHeld;
+    await route.continue();
+  });
+  return releaseSave;
+}
+
 test.describe("selector de idioma: guarda la elección", () => {
   test.use({ locale: "es-CO", userAgent: BROWSER_USER_AGENT });
 
@@ -253,6 +266,84 @@ test.describe("selector de idioma: guarda la elección", () => {
     await expect(page).toHaveURL(`${APP_URL}/`);
     expect(decodeChoice(await readLanguageCookie(page))).toBe("es");
     await expect(page.locator("html")).toHaveAttribute("lang", "es");
+  });
+
+  // Guardar la elección y cargar la página toman un momento. Si el selector
+  // no reacciona al clic, parece que no funcionó.
+  test("el selector marca el idioma elegido apenas se hace clic, antes de cambiar de página", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const releaseSave = await holdLanguageSave(page);
+
+    try {
+      await switcherLink(page, "en").click();
+
+      await expect(switcherLink(page, "en")).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+      await expect(switcherLink(page, "es")).not.toHaveAttribute(
+        "aria-current",
+      );
+      await expect(page).toHaveURL(COMPONENTS_URL);
+    } finally {
+      releaseSave();
+    }
+
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+  });
+
+  test("un segundo clic mientras se guarda el primero no cambia lo elegido", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const releaseSave = await holdLanguageSave(page);
+
+    try {
+      await switcherLink(page, "en").click();
+      await switcherLink(page, "es").click();
+
+      await expect(switcherLink(page, "en")).toHaveAttribute(
+        "aria-current",
+        "true",
+      );
+    } finally {
+      releaseSave();
+    }
+
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+    expect(decodeChoice(await readLanguageCookie(page))).toBe("en");
+  });
+
+  test("al volver con el botón atrás, el selector marca el idioma de esa página", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    await switcherLink(page, "en").click();
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+
+    await page.goBack();
+
+    await expect(page).toHaveURL(COMPONENTS_URL);
+    await expect(switcherLink(page, "es")).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+    await expect(switcherLink(page, "en")).not.toHaveAttribute("aria-current");
+  });
+
+  test("si guardar la elección falla, igual cambia de página", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    await page.route("**/idioma", (route) => route.abort());
+
+    await switcherLink(page, "en").click();
+
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
   });
 
   test("abrir el otro idioma en una pestaña nueva no cambia la elección", async ({
