@@ -14,7 +14,6 @@ import {
 } from "./pressable-styles";
 
 const NOT_FOUND_STATUS = 404;
-const SERVER_ERROR_STATUS = 500;
 const WORDMARK_WIDTH = 312;
 const WORDMARK_HEIGHT = 59;
 
@@ -28,9 +27,11 @@ const RETRY_STYLES = `inline-flex min-h-[50px] max-w-full items-center justify-c
 type ErrorKind = "notFound" | "server" | "other";
 
 function classifyError(error: unknown): ErrorKind {
+  // Una respuesta de ruta (400, 403, 404...) es una decisión de la app y
+  // conserva su estado. Todo lo demás es un fallo no controlado.
   if (!isRouteErrorResponse(error)) return "server";
   if (error.status === NOT_FOUND_STATUS) return "notFound";
-  return error.status >= SERVER_ERROR_STATUS ? "server" : "other";
+  return "other";
 }
 
 /**
@@ -115,13 +116,12 @@ export function ServerErrorPage(): ReactElement {
       </a>
       <h1 className={TITLE_STYLES}>{messages["error.serverTitle"]}</h1>
       <p className={DETAILS_STYLES}>{messages["error.serverDetails"]}</p>
-      {referenceCode === undefined ? null : (
-        <p className="mt-6 text-[14px] text-ink-muted">
-          {messages["error.serverReference"]}:{" "}
-          {/* El navegador no conoce el código: lo que pintó el servidor se queda. */}
-          <strong suppressHydrationWarning>{referenceCode}</strong>
-        </p>
-      )}
+      {/* El navegador no conoce el código, pero la estructura tiene que ser la
+          misma que pintó el servidor: el texto del código se deja como vino. */}
+      <p className="mt-6 text-[14px] text-ink-muted">
+        {messages["error.serverReference"]}:{" "}
+        <strong suppressHydrationWarning>{referenceCode ?? ""}</strong>
+      </p>
       <div className={ACTIONS_STYLES}>
         <a href={`${pathname}${search}`} className={RETRY_STYLES}>
           {messages["error.serverRetry"]}

@@ -1231,3 +1231,88 @@ for (const vp of viewports) {
     });
   });
 }
+
+// ---------------------------------------------------------------------------
+// Páginas de error: 404 (con la cáscara) y 500 (sin ella), en los dos idiomas.
+// ---------------------------------------------------------------------------
+
+const ERROR_PAGES = [
+  { name: "404-es", path: "/esta-pagina-no-existe", status: 404 },
+  { name: "404-en", path: "/en/esta-pagina-no-existe", status: 404 },
+  { name: "500-es", path: "/dev/fallo", status: 500 },
+  { name: "500-en", path: "/en/dev/fallo", status: 500 },
+] as const;
+
+for (const errorPage of ERROR_PAGES) {
+  for (const vp of viewports) {
+    test.describe(`error ${errorPage.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({ page }) => {
+        const response = await page.goto(`${APP_URL}${errorPage.path}`);
+        expect(response?.status()).toBe(errorPage.status);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        const name = `error-${errorPage.name}-${vp.name}.png`;
+        // El código de referencia de la 500 cambia en cada petición.
+        const referenceCode = [page.locator("p:has(strong)")];
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({
+            ...SCREENSHOT_OPTIONS,
+            fullPage: true,
+            mask: referenceCode,
+          }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          mask: referenceCode,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+
+      test("axe no reporta violaciones y no hay scroll horizontal", async ({
+        page,
+      }) => {
+        await page.goto(`${APP_URL}${errorPage.path}`);
+        const results = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa"])
+          .analyze();
+        expect(results.violations).toEqual([]);
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        );
+        expect(overflow).toBeLessThanOrEqual(0);
+      });
+    });
+  }
+}
+
+test.describe("página 500", () => {
+  test("no muestra el mensaje del error y ofrece reintentar e ir a la home", async ({
+    page,
+  }) => {
+    await page.goto(`${APP_URL}/dev/fallo`);
+    await expect(page.locator("h1")).toHaveText(/Pedimos tiempo/i);
+    await expect(page.getByText("detalle-tecnico-secreto")).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "Reintentar" }),
+    ).toHaveAttribute("href", "/dev/fallo");
+    await expect(
+      page.getByRole("link", { name: "Ir al inicio", exact: true }),
+    ).toBeVisible();
+    await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+      "content",
+      /noindex/,
+    );
+  });
+
+  test("un 403 conserva su estado", async ({ page }) => {
+    const response = await page.goto(`${APP_URL}/dev/fallo?estado=403`);
+    expect(response?.status()).toBe(403);
+    await expect(page.locator("h1")).not.toHaveText(/Pedimos tiempo/i);
+  });
+});

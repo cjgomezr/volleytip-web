@@ -109,8 +109,8 @@ describe("500", () => {
     expect(countOf(html, "<h1")).toBe(1);
   });
 
-  it("un error no controlado y una respuesta 5xx son un 500", () => {
+  it("un error no controlado y una respuesta de ruta no lo es", () => {
     expect(isServerError(new Error("x"))).toBe(true);
-    expect(isServerError({ ...NOT_FOUND, status: 503 })).toBe(true);
+    expect(isServerError({ ...NOT_FOUND, status: 503 })).toBe(false);
   });
 });
