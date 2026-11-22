@@ -54,14 +54,16 @@ export function formatMoney(money: Money, language: Language): string {
   if (!isSupportedCurrency(currency)) {
     throw new Error(`Moneda desconocida: ${String(currency)}.`);
   }
-  // `-0` pasa por entero seguro y se pintaría con signo: `+ 0` lo vuelve 0.
   const shownDigits = getDisplayDigits(currency);
   const formatted = new Intl.NumberFormat(LOCALE_BY_LANGUAGE[language], {
     style: "currency",
     currency,
     minimumFractionDigits: shownDigits,
     maximumFractionDigits: shownDigits,
-  }).format((amount + 0) / DECIMAL_BASE ** STORED_MINOR_UNIT_DIGITS);
+    // Sin signo cuando lo que se muestra es cero: ni `-0` ni unos centavos
+    // negativos que el peso redondea a nada deben salir como `-$0`.
+    signDisplay: "negative",
+  }).format(amount / DECIMAL_BASE ** STORED_MINOR_UNIT_DIGITS);
   return language === "es"
     ? formatted.replace(SPACE_AFTER_SYMBOL, "$1")
     : formatted;

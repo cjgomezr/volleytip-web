@@ -46,6 +46,29 @@ describe("dinero", () => {
     expect(formatMoney({ amount: -0, currency: "COP" }, "es")).toBe("$0");
   });
 
+  // Un descuento por porcentaje puede dejar centavos sueltos. El peso se
+  // muestra sin decimales, así que se redondea al peso más cercano.
+  it.each([
+    [-40, "es", "$0"],
+    [-40, "en", "COP 0"],
+    [40, "es", "$0"],
+    [-50, "es", "-$1"],
+    [99, "es", "$1"],
+    [12000049, "es", "$120.000"],
+    [12000050, "es", "$120.001"],
+  ] as const)(
+    "redondea %i centavos de peso en %s a %s, sin signo si queda en cero",
+    (amount, language, expected) => {
+      expect(
+        formatMoney({ amount, currency: "COP" }, language).replace(/ /g, " "),
+      ).toBe(expected);
+    },
+  );
+
+  it("no pinta signo en un dólar que queda en cero", () => {
+    expect(formatMoney({ amount: -0, currency: "USD" }, "en")).toBe("$0.00");
+  });
+
   it("usa los separadores del idioma en un monto grande", () => {
     expect(
       formatMoney({ amount: 123_456_789_000, currency: "COP" }, "es"),
