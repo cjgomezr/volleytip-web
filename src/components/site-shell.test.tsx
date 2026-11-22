@@ -15,7 +15,7 @@ function renderShell(at: string): string {
         language={language}
         messages={getMessages(language)}
       >
-        <SiteShell>
+        <SiteShell year={2026}>
           <p>contenido de la página</p>
         </SiteShell>
       </TranslationsProvider>
@@ -30,6 +30,13 @@ describe("cáscara", () => {
     expect(html).toContain("<header");
     expect(html.match(/<main/g)).toHaveLength(1);
     expect(html).toMatch(/<main[^>]*>[\s\S]*contenido de la página/);
+  });
+
+  it("ends the page with the footer, after the main", () => {
+    const html = renderShell("/");
+
+    expect(html.lastIndexOf("</main>")).toBeLessThan(html.indexOf("<footer"));
+    expect(html.trimEnd()).toMatch(/<\/footer>$/);
   });
 
   it("puts the skip link before everything else, pointing at the main", () => {

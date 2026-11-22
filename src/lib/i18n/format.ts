@@ -102,6 +102,16 @@ export function formatDate(
   }).format(date);
 }
 
+/** El año en curso en la hora de Colombia, no la del servidor: el 31 de
+ * diciembre a las 11 p. m. allá sigue siendo el año viejo. */
+export function getSiteYear(now: Date): number {
+  const year = new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    timeZone: SITE_TIME_ZONE,
+  }).format(now);
+  return Number(year);
+}
+
 export function formatNumber(value: number, language: Language): string {
   return new Intl.NumberFormat(LOCALE_BY_LANGUAGE[language]).format(value);
 }
