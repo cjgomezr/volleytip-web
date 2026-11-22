@@ -12,8 +12,12 @@ const SKIP_LINK_STYLES =
 
 /** Lo que comparten las páginas públicas: salto, header y el único `<main>`. */
 export function SiteShell({
+  notice = null,
   children,
 }: {
+  /** Un aviso sobre el header (el de idioma). Va después del enlace de salto
+   * para que este siga siendo el primer foco. */
+  readonly notice?: ReactNode;
   readonly children: ReactNode;
 }): ReactElement {
   const translate = useTranslate();
@@ -22,6 +26,7 @@ export function SiteShell({
       <a href={`#${MAIN_ID}`} className={SKIP_LINK_STYLES}>
         {translate("header.skipLink")}
       </a>
+      {notice}
       <SiteHeader />
       <main id={MAIN_ID} tabIndex={-1} className="outline-none">
         {children}

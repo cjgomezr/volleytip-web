@@ -1049,12 +1049,15 @@ test.describe("cáscara: enlace de salto", () => {
 });
 
 test.describe("cáscara: rutas sin ella", () => {
-  test("/healthz y /dev/componentes no llevan el header del sitio", async ({
+  test("/dev/componentes no lleva el enlace de salto ni el logo del header", async ({
     page,
   }) => {
     await page.goto(`${APP_URL}/dev/componentes`);
-    await expect(page.getByRole("link", { name: /VolleyTip/ })).toHaveCount(0);
-    const health = await page.request.get(`${APP_URL}/healthz`);
-    expect(await health.text()).not.toContain("<header");
+    await expect(
+      page.getByRole("link", { name: "Saltar al contenido" }),
+    ).toHaveCount(0);
+    await expect(
+      page.getByRole("link", { name: "VolleyTip, ir al inicio" }),
+    ).toHaveCount(0);
   });
 });

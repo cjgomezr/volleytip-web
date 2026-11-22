@@ -10,10 +10,7 @@ import {
 
 import { ErrorContent } from "~/components/error-content";
 import { LanguageAlternates } from "~/components/language-alternates";
-import {
-  LanguageSuggestion,
-  type LanguageSuggestionTexts,
-} from "~/components/language-suggestion";
+import type { LanguageSuggestionTexts } from "~/components/language-suggestion";
 import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getDocumentPath } from "~/lib/i18n/document-path";
@@ -161,15 +158,14 @@ export default function App({
   return (
     <>
       <LanguageAlternates siteOrigin={loaderData.siteOrigin} />
-      {loaderData.languageSuggestion === null ? null : (
-        <LanguageSuggestion {...loaderData.languageSuggestion} />
-      )}
       <Outlet />
     </>
   );
 }
 
-// Límite de error provisional. Las páginas 404, 500 y mantenimiento del
+// Respaldo para cuando falla la raíz o el layout del sitio: sin textos ni
+// header. El 404 y los errores de una página los pinta el límite de
+// `site-layout.tsx`, con la cáscara. Las páginas 404, 500 y mantenimiento del
 // diseño (FR-056) llegan con W3.
 export function ErrorBoundary({
   error,

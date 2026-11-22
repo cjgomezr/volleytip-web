@@ -122,8 +122,14 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     expect(response.headers()["cache-control"]).toBe("private");
   });
 
-  test("se recorre con el teclado", async ({ page }) => {
+  test("se recorre con el teclado, con el enlace de salto primero", async ({
+    page,
+  }) => {
     await page.goto(APP_URL);
+    await page.keyboard.press("Tab");
+    await expect(
+      page.getByRole("link", { name: "Saltar al contenido" }),
+    ).toBeFocused();
     await page.keyboard.press("Tab");
     await expect(
       page.getByRole("button", { name: "View in English" }),
