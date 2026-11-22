@@ -313,7 +313,7 @@ Los 16 tickets cuelgan de la épica #3. Ninguno necesita que Camilo cambie algo 
 
 Carril de migraciones: los tickets 4, 7, 8, 9, 11 y 12 llevan migración (tablas nuevas, o filas sembradas en `settings` y `site_texts`) y van uno tras otro. Si W10a corre a la vez en otro computador, sus tickets con migración entran en el mismo carril.
 
-Creados el 22 de noviembre de 2026 como #82 a #97, en el mismo orden de la tabla (el ticket 1 es el #82 y el 16 es el #97). El carril de migraciones quedó encadenado con `blocked-by`: #85, #88, #89, #90, #92 y #93. Llevan `ui-review` los #82, #83, #84, #87, #89, #91, #93, #94, #95 y #96.
+Creados el 22 de noviembre de 2026 como #82 a #97, en el mismo orden de la tabla (el ticket 1 es el #82 y el 16 es el #97). El carril de migraciones quedó encadenado con `blocked-by`, en este orden: #90, #85, #88, #89, #92 y #93. El #90 pasó al frente ese mismo día para poder correr a la par del #82 en otro computador: solo crea una tabla y no necesita la cáscara. Llevan `ui-review` los #82, #83, #84, #87, #89, #91, #93, #94, #95 y #96.
 
 | #   | Título propuesto                                                        | RF    | Tamaño | Depende de | Auto-merge sugerido                            |
 | --- | ----------------------------------------------------------------------- | ----- | ------ | ---------- | ---------------------------------------------- |
