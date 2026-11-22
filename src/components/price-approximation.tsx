@@ -34,9 +34,13 @@ export function PriceApproximation({
 
   return (
     <p className="text-[14px] leading-[1.4]">
-      <span aria-hidden="true">{visibleText}</span>
-      <span className="sr-only">{spokenText}</span>{" "}
-      <span>{translate("priceApproximation.chargeNote")}</span>
+      <span className="block">
+        <span aria-hidden="true">{visibleText}</span>
+        <span className="sr-only">{spokenText}</span>
+      </span>
+      <span className="block">
+        {translate("priceApproximation.chargeNote")}
+      </span>
     </p>
   );
 }
