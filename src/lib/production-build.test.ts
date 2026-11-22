@@ -200,15 +200,17 @@ function requestFromBuiltServer(
     import { createRequestHandler } from "react-router";
     const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
     const handle = createRequestHandler(build, "production");
-    const served = [];
-    for (const { method, path } of ${JSON.stringify(requests)}) {
+    // Todas a la vez: cada página espera a la base por la barra de anuncios
+    // hasta su límite, y aquí la base no existe. De una en una, la suma de
+    // esas esperas se come el tiempo de la prueba.
+    const serve = async ({ method, path }) => {
       const response = await handle(
         new Request("http://localhost" + path, { method, redirect: "manual" }),
       );
       // Se lee el cuerpo entero, como haría un navegador. Una página grande
       // sin leer deja el envío a medias y el proceso espera a que venza.
       const body = await response.text();
-      served.push({
+      return {
         method,
         path,
         location: response.headers.get("Location"),
@@ -217,9 +219,14 @@ function requestFromBuiltServer(
         status: response.status,
         contentType: response.headers.get("Content-Type"),
         robots: response.headers.get("X-Robots-Tag"),
-      });
-    }
-    process.stdout.write("${RESULT_MARKER}" + JSON.stringify(served));
+      };
+    };
+    const served = await Promise.all(${JSON.stringify(requests)}.map(serve));
+    // Sale en cuanto escribe: las consultas a la base que ya nadie espera
+    // siguen reintentando y dejarían vivo el proceso.
+    process.stdout.write("${RESULT_MARKER}" + JSON.stringify(served), () => {
+      process.exit(0);
+    });
   `;
   const result = spawnSync(
     process.execPath,

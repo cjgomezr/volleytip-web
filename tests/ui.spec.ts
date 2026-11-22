@@ -37,6 +37,8 @@ import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { test, expect, type Page } from "@playwright/test";
+
+import { ANNOUNCEMENT_FIXTURES } from "./support/site-fixtures";
 import AxeBuilder from "@axe-core/playwright";
 import { shouldCreateMissingSnapshot } from "./support/missing-snapshot-policy";
 import { snapshotCreatedNotice } from "./support/visual-baseline-notice";
@@ -321,6 +323,9 @@ for (const vp of viewports) {
           const limit = box.getBoundingClientRect();
           const overflowing = [...box.querySelectorAll("*")].filter(
             (element) => {
+              // Un elemento que no se pinta (los avisos 2 y 3 de la barra en
+              // celular) no tiene caja: no puede salirse de la suya.
+              if (element.getClientRects().length === 0) return false;
               const rect = element.getBoundingClientRect();
               return (
                 rect.right > limit.right + tolerance ||
@@ -1062,41 +1067,150 @@ test.describe("cáscara: rutas sin ella", () => {
   });
 });
 
-// Barra de anuncios (#85): la migración siembra tres mensajes de ejemplo.
-const ANNOUNCEMENT_MESSAGES = 3;
+// ---------------------------------------------------------------------------
+// Pie del sitio
+// ---------------------------------------------------------------------------
+
+for (const vp of viewports) {
+  test.describe(`pie @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    for (const footerPage of [
+      { language: "es", url: APP_URL },
+      { language: "en", url: ENGLISH_HOME_URL },
+    ]) {
+      test(`${footerPage.language}: coincide con la línea base aprobada`, async ({
+        page,
+      }) => {
+        await page.goto(footerPage.url);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        const footer = page.locator("footer");
+        // El logo del pie carga aparte: sin esperarlo, la captura sale a medias.
+        await footer
+          .locator("img")
+          .evaluate((image: HTMLImageElement) => image.decode());
+        const name = `pie-${footerPage.language}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          footer.screenshot(SCREENSHOT_OPTIONS),
+        );
+        await expect(footer).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+
+      test(`${footerPage.language}: cada enlace tiene zona de toque de 44 px`, async ({
+        page,
+      }) => {
+        await page.goto(footerPage.url);
+        const sizes = await page.locator("footer a").evaluateAll((links) =>
+          links.map((link) => {
+            const { width, height } = link.getBoundingClientRect();
+            return { name: link.textContent || link.ariaLabel, width, height };
+          }),
+        );
+        for (const { name, width, height } of sizes) {
+          expect(height, `alto de ${name}`).toBeGreaterThanOrEqual(
+            MIN_TOUCH_TARGET_PX,
+          );
+          expect(width, `ancho de ${name}`).toBeGreaterThanOrEqual(
+            MIN_TOUCH_TARGET_PX,
+          );
+        }
+      });
+    }
+  });
+}
+
+test.describe("pie: salto", () => {
+  test("termina cada página con el pie, que lleva el ancla", async ({
+    page,
+  }) => {
+    for (const { url } of SHELL_PAGES) {
+      await page.goto(url);
+      await expect(page.locator("footer#pie")).toHaveCount(1);
+    }
+  });
+
+  test("en una página corta el pie queda pegado al fondo de la pantalla", async ({
+    page,
+  }) => {
+    const TALL_VIEWPORT = { width: 1440, height: 1600 };
+    await page.setViewportSize(TALL_VIEWPORT);
+    await page.goto(`${APP_URL}/no-existe`);
+
+    const footerBottom = await page
+      .locator("footer#pie")
+      .evaluate((footer) => footer.getBoundingClientRect().bottom);
+
+    expect(Math.round(footerBottom)).toBe(TALL_VIEWPORT.height);
+  });
+
+  test("dentro de la columna el header conserva su ancho completo", async ({
+    page,
+  }) => {
+    const HEADER_MAX_WIDTH = 1280;
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(APP_URL);
+
+    const headerWidth = await page
+      .locator("header")
+      .evaluate((header) => header.getBoundingClientRect().width);
+
+    expect(Math.round(headerWidth)).toBe(HEADER_MAX_WIDTH);
+  });
+});
+// Barra de anuncios (#85). Playwright corre contra la base local, y antes de
+// cada corrida deja en ella estos mensajes (tests/support/site-fixtures.ts).
+// Si la barra no sale, la prueba falla: una página sin barra no es un caso
+// que se pueda saltar.
+const [FIRST_ANNOUNCEMENT, ...OTHER_ANNOUNCEMENTS] = ANNOUNCEMENT_FIXTURES;
 const PHONE_MAX_WIDTH = 768;
 
 for (const vp of viewports) {
   test.describe(`barra de anuncios @ ${vp.name}`, () => {
     test.use({ viewport: { width: vp.width, height: vp.height } });
 
-    test("muestra un solo mensaje en celular y los tres desde 768 px", async ({
-      page,
-    }) => {
-      await page.goto(APP_URL);
-      const bar = page.locator("div.bg-brand-lime ul li");
-      // La barra sale de la base: sin base local con la migración sembrada, o
-      // con la llave de servicio de marcador de TEST_ENV, la página responde
-      // sin barra (a propósito) y no hay nada que medir.
-      test.skip(
-        (await bar.count()) === 0,
-        "La base local no entregó la barra sembrada",
-      );
+    for (const [language, url] of [
+      ["es", APP_URL],
+      ["en", `${APP_URL}/en/`],
+    ] as const) {
+      test(`${language}: muestra un mensaje en celular y los tres desde 768 px`, async ({
+        page,
+      }) => {
+        await page.goto(url);
+        await expect(
+          page.getByText(FIRST_ANNOUNCEMENT[language], { exact: true }),
+        ).toBeVisible();
+        for (const message of OTHER_ANNOUNCEMENTS) {
+          const item = page.getByText(message[language], { exact: true });
+          await (vp.width < PHONE_MAX_WIDTH
+            ? expect(item).toBeHidden()
+            : expect(item).toBeVisible());
+        }
+      });
+    }
 
-      await expect(bar.first()).toBeVisible();
-      const expected =
-        vp.width < PHONE_MAX_WIDTH ? 1 : ANNOUNCEMENT_MESSAGES;
-      expect(await bar.filter({ visible: true }).count()).toBe(expected);
+    test("va arriba del header", async ({ page }) => {
+      await page.goto(APP_URL);
+      const barBottom = await page
+        .getByText(FIRST_ANNOUNCEMENT.es, { exact: true })
+        .evaluate((item) => item.getBoundingClientRect().bottom);
+      const headerTop = await page
+        .locator("header")
+        .evaluate((header) => header.getBoundingClientRect().top);
+
+      expect(barBottom).toBeLessThanOrEqual(headerTop);
     });
 
-    test("no desborda en horizontal", async ({ page }) => {
-      await page.goto(APP_URL);
-      const overflow = await page.evaluate(
-        () =>
-          document.documentElement.scrollWidth >
-          document.documentElement.clientWidth,
-      );
-      expect(overflow).toBe(false);
+    test("la 404 también la lleva", async ({ page }) => {
+      await page.goto(`${APP_URL}/no-existe`);
+
+      await expect(
+        page.getByText(FIRST_ANNOUNCEMENT.es, { exact: true }),
+      ).toBeVisible();
     });
   });
 }

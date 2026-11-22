@@ -1,4 +1,12 @@
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 
 import { connectToLocalDatabase, type Database } from "~/testing/database";
 import { describeIntegration } from "~/testing/describe-integration";
@@ -7,6 +15,7 @@ import { createLocalServiceClient } from "~/testing/local-supabase.server";
 import {
   ANNOUNCEMENT_BAR_KEY,
   ANNOUNCEMENT_BAR_SETTING,
+  ANNOUNCEMENT_BAR_TIMEOUT_MS,
   MAX_ANNOUNCEMENT_MESSAGES,
   loadAnnouncementMessages,
   pickAnnouncementMessages,
@@ -43,7 +52,11 @@ describe("ajuste de la barra de anuncios", () => {
       text: { es: `m${index}` },
     }));
 
-    expect(pickAnnouncementMessages(messages, "es")).toEqual(["m0", "m1", "m2"]);
+    expect(pickAnnouncementMessages(messages, "es")).toEqual([
+      "m0",
+      "m1",
+      "m2",
+    ]);
     expect(MAX_ANNOUNCEMENT_MESSAGES).toBe(3);
   });
 });
@@ -94,7 +107,10 @@ describe("carga de la barra sin romper la página", () => {
   it("devuelve los mensajes del idioma", async () => {
     const client = clientReturning({
       data: [
-        { key: ANNOUNCEMENT_BAR_KEY, value: [{ text: { es: "Hola", en: "Hi" } }] },
+        {
+          key: ANNOUNCEMENT_BAR_KEY,
+          value: [{ text: { es: "Hola", en: "Hi" } }],
+        },
       ],
       error: null,
     });
@@ -111,7 +127,9 @@ describe("carga de la barra sin romper la página", () => {
   });
 
   it("registra el error y devuelve lista vacía con una forma inválida", async () => {
-    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const logged = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const client = clientReturning({
       data: [{ key: ANNOUNCEMENT_BAR_KEY, value: "roto" }],
       error: null,
@@ -122,11 +140,39 @@ describe("carga de la barra sin romper la página", () => {
   });
 
   it("registra el error y devuelve lista vacía cuando la base falla", async () => {
-    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const logged = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const client = clientReturning({ data: null, error: { message: "caída" } });
 
     await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([]);
     expect(logged).toHaveBeenCalledOnce();
+  });
+
+  it("no hace esperar a la página cuando la base no responde", async () => {
+    vi.useFakeTimers();
+    const logged = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const query = {
+      select: () => query,
+      // Una base colgada: la consulta no termina nunca.
+      in: () => new Promise(() => undefined),
+    };
+    const hungClient = { from: () => query } as unknown as TypedSupabaseClient;
+
+    const loading = loadAnnouncementMessages("es", hungClient);
+    await vi.advanceTimersByTimeAsync(ANNOUNCEMENT_BAR_TIMEOUT_MS);
+
+    await expect(loading).resolves.toEqual([]);
+    expect(logged).toHaveBeenCalledOnce();
+    vi.useRealTimers();
+  });
+
+  it("espera a la base menos de lo que tarda en cansarse una persona", () => {
+    const TWO_SECONDS_MS = 2000;
+
+    expect(ANNOUNCEMENT_BAR_TIMEOUT_MS).toBeLessThanOrEqual(TWO_SECONDS_MS);
   });
 });
 
@@ -141,7 +187,8 @@ describeIntegration("announcement_bar", () => {
     const rows = await database<{ value: unknown }[]>`
       select value from public.settings where key = ${ANNOUNCEMENT_BAR_KEY}
     `;
-    original = rows[0] === undefined ? undefined : JSON.stringify(rows[0].value);
+    original =
+      rows[0] === undefined ? undefined : JSON.stringify(rows[0].value);
   });
 
   afterAll(async () => {
@@ -162,9 +209,13 @@ describeIntegration("announcement_bar", () => {
 
   it("devuelve los mensajes de la fila y, al cambiarla, el cambio", async () => {
     await store([{ text: { es: "Uno" } }]);
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual(["Uno"]);
+    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([
+      "Uno",
+    ]);
 
     await store([{ text: { es: "Dos" } }]);
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual(["Dos"]);
+    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([
+      "Dos",
+    ]);
   });
 });

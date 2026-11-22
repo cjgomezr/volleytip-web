@@ -11,6 +11,14 @@ import type { loader as rootLoader } from "../root";
 
 import type { Route } from "./+types/site-layout";
 
+function useCurrentYear(): number {
+  const year = useRouteLoaderData<typeof rootLoader>("root")?.currentYear;
+  if (year === undefined) {
+    throw new Error("La raíz no entregó el año del pie.");
+  }
+  return year;
+}
+
 function LanguageNotice(): ReactElement | null {
   const suggestion =
     useRouteLoaderData<typeof rootLoader>("root")?.languageSuggestion;
@@ -36,10 +44,12 @@ export function shouldRevalidate(): boolean {
 export default function SiteLayout({
   loaderData,
 }: Route.ComponentProps): ReactElement {
+  const year = useCurrentYear();
   return (
     <SiteShell
       announcements={loaderData.announcements}
       notice={<LanguageNotice />}
+      year={year}
     >
       <Outlet />
     </SiteShell>
@@ -50,10 +60,15 @@ export default function SiteLayout({
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
+  const year = useCurrentYear();
   const announcements =
     useRouteLoaderData<typeof loader>("routes/site-layout")?.announcements;
   return (
-    <SiteShell announcements={announcements} notice={<LanguageNotice />}>
+    <SiteShell
+      announcements={announcements}
+      notice={<LanguageNotice />}
+      year={year}
+    >
       <ErrorContent error={error} />
     </SiteShell>
   );

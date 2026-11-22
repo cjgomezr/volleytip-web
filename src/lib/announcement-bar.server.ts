@@ -58,6 +58,29 @@ export function pickAnnouncementMessages(
   );
 }
 
+/** Lo máximo que una página espera a la base por la barra. Pasado ese
+ * tiempo sale sin barra: un aviso no vale una página lenta. */
+export const ANNOUNCEMENT_BAR_TIMEOUT_MS = 1500;
+
+/** Devuelve lo que entregue `work`, o falla si tarda más de `limitMs`. La
+ * consulta sigue su curso; lo que no hace es retener la respuesta. */
+async function giveUpAfter<Result>(
+  limitMs: number,
+  work: Promise<Result>,
+): Promise<Result> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const limit = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      reject(new Error(`La base no respondió en ${limitMs} ms`));
+    }, limitMs);
+  });
+  try {
+    return await Promise.race([work, limit]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /**
  * Lee la barra para una página. Un aviso mal guardado o una base caída no
  * pueden tumbar el sitio: se registra el error y la página sale sin barra.
@@ -68,9 +91,9 @@ export async function loadAnnouncementMessages(
   client?: TypedSupabaseClient,
 ): Promise<string[]> {
   try {
-    const { announcementBar } = await readSettings(
-      { announcementBar: ANNOUNCEMENT_BAR_SETTING },
-      client,
+    const { announcementBar } = await giveUpAfter(
+      ANNOUNCEMENT_BAR_TIMEOUT_MS,
+      readSettings({ announcementBar: ANNOUNCEMENT_BAR_SETTING }, client),
     );
     return pickAnnouncementMessages(announcementBar, language);
   } catch (error) {

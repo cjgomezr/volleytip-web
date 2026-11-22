@@ -48,7 +48,7 @@ export function SiteHeader({ pages = PAGES }: SiteHeaderProps): ReactElement {
   }
 
   return (
-    <header className="mx-auto flex max-w-[1280px] items-center justify-between gap-3 px-4 py-5 md:gap-4 md:px-6">
+    <header className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-3 px-4 py-5 md:gap-4 md:px-6">
       <Link
         to={getPagePath("home", language)}
         aria-label={translate("header.homeLink")}
