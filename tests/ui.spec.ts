@@ -1061,3 +1061,42 @@ test.describe("cáscara: rutas sin ella", () => {
     ).toHaveCount(0);
   });
 });
+
+// Barra de anuncios (#85): la migración siembra tres mensajes de ejemplo.
+const ANNOUNCEMENT_MESSAGES = 3;
+const PHONE_MAX_WIDTH = 768;
+
+for (const vp of viewports) {
+  test.describe(`barra de anuncios @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    test("muestra un solo mensaje en celular y los tres desde 768 px", async ({
+      page,
+    }) => {
+      await page.goto(APP_URL);
+      const bar = page.locator("div.bg-brand-lime ul li");
+      // La barra sale de la base: sin base local con la migración sembrada, o
+      // con la llave de servicio de marcador de TEST_ENV, la página responde
+      // sin barra (a propósito) y no hay nada que medir.
+      test.skip(
+        (await bar.count()) === 0,
+        "La base local no entregó la barra sembrada",
+      );
+
+      await expect(bar.first()).toBeVisible();
+      const expected =
+        vp.width < PHONE_MAX_WIDTH ? 1 : ANNOUNCEMENT_MESSAGES;
+      expect(await bar.locator("visible=true").count()).toBe(expected);
+    });
+
+    test("no desborda en horizontal", async ({ page }) => {
+      await page.goto(APP_URL);
+      const overflow = await page.evaluate(
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
+      );
+      expect(overflow).toBe(false);
+    });
+  });
+}
