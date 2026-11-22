@@ -10,10 +10,20 @@ import {
 } from "react-router";
 
 import { LanguageAlternates } from "~/components/language-alternates";
+import {
+  LanguageSuggestion,
+  type LanguageSuggestionTexts,
+} from "~/components/language-suggestion";
 import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
-import { getRequestLanguage } from "~/lib/i18n/languages";
-import { getMessages } from "~/lib/i18n/messages.server";
+import {
+  addVaryHeaders,
+  getLanguageProposal,
+  redirectRootToChosenLanguage,
+} from "~/lib/i18n/language-choice.server";
+import { getRequestLanguage, type Language } from "~/lib/i18n/languages";
+import { getMessages, getTranslate } from "~/lib/i18n/messages.server";
+import { getPageAtPath } from "~/lib/i18n/pages";
 import { ERROR_MESSAGES } from "~/lib/i18n/messages/errors";
 import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
@@ -29,12 +39,36 @@ const NOT_FOUND_STATUS = 404;
 // las respuestas de todas las rutas: páginas, datos, rutas de recurso y
 // errores. Queda fuera lo que React Router rechaza antes de buscar una ruta
 // (un método como OPTIONS), que no es contenido que un buscador indexe.
+// Las páginas dependen de la cookie de idioma y de `Accept-Language`
+// (el aviso de idioma), y la raíz redirige según la cookie. Las demás
+// respuestas no cambian con eso.
+function declareLanguageVariation(
+  request: Request,
+  response: Response,
+): Response {
+  const { pathname } = new URL(request.url);
+  return getPageAtPath(pathname) === undefined
+    ? response
+    : addVaryHeaders(response);
+}
+
+async function respondWithLanguageChoice(
+  request: Request,
+  next: () => Promise<Response>,
+): Promise<Response> {
+  const redirect =
+    redirectFromDefaultPrefix(new URL(request.url)) ??
+    (await redirectRootToChosenLanguage(request));
+  if (redirect !== null) return addVaryHeaders(redirect);
+  return declareLanguageVariation(request, await next());
+}
+
 const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
   { request },
   next,
 ) => {
-  const redirect = redirectFromDefaultPrefix(new URL(request.url));
-  return markAsNotIndexable(redirect ?? (await next()), serverEnv.appEnv);
+  const response = await respondWithLanguageChoice(request, next);
+  return markAsNotIndexable(response, serverEnv.appEnv);
 };
 
 export const middleware: Route.MiddlewareFunction[] = [
@@ -51,13 +85,41 @@ export const links: Route.LinksFunction = () => [
 // idioma. Lo vigila una prueba de Playwright.
 // `siteOrigin` no es un secreto: es el dominio público, y el navegador lo
 // necesita para pintar las mismas direcciones que el servidor.
-export function loader({ request }: Route.LoaderArgs): {
+interface LanguageSuggestionData {
+  readonly proposed: Language;
+  readonly pageLanguage: Language;
+  readonly texts: LanguageSuggestionTexts;
+}
+
+// Los textos del aviso van en el idioma que propone, no en el de la página:
+// es el que lee quien lo recibe.
+async function loadLanguageSuggestion(
+  request: Request,
+): Promise<LanguageSuggestionData | null> {
+  const proposed = await getLanguageProposal(request);
+  if (proposed === undefined) return null;
+  const translate = getTranslate(proposed);
+  return {
+    proposed,
+    pageLanguage: getRequestLanguage(request),
+    texts: {
+      label: translate("languageSuggestion.label"),
+      message: translate("languageSuggestion.message"),
+      accept: translate("languageSuggestion.accept"),
+      stay: translate("languageSuggestion.stay"),
+    },
+  };
+}
+
+export async function loader({ request }: Route.LoaderArgs): Promise<{
   readonly messages: Messages;
   readonly siteOrigin: string;
-} {
+  readonly languageSuggestion: LanguageSuggestionData | null;
+}> {
   return {
     messages: getMessages(getRequestLanguage(request)),
     siteOrigin: serverEnv.siteOrigin,
+    languageSuggestion: await loadLanguageSuggestion(request),
   };
 }
 
@@ -100,6 +162,9 @@ export default function App({
   return (
     <>
       <LanguageAlternates siteOrigin={loaderData.siteOrigin} />
+      {loaderData.languageSuggestion === null ? null : (
+        <LanguageSuggestion {...loaderData.languageSuggestion} />
+      )}
       <Outlet />
     </>
   );

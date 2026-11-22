@@ -1,5 +1,5 @@
-import type { ReactElement } from "react";
-import { Link, useLocation } from "react-router";
+import type { MouseEvent, ReactElement } from "react";
+import { Link, useLocation, useNavigate } from "react-router";
 
 import {
   LANGUAGE_NAMES,
@@ -7,6 +7,10 @@ import {
   type Language,
 } from "~/lib/i18n/languages";
 import { getPagePath, type CurrentPage } from "~/lib/i18n/pages";
+import {
+  isPlainLeftClick,
+  saveLanguageChoice,
+} from "~/lib/i18n/save-language-choice";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useCurrentPage } from "~/lib/i18n/use-current-page";
 import { useLanguage } from "~/lib/i18n/use-language";
@@ -56,16 +60,33 @@ export function LanguageSwitcher({
 }: LanguageSwitcherProps): ReactElement {
   const translate = useTranslate();
   const currentLanguage = useLanguage();
-  const { search } = useLocation();
+  const { pathname, search } = useLocation();
+  const navigate = useNavigate();
   const { page, params } = useCurrentPage() ?? FALLBACK_PAGE;
+
+  // Con JavaScript el clic guarda la elección antes de cambiar de página; sin
+  // él sigue siendo un enlace y la elección no se guarda.
+  function handleClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    language: Language,
+    href: string,
+  ): void {
+    if (!isPlainLeftClick(event)) return;
+    event.preventDefault();
+    void saveLanguageChoice(language, `${pathname}${search}`).then(() =>
+      navigate(href),
+    );
+  }
 
   function renderLanguage(language: Language): ReactElement {
     const isCurrent = language === currentLanguage;
     const stateStyles = isCurrent ? CURRENT_STYLES[zone] : OTHER_STYLES[zone];
+    const href = `${getPagePath(page, language, params)}${search}`;
     return (
       <li key={language} className="flex">
         <Link
-          to={`${getPagePath(page, language, params)}${search}`}
+          to={href}
+          onClick={(event) => handleClick(event, language, href)}
           lang={language}
           hrefLang={language}
           aria-current={isCurrent ? "true" : undefined}
