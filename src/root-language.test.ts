@@ -98,4 +98,25 @@ describe("raíz: elección de idioma", () => {
 
     expect(response.status).toBe(200);
   });
+
+  it.each(["/_root.data", "/en/_.data", "/en.data"])(
+    "la petición de datos %s también declara Vary y Cache-Control privado",
+    async (path) => {
+      const response = await runMiddleware(
+        requestFor(path, { "accept-language": "en" }),
+      );
+
+      expect(response.headers.get("Vary")).toContain("Accept-Language");
+      expect(response.headers.get("Cache-Control")).toBe("private");
+    },
+  );
+
+  it("la raíz con inglés guardado redirige también al navegar (/_root.data)", async () => {
+    const response = await runMiddleware(
+      requestFor("/_root.data", { cookie: ENGLISH_CHOICE }),
+    );
+
+    expect(response.status).toBe(302);
+    expect(response.headers.get("Location")).toBe("/en/");
+  });
 });

@@ -16,6 +16,7 @@ import {
 } from "~/components/language-suggestion";
 import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
+import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
   addVaryHeaders,
   getLanguageProposal,
@@ -35,19 +36,16 @@ import "./app.css";
 
 const NOT_FOUND_STATUS = 404;
 
-// El único lugar que pone `X-Robots-Tag`. Al estar en la ruta raíz envuelve
-// las respuestas de todas las rutas: páginas, datos, rutas de recurso y
-// errores. Queda fuera lo que React Router rechaza antes de buscar una ruta
-// (un método como OPTIONS), que no es contenido que un buscador indexe.
 // Las páginas dependen de la cookie de idioma y de `Accept-Language`
 // (el aviso de idioma), y la raíz redirige según la cookie. Las demás
-// respuestas no cambian con eso.
+// respuestas no cambian con eso. Vale también para los datos que React Router
+// pide al navegar (`/_root.data`), que llevan el mismo aviso.
 function declareLanguageVariation(
   request: Request,
   response: Response,
 ): Response {
-  const { pathname } = new URL(request.url);
-  return getPageAtPath(pathname) === undefined
+  const pagePath = getDocumentPath(new URL(request.url));
+  return getPageAtPath(pagePath) === undefined
     ? response
     : addVaryHeaders(response);
 }
@@ -63,6 +61,10 @@ async function respondWithLanguageChoice(
   return declareLanguageVariation(request, await next());
 }
 
+// El único lugar que pone `X-Robots-Tag`. Al estar en la ruta raíz envuelve
+// las respuestas de todas las rutas: páginas, datos, rutas de recurso y
+// errores. Queda fuera lo que React Router rechaza antes de buscar una ruta
+// (un método como OPTIONS), que no es contenido que un buscador indexe.
 const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
   { request },
   next,

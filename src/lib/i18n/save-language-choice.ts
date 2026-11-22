@@ -41,6 +41,6 @@ export async function saveLanguageChoice(
       redirect: "manual",
     });
   } catch {
-    // Ver el comentario de la función.
+    // El selector sigue funcionando como enlace sin la cookie.
   }
 }

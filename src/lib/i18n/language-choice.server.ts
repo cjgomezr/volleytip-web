@@ -4,6 +4,7 @@ import { createCookie } from "react-router";
 import type { AppEnvironment } from "../env.server";
 
 import { getPreferredLanguage } from "./browser-language";
+import { getDocumentPath } from "./document-path";
 import {
   getLanguageFromPath,
   isSupportedLanguage,
@@ -76,7 +77,9 @@ export async function getLanguageProposal(
   const preferred = getPreferredLanguage(
     request.headers.get("Accept-Language"),
   );
-  const pageLanguage = getLanguageFromPath(new URL(request.url).pathname);
+  const pageLanguage = getLanguageFromPath(
+    getDocumentPath(new URL(request.url)),
+  );
   return preferred === pageLanguage ? undefined : preferred;
 }
 
@@ -86,7 +89,7 @@ export async function redirectRootToChosenLanguage(
   request: Request,
 ): Promise<Response | null> {
   const url = new URL(request.url);
-  if (url.pathname !== ROOT_PATH || isRobot(request)) return null;
+  if (getDocumentPath(url) !== ROOT_PATH || isRobot(request)) return null;
   const choice = await readLanguageChoice(request);
   if (choice === undefined) return null;
   const target = getPagePath("home", choice);
