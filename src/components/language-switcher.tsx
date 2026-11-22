@@ -1,4 +1,4 @@
-import type { MouseEvent, ReactElement } from "react";
+import { useState, type MouseEvent, type ReactElement } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
 import {
@@ -27,6 +27,12 @@ interface LanguageSwitcherProps {
   /** El nombre accesible de la navegación. Cada una de la página necesita el
    * suyo: el pie no puede repetir el del header. */
   readonly label?: string;
+}
+
+/** El idioma recién elegido y la entrada del historial donde se eligió. */
+interface PendingChoice {
+  readonly language: Language;
+  readonly locationKey: string;
 }
 
 const FALLBACK_PAGE: CurrentPage = { page: "home", params: {} };
@@ -72,12 +78,27 @@ export function LanguageSwitcher({
 }: LanguageSwitcherProps): ReactElement {
   const translate = useTranslate();
   const currentLanguage = useLanguage();
-  const { pathname, search } = useLocation();
+  const { pathname, search, key: locationKey } = useLocation();
   const navigate = useNavigate();
   const { page, params } = useCurrentPage() ?? FALLBACK_PAGE;
+  // Guardar la elección ocurre antes de la navegación, así que
+  // `useNavigation` todavía no la ve: por eso el idioma recién elegido se
+  // recuerda aquí. Vale solo en la entrada del historial donde se hizo el
+  // clic y se descarta en el mismo pintado en que llega otra dirección, sea la
+  // página nueva o cualquier otra. Así el selector nunca vuelve un instante al
+  // idioma viejo, ni queda marcado al regresar con el botón atrás.
+  const [pendingChoice, setPendingChoice] = useState<PendingChoice | null>(
+    null,
+  );
+  if (pendingChoice !== null && pendingChoice.locationKey !== locationKey) {
+    setPendingChoice(null);
+  }
+  const selectedLanguage = pendingChoice?.language ?? currentLanguage;
 
   // Con JavaScript el clic guarda la elección antes de cambiar de página; sin
-  // él sigue siendo un enlace y la elección no se guarda.
+  // él sigue siendo un enlace y la elección no se guarda. El selector marca el
+  // idioma elegido de inmediato: sin eso el clic parece no haber hecho nada
+  // mientras responden el guardado y la página nueva.
   function handleClick(
     event: MouseEvent<HTMLAnchorElement>,
     language: Language,
@@ -85,13 +106,18 @@ export function LanguageSwitcher({
   ): void {
     if (!isPlainLeftClick(event)) return;
     event.preventDefault();
+    // Un segundo clic mientras el primero viaja pondría a competir dos
+    // guardados y dos navegaciones.
+    if (pendingChoice !== null) return;
+    setPendingChoice({ language, locationKey });
+    // `saveLanguageChoice` nunca rechaza: si falla, igual se navega.
     void saveLanguageChoice(language, `${pathname}${search}`).then(() =>
       navigate(href),
     );
   }
 
   function renderLanguage(language: Language): ReactElement {
-    const isCurrent = language === currentLanguage;
+    const isCurrent = language === selectedLanguage;
     const stateStyles = isCurrent ? CURRENT_STYLES[zone] : OTHER_STYLES[zone];
     const href = `${getPagePath(page, language, params)}${search}`;
     return (
