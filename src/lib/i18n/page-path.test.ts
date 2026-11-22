@@ -96,6 +96,8 @@ describe("página de una dirección", () => {
     ["/en/", "home", "en", {}],
     ["/tienda", "shop", "es", {}],
     ["/tienda/", "shop", "es", {}],
+    ["//", "home", "es", {}],
+    ["/en//", "home", "en", {}],
     ["/en/shop", "shop", "en", {}],
     ["/tienda/balon", "product", "es", { slug: "balon" }],
     ["/en/shop/bal%C3%B3n", "product", "en", { slug: "balón" }],
@@ -116,6 +118,10 @@ describe("página de una dirección", () => {
     "/Tienda",
     "/es/tienda",
     "/tienda/balon/extra",
+    // React Router da 404 con una barra doble al comienzo o en medio.
+    "//en",
+    "/en//shop",
+    "/tienda//balon",
     "/en/shop/%E0%A4%A",
   ])("%s no es de ninguna página", (path) => {
     expect(findPageAtPath(path, PAGES_SAMPLE, LANGUAGES)).toBeUndefined();

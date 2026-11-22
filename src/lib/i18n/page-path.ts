@@ -17,6 +17,7 @@ export type PageParams = Readonly<Record<string, string>>;
 
 const ROUTE_ID_SEPARATOR = ".";
 const PARAM_PREFIX = ":";
+const TRAILING_SLASHES = /\/+$/;
 
 /** El nombre de la sección de una página en un idioma, sin barras al borde. */
 export function getSectionPath(
@@ -95,6 +96,16 @@ function splitPath(path: string): string[] {
   return path.split("/").filter((segment) => segment !== "");
 }
 
+// Los segmentos de una dirección pedida. React Router perdona las barras del
+// final (`/en/`, `/en//`) pero no una barra doble en medio o al comienzo
+// (`//en`): esa dirección es un 404, y aquí tampoco es una página.
+function splitRequestedPath(pathname: string): string[] | undefined {
+  const trimmed = pathname.replace(TRAILING_SLASHES, "");
+  if (trimmed === "") return [];
+  const [, ...segments] = trimmed.split("/");
+  return segments.includes("") ? undefined : segments;
+}
+
 function matchSegments(
   pattern: readonly string[],
   actual: readonly string[],
@@ -124,7 +135,8 @@ export function findPageAtPath<Page extends PageDeclaration>(
   pages: readonly Page[],
   languages: readonly LanguageDefinition[],
 ): PageMatch<Page> | undefined {
-  const actual = splitPath(pathname);
+  const actual = splitRequestedPath(pathname);
+  if (actual === undefined) return undefined;
   for (const language of languages) {
     const prefix = language.isDefault ? [] : [language.code];
     for (const page of pages) {
