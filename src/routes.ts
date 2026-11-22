@@ -5,7 +5,8 @@ import { buildLocalizedRoutes } from "./lib/i18n/route-map";
 
 export default [
   // La cáscara (header) envuelve las páginas del sitio y el 404. Las rutas
-  // de abajo, que no son páginas, quedan fuera de ella.
+  // de abajo, que no son páginas, quedan fuera de ella, y con ella el aviso
+  // de idioma: es a propósito.
   layout("routes/site-layout.tsx", [
     // Las páginas del sitio se declaran una vez en el mapa de páginas y
     // existen en todos los idiomas.

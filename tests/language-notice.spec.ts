@@ -44,6 +44,14 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     ).toBeVisible();
   });
 
+  test("también sale en el 404, que lleva la cáscara", async ({ page }) => {
+    const response = await page.goto(`${APP_URL}/no-existe`);
+
+    expect(response?.status()).toBe(404);
+    await expect(languageNotice(page)).toBeVisible();
+    await expect(page.locator("header")).toHaveCount(1);
+  });
+
   test("aceptar abre la página en inglés, con su búsqueda, y guarda la elección", async ({
     page,
   }) => {
