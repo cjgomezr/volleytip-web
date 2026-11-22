@@ -24,7 +24,12 @@ const FOUND = 302;
 const ROOT_PATH = "/";
 // La respuesta cambia con lo que la persona guardó y con lo que su navegador
 // dice, así que una caché compartida no puede servírsela a otra.
-const VARYING_HEADERS = ["Cookie", "Accept-Language", "User-Agent"];
+const VARYING_HEADERS = [
+  "Cookie",
+  "Accept-Language",
+  "User-Agent",
+  "Sec-Fetch-Site",
+];
 // Directivas de `Cache-Control` que ya impiden guardar en una caché compartida.
 const ALREADY_PRIVATE = /(^|[\s,])(private|no-store)(?=$|[\s,=])/i;
 
@@ -63,6 +68,16 @@ export function serializeLanguageChoice(
   return createLanguageCookie(appEnv).serialize(language);
 }
 
+// El navegador dice con `Sec-Fetch-Site` de dónde sale una petición.
+// "same-origin" es alguien que ya está en el sitio y sigue un enlace, o la
+// propia página pidiendo datos al navegar. Un navegador viejo no la manda.
+const FETCH_SITE_HEADER = "Sec-Fetch-Site";
+const FROM_THIS_SITE = "same-origin";
+
+function comesFromThisSite(request: Request): boolean {
+  return request.headers.get(FETCH_SITE_HEADER) === FROM_THIS_SITE;
+}
+
 function isRobot(request: Request): boolean {
   // Sin agente de usuario no es un navegador de verdad.
   return isbot(request.headers.get("User-Agent") ?? "");
@@ -85,13 +100,22 @@ export async function getLanguageProposal(
   return preferred === pageLanguage ? undefined : preferred;
 }
 
-/** Solo la raíz sin prefijo, solo con una elección guardada distinta del
- * idioma por defecto y nunca para un robot. */
+/**
+ * Solo la raíz sin prefijo, solo con una elección guardada distinta del
+ * idioma por defecto, nunca para un robot y solo a quien llega de fuera
+ * (escribió la dirección, abrió un marcador, viene de un buscador).
+ *
+ * A quien ya está en el sitio y sigue un enlace a la raíz se le respeta la
+ * dirección. Si no, alguien con inglés guardado que elige "Español" en el
+ * selector sin JavaScript, que ahí es un enlace y no guarda nada, volvería a
+ * caer en /en/ cada vez.
+ */
 export async function redirectRootToChosenLanguage(
   request: Request,
 ): Promise<Response | null> {
   const url = new URL(request.url);
   if (getDocumentPath(url) !== ROOT_PATH || isRobot(request)) return null;
+  if (comesFromThisSite(request)) return null;
   const choice = await readLanguageChoice(request);
   if (choice === undefined) return null;
   const target = getPagePath("home", choice);

@@ -18,6 +18,7 @@ interface RequestOptions {
   readonly cookie?: string;
   readonly acceptLanguage?: string;
   readonly userAgent?: string;
+  readonly fetchSite?: string;
 }
 
 function requestFor(path: string, options: RequestOptions = {}): Request {
@@ -27,6 +28,9 @@ function requestFor(path: string, options: RequestOptions = {}): Request {
   if (options.cookie !== undefined) headers.set("cookie", options.cookie);
   if (options.acceptLanguage !== undefined) {
     headers.set("accept-language", options.acceptLanguage);
+  }
+  if (options.fetchSite !== undefined) {
+    headers.set("sec-fetch-site", options.fetchSite);
   }
   return new Request(`http://localhost${path}`, { headers });
 }
@@ -188,6 +192,37 @@ describe("raíz con elección guardada", () => {
       await redirectRootToChosenLanguage(requestFor("/en/", { cookie })),
     ).toBeNull();
   });
+
+  // Quien ya está en el sitio y sigue un enlace a la raíz quiere esa página.
+  // Sin esto, alguien con inglés guardado que elige "Español" en el selector
+  // sin JavaScript volvería a caer en /en/ y no podría salir de ahí.
+  it("no redirige a quien llega a la raíz desde otra página del sitio", async () => {
+    const cookie = await cookieFor("en");
+
+    expect(
+      await redirectRootToChosenLanguage(
+        requestFor("/", { cookie, fetchSite: "same-origin" }),
+      ),
+    ).toBeNull();
+    expect(
+      await redirectRootToChosenLanguage(
+        requestFor("/_.data", { cookie, fetchSite: "same-origin" }),
+      ),
+    ).toBeNull();
+  });
+
+  it.each(["none", "cross-site", "same-site"])(
+    "sí redirige a quien llega de fuera (Sec-Fetch-Site: %s)",
+    async (fetchSite) => {
+      const cookie = await cookieFor("en");
+
+      const response = await redirectRootToChosenLanguage(
+        requestFor("/", { cookie, fetchSite }),
+      );
+
+      expect(response?.headers.get("Location")).toBe("/en/");
+    },
+  );
 
   it("un robot no recibe redirección", async () => {
     const cookie = await cookieFor("en");

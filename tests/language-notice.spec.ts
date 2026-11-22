@@ -170,52 +170,117 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
 // El selector vive por ahora solo en la página de muestra (W3 lo pone en el
 // header). Ahí se comprueba de punta a punta que cambiar de idioma guarda la
 // elección.
+const SWITCHER_LINK = '[data-zone="dark"] nav a[lang]';
+
+function switcherLink(
+  page: Page,
+  language: string,
+): ReturnType<Page["locator"]> {
+  return page.locator(`[data-zone="dark"] nav a[lang="${language}"]`);
+}
+
+// El valor que escribe la cookie: el JSON del idioma, en base64.
+function decodeChoice(value: string | undefined): unknown {
+  if (value === undefined) return undefined;
+  return JSON.parse(
+    Buffer.from(decodeURIComponent(value), "base64").toString("utf8"),
+  );
+}
+
+// El valor de la cookie con inglés guardado, tal como lo escribe el servidor.
+const ENGLISH_CHOICE = encodeURIComponent(
+  Buffer.from(JSON.stringify("en")).toString("base64"),
+);
+
+async function saveEnglishChoice(page: Page): Promise<void> {
+  await page
+    .context()
+    .addCookies([
+      { name: LANGUAGE_COOKIE, value: ENGLISH_CHOICE, url: APP_URL },
+    ]);
+}
+
 test.describe("selector de idioma: guarda la elección", () => {
   test.use({ locale: "es-CO", userAgent: BROWSER_USER_AGENT });
 
-  // El valor que escribe la cookie: el JSON del idioma, en base64.
-  function decodeChoice(value: string | undefined): unknown {
-    if (value === undefined) return undefined;
-    return JSON.parse(
-      Buffer.from(decodeURIComponent(value), "base64").toString("utf8"),
-    );
+  // Antes de que React tome la página, el selector es un enlace corriente y
+  // un clic no guarda nada. Estas pruebas hablan del selector ya activo.
+  async function openComponentsPage(page: Page): Promise<void> {
+    await page.goto(COMPONENTS_URL);
+    await page.waitForFunction((selector) => {
+      const link = document.querySelector(selector);
+      return (
+        link !== null &&
+        Object.keys(link).some((key) => key.startsWith("__reactProps"))
+      );
+    }, SWITCHER_LINK);
   }
 
   test("al elegir inglés, la elección guardada pasa a ser inglés", async ({
     page,
   }) => {
-    await page.goto(COMPONENTS_URL);
+    await openComponentsPage(page);
     expect(await readLanguageCookie(page)).toBeUndefined();
 
-    await page.locator('[data-zone="dark"] nav a[lang="en"]').click();
+    await switcherLink(page, "en").click();
 
     await expect(page).toHaveURL(ENGLISH_HOME_URL);
     expect(decodeChoice(await readLanguageCookie(page))).toBe("en");
   });
 
-  test("al volver a español, la elección guardada pasa a ser español y la raíz ya no redirige", async ({
+  test("con inglés guardado, elegir español guarda español y lleva a la raíz", async ({
     page,
   }) => {
-    await page.goto(COMPONENTS_URL);
-    await page.locator('[data-zone="dark"] nav a[lang="en"]').click();
-    await expect(page).toHaveURL(ENGLISH_HOME_URL);
+    await saveEnglishChoice(page);
+    await openComponentsPage(page);
 
-    await page.goto(COMPONENTS_URL);
-    await page.locator('[data-zone="dark"] nav a[lang="es"]').click();
+    await switcherLink(page, "es").click();
 
     await expect(page).toHaveURL(`${APP_URL}/`);
     expect(decodeChoice(await readLanguageCookie(page))).toBe("es");
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
   });
 
   test("abrir el otro idioma en una pestaña nueva no cambia la elección", async ({
     page,
   }) => {
-    await page.goto(COMPONENTS_URL);
+    await openComponentsPage(page);
 
-    await page
-      .locator('[data-zone="dark"] nav a[lang="en"]')
-      .click({ modifiers: ["ControlOrMeta"] });
+    await switcherLink(page, "en").click({ modifiers: ["ControlOrMeta"] });
 
     expect(await readLanguageCookie(page)).toBeUndefined();
+  });
+});
+
+test.describe("selector de idioma sin JavaScript", () => {
+  test.use({
+    locale: "es-CO",
+    userAgent: BROWSER_USER_AGENT,
+    javaScriptEnabled: false,
+  });
+
+  // Sin JavaScript el selector es un enlace y no guarda la elección. Con
+  // inglés guardado, la raíz no puede devolver a /en/ a quien acaba de pedir
+  // español desde el propio sitio: quedaría atrapado.
+  test("con inglés guardado, elegir español abre la raíz en español", async ({
+    page,
+  }) => {
+    await saveEnglishChoice(page);
+    await page.goto(COMPONENTS_URL);
+
+    await switcherLink(page, "es").click();
+
+    await expect(page).toHaveURL(`${APP_URL}/`);
+    await expect(page.locator("html")).toHaveAttribute("lang", "es");
+  });
+
+  test("con inglés guardado, llegar a la raíz de fuera sigue llevando a /en/", async ({
+    page,
+  }) => {
+    await saveEnglishChoice(page);
+
+    await page.goto(APP_URL);
+
+    await expect(page).toHaveURL(ENGLISH_HOME_URL);
   });
 });
