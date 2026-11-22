@@ -12,6 +12,13 @@ export class MissingSiteTextError extends Error {
   }
 }
 
+/** Un texto editable y el idioma en que salió: el pedido, o el español si
+ * no había traducción. La página usa el idioma para el atributo `lang`. */
+export interface SiteText {
+  readonly text: string;
+  readonly language: Language;
+}
+
 interface SiteTextRow {
   readonly key: string;
   readonly locale: string;
@@ -26,9 +33,27 @@ function pickValue(
   return rows.find((row) => row.key === key && row.locale === language)?.value;
 }
 
+// Una versión vacía o de solo espacios es una traducción que no se hizo.
+function resolveSiteText(
+  rows: readonly SiteTextRow[],
+  key: string,
+  language: Language,
+): SiteText {
+  const requested = pickValue(rows, key, language);
+  if (requested !== undefined && requested.trim() !== "") {
+    return { text: requested, language };
+  }
+  const fallback = pickValue(rows, key, DEFAULT_LANGUAGE);
+  if (fallback === undefined) {
+    throw new MissingSiteTextError(key);
+  }
+  return { text: fallback, language: DEFAULT_LANGUAGE };
+}
+
 /**
  * Lee textos editables por clave, en una sola consulta, con el respaldo en
- * español: una versión vacía o de solo espacios cuenta como ausente.
+ * español: una versión vacía o de solo espacios cuenta como ausente. Cada
+ * texto dice de qué idioma salió.
  *
  * - Si una clave no existe en ningún idioma, lanza `MissingSiteTextError`.
  * - Si la base falla, lanza el error con las claves en el mensaje.
@@ -40,7 +65,7 @@ export async function readSiteTexts(
   keys: readonly string[],
   language: Language,
   client: TypedSupabaseClient = createAnonSupabaseClient(),
-): Promise<Readonly<Record<string, string>>> {
+): Promise<Readonly<Record<string, SiteText>>> {
   const { data, error } = await client
     .from("site_texts")
     .select("key, locale, value")
@@ -54,17 +79,7 @@ export async function readSiteTexts(
     );
   }
 
-  const texts: Record<string, string> = {};
-  for (const key of keys) {
-    const requested = pickValue(data, key, language);
-    const text =
-      requested !== undefined && requested.trim() !== ""
-        ? requested
-        : pickValue(data, key, DEFAULT_LANGUAGE);
-    if (text === undefined) {
-      throw new MissingSiteTextError(key);
-    }
-    texts[key] = text;
-  }
-  return texts;
+  return Object.fromEntries(
+    keys.map((key) => [key, resolveSiteText(data, key, language)]),
+  );
 }

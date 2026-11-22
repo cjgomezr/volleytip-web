@@ -211,7 +211,7 @@ describeIntegration("textos editables", () => {
       createLocalAnonClient(),
     );
 
-    expect(texts[TEST_KEY]).toBe("Hello");
+    expect(texts[TEST_KEY]).toEqual({ text: "Hello", language: "en" });
   });
 
   it("devuelve el español cuando no hay inglés", async () => {
@@ -223,7 +223,7 @@ describeIntegration("textos editables", () => {
       createLocalAnonClient(),
     );
 
-    expect(texts[TEST_KEY]).toBe("Hola");
+    expect(texts[TEST_KEY]).toEqual({ text: "Hola", language: "es" });
   });
 
   it("devuelve el español cuando el inglés es solo espacios", async () => {
@@ -236,7 +236,7 @@ describeIntegration("textos editables", () => {
       createLocalAnonClient(),
     );
 
-    expect(texts[TEST_KEY]).toBe("Hola");
+    expect(texts[TEST_KEY]).toEqual({ text: "Hola", language: "es" });
   });
 
   it("lanza un error que nombra la clave inexistente", async () => {
@@ -267,7 +267,10 @@ describeIntegration("textos editables", () => {
 
     const texts = await readSiteTexts([TEST_KEY, OTHER_TEST_KEY], "en", client);
 
-    expect(texts).toEqual({ [TEST_KEY]: "Hola", [OTHER_TEST_KEY]: "Bye" });
+    expect(texts).toEqual({
+      [TEST_KEY]: { text: "Hola", language: "es" },
+      [OTHER_TEST_KEY]: { text: "Bye", language: "en" },
+    });
     expect(requests).toHaveLength(1);
   });
 });
