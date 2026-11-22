@@ -5,10 +5,10 @@ import { renderInRouter } from "./render-in-router";
 
 describe("Botón", () => {
   it("con destino se pinta como enlace", () => {
-    const html = renderInRouter(<Button to="/tienda">Ir a la tienda</Button>);
+    const html = renderInRouter(<Button to="home">Ir al inicio</Button>);
 
-    expect(html).toMatch(/^<a [^>]*href="\/tienda"/);
-    expect(html).toContain("Ir a la tienda");
+    expect(html).toMatch(/^<a [^>]*href="\/"/);
+    expect(html).toContain("Ir al inicio");
     expect(html).not.toContain("<button");
   });
 
@@ -33,8 +33,8 @@ describe("Botón", () => {
 
   it("un enlace deshabilitado no lleva destino y se anuncia deshabilitado", () => {
     const html = renderInRouter(
-      <Button to="/tienda" isDisabled>
-        Ir a la tienda
+      <Button to="home" isDisabled>
+        Ir al inicio
       </Button>,
     );
 

@@ -15,6 +15,7 @@ const TEST_SERVER_ENV: ServerEnv = {
   clientIpHeader: "X-Forwarded-For",
   clientIpTrustedHops: 1,
   imageCdnHost: "imagenes-de-prueba.b-cdn.net",
+  siteOrigin: "https://sitio-de-prueba.volleytip.test",
 };
 
 /**

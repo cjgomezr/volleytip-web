@@ -26,4 +26,7 @@ export const TEST_ENV = {
   CLIENT_IP_TRUSTED_HOPS: "1",
   // No existe: ninguna prueba pide una imagen al CDN.
   IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
+  // A propósito distinto de la dirección donde corren las pruebas: las
+  // direcciones absolutas tienen que salir de aquí y no de la petición.
+  SITE_ORIGIN: "https://sitio-de-prueba.volleytip.test",
 } as const;

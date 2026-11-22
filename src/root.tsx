@@ -9,6 +9,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 
+import { LanguageAlternates } from "~/components/language-alternates";
 import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getRequestLanguage } from "~/lib/i18n/languages";
@@ -48,10 +49,16 @@ export const links: Route.LinksFunction = () => [
 // framework con SSR, React Router vuelve a pedir este loader en cada
 // navegación, así que al pasar de `/` a `/en/` los textos cambian con el
 // idioma. Lo vigila una prueba de Playwright.
+// `siteOrigin` no es un secreto: es el dominio público, y el navegador lo
+// necesita para pintar las mismas direcciones que el servidor.
 export function loader({ request }: Route.LoaderArgs): {
   readonly messages: Messages;
+  readonly siteOrigin: string;
 } {
-  return { messages: getMessages(getRequestLanguage(request)) };
+  return {
+    messages: getMessages(getRequestLanguage(request)),
+    siteOrigin: serverEnv.siteOrigin,
+  };
 }
 
 export function Layout({ children }: { children: ReactNode }): ReactElement {
@@ -84,8 +91,18 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
   );
 }
 
-export default function App(): ReactElement {
-  return <Outlet />;
+// Las direcciones para buscadores se pintan aquí y no en `Layout`: este
+// componente no se pinta cuando la página es un error (lo hace
+// `ErrorBoundary`), así que un 404 sale sin canónica ni `hreflang`.
+export default function App({
+  loaderData,
+}: Route.ComponentProps): ReactElement {
+  return (
+    <>
+      <LanguageAlternates siteOrigin={loaderData.siteOrigin} />
+      <Outlet />
+    </>
+  );
 }
 
 interface ErrorSummary {

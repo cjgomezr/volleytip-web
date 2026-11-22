@@ -32,6 +32,7 @@ export const SERVER_ENV_VARIABLES = [
   "CLIENT_IP_HEADER",
   "CLIENT_IP_TRUSTED_HOPS",
   "IMAGE_CDN_HOST",
+  "SITE_ORIGIN",
 ] as const;
 
 type ServerEnvVariable = (typeof SERVER_ENV_VARIABLES)[number];
@@ -51,6 +52,9 @@ export interface ServerEnv {
   readonly clientIpTrustedHops: number;
   /** Dominio del CDN de imágenes (Bunny Optimizer), sin protocolo ni ruta. */
   readonly imageCdnHost: string;
+  /** Dirección pública del sitio en este entorno: protocolo y dominio, sin
+   * barra final. Con ella se arman las direcciones absolutas. */
+  readonly siteOrigin: string;
 }
 
 export type EnvSource = Readonly<Record<string, string | undefined>>;
@@ -68,6 +72,9 @@ const HEADER_NAME = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/;
 const POSITIVE_INTEGER = /^[1-9]\d{0,2}$/;
 // Fuera de estos entornos Turnstile tiene que proteger de verdad.
 const ENVIRONMENTS_FOR_TEST_KEYS: readonly string[] = ["local", "test"];
+// Solo en la máquina de quien programa el sitio se sirve sin cifrar.
+const ENVIRONMENTS_FOR_PLAIN_HTTP: readonly string[] = ["local", "test"];
+const SECURE_PROTOCOL = "https:";
 
 function isAppEnvironment(value: string): value is AppEnvironment {
   return (APP_ENVIRONMENTS as readonly string[]).includes(value);
@@ -157,12 +164,39 @@ function findInvalidImageValues(values: PresentValues): string[] {
   ];
 }
 
+/** Un origen es protocolo y dominio, tal como lo escribe el navegador:
+ * sin ruta, sin barra final, sin búsqueda y en minúsculas. */
+function isHttpOrigin(value: string): boolean {
+  return isHttpUrl(value) && new URL(value).origin === value;
+}
+
+function findInvalidSiteOrigin(values: PresentValues): string[] {
+  const { SITE_ORIGIN: origin, APP_ENV: appEnv } = values;
+  if (origin === undefined) {
+    return [];
+  }
+  if (!isHttpOrigin(origin)) {
+    return [
+      "SITE_ORIGIN no es la dirección pública del sitio. Va con protocolo y dominio, sin ruta ni barra final, por ejemplo https://volleytip.com.",
+    ];
+  }
+  const allowsPlainHttp =
+    appEnv !== undefined && ENVIRONMENTS_FOR_PLAIN_HTTP.includes(appEnv);
+  if (new URL(origin).protocol !== SECURE_PROTOCOL && !allowsPlainHttp) {
+    return [
+      `SITE_ORIGIN debe empezar por https. Solo se permite http con APP_ENV en ${ENVIRONMENTS_FOR_PLAIN_HTTP.join(" o ")}.`,
+    ];
+  }
+  return [];
+}
+
 function findInvalidValues(values: PresentValues): string[] {
   return [
     ...findInvalidSupabaseValues(values),
     ...findTurnstileTestKeys(values),
     ...findInvalidFormProtectionValues(values),
     ...findInvalidImageValues(values),
+    ...findInvalidSiteOrigin(values),
   ];
 }
 
@@ -202,6 +236,7 @@ function buildServerEnv(
     clientIpHeader: values.CLIENT_IP_HEADER,
     clientIpTrustedHops: Number(values.CLIENT_IP_TRUSTED_HOPS),
     imageCdnHost: values.IMAGE_CDN_HOST,
+    siteOrigin: values.SITE_ORIGIN,
   };
 }
 

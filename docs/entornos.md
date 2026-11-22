@@ -126,20 +126,21 @@ Para saber a qué entorno apunta un servicio, se abre su dirección con `/health
 
 Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación y las cinco de la protección de formularios. Ninguna llave ni secreto se repite entre los dos.
 
-| Variable                    | Servicio `staging`          | Servicio `production`    |
-| --------------------------- | --------------------------- | ------------------------ |
-| `APP_ENV`                   | `staging`                   | `production`             |
-| `SUPABASE_URL`              | De `volleytip-dev`          | De `volleytip-prod`      |
-| `SUPABASE_ANON_KEY`         | De `volleytip-dev`          | De `volleytip-prod`      |
-| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev`          | De `volleytip-prod`      |
-| `TURNSTILE_SITE_KEY`        | Del widget de staging       | Del widget de producción |
-| `TURNSTILE_SECRET_KEY`      | Del widget de staging       | Del widget de producción |
-| `FORM_PROTECTION_SECRET`    | Generado para staging       | Generado para producción |
-| `CLIENT_IP_HEADER`          | `X-Real-IP`                 | El mismo que staging     |
-| `CLIENT_IP_TRUSTED_HOPS`    | `1`                         | El mismo que staging     |
-| `IMAGE_CDN_HOST`            | Dominio de la zona de Bunny | El mismo que staging     |
+| Variable                    | Servicio `staging`              | Servicio `production`                         |
+| --------------------------- | ------------------------------- | --------------------------------------------- |
+| `APP_ENV`                   | `staging`                       | `production`                                  |
+| `SUPABASE_URL`              | De `volleytip-dev`              | De `volleytip-prod`                           |
+| `SUPABASE_ANON_KEY`         | De `volleytip-dev`              | De `volleytip-prod`                           |
+| `SUPABASE_SERVICE_ROLE_KEY` | De `volleytip-dev`              | De `volleytip-prod`                           |
+| `TURNSTILE_SITE_KEY`        | Del widget de staging           | Del widget de producción                      |
+| `TURNSTILE_SECRET_KEY`      | Del widget de staging           | Del widget de producción                      |
+| `FORM_PROTECTION_SECRET`    | Generado para staging           | Generado para producción                      |
+| `CLIENT_IP_HEADER`          | `X-Real-IP`                     | El mismo que staging                          |
+| `CLIENT_IP_TRUSTED_HOPS`    | `1`                             | El mismo que staging                          |
+| `IMAGE_CDN_HOST`            | Dominio de la zona de Bunny     | El mismo que staging                          |
+| `SITE_ORIGIN`               | `https://staging.volleytip.com` | `https://production-volleytip.up.railway.app` |
 
-De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios".
+De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios", "Imágenes" y "Dirección pública del sitio".
 
 - **`SUPABASE_SERVICE_ROLE_KEY` va sellada** (menú de la variable, Seal). Sellada no se puede leer desde el panel ni desde la API de Railway; el servidor la recibe igual. No se puede quitar el sello: para cambiarla se reemplaza el valor. El original sigue en el gestor de contraseñas.
 - **`TURNSTILE_SECRET_KEY` y `FORM_PROTECTION_SECRET` también van selladas.**
@@ -285,3 +286,23 @@ Optimizer cuesta US$9,50 al mes por zona, más el tráfico. Fuente, consultada e
 - El componente pide dos anchos, el normal y el doble para pantallas de alta densidad, y siempre lleva `width` y `height` para que la página no salte al cargar.
 - **Los logos no pasan por aquí.** Viven en `public/brand/` y se pintan con `<img>`. El constructor rechaza una ruta que empiece por `brand/`.
 - **El formato no va en la dirección.** Lo negocia Bunny con el navegador. La documentación de Bunny solo describe esa negociación automática para WebP, no para AVIF.
+
+## Dirección pública del sitio
+
+Cada página declara a los buscadores su dirección canónica y sus versiones en cada idioma (`hreflang`). Esas direcciones tienen que ser absolutas y con `https`, y no pueden salir de la petición: detrás del proxy de Railway el servidor la ve llegar por `http`. Por eso el dominio público es una variable.
+
+| Variable      | Qué es                                                    | Staging                         | Producción                                                    |
+| ------------- | --------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------- |
+| `SITE_ORIGIN` | Protocolo y dominio públicos del entorno, sin barra final | `https://staging.volleytip.com` | `https://production-volleytip.up.railway.app`, hasta W13 (#8) |
+
+- **No es un secreto.** Llega al navegador con los datos de cada página.
+- **Se valida al arrancar.** Con ruta, con barra final, con parámetros o sin protocolo, el servidor no arranca. Fuera de `local` y `test` tiene que empezar por `https`.
+- **En local** va la dirección del servidor de desarrollo, `http://localhost:3740`. Las pruebas ponen la suya.
+- **Cuando producción reciba `volleytip.com` (W13)** hay que cambiar el valor en el servicio `production`. Mientras tanto, las direcciones canónicas de producción apuntan a la dirección provisional.
+
+### Cómo se usa en el código
+
+- Las páginas del sitio se declaran una vez en `src/lib/i18n/pages.ts`. De esa lista salen las rutas y la dirección de cada enlace.
+- Un enlace interno usa `<LocalizedLink page="...">` (`src/components/localized-link.tsx`) o un botón con `to="..."`. Reciben una página del mapa, no una dirección, y llevan a esa página en el idioma de la actual.
+- La canónica y los `hreflang` los pinta `<LanguageAlternates>` desde `src/root.tsx`, una sola vez para todo el sitio. Una página de error o una dirección fuera del mapa no las lleva.
+- El selector de idioma es `<LanguageSwitcher>` (`src/components/language-switcher.tsx`).

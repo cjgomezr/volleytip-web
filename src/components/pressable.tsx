@@ -1,5 +1,9 @@
 import type { MouseEvent, ReactElement, ReactNode } from "react";
-import { Link } from "react-router";
+
+import type { PageParams } from "~/lib/i18n/page-path";
+import type { PageId } from "~/lib/i18n/pages";
+
+import { LocalizedLink } from "./localized-link";
 
 /** Zona de la página donde se pinta el componente. El sitio es oscuro por
  * defecto; tienda, carrito, checkout y admin son zonas claras. */
@@ -18,9 +22,12 @@ interface SharedTarget {
   readonly "aria-label"?: string;
 }
 
-/** Con destino: se pinta como enlace. */
+/** Con destino: se pinta como enlace a una página del sitio, en el idioma
+ * de la página actual. */
 export interface LinkTarget extends SharedTarget {
-  readonly to: string;
+  /** Una página del mapa (`src/lib/i18n/pages.ts`), no una dirección. */
+  readonly to: PageId;
+  readonly params?: PageParams;
 }
 
 /** Sin destino: se pinta como `<button>`. */
@@ -54,6 +61,7 @@ export function isInert(target: PressableTarget): boolean {
 
 function PressableLink({
   to,
+  params,
   isDisabled = false,
   previewState,
   className,
@@ -75,14 +83,15 @@ function PressableLink({
     );
   }
   return (
-    <Link
-      to={to}
+    <LocalizedLink
+      page={to}
+      params={params}
       aria-label={ariaLabel}
       data-preview={previewState}
       className={className}
     >
       {children}
-    </Link>
+    </LocalizedLink>
   );
 }
 

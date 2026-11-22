@@ -1,10 +1,12 @@
 import { type RouteConfig, route } from "@react-router/dev/routes";
 
+import { PAGES } from "./lib/i18n/pages";
 import { buildLocalizedRoutes } from "./lib/i18n/route-map";
 
 export default [
-  // Cada página se declara una vez aquí y existe en todos los idiomas.
-  ...buildLocalizedRoutes([{ id: "home", file: "routes/home.tsx", path: "" }]),
+  // Las páginas del sitio se declaran una vez en el mapa de páginas y
+  // existen en todos los idiomas.
+  ...buildLocalizedRoutes(PAGES),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
   // Página de muestra de los componentes. En producción responde 404.
