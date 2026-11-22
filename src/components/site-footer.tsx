@@ -87,8 +87,11 @@ export function SiteFooter({
               height={WORDMARK_HEIGHT}
               className="h-[30px] w-auto self-start"
             />
-            <p className="m-0 font-display text-[20px] uppercase">
-              {translate("footer.tagline")}
+            <p className="m-0 font-display text-[28px] leading-none font-normal uppercase md:text-[32px]">
+              {translate("footer.taglineStart")}{" "}
+              <span className="text-brand-red">
+                {translate("footer.taglineAccent")}
+              </span>
             </p>
             <ul
               aria-label={translate("footer.social.label")}
