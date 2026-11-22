@@ -886,12 +886,25 @@ for (const vp of viewports) {
           fullPage: true,
           maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
         });
-        const overflow = await page.evaluate(
-          () =>
-            document.documentElement.scrollWidth >
-            document.documentElement.clientWidth,
-        );
-        expect(overflow, `scroll horizontal a ${vp.width}px`).toBe(false);
+        // Si algo se sale, el mensaje dice qué: la captura no lo muestra,
+        // porque se toma al ancho de la ventana.
+        const overflowing = await page.evaluate(() => {
+          const viewportWidth = document.documentElement.clientWidth;
+          if (document.documentElement.scrollWidth <= viewportWidth) {
+            return [];
+          }
+          return [...document.querySelectorAll("body *")]
+            .filter(
+              (element) =>
+                element.getBoundingClientRect().right > viewportWidth,
+            )
+            .map((element) => {
+              const { right, width } = element.getBoundingClientRect();
+              const text = (element.textContent ?? "").trim().slice(0, 40);
+              return `${element.tagName.toLowerCase()} derecha=${right.toFixed(1)} ancho=${width.toFixed(1)} "${text}"`;
+            });
+        });
+        expect(overflowing, `scroll horizontal a ${vp.width}px`).toEqual([]);
         await context.close();
       });
     }
