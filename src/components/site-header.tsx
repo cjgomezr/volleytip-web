@@ -72,7 +72,7 @@ export function SiteHeader({ pages = PAGES }: SiteHeaderProps): ReactElement {
           </ul>
         </nav>
       )}
-      <LanguageSwitcher />
+      <LanguageSwitcher isCompact />
     </header>
   );
 }

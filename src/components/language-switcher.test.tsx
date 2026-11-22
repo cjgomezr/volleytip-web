@@ -27,7 +27,48 @@ function linkOf(html: string, language: Language): string {
   return link;
 }
 
+function renderCompactAt(path: string, language: Language): string {
+  return renderInRouter(
+    <TranslationsProvider language={language} messages={getMessages(language)}>
+      <LanguageSwitcher isCompact />
+    </TranslationsProvider>,
+    path,
+  );
+}
+
+describe("selector de idioma compacto", () => {
+  it("muestra el código de cada idioma y no el nombre completo", () => {
+    const html = renderCompactAt("/", "es");
+
+    expect(html).toContain('<span aria-hidden="true">ES</span>');
+    expect(html).toContain('<span aria-hidden="true">EN</span>');
+  });
+
+  it("el lector de pantalla sigue oyendo el nombre completo", () => {
+    const html = renderCompactAt("/", "es");
+
+    expect(html).toContain('<span class="sr-only">Español</span>');
+    expect(html).toContain('<span class="sr-only">English</span>');
+  });
+
+  it("conserva los enlaces, el idioma actual y la zona de toque", () => {
+    const html = renderCompactAt("/en/", "en");
+
+    expect(html).toContain('href="/"');
+    expect(html).toContain('href="/en/"');
+    expect(html.match(/aria-current="true"/g)).toHaveLength(1);
+    expect(html.match(/min-h-11/g)).toHaveLength(SUPPORTED_LANGUAGES.length);
+  });
+});
+
 describe("selector de idioma", () => {
+  it("sin la forma compacta no pinta códigos", () => {
+    const html = renderAt("/", "es");
+
+    expect(html).not.toContain("sr-only");
+    expect(html).toContain(">Español</a>");
+  });
+
   it("pinta un enlace por idioma", () => {
     const html = renderAt("/", "es");
 
