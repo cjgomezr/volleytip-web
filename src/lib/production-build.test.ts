@@ -568,12 +568,16 @@ describe("página 500 en el servidor construido", () => {
   const FORBIDDEN_PAGE = { method: "GET", path: "/dev/fallo?estado=403" };
   const ENGLISH_FAILING_PAGE = { method: "GET", path: "/en/dev/fallo" };
   const SECRET_MESSAGE = "detalle-tecnico-secreto";
-  const run = (): ReturnType<typeof runBuiltServer> =>
-    runBuiltServer("staging", [
+  // Un solo arranque del servidor para todo el bloque.
+  let cached: ReturnType<typeof runBuiltServer> | undefined;
+  const run = (): ReturnType<typeof runBuiltServer> => {
+    cached ??= runBuiltServer("staging", [
       FAILING_PAGE,
       FORBIDDEN_PAGE,
       ENGLISH_FAILING_PAGE,
     ]);
+    return cached;
+  };
 
   it("un loader que lanza responde 500 con 'Pedimos tiempo' y sin la cáscara", () => {
     const response = findServed(run().served, FAILING_PAGE);
