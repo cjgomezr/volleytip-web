@@ -38,10 +38,6 @@ describe("home", () => {
     expect(html).not.toContain("Aprende voley");
   });
 
-  it("shows the VolleyTip wordmark with alternative text", () => {
-    expect(renderHome("es")).toMatch(/<img[^>]+alt="VolleyTip"/);
-  });
-
   it("links to the health check, the route that walks end to end", () => {
     expect(renderHome("en")).toMatch(/<a[^>]+href="\/healthz"/);
   });

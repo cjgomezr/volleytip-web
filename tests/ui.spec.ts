@@ -964,3 +964,97 @@ test.describe("Precio aproximado en dólares", () => {
     });
   }
 });
+
+// ---------------------------------------------------------------------------
+// Cáscara del sitio: header, enlace de salto y página 404
+// ---------------------------------------------------------------------------
+
+const SHELL_PAGES = [
+  { name: "home en español", url: APP_URL },
+  { name: "home en inglés", url: `${APP_URL}/en/` },
+  { name: "404 en español", url: `${APP_URL}/no-existe` },
+  { name: "404 en inglés", url: `${APP_URL}/en/no-existe` },
+] as const;
+
+for (const vp of viewports) {
+  test.describe(`cáscara @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    for (const shellPage of SHELL_PAGES) {
+      test(`${shellPage.name}: axe no reporta violaciones`, async ({
+        page,
+      }) => {
+        await page.goto(shellPage.url);
+        const results = await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa"])
+          .analyze();
+        expect(
+          results.violations,
+          JSON.stringify(results.violations, null, 2),
+        ).toEqual([]);
+      });
+
+      test(`${shellPage.name}: no hay desborde horizontal`, async ({
+        page,
+      }) => {
+        await page.goto(shellPage.url);
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth >
+            document.documentElement.clientWidth,
+        );
+        expect(overflow, `desborde a ${vp.width}px`).toBe(false);
+      });
+    }
+
+    test("el header coincide con la línea base aprobada", async ({ page }) => {
+      await page.goto(ENGLISH_HOME_URL);
+      await page.evaluate(async () => {
+        await document.fonts.ready;
+      });
+      const header = page.locator("header");
+      const name = `header-en-${vp.name}.png`;
+      await createMissingLocalBaseline(name, () =>
+        header.screenshot(SCREENSHOT_OPTIONS),
+      );
+      await expect(header).toHaveScreenshot(name, {
+        ...SCREENSHOT_OPTIONS,
+        maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+      });
+    });
+  });
+}
+
+test.describe("cáscara: enlace de salto", () => {
+  test("es el primer foco con teclado y lleva al contenido principal", async ({
+    page,
+  }) => {
+    await page.goto(APP_URL);
+    await page.keyboard.press("Tab");
+    const skipLink = page.getByRole("link", { name: "Saltar al contenido" });
+    await expect(skipLink).toBeFocused();
+    await expect(skipLink).toBeInViewport();
+
+    await page.keyboard.press("Enter");
+
+    await expect(page.locator("main")).toBeFocused();
+  });
+
+  test("cada página lleva un solo main", async ({ page }) => {
+    for (const { url } of SHELL_PAGES) {
+      await page.goto(url);
+      await expect(page.locator("main")).toHaveCount(1);
+    }
+  });
+});
+
+test.describe("cáscara: rutas sin ella", () => {
+  test("/healthz y /dev/componentes no llevan el header del sitio", async ({
+    page,
+  }) => {
+    await page.goto(`${APP_URL}/dev/componentes`);
+    await expect(page.getByRole("link", { name: /VolleyTip/ })).toHaveCount(0);
+    const health = await page.request.get(`${APP_URL}/healthz`);
+    expect(await health.text()).not.toContain("<header");
+  });
+});

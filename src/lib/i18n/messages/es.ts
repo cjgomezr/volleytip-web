@@ -4,7 +4,6 @@
 import { errorsEs } from "./errors";
 
 export const es = {
-  "site.name": "VolleyTip",
   "home.title": "VolleyTip",
   "home.description":
     "Tips de voleibol en 60 segundos, tienda y camps de VolleyTip.",
@@ -15,6 +14,15 @@ export const es = {
   "home.intro":
     "Estamos reconstruyendo volleytip.com. Esta página es la base del sitio nuevo.",
   "home.healthLink": "Ver estado del servicio",
+  "header.skipLink": "Saltar al contenido",
+  "header.homeLink": "VolleyTip, ir al inicio",
+  "header.menuLabel": "Menú principal",
+  "header.menu.tips": "Tips",
+  "header.menu.camps": "Camps",
+  "header.menu.vballTour": "VBall Tour",
+  "header.menu.shop": "Tienda",
+  "header.menu.app": "App",
+  "header.menu.about": "Nosotros",
   "languageSwitcher.label": "Idioma",
   "languageSuggestion.label": "Sugerencia de idioma",
   "languageSuggestion.message":

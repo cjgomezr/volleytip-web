@@ -1,6 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
 import {
-  isRouteErrorResponse,
   Links,
   Meta,
   Outlet,
@@ -9,6 +8,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 
+import { ErrorContent } from "~/components/error-content";
 import { LanguageAlternates } from "~/components/language-alternates";
 import {
   LanguageSuggestion,
@@ -25,7 +25,6 @@ import {
 import { getRequestLanguage, type Language } from "~/lib/i18n/languages";
 import { getMessages, getTranslate } from "~/lib/i18n/messages.server";
 import { getPageAtPath } from "~/lib/i18n/pages";
-import { ERROR_MESSAGES } from "~/lib/i18n/messages/errors";
 import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
@@ -33,8 +32,6 @@ import { markAsNotIndexable } from "~/lib/indexing.server";
 
 import type { Route } from "./+types/root";
 import "./app.css";
-
-const NOT_FOUND_STATUS = 404;
 
 // Las páginas dependen de la cookie de idioma y de `Accept-Language`
 // (el aviso de idioma), y la raíz redirige según la cookie. Las demás
@@ -172,45 +169,14 @@ export default function App({
   );
 }
 
-interface ErrorSummary {
-  readonly title: string;
-  readonly details: string;
-}
-
-// No usa `useTranslate`: los textos de la raíz pueden faltar justo cuando
-// hay que pintar un error (un fallo en el middleware o en el loader de la
-// raíz, un método que React Router rechaza). Los de la página de error
-// viajan siempre con el código.
-function useErrorSummary(error: unknown): ErrorSummary {
-  const messages = ERROR_MESSAGES[useLanguage()];
-  if (isRouteErrorResponse(error) && error.status === NOT_FOUND_STATUS) {
-    return {
-      title: messages["error.notFoundTitle"],
-      details: messages["error.notFoundDetails"],
-    };
-  }
-  if (import.meta.env.DEV && error instanceof Error) {
-    return { title: messages["error.genericTitle"], details: error.message };
-  }
-  return {
-    title: messages["error.genericTitle"],
-    details: messages["error.genericDetails"],
-  };
-}
-
 // Límite de error provisional. Las páginas 404, 500 y mantenimiento del
 // diseño (FR-056) llegan con W3.
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
-  const { title, details } = useErrorSummary(error);
-
   return (
-    <main className="mx-auto max-w-[1280px] px-6 pt-12 pb-24">
-      <h1 className="font-display text-[56px] leading-[0.95] uppercase">
-        {title}
-      </h1>
-      <p className="mt-6 text-[16px] leading-[1.5] text-ink-muted">{details}</p>
+    <main>
+      <ErrorContent error={error} />
     </main>
   );
 }
