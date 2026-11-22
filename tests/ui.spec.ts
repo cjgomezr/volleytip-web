@@ -1208,6 +1208,20 @@ for (const vp of viewports) {
       expect(barBottom).toBeLessThanOrEqual(headerTop);
     });
 
+    test("mide un número entero de píxeles de alto", async ({ page }) => {
+      // Con medio píxel de alto, todo lo que va debajo se pinta corrido y
+      // borroso, empezando por el header.
+      await page.goto(APP_URL);
+      const barHeight = await page
+        .getByText(FIRST_ANNOUNCEMENT.es, { exact: true })
+        .evaluate(
+          (item) => item.closest("div")?.getBoundingClientRect().height ?? 0,
+        );
+
+      expect(barHeight).toBeGreaterThan(0);
+      expect(Number.isInteger(barHeight)).toBe(true);
+    });
+
     test("la 404 también la lleva", async ({ page }) => {
       await page.goto(`${APP_URL}/no-existe`);
 

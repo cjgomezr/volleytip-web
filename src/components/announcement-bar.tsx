@@ -20,7 +20,7 @@ export function AnnouncementBar({
   }
   return (
     <div className="bg-brand-lime text-brand-night">
-      <ul className="mx-auto flex max-w-[1280px] flex-wrap justify-center gap-x-8 gap-y-1 px-4 py-2.5 text-center text-[13px] font-bold tracking-[0.08em] break-words uppercase min-[390px]:px-6">
+      <ul className="mx-auto flex max-w-[1280px] flex-wrap justify-center gap-x-8 gap-y-1 px-4 py-2.5 text-center text-[13px] leading-5 font-bold tracking-[0.08em] break-words uppercase min-[390px]:px-6">
         {visibleMessages.map((message, index) => (
           <li
             key={message}
