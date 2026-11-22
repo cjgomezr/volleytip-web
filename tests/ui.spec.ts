@@ -844,6 +844,7 @@ const BROWSER_USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 
 const FIRST_VISIT = { cookies: [], origins: [] };
+const OVERFLOW_SETTLE_MS = 5_000;
 const LANGUAGE_NOTICE_NAME = /Language suggestion|Sugerencia de idioma/;
 
 for (const vp of viewports) {
@@ -888,32 +889,39 @@ for (const vp of viewports) {
         });
         // Si algo se sale, el mensaje dice qué: la captura no lo muestra,
         // porque se toma al ancho de la ventana.
-        const overflow = await page.evaluate(() => {
-          const root = document.documentElement;
-          const viewportWidth = root.clientWidth;
-          const describe = (element: Element): string => {
-            const { right, width } = element.getBoundingClientRect();
-            const text = (element.textContent ?? "").trim().slice(0, 40);
-            return `${element.tagName.toLowerCase()} derecha=${right.toFixed(1)} ancho=${width.toFixed(1)} propio=${String(element.scrollWidth)}/${String(element.clientWidth)} "${text}"`;
-          };
-          const elements = [...document.querySelectorAll("body *")];
-          return {
-            scrollWidth: root.scrollWidth,
-            viewportWidth,
-            // Lo que pasa del borde, y lo que no cabe en su propia caja.
-            suspects: elements
-              .filter(
-                (element) =>
-                  element.getBoundingClientRect().right > viewportWidth ||
-                  element.scrollWidth > element.clientWidth + 1,
-              )
-              .map(describe),
-          };
-        });
-        expect(
-          overflow.scrollWidth,
-          `scroll horizontal a ${vp.width}px: ${overflow.suspects.join(" | ")}`,
-        ).toBeLessThanOrEqual(overflow.viewportWidth);
+        // Se reintenta unos segundos. En Linux, una corrida de cada tres, el
+        // título de la home en inglés midió 353 px en una caja de 312 justo
+        // después de una captura que sí coincidía con la línea base: la
+        // página estaba bien pintada y la medida no. Un scroll horizontal
+        // que se queda sigue fallando.
+        await expect(async () => {
+          const overflow = await page.evaluate(() => {
+            const root = document.documentElement;
+            const viewportWidth = root.clientWidth;
+            const describe = (element: Element): string => {
+              const { right, width } = element.getBoundingClientRect();
+              const text = (element.textContent ?? "").trim().slice(0, 40);
+              return `${element.tagName.toLowerCase()} derecha=${right.toFixed(1)} ancho=${width.toFixed(1)} propio=${String(element.scrollWidth)}/${String(element.clientWidth)} "${text}"`;
+            };
+            const elements = [...document.querySelectorAll("body *")];
+            return {
+              scrollWidth: root.scrollWidth,
+              viewportWidth,
+              // Lo que pasa del borde, y lo que no cabe en su propia caja.
+              suspects: elements
+                .filter(
+                  (element) =>
+                    element.getBoundingClientRect().right > viewportWidth ||
+                    element.scrollWidth > element.clientWidth + 1,
+                )
+                .map(describe),
+            };
+          });
+          expect(
+            overflow.scrollWidth,
+            `scroll horizontal a ${vp.width}px: ${overflow.suspects.join(" | ")}`,
+          ).toBeLessThanOrEqual(overflow.viewportWidth);
+        }).toPass({ timeout: OVERFLOW_SETTLE_MS });
         await context.close();
       });
     }
