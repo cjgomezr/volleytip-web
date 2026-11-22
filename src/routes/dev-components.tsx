@@ -6,14 +6,10 @@ import { Button, type ButtonVariant } from "~/components/button";
 import { Eyebrow } from "~/components/eyebrow";
 import { FormProtection } from "~/components/form-protection";
 import { IconButton } from "~/components/icon-button";
-import { PriceApproximation } from "~/components/price-approximation";
 import { LanguageSwitcher } from "~/components/language-switcher";
 import type { PreviewState, Zone } from "~/components/pressable";
+import { PriceApproximation } from "~/components/price-approximation";
 import { TextField } from "~/components/text-field";
-import {
-  calculateUsdApproximation,
-  type UsdApproximation,
-} from "~/lib/usd-approximation";
 import { serverEnv } from "~/lib/env.server";
 import {
   issueFormProtection,
@@ -22,6 +18,10 @@ import {
   type ProtectedFormResult,
 } from "~/lib/forms/protected-form.server";
 import { SAMPLE_FORM } from "~/lib/forms/sample-form.server";
+import {
+  calculateUsdApproximation,
+  type UsdApproximation,
+} from "~/lib/usd-approximation";
 
 import type { Route } from "./+types/dev-components";
 
