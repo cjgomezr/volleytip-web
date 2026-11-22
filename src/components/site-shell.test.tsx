@@ -15,7 +15,7 @@ function renderShell(at: string): string {
         language={language}
         messages={getMessages(language)}
       >
-        <SiteShell>
+        <SiteShell year={2026}>
           <p>contenido de la página</p>
         </SiteShell>
       </TranslationsProvider>
@@ -32,6 +32,14 @@ describe("cáscara", () => {
     expect(html).toMatch(/<main[^>]*>[\s\S]*contenido de la página/);
   });
 
+  it("ends the page with the footer, after the main", () => {
+    const html = renderShell("/");
+
+    expect(html.lastIndexOf("</main>")).toBeLessThan(html.indexOf("<footer"));
+    // Después del pie solo cierra la columna que envuelve la cáscara.
+    expect(html.trimEnd()).toMatch(/<\/footer><\/div>$/);
+  });
+
   it("puts the skip link before everything else, pointing at the main", () => {
     const html = renderShell("/");
     const target = /<main[^>]+id="([^"]+)"/.exec(html)?.[1];
@@ -40,8 +48,9 @@ describe("cáscara", () => {
     expect(html).toMatch(
       new RegExp(`<a[^>]+href="#${target}"[^>]*>Saltar al contenido</a>`),
     );
-    // Lo único que puede ir antes son los <link> que React sube al <head>.
-    expect(html.replace(/<link[^>]*>/g, "")).toMatch(/^<a /);
+    // Lo único que puede ir antes son los <link> que React sube al <head> y
+    // la columna que envuelve la cáscara: el enlace es su primer hijo.
+    expect(html.replace(/<link[^>]*>/g, "")).toMatch(/^<div [^>]*><a /);
   });
 
   it("writes the skip link in English under /en/", () => {

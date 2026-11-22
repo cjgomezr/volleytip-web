@@ -5,6 +5,7 @@ import {
   formatDuration,
   formatMoney,
   formatNumber,
+  getSiteYear,
   type Money,
 } from "./format";
 
@@ -188,5 +189,16 @@ describe("números y duraciones", () => {
   it("falla con una duración negativa o no entera", () => {
     expect(() => formatDuration(-1)).toThrow(/duración/i);
     expect(() => formatDuration(1.5)).toThrow(/duración/i);
+  });
+});
+
+describe("año del sitio", () => {
+  it("uses the Colombian clock when the server is already in the new year", () => {
+    // 1 de enero 2027, 02:00 UTC: en Colombia son las 9 p. m. del 31.
+    expect(getSiteYear(new Date("2027-01-01T02:00:00Z"))).toBe(2026);
+  });
+
+  it("changes year at midnight in Colombia", () => {
+    expect(getSiteYear(new Date("2027-01-01T05:00:00Z"))).toBe(2027);
   });
 });

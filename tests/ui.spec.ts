@@ -1061,3 +1061,99 @@ test.describe("cáscara: rutas sin ella", () => {
     ).toHaveCount(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pie del sitio
+// ---------------------------------------------------------------------------
+
+for (const vp of viewports) {
+  test.describe(`pie @ ${vp.name}`, () => {
+    test.use({ viewport: { width: vp.width, height: vp.height } });
+
+    for (const footerPage of [
+      { language: "es", url: APP_URL },
+      { language: "en", url: ENGLISH_HOME_URL },
+    ]) {
+      test(`${footerPage.language}: coincide con la línea base aprobada`, async ({
+        page,
+      }) => {
+        await page.goto(footerPage.url);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        const footer = page.locator("footer");
+        // El logo del pie carga aparte: sin esperarlo, la captura sale a medias.
+        await footer
+          .locator("img")
+          .evaluate((image: HTMLImageElement) => image.decode());
+        const name = `pie-${footerPage.language}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          footer.screenshot(SCREENSHOT_OPTIONS),
+        );
+        await expect(footer).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+
+      test(`${footerPage.language}: cada enlace tiene zona de toque de 44 px`, async ({
+        page,
+      }) => {
+        await page.goto(footerPage.url);
+        const sizes = await page.locator("footer a").evaluateAll((links) =>
+          links.map((link) => {
+            const { width, height } = link.getBoundingClientRect();
+            return { name: link.textContent || link.ariaLabel, width, height };
+          }),
+        );
+        for (const { name, width, height } of sizes) {
+          expect(height, `alto de ${name}`).toBeGreaterThanOrEqual(
+            MIN_TOUCH_TARGET_PX,
+          );
+          expect(width, `ancho de ${name}`).toBeGreaterThanOrEqual(
+            MIN_TOUCH_TARGET_PX,
+          );
+        }
+      });
+    }
+  });
+}
+
+test.describe("pie: salto", () => {
+  test("termina cada página con el pie, que lleva el ancla", async ({
+    page,
+  }) => {
+    for (const { url } of SHELL_PAGES) {
+      await page.goto(url);
+      await expect(page.locator("footer#pie")).toHaveCount(1);
+    }
+  });
+
+  test("en una página corta el pie queda pegado al fondo de la pantalla", async ({
+    page,
+  }) => {
+    const TALL_VIEWPORT = { width: 1440, height: 1600 };
+    await page.setViewportSize(TALL_VIEWPORT);
+    await page.goto(`${APP_URL}/no-existe`);
+
+    const footerBottom = await page
+      .locator("footer#pie")
+      .evaluate((footer) => footer.getBoundingClientRect().bottom);
+
+    expect(Math.round(footerBottom)).toBe(TALL_VIEWPORT.height);
+  });
+
+  test("dentro de la columna el header conserva su ancho completo", async ({
+    page,
+  }) => {
+    const HEADER_MAX_WIDTH = 1280;
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(APP_URL);
+
+    const headerWidth = await page
+      .locator("header")
+      .evaluate((header) => header.getBoundingClientRect().width);
+
+    expect(Math.round(headerWidth)).toBe(HEADER_MAX_WIDTH);
+  });
+});

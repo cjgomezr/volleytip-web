@@ -24,6 +24,9 @@ interface LanguageSwitcherProps {
    * donde el nombre completo no cabe junto al logo a 360 px. El lector de
    * pantalla sigue oyendo el nombre. */
   readonly isCompact?: boolean;
+  /** El nombre accesible de la navegación. Cada una de la página necesita el
+   * suyo: el pie no puede repetir el del header. */
+  readonly label?: string;
 }
 
 const FALLBACK_PAGE: CurrentPage = { page: "home", params: {} };
@@ -65,6 +68,7 @@ const OTHER_STYLES: Record<Zone, string> = {
 export function LanguageSwitcher({
   zone = "dark",
   isCompact = false,
+  label,
 }: LanguageSwitcherProps): ReactElement {
   const translate = useTranslate();
   const currentLanguage = useLanguage();
@@ -114,7 +118,7 @@ export function LanguageSwitcher({
   }
 
   return (
-    <nav aria-label={translate("languageSwitcher.label")}>
+    <nav aria-label={label ?? translate("languageSwitcher.label")}>
       <ul className={`${LIST_STYLES} ${LIST_ZONE_STYLES[zone]}`}>
         {SUPPORTED_LANGUAGES.map(({ code }) => renderLanguage(code))}
       </ul>

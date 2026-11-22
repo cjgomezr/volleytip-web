@@ -20,6 +20,7 @@ import {
   redirectRootToChosenLanguage,
 } from "~/lib/i18n/language-choice.server";
 import { getRequestLanguage, type Language } from "~/lib/i18n/languages";
+import { getSiteYear } from "~/lib/i18n/format";
 import { getMessages, getTranslate } from "~/lib/i18n/messages.server";
 import { getPageAtPath } from "~/lib/i18n/pages";
 import type { Messages } from "~/lib/i18n/translate";
@@ -110,11 +111,13 @@ async function loadLanguageSuggestion(
 export async function loader({ request }: Route.LoaderArgs): Promise<{
   readonly messages: Messages;
   readonly siteOrigin: string;
+  readonly currentYear: number;
   readonly languageSuggestion: LanguageSuggestionData | null;
 }> {
   return {
     messages: getMessages(getRequestLanguage(request)),
     siteOrigin: serverEnv.siteOrigin,
+    currentYear: getSiteYear(new Date()),
     languageSuggestion: await loadLanguageSuggestion(request),
   };
 }
