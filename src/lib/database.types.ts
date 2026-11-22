@@ -234,6 +234,39 @@ export type Database = {
           },
         ];
       };
+      site_texts: {
+        Row: {
+          created_at: string;
+          key: string;
+          locale: string;
+          updated_at: string;
+          value: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          created_at?: string;
+          key: string;
+          locale: string;
+          updated_at?: string;
+          value: string;
+        };
+        Update: {
+          created_at?: string;
+          key?: string;
+          locale?: string;
+          updated_at?: string;
+          value?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "site_texts_locale_fkey";
+            columns: ["locale"];
+            isOneToOne: false;
+            referencedRelation: "languages";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
