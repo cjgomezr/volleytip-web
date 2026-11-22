@@ -31,6 +31,12 @@ const TITLE_STYLES =
 const DETAILS_STYLES = "mt-6 max-w-[56ch] text-[16px] leading-[1.5]";
 const ACTIONS_STYLES = "mt-8 flex flex-wrap items-center gap-4";
 const PAGE_LINK_STYLES = `inline-flex min-h-11 items-center px-1 text-[14px] font-bold underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
+// El relleno lateral agranda la zona de toque. El margen negativo deja el
+// texto del primer enlace alineado con el título.
+const HOME_LINK_STYLES = `${PAGE_LINK_STYLES} -ml-1`;
+// 44 px de zona de toque alrededor de un logo de 30 px, sin mover el logo.
+const LOGO_LINK_STYLES =
+  "-my-[7px] inline-flex min-h-11 items-center self-start";
 const RETRY_STYLES = `inline-flex min-h-[54px] max-w-full items-center justify-center gap-2 rounded-pill bg-brand-red px-7 py-2 text-center text-[17px] leading-tight font-bold text-brand-night no-underline hovered:bg-brand-lime pressed:bg-brand-mist ${TRANSITION_STYLES}`;
 
 type ErrorKind = "notFound" | "server" | "other";
@@ -44,8 +50,10 @@ function classifyError(error: unknown): ErrorKind {
 }
 
 /**
- * Un error no controlado o una respuesta 5xx. Esta página no lleva la cáscara
- * del sitio: se pinta aunque el fallo haya sido justo en leer los ajustes.
+ * Un error no controlado: algo que no es una respuesta de ruta. Una respuesta
+ * controlada, también un 503, conserva su estado y usa la página genérica.
+ * La página del error no controlado no lleva la cáscara del sitio: se pinta
+ * aunque el fallo haya sido justo en leer los ajustes.
  */
 export function isServerError(error: unknown): boolean {
   return classifyError(error) === "server";
@@ -99,7 +107,7 @@ export function ErrorContent({
       <p className={`${DETAILS_STYLES} text-ink-muted`}>{details}</p>
       {isNotFound ? (
         <nav className={ACTIONS_STYLES}>
-          <LocalizedLink page="home" className={PAGE_LINK_STYLES}>
+          <LocalizedLink page="home" className={HOME_LINK_STYLES}>
             {messages["error.homeShort"]}
           </LocalizedLink>
           {children}
@@ -130,7 +138,7 @@ export function ServerErrorPage(): ReactElement {
       <a
         href={getPagePath("home", language)}
         aria-label={messages["error.homeLinkLabel"]}
-        className="self-start"
+        className={LOGO_LINK_STYLES}
       >
         <img
           src="/brand/wordmark.png"
@@ -147,7 +155,9 @@ export function ServerErrorPage(): ReactElement {
           className={OUTLINED_CODE_STYLES}
         />
         <h1 className={TITLE_STYLES}>{messages["error.serverTitle"]}</h1>
-        <p className={DETAILS_STYLES}>{messages["error.serverDetails"]}</p>
+        <p className={`${DETAILS_STYLES} text-ink-muted`}>
+          {messages["error.serverDetails"]}
+        </p>
         <div className={ACTIONS_STYLES}>
           <a href={`${pathname}${search}`} className={RETRY_STYLES}>
             {messages["error.serverRetry"]}

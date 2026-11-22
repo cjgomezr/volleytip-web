@@ -87,6 +87,16 @@ describe("sendFailedNavigationToDocument", () => {
     expect(response.headers.get("X-Remix-Reload-Document")).toBe("true");
   });
 
+  it("nunca manda a otro sitio, aunque la dirección empiece con dos barras", () => {
+    silenceLog();
+    const request = new Request("http://localhost//otro-sitio.example.data");
+    reportServerError(new Error("falló"), request);
+
+    const response = sendFailedNavigationToDocument(dataResponse(), request);
+
+    expect(response.headers.get("Location")).toBe("/otro-sitio.example");
+  });
+
   it("deja igual la respuesta de una petición de datos que no falló", () => {
     const request = new Request("http://localhost/en/tips.data");
     const original = dataResponse();

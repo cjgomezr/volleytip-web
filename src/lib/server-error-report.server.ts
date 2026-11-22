@@ -32,13 +32,16 @@ export function reportServerError(error: unknown, request: Request): void {
 }
 
 const ROUTES_PARAM = "_routes";
+const LEADING_SLASHES = /^\/{2,}/;
 
 // La dirección del documento de una petición de datos: sin el sufijo `.data`
 // y sin el parámetro con el que React Router dice qué rutas pide.
 function getDocumentLocation(request: Request): string {
   const url = new URL(request.url);
   url.searchParams.delete(ROUTES_PARAM);
-  return `${getDocumentPath(url)}${url.search}`;
+  // Una dirección que empieza con `//` sería, como `Location`, otro sitio.
+  const path = getDocumentPath(url).replace(LEADING_SLASHES, "/");
+  return `${path}${url.search}`;
 }
 
 /**
