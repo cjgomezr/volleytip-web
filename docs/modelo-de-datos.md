@@ -330,7 +330,7 @@ Los códigos de 6 dígitos y los enlaces de un solo uso los maneja Supabase Auth
 `id`, `reason` (`order`, `camps`, `brands`, `suggest_tip`, `vball_tour`, `other`), `name`, `email`, `whatsapp`, `payload` (jsonb con los campos propios del motivo: número de pedido, organización, formas de participar…), `locale`, `status` (`message_status`), `answered_by`, `answered_at` (FR-053, FR-064, FR-132).
 
 ### `waitlists`
-`id`, `kind` (`app`, `camp_notify`), `email`, `locale`, `country_code`, `city`, `notified_at`. Clave única (`kind`, `email`) (FR-035, FR-082).
+`id`, `kind` (`app`, `camp_notify`), `email` (en minúsculas y sin espacios), `locale`, `country_code`, `city`, `privacy_version` (la versión de la política que aceptó la persona), `notified_at`, `created_at`. Clave única (`kind`, `email`) (FR-035, FR-082). Se inscribe con la función `enroll_waitlist`, que no falla ni cambia nada si el correo ya estaba.
 
 ### `faqs` y `faq_translations`
 `faqs`: `id`, `sort_order`, `status` (`publish_status`). `faq_translations`: `question`, `answer`. Página de preguntas frecuentes editable desde el admin (FR-137).
