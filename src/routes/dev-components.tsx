@@ -8,6 +8,7 @@ import { FormProtection } from "~/components/form-protection";
 import { IconButton } from "~/components/icon-button";
 import { LanguageSwitcher } from "~/components/language-switcher";
 import type { PreviewState, Zone } from "~/components/pressable";
+import { PriceApproximation } from "~/components/price-approximation";
 import { TextField } from "~/components/text-field";
 import { serverEnv } from "~/lib/env.server";
 import {
@@ -17,6 +18,10 @@ import {
   type ProtectedFormResult,
 } from "~/lib/forms/protected-form.server";
 import { SAMPLE_FORM } from "~/lib/forms/sample-form.server";
+import {
+  calculateUsdApproximation,
+  type UsdApproximation,
+} from "~/lib/usd-approximation";
 
 import type { Route } from "./+types/dev-components";
 
@@ -123,6 +128,30 @@ const CAPTION_STYLES: Record<Zone, string> = {
 const BUTTON_VARIANTS: readonly { variant: ButtonVariant; title: string }[] = [
   { variant: "primary", title: "Botón primario" },
   { variant: "secondary", title: "Botón secundario" },
+];
+
+// Un precio de muestra con una tasa de muestra: la página no lee la base.
+const SAMPLE_COP_PER_USD = 4000;
+const SAMPLE_PRICE_PESOS = 48_000;
+const CENTS_PER_PESO = 100;
+const SAMPLE_APPROXIMATIONS: readonly {
+  name: string;
+  approximation: UsdApproximation;
+}[] = [
+  {
+    name: "Con aproximado",
+    approximation: calculateUsdApproximation(
+      { amount: SAMPLE_PRICE_PESOS * CENTS_PER_PESO, currency: "COP" },
+      SAMPLE_COP_PER_USD,
+    ),
+  },
+  {
+    name: "Menos de un dólar",
+    approximation: calculateUsdApproximation(
+      { amount: CENTS_PER_PESO, currency: "COP" },
+      SAMPLE_COP_PER_USD,
+    ),
+  },
 ];
 
 const BUTTON_TEXT = "Agregar al carrito";
@@ -398,6 +427,13 @@ function ZoneShowcase({
         <TextFieldShowcase zone={zone} />
         <Showcase title="Eyebrow">
           <Eyebrow text={EYEBROW_TEXT} />
+        </Showcase>
+        <Showcase title="Precio aproximado">
+          {SAMPLE_APPROXIMATIONS.map(({ name, approximation }) => (
+            <Specimen key={name} name={name} zone={zone}>
+              <PriceApproximation approximation={approximation} />
+            </Specimen>
+          ))}
         </Showcase>
         <Showcase title="Selector de idioma">
           <LanguageSwitcher zone={zone} />

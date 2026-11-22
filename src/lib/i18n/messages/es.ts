@@ -17,8 +17,17 @@ export const es = {
   "home.healthLink": "Ver estado del servicio",
   "languageSwitcher.label": "Idioma",
   "languageSuggestion.label": "Sugerencia de idioma",
-  "languageSuggestion.message": "Esta página también está disponible en español.",
+  "languageSuggestion.message":
+    "Esta página también está disponible en español.",
   "languageSuggestion.accept": "Ver en español",
   "languageSuggestion.stay": "Quedarme en esta página",
+  "priceApproximation.about": "≈ US${amount}",
+  "priceApproximation.lessThanOne": "menos de US$1",
+  "priceApproximation.spoken": {
+    one: "aproximadamente {count} dólar",
+    other: "aproximadamente {count} dólares",
+  },
+  "priceApproximation.spokenLessThanOne": "menos de 1 dólar",
+  "priceApproximation.chargeNote": "El cobro es en pesos colombianos.",
   ...errorsEs,
 } as const;

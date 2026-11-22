@@ -19,5 +19,13 @@ export const en = {
   "languageSuggestion.message": "This page is also available in English.",
   "languageSuggestion.accept": "View in English",
   "languageSuggestion.stay": "Stay on this page",
+  "priceApproximation.about": "≈ US${amount}",
+  "priceApproximation.lessThanOne": "less than US$1",
+  "priceApproximation.spoken": {
+    one: "approximately {count} dollar",
+    other: "approximately {count} dollars",
+  },
+  "priceApproximation.spokenLessThanOne": "less than 1 dollar",
+  "priceApproximation.chargeNote": "You are charged in Colombian pesos.",
   ...errorsEn,
 } as const satisfies Messages;

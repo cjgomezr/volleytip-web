@@ -927,3 +927,40 @@ for (const vp of viewports) {
     }
   });
 }
+
+// ---------------------------------------------------------------------------
+// Precio aproximado en dólares (FR-122)
+// ---------------------------------------------------------------------------
+
+test.describe("Precio aproximado en dólares", () => {
+  for (const zone of ["dark", "light"] as const) {
+    test(`en zona ${zone}, dice el aproximado, la nota y una frase para el lector de pantalla`, async ({
+      page,
+    }) => {
+      await openComponentsPage(page);
+      const approximation = page
+        .locator(`[data-zone="${zone}"] p`)
+        .filter({ hasText: "El cobro es en pesos colombianos." })
+        .first();
+
+      await expect(approximation).toContainText("≈ US$12");
+      await expect(approximation.locator(".sr-only")).toHaveText(
+        "aproximadamente 12 dólares",
+      );
+      await expect(approximation.locator('[aria-hidden="true"]')).toHaveText(
+        "≈ US$12",
+      );
+    });
+
+    test(`en zona ${zone}, axe no reporta violaciones en el aproximado`, async ({
+      page,
+    }) => {
+      await openComponentsPage(page);
+      const results = await new AxeBuilder({ page })
+        .include(`[data-zone="${zone}"]`)
+        .analyze();
+
+      expect(results.violations).toEqual([]);
+    });
+  }
+});
