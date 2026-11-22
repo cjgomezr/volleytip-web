@@ -344,6 +344,51 @@ export type Database = {
           },
         ];
       };
+      waitlists: {
+        Row: {
+          city: string | null;
+          country_code: string | null;
+          created_at: string;
+          email: string;
+          id: string;
+          kind: string;
+          locale: string;
+          notified_at: string | null;
+          privacy_version: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          city?: string | null;
+          country_code?: string | null;
+          created_at?: string;
+          email: string;
+          id?: string;
+          kind: string;
+          locale: string;
+          notified_at?: string | null;
+          privacy_version: string;
+        };
+        Update: {
+          city?: string | null;
+          country_code?: string | null;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          kind?: string;
+          locale?: string;
+          notified_at?: string | null;
+          privacy_version?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "waitlists_locale_fkey";
+            columns: ["locale"];
+            isOneToOne: false;
+            referencedRelation: "languages";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -356,6 +401,17 @@ export type Database = {
           p_window_seconds: number;
         };
         Returns: boolean;
+      };
+      enroll_waitlist: {
+        Args: {
+          p_city?: string;
+          p_country_code?: string;
+          p_email: string;
+          p_kind: string;
+          p_locale: string;
+          p_privacy_version: string;
+        };
+        Returns: undefined;
       };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
       purge_expired_rate_limits: {
