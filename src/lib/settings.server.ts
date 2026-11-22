@@ -30,10 +30,10 @@ type SettingValues<Definitions extends SettingDefinitions> = {
     : never;
 };
 
-function resolveSetting(
-  definition: SettingDefinition<unknown>,
+function resolveSetting<Value>(
+  definition: SettingDefinition<Value>,
   rows: readonly { key: string; value: unknown }[],
-): unknown {
+): Value {
   const row = rows.find(({ key }) => key === definition.key);
   if (row === undefined) {
     return definition.fallback;
@@ -75,6 +75,8 @@ export async function readSettings<Definitions extends SettingDefinitions>(
     );
   }
 
+  // `Object.fromEntries` pierde las claves: cada valor sale de la definición
+  // con su nombre, y `SettingValues` las vuelve a tipar.
   return Object.fromEntries(
     entries.map(([name, definition]) => [
       name,
@@ -104,5 +106,5 @@ export async function readSetting<Value>(
   return resolveSetting(
     definition,
     data === null ? [] : [{ key, value: data.value }],
-  ) as Value;
+  );
 }

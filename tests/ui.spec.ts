@@ -1086,7 +1086,7 @@ for (const vp of viewports) {
       await expect(bar.first()).toBeVisible();
       const expected =
         vp.width < PHONE_MAX_WIDTH ? 1 : ANNOUNCEMENT_MESSAGES;
-      expect(await bar.locator("visible=true").count()).toBe(expected);
+      expect(await bar.filter({ visible: true }).count()).toBe(expected);
     });
 
     test("no desborda en horizontal", async ({ page }) => {
