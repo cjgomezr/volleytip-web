@@ -11,6 +11,16 @@ import {
 // dirección de cada enlace. Una página que no esté aquí no se puede enlazar.
 export const PAGES = [
   { id: "home", file: "routes/home.tsx", path: "" },
+  {
+    id: "terms",
+    file: "routes/terms.tsx",
+    path: { es: "terminos", en: "terms" },
+  },
+  {
+    id: "privacy",
+    file: "routes/privacy.tsx",
+    path: { es: "privacidad", en: "privacy" },
+  },
 ] as const satisfies readonly PageDeclaration[];
 
 export type PageId = (typeof PAGES)[number]["id"];

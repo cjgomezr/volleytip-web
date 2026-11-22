@@ -41,6 +41,10 @@ export const en = {
   "footer.social.whatsapp": "WhatsApp",
   "footer.languageLabel": "Site language",
   "footer.legalLine": "© {year} VolleyTip. Made in Colombia.",
+  "legal.version": "Version {version}",
+  "legal.effectiveFrom": "In force since {date}",
+  "legal.provisionalNotice":
+    "This is a provisional text. The final text will be published soon.",
   "languageSwitcher.label": "Language",
   "languageSuggestion.label": "Language suggestion",
   "languageSuggestion.message": "This page is also available in English.",
