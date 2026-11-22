@@ -40,6 +40,7 @@ import { test, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { shouldCreateMissingSnapshot } from "./support/missing-snapshot-policy";
 import { snapshotCreatedNotice } from "./support/visual-baseline-notice";
+import { TEST_ENV } from "./support/test-env";
 
 // Con qué condiciones se toma cada captura, sembrada o comparada. Hoy
 // coinciden con los valores por defecto de toHaveScreenshot, pero se pasan a
@@ -716,5 +717,96 @@ test.describe("home en inglés", () => {
       "Learn volleyball in",
     );
     expect(warnings).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Selector de idioma (FR-004)
+// ---------------------------------------------------------------------------
+
+// El servidor de las pruebas corre con este dominio, distinto de la
+// dirección donde se le pide.
+const TEST_SITE_ORIGIN = TEST_ENV.SITE_ORIGIN;
+
+test.describe("Selector de idioma", () => {
+  const ZONE_NAMES = ["dark", "light"] as const;
+
+  for (const zone of ZONE_NAMES) {
+    test(`en zona ${zone}, cada enlace mide 44 px o más de alto`, async ({
+      page,
+    }) => {
+      await openComponentsPage(page);
+      const links = page.locator(`[data-zone="${zone}"] nav a[hreflang]`);
+
+      await expect(links).toHaveCount(2);
+      for (const link of await links.all()) {
+        const box = await link.boundingBox();
+        expect(box?.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET_PX);
+      }
+    });
+  }
+
+  test("marca el idioma actual y nombra cada idioma en ese idioma", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const switcher = page.locator('[data-zone="dark"] nav').first();
+
+    await expect(switcher.locator('a[aria-current="true"]')).toHaveText(
+      "Español",
+    );
+    await expect(switcher.locator('a[lang="en"]')).toHaveText("English");
+  });
+
+  test.describe("sin JavaScript", () => {
+    test.use({ javaScriptEnabled: false });
+
+    test("el enlace lleva a la página en el otro idioma", async ({ page }) => {
+      await page.goto(COMPONENTS_URL);
+      await page.locator('[data-zone="dark"] nav a[lang="en"]').click();
+
+      await expect(page).toHaveURL(/\/en\/$/);
+      await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    });
+  });
+
+  test("la home declara su canónica y sus versiones con el dominio del entorno", async ({
+    page,
+  }) => {
+    await page.goto(`${APP_URL}/en/?talla=m`);
+    const head = page.locator("head");
+
+    await expect(head.locator('link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      `${TEST_SITE_ORIGIN}/en/`,
+    );
+    await expect(head.locator('link[rel="alternate"][hreflang]')).toHaveCount(
+      3,
+    );
+    await expect(
+      head.locator('link[rel="alternate"][hreflang="x-default"]'),
+    ).toHaveAttribute("href", `${TEST_SITE_ORIGIN}/`);
+  });
+
+  test("al cambiar de idioma sin recargar, la canónica cambia con la página", async ({
+    page,
+  }) => {
+    await page.goto(APP_URL);
+    await page.waitForFunction(() => "__reactRouterDataRouter" in window);
+    await page.evaluate(() => {
+      const router = (
+        window as unknown as {
+          __reactRouterDataRouter: { navigate: (to: string) => Promise<void> };
+        }
+      ).__reactRouterDataRouter;
+      return router.navigate("/en/");
+    });
+
+    await expect(page.locator("html")).toHaveAttribute("lang", "en");
+    await expect(page.locator('head link[rel="canonical"]')).toHaveCount(1);
+    await expect(page.locator('head link[rel="canonical"]')).toHaveAttribute(
+      "href",
+      `${TEST_SITE_ORIGIN}/en/`,
+    );
   });
 });

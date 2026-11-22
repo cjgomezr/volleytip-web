@@ -17,13 +17,13 @@ describe("Botón de ícono", () => {
 
   it("con destino es un enlace con su aria-label", () => {
     const html = renderInRouter(
-      <IconButton to="/carrito" aria-label="Ver el carrito">
+      <IconButton to="home" aria-label="Ir al inicio">
         {ICON}
       </IconButton>,
     );
 
-    expect(html).toMatch(/^<a [^>]*href="\/carrito"/);
-    expect(html).toMatch(/^<a [^>]*aria-label="Ver el carrito"/);
+    expect(html).toMatch(/^<a [^>]*href="\/"/);
+    expect(html).toMatch(/^<a [^>]*aria-label="Ir al inicio"/);
   });
 
   it("mide 44 por 44 px, es un círculo con borde y no se encoge", () => {

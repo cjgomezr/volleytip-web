@@ -19,6 +19,7 @@ const SERVER_ENV_NAMES = Object.keys({
   CLIENT_IP_HEADER: true,
   CLIENT_IP_TRUSTED_HOPS: true,
   IMAGE_CDN_HOST: true,
+  SITE_ORIGIN: true,
 });
 const REACT_ROUTER_CLI = path.join(
   REPO_ROOT,
@@ -43,6 +44,8 @@ const SENTINEL_ENV = {
   CLIENT_IP_HEADER: "X-Forwarded-For",
   CLIENT_IP_TRUSTED_HOPS: "1",
   IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
+  // Distinto de la dirección con la que se pide en estas pruebas.
+  SITE_ORIGIN: "https://sitio-construido.volleytip.test",
 } as const;
 const SECRET_SENTINELS = [
   SENTINEL_ENV.SUPABASE_URL,
@@ -159,6 +162,7 @@ const REJECTED_SUBMISSION = { method: "POST", path: "/healthz" };
 // La página de muestra de los componentes no existe en producción.
 const SAMPLE_PAGE = { method: "GET", path: "/dev/componentes" };
 const ENGLISH_HOME = { method: "GET", path: "/en/" };
+const ENGLISH_HOME_SEARCH = { method: "GET", path: "/en/?talla=m" };
 const SPANISH_PREFIX = { method: "GET", path: "/es/?utm=1" };
 const UNSUPPORTED_PREFIX = { method: "GET", path: "/fr/" };
 const MISSING_ENGLISH_PAGE = { method: "GET", path: "/en/no-existe" };
@@ -170,6 +174,7 @@ const SERVED_REQUESTS: readonly ServedRequest[] = [
   HOME_PAGE,
   ENGLISH_HOME,
   { method: "GET", path: "/en" },
+  ENGLISH_HOME_SEARCH,
   ENCODED_ENGLISH_HOME,
   SPANISH_PREFIX,
   UNSUPPORTED_PREFIX,
@@ -540,5 +545,76 @@ describe("página de error cuando la raíz no tiene datos", () => {
     expect(response.lang).toBe("en");
     expect(response.body).toContain("Something went wrong. Please try again.");
     expect(response.body).not.toContain("Unexpected Server Error");
+  });
+});
+
+describe("head en el servidor construido", () => {
+  // Las peticiones de esta prueba llegan por `http` y con `Host: localhost`,
+  // como las ve el servidor detrás del proxy. Las direcciones tienen que
+  // salir de `SITE_ORIGIN`.
+  const ORIGIN = SENTINEL_ENV.SITE_ORIGIN;
+  const served = (): ServedResponse[] => requestFromBuiltServer("staging");
+
+  function headOf(response: ServedResponse): string {
+    const [head] = response.body.split("</head>");
+    return head ?? "";
+  }
+
+  function listLinks(response: ServedResponse): string[] {
+    const links = headOf(response).matchAll(
+      /<link rel="(canonical|alternate)"(?: hrefLang="([^"]*)")? href="([^"]*)"\/>/g,
+    );
+    return [...links].map(
+      ([, rel, hreflang, href]) => `${rel} ${hreflang ?? "-"} ${href}`,
+    );
+  }
+
+  it("/ trae su canónica y sus hreflang con SITE_ORIGIN, dentro del head", () => {
+    expect(listLinks(findServed(served(), HOME_PAGE))).toEqual([
+      `canonical - ${ORIGIN}/`,
+      `alternate es ${ORIGIN}/`,
+      `alternate en ${ORIGIN}/en/`,
+      `alternate x-default ${ORIGIN}/`,
+    ]);
+  });
+
+  it.each([ENGLISH_HOME, { method: "GET", path: "/en" }, ENGLISH_HOME_SEARCH])(
+    "$path trae la canónica en inglés, sin parámetros de búsqueda",
+    (request) => {
+      expect(listLinks(findServed(served(), request))).toEqual([
+        `canonical - ${ORIGIN}/en/`,
+        `alternate es ${ORIGIN}/`,
+        `alternate en ${ORIGIN}/en/`,
+        `alternate x-default ${ORIGIN}/`,
+      ]);
+    },
+  );
+
+  it("ninguna dirección sale de la petición", () => {
+    const body = findServed(served(), ENGLISH_HOME_SEARCH).body;
+
+    expect(body).not.toContain('href="http://localhost');
+    expect(headOf(findServed(served(), ENGLISH_HOME_SEARCH))).not.toContain(
+      "talla",
+    );
+    expect(body).toContain(ORIGIN);
+  });
+
+  it.each([MISSING_PAGE, MISSING_ENGLISH_PAGE, UNSUPPORTED_PREFIX])(
+    "el 404 de $path no lleva canónica ni hreflang",
+    (request) => {
+      const response = findServed(served(), request);
+
+      expect(response.status).toBe(404);
+      expect(response.body).not.toContain('rel="canonical"');
+      expect(response.body).not.toContain('rel="alternate"');
+    },
+  );
+
+  it("la página de muestra, que no es del sitio, tampoco las lleva", () => {
+    const response = findServed(served(), SAMPLE_PAGE);
+
+    expect(response.body).not.toContain('rel="canonical"');
+    expect(response.body).not.toContain('rel="alternate"');
   });
 });

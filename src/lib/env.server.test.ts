@@ -26,6 +26,7 @@ const VALID_SOURCE: EnvSource = {
   CLIENT_IP_HEADER: "X-Forwarded-For",
   CLIENT_IP_TRUSTED_HOPS: "1",
   IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
+  SITE_ORIGIN: "https://staging.volleytip.test",
 };
 
 function withOverrides(overrides: EnvSource): EnvSource {
@@ -57,6 +58,7 @@ describe("env del servidor", () => {
         clientIpHeader: "X-Forwarded-For",
         clientIpTrustedHops: 1,
         imageCdnHost: "imagenes-de-prueba.b-cdn.net",
+        siteOrigin: "https://staging.volleytip.test",
       },
     });
   });
@@ -285,5 +287,72 @@ describe("dominio del CDN", () => {
 
     expect(message).toContain("IMAGE_CDN_HOST");
     expect(message).not.toContain(host);
+  });
+});
+
+describe("env: SITE_ORIGIN", () => {
+  it("sale del módulo de entorno", () => {
+    const result = parseServerEnv(
+      withOverrides({ SITE_ORIGIN: "https://volleytip.com" }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      env: { siteOrigin: "https://volleytip.com" },
+    });
+  });
+
+  it("si falta, el entorno es inválido y nombra la variable", () => {
+    const message = expectFailure(withOverrides({ SITE_ORIGIN: undefined }));
+
+    expect(message).toContain("Falta SITE_ORIGIN");
+  });
+
+  it.each([
+    ["con barra final", "https://volleytip.com/"],
+    ["con ruta", "https://volleytip.com/en"],
+    ["con parámetros de búsqueda", "https://volleytip.com?a=1"],
+    ["con ancla", "https://volleytip.com#inicio"],
+    ["con usuario", "https://ana@volleytip.com"],
+    ["sin protocolo", "dominio-sin-protocolo.test"],
+    ["con otro protocolo", "ftp://volleytip.com"],
+    ["con el puerto por defecto escrito", "https://volleytip.com:443"],
+    ["con mayúsculas en el dominio", "https://VolleyTip.com"],
+    ["que no es una dirección", "esto no es una dirección"],
+  ])("rechaza un valor %s sin imprimirlo", (_case, origin) => {
+    const message = expectFailure(withOverrides({ SITE_ORIGIN: origin }));
+
+    expect(message).toContain("SITE_ORIGIN");
+    expect(message).not.toContain(origin);
+  });
+
+  it.each(["staging", "production"])(
+    "rechaza http en %s sin imprimir el valor",
+    (appEnv) => {
+      const origin = "http://sitio-sin-cifrar.test";
+      const message = expectFailure(
+        withOverrides({ APP_ENV: appEnv, SITE_ORIGIN: origin }),
+      );
+
+      expect(message).toContain("SITE_ORIGIN");
+      expect(message).toContain("https");
+      expect(message).not.toContain(origin);
+    },
+  );
+
+  it.each(["local", "test"])("acepta http en %s", (appEnv) => {
+    const result = parseServerEnv(
+      withOverrides({
+        APP_ENV: appEnv,
+        TURNSTILE_SITE_KEY: TURNSTILE_TEST_SITE_KEY,
+        TURNSTILE_SECRET_KEY: TURNSTILE_TEST_SECRET_KEY,
+        SITE_ORIGIN: "http://localhost:3740",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      env: { siteOrigin: "http://localhost:3740" },
+    });
   });
 });

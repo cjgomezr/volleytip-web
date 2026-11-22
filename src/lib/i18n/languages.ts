@@ -13,6 +13,13 @@ export const SUPPORTED_LANGUAGES = [
 
 export type Language = (typeof SUPPORTED_LANGUAGES)[number]["code"];
 
+// El nombre de cada idioma, escrito en ese idioma: es como lo busca quien lo
+// habla. No pasa por los archivos de traducción porque no se traduce.
+export const LANGUAGE_NAMES: Readonly<Record<Language, string>> = {
+  es: "Español",
+  en: "English",
+};
+
 /** Falla pronto si la lista no tiene exactamente un idioma por defecto. */
 export function findDefaultLanguage(
   languages: readonly LanguageDefinition[],

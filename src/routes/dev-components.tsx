@@ -6,6 +6,7 @@ import { Button, type ButtonVariant } from "~/components/button";
 import { Eyebrow } from "~/components/eyebrow";
 import { FormProtection } from "~/components/form-protection";
 import { IconButton } from "~/components/icon-button";
+import { LanguageSwitcher } from "~/components/language-switcher";
 import type { PreviewState, Zone } from "~/components/pressable";
 import { TextField } from "~/components/text-field";
 import { serverEnv } from "~/lib/env.server";
@@ -245,12 +246,12 @@ function ButtonShowcase({
           </Specimen>
         ))}
         <Specimen name="Enlace" zone={zone}>
-          <Button variant={variant} zone={zone} to="/">
+          <Button variant={variant} zone={zone} to="home">
             {LINK_TEXT}
           </Button>
         </Specimen>
         <Specimen name="Enlace deshabilitado" zone={zone}>
-          <Button variant={variant} zone={zone} to="/" isDisabled>
+          <Button variant={variant} zone={zone} to="home" isDisabled>
             {LINK_TEXT}
           </Button>
         </Specimen>
@@ -397,6 +398,9 @@ function ZoneShowcase({
         <TextFieldShowcase zone={zone} />
         <Showcase title="Eyebrow">
           <Eyebrow text={EYEBROW_TEXT} />
+        </Showcase>
+        <Showcase title="Selector de idioma">
+          <LanguageSwitcher zone={zone} />
         </Showcase>
         <Showcase title="Barra de anuncios">
           <div className="w-full">

@@ -14,5 +14,6 @@ export const en = {
   "home.intro":
     "We are rebuilding volleytip.com. This page is the foundation of the new site.",
   "home.healthLink": "Check service status",
+  "languageSwitcher.label": "Language",
   ...errorsEn,
 } as const satisfies Messages;
