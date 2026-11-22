@@ -50,6 +50,37 @@ export type Database = {
           },
         ];
       };
+      catalog_items: {
+        Row: {
+          counts_for_free_shipping: boolean;
+          created_at: string;
+          id: string;
+          kind: Database["public"]["Enums"]["item_kind"];
+          status: Database["public"]["Enums"]["publish_status"];
+          tax_rate_bp: number;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          counts_for_free_shipping?: boolean;
+          created_at?: string;
+          id?: string;
+          kind: Database["public"]["Enums"]["item_kind"];
+          status?: Database["public"]["Enums"]["publish_status"];
+          tax_rate_bp?: number;
+          updated_at?: string;
+        };
+        Update: {
+          counts_for_free_shipping?: boolean;
+          created_at?: string;
+          id?: string;
+          kind?: Database["public"]["Enums"]["item_kind"];
+          status?: Database["public"]["Enums"]["publish_status"];
+          tax_rate_bp?: number;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       form_rejections: {
         Row: {
           count: number;
@@ -142,6 +173,52 @@ export type Database = {
             isOneToOne: false;
             referencedRelation: "languages";
             referencedColumns: ["code"];
+          },
+        ];
+      };
+      prices: {
+        Row: {
+          amount: number;
+          catalog_item_id: string;
+          created_at: string;
+          currency: string;
+          market_id: string;
+          mode: Database["public"]["Enums"]["price_mode"];
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          amount: number;
+          catalog_item_id: string;
+          created_at?: string;
+          currency: string;
+          market_id: string;
+          mode?: Database["public"]["Enums"]["price_mode"];
+          updated_at?: string;
+        };
+        Update: {
+          amount?: number;
+          catalog_item_id?: string;
+          created_at?: string;
+          currency?: string;
+          market_id?: string;
+          mode?: Database["public"]["Enums"]["price_mode"];
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "prices_catalog_item_id_fkey";
+            columns: ["catalog_item_id"];
+            isOneToOne: false;
+            referencedRelation: "catalog_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "prices_market_currency_fkey";
+            columns: ["market_id", "currency"];
+            isOneToOne: false;
+            referencedRelation: "markets";
+            referencedColumns: ["id", "currency"];
           },
         ];
       };
@@ -291,6 +368,8 @@ export type Database = {
       };
     };
     Enums: {
+      item_kind: "physical" | "digital" | "event_plan" | "bundle";
+      price_mode: "manual";
       publish_status: "draft" | "published" | "retired";
       user_role: "admin" | "staff" | "buyer";
     };
@@ -420,6 +499,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      item_kind: ["physical", "digital", "event_plan", "bundle"],
+      price_mode: ["manual"],
       publish_status: ["draft", "published", "retired"],
       user_role: ["admin", "staff", "buyer"],
     },

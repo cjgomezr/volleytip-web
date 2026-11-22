@@ -12,7 +12,7 @@ Este documento define las tablas, sus campos principales, las reglas que la base
 | Nombres | Tablas y columnas en inglés, `snake_case`, tablas en plural |
 | Identificadores | `id uuid` con `gen_random_uuid()`. Los números visibles (pedido `VT-1042`) son columnas aparte |
 | Fechas | `timestamptz` en UTC. Toda tabla tiene `created_at`; las editables, `updated_at` |
-| Dinero | `integer` en la unidad menor de la moneda más `currency char(3)` (DR-001). Nunca `numeric` ni `float` para montos |
+| Dinero | `bigint` en la unidad menor de la moneda más `currency char(3)` (DR-001). Los pesos se guardan en centavos: `$120.000` es `12000000`. Un `integer` llegaría solo a unos 21 millones de pesos. Nunca `numeric` ni `float` para montos |
 | Correo | Guardado normalizado: minúsculas y sin espacios (DR-008). Tipo `citext` |
 | Borrado | No se borran pedidos, inscripciones, accesos ni facturas: se usa `status` (DR-006) |
 | Traducciones | Tabla base + tabla `<base>_translations` con `locale` y los campos de texto. Clave única (`<base>_id`, `locale`). El español es obligatorio |
@@ -131,11 +131,11 @@ Vista `public_tips`: solo publicados, con traducciones y el id del video. Es lo 
 | `id` | uuid PK | |
 | `kind` | `item_kind` | |
 | `status` | `publish_status` | |
-| `tax_rate_bp` | integer | Tarifa de IVA en puntos básicos; 0 en la fase 1 (FR-126) |
+| `tax_rate_bp` | integer | Tarifa de IVA en puntos básicos, de 0 a 10000; nace en 0 y en la fase 1 se queda ahí (FR-126) |
 | `counts_for_free_shipping` | boolean | Verdadero solo en físicos (AC-006) |
 
 ### `prices`
-`catalog_item_id`, `market_id`, `amount`, `currency`, `mode` (`price_mode`). Clave única (`catalog_item_id`, `market_id`). El precio base es el del mercado Colombia. En la fase 1 todos los precios se fijan a mano (FR-010).
+`catalog_item_id`, `market_id`, `amount` (**`bigint`**, en la unidad menor, `check (amount >= 0)`), `currency`, `mode` (`price_mode`). Clave primaria (`catalog_item_id`, `market_id`). La moneda es la del mercado: una llave foránea compuesta (`market_id`, `currency`) a `markets` lo garantiza y impide cambiar la moneda de un mercado con precios. Al borrar el ítem se borran sus precios. Un precio es público solo si su ítem está publicado y su mercado activo. El precio base es el del mercado Colombia. En la fase 1 todos los precios se fijan a mano (FR-010).
 
 ### `bundle_items`
 `bundle_id` (catalog_items de tipo `bundle`), `included_item_id`, `quantity`. Un combo "Camp + paquete" es un `catalog_item` propio con su precio y dos filas aquí (FR-094).
@@ -172,7 +172,7 @@ El carrito vive en el navegador 30 días. Esta tabla solo guarda una copia cuand
 | `payment_status` | `payment_status` | |
 | `fulfillment_status` | `fulfillment_status`, nulo | Nulo si el pedido no tiene productos físicos; `to_ship` al quedar pagado (FR-029) |
 | `market_id`, `currency`, `locale` | | Congelados al comprar (FR-011) |
-| `subtotal`, `shipping_fee`, `discount`, `tax_total`, `total` | integer | |
+| `subtotal`, `shipping_fee`, `discount`, `tax_total`, `total` | bigint | |
 | `billing_name`, `billing_doc_type`, `billing_doc_number` | text | Documento opcional en la fase 1 (FR-125) |
 | `whatsapp` | text | |
 | `shipping_address` | jsonb, nulo | Departamento, ciudad, dirección; nulo si no hay físicos |

@@ -522,7 +522,7 @@ describeIntegration("tabla profiles", () => {
 describeIntegration("enums base", () => {
   // Lista completa de los enums de `public`. La épica que cree un enum nuevo
   // lo agrega aquí a propósito: así ninguno aparece sin que alguien lo vea.
-  it("existen user_role y publish_status con sus valores exactos, y ningún otro", async () => {
+  it("existen los enums de public con sus valores exactos, y ningún otro", async () => {
     const enums = await database<{ name: string; labels: string[] }[]>`
       select t.typname as name,
              array_agg(e.enumlabel::text order by e.enumsortorder) as labels
@@ -534,6 +534,11 @@ describeIntegration("enums base", () => {
     `;
 
     expect(enums.map(({ name, labels }) => ({ name, labels }))).toEqual([
+      {
+        name: "item_kind",
+        labels: ["physical", "digital", "event_plan", "bundle"],
+      },
+      { name: "price_mode", labels: ["manual"] },
       { name: "publish_status", labels: ["draft", "published", "retired"] },
       { name: "user_role", labels: ["admin", "staff", "buyer"] },
     ]);
