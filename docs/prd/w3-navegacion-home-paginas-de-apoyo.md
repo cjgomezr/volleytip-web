@@ -295,7 +295,7 @@ Lo que la app va a necesitar cuando exista (FR-080, FR-081, AC-035).
 
 ## 9. Decisiones y preguntas abiertas
 
-Camilo aprobó las propuestas 1 a 7 y la 9 el 22 de noviembre de 2026. La 8 es un dato que falta: las direcciones de las redes.
+Camilo aprobó las propuestas 1 a 7 y la 9 el 22 de noviembre de 2026, y ese día entregó el dato de la 8.
 
 - [x] **1. El menú y la home solo muestran lo que existe.** FR-002 fija seis entradas, pero hoy solo existirán App y Nosotros. Propuesta: la lista completa vive en el código con su orden, y una entrada se pinta cuando su página entra al mapa de páginas. Igual con los bloques de la home. Cada épica agrega lo suyo en su propio ticket. La alternativa es una página "Próximamente" por sección, que deja enlaces a páginas vacías. (Camilo)
 - [x] **2. Botón "Síguenos" del header.** Está en los mockups y no en la lista de FR-002. Propuesta: no se construye. El header queda con logo, menú e idioma, y las redes van en el héroe, el menú de celular y el pie. (Camilo)
@@ -304,14 +304,14 @@ Camilo aprobó las propuestas 1 a 7 y la 9 el 22 de noviembre de 2026. La 8 es u
 - [x] **5. Dónde viven la barra y las cifras.** Propuesta: la barra en `settings.announcement_bar`, como una lista de hasta tres mensajes con su texto por idioma. Las cifras en `site_texts`, sembradas por migración con los valores del mockup (116K, 530K, Millones, LATAM). Las dos cosas las edita W10a. (Se decide al construir, salvo objeción)
 - [x] **6. Lista de espera de la app: país a la vista y sin contador.** FR-082 pide guardar el país y el SRD descarta detectarlo. Propuesta: un selector de país junto al correo, con Colombia por defecto. El contador público del mockup no se construye: pide abrir un conteo de una tabla privada y al principio diría "3 personas". (Camilo)
 - [x] **7. Preguntas frecuentes vacías al nacer.** Propuesta: la tabla nace vacía y la página muestra su estado vacío. Las preguntas las carga Andrés cuando W10a tenga el editor. Las cuatro preguntas de la página de la app son textos fijos de esa página. Si Camilo entrega una lista inicial antes, entra por migración. (Camilo)
-- [ ] **8. Direcciones de las redes.** Hacen falta las direcciones exactas de TikTok, Instagram, YouTube y Facebook. Sin ellas el pie no se puede cerrar. (Camilo)
+- [x] **8. Direcciones de las redes.** Las entregó Camilo el 22 de noviembre de 2026: `https://www.tiktok.com/@volleytip`, `https://www.instagram.com/volleytip/`, `https://www.youtube.com/@volleytip` y `https://www.facebook.com/volleytip/`. WhatsApp es `https://wa.me/573146486275`.
 - [x] **9. Direcciones de las páginas.** Propuesta, siguiendo la decisión 3 de W2: `/nosotros` y `/en/about`, `/contacto` y `/en/contact`, `/app` en los dos, `/preguntas-frecuentes` y `/en/faq`, `/terminos` y `/en/terms`, `/privacidad` y `/en/privacy`. (Camilo)
 
 ## 10. Descomposición en tickets (para write-ticket)
 
 Los 16 tickets cuelgan de la épica #3. Ninguno necesita que Camilo cambie algo en Railway: W3 no estrena variables de entorno.
 
-Carril de migraciones: los tickets 4, 7, 9 y 11 llevan migración y van uno tras otro. Si W10a corre a la vez en otro computador, sus tickets con migración entran en el mismo carril.
+Carril de migraciones: los tickets 4, 7, 8, 9, 11 y 12 llevan migración (tablas nuevas, o filas sembradas en `settings` y `site_texts`) y van uno tras otro. Si W10a corre a la vez en otro computador, sus tickets con migración entran en el mismo carril.
 
 | #   | Título propuesto                                                        | RF    | Tamaño | Depende de | Auto-merge sugerido                            |
 | --- | ----------------------------------------------------------------------- | ----- | ------ | ---------- | ---------------------------------------------- |
