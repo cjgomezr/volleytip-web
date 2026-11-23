@@ -8,7 +8,7 @@ import { useTranslate } from "~/lib/i18n/translations-context";
 /** Dónde vive la foto dentro del almacenamiento de imágenes. */
 export const ABOUT_PHOTO_PATH = "sitio/camilo-estudio.jpg";
 const ABOUT_PHOTO_WIDTH = 640;
-const ABOUT_PHOTO_HEIGHT = 427;
+const ABOUT_PHOTO_HEIGHT = 360;
 const ABOUT_PAGE_ID: string = "about";
 
 const LINK_STYLES =
@@ -35,7 +35,7 @@ export function HomeAbout({
         width={ABOUT_PHOTO_WIDTH}
         height={ABOUT_PHOTO_HEIGHT}
         sizes="(min-width: 768px) 50vw, 100vw"
-        className="h-auto w-full rounded-2xl bg-brand-indigo object-cover"
+        className="h-auto w-full aspect-video rounded-2xl bg-brand-indigo object-cover"
       />
       <div>
         <p className="m-0 text-[12px] font-bold tracking-[0.12em] uppercase">

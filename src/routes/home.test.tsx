@@ -178,7 +178,7 @@ describe("home: nosotros", () => {
     const html = renderHome("es");
 
     expect(html).toMatch(/<img[^>]+alt="Camilo[^"]+"/);
-    expect(html).toMatch(/<img[^>]+width="640"[^>]+height="427"/);
+    expect(html).toMatch(/<img[^>]+width="640"[^>]+height="360"/);
     expect(html).toContain('loading="lazy"');
   });
 
