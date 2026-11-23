@@ -126,24 +126,26 @@ export function WaitlistForm({
               {translate(REJECTION_MESSAGES[outcome.reason])}
             </p>
           ) : null}
-          <TextField
-            label={translate("waitlist.emailLabel")}
-            name="email"
-            type="email"
-            autoComplete="email"
-            placeholder={translate("waitlist.emailPlaceholder")}
-            isRequired
-            defaultValue={values.email}
-            error={translateError(fieldErrors.email)}
-          />
-          <SelectField
-            label={translate("waitlist.countryLabel")}
-            name="country"
-            autoComplete="country"
-            options={countryOptions}
-            defaultValue={values.country ?? DEFAULT_COUNTRY_CODE}
-            error={translateError(fieldErrors.country)}
-          />
+          <div className="grid gap-5 md:grid-cols-[1fr_180px] md:items-start">
+            <TextField
+              label={translate("waitlist.emailLabel")}
+              name="email"
+              type="email"
+              autoComplete="email"
+              placeholder={translate("waitlist.emailPlaceholder")}
+              isRequired
+              defaultValue={values.email}
+              error={translateError(fieldErrors.email)}
+            />
+            <SelectField
+              label={translate("waitlist.countryLabel")}
+              name="country"
+              autoComplete="country"
+              options={countryOptions}
+              defaultValue={values.country ?? DEFAULT_COUNTRY_CODE}
+              error={translateError(fieldErrors.country)}
+            />
+          </div>
           <FormProtection
             siteKey={protection.siteKey}
             timestamp={protection.timestamp}
