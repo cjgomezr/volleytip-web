@@ -19,7 +19,6 @@ const STAND_IN_IMAGE = path.join(
   "camilo-estudio.jpg",
 );
 
-const TURNSTILE_REQUESTS = "https://challenges.cloudflare.com/**";
 // Un Turnstile de mentira que anota lo que la página le pide. El de verdad
 // pinta su widget cuando la red se lo deja, y la página mide distinto de una
 // corrida a otra.
@@ -34,6 +33,8 @@ const TURNSTILE_STAND_IN = `
     remove() { window.turnstileCalls.push({ method: "remove" }); },
   };
 `;
+
+const TURNSTILE_REQUESTS = "https://challenges.cloudflare.com/**";
 
 /**
  * Responde desde aquí lo que un contexto pide fuera del sitio: las imágenes

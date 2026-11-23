@@ -219,9 +219,8 @@ interface TurnstileCall {
 }
 
 /**
- * Reemplaza el script de Cloudflare por uno propio que anota cómo lo llama
- * la página. Así ninguna prueba depende de la red, y la captura no cambia
- * con lo que Cloudflare decida dibujar ese día.
+ * Las llamadas que la página le hizo al Turnstile de mentira que reciben
+ * todas las pruebas (`tests/support/test.ts`).
  */
 async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
   return page.evaluate(
@@ -1525,10 +1524,10 @@ test.describe("avísame sin JavaScript", () => {
     await page.route("**/*", async (route) => {
       const request = route.request();
       if (request.method() !== "POST") {
-        await route.continue();
+        await route.fallback();
         return;
       }
-      await route.continue({
+      await route.fallback({
         postData: `${request.postData() ?? ""}&cf-turnstile-response=${TURNSTILE_DUMMY_TOKEN}`,
       });
     });
