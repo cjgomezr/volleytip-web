@@ -57,7 +57,7 @@ function parseSetting<Value>(
   return definition.fallback;
 }
 
-async function giveUpAfter<Result>(
+export async function giveUpAfter<Result>(
   limitMs: number,
   work: Promise<Result>,
 ): Promise<Result> {

@@ -5,7 +5,12 @@ import type { SiteStat } from "~/lib/site-stats.server";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 
-import Home, { loader, meta, type HomeData } from "./home";
+import Home, {
+  HOME_STATS_TIMEOUT_MS,
+  loader,
+  meta,
+  type HomeData,
+} from "./home";
 
 vi.mock("~/lib/site-stats.server", () => ({ readSiteStats: vi.fn() }));
 const { readSiteStats } = await import("~/lib/site-stats.server");
@@ -78,6 +83,19 @@ describe("home: loader", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     const data = await loadHome("/");
+
+    expect(data.stats).toEqual([]);
+  });
+
+  it("sigue sin cifras cuando la base no responde a tiempo", async () => {
+    vi.useFakeTimers();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    readSiteStatsMock.mockReturnValue(new Promise(() => undefined));
+
+    const pending = loadHome("/");
+    await vi.advanceTimersByTimeAsync(HOME_STATS_TIMEOUT_MS);
+    const data = await pending;
+    vi.useRealTimers();
 
     expect(data.stats).toEqual([]);
   });

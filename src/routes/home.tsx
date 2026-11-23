@@ -6,6 +6,7 @@ import { StatsStrip } from "~/components/stats-strip";
 import { serverEnv } from "~/lib/env.server";
 import { getRequestLanguage, type Language } from "~/lib/i18n/languages";
 import { getTranslate } from "~/lib/i18n/messages.server";
+import { giveUpAfter } from "~/lib/site-settings.server";
 import { readSiteStats, type SiteStat } from "~/lib/site-stats.server";
 
 import type { Route } from "./+types/home";
@@ -18,11 +19,14 @@ export interface HomeData {
   readonly cdnHost: string;
 }
 
-// Las cifras son un adorno de la home: si la base falla, la página sale sin
-// ellas en vez de caerse.
+/** Lo máximo que la home espera a la base por las cifras. */
+export const HOME_STATS_TIMEOUT_MS = 1500;
+
+// Las cifras son un adorno de la home: si la base falla o tarda, la página
+// sale sin ellas en vez de caerse o hacerse esperar.
 async function loadStats(language: Language): Promise<readonly SiteStat[]> {
   try {
-    return await readSiteStats(language);
+    return await giveUpAfter(HOME_STATS_TIMEOUT_MS, readSiteStats(language));
   } catch (error) {
     console.error("No se pudieron leer las cifras de la home", error);
     return [];
