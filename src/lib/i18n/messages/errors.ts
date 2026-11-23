@@ -20,6 +20,19 @@ export const errorsEs = {
   "error.homeLink": "Ir al inicio",
   "error.homeShort": "Inicio",
   "error.homeLinkLabel": "VolleyTip, ir al inicio",
+  // El título completo, para la pestaña del navegador. En la página va en
+  // dos renglones: `titleStart` y `titleAccent`.
+  "maintenance.title": "Estamos calentando",
+  "maintenance.titleStart": "Estamos",
+  "maintenance.titleAccent": "calentando",
+  "maintenance.badge": "Volvemos pronto",
+  "maintenance.details":
+    "Estamos mejorando la página. Mientras tanto, los tips siguen en redes.",
+  // Sin punto final: la hora en español termina en "p. m." o "a. m.", que ya
+  // lo trae.
+  "maintenance.returnsAt": "Volvemos el {time}",
+  "maintenance.socialLabel": "Mientras tanto, síguenos",
+  "maintenance.logoLabel": "VolleyTip",
 } as const;
 
 export type ErrorMessages = {
@@ -40,6 +53,15 @@ export const errorsEn = {
   "error.homeLink": "Go to the home page",
   "error.homeShort": "Home",
   "error.homeLinkLabel": "VolleyTip, go home",
+  "maintenance.title": "We are warming up",
+  "maintenance.titleStart": "We are",
+  "maintenance.titleAccent": "warming up",
+  "maintenance.badge": "Back soon",
+  "maintenance.details":
+    "We are improving the site. Meanwhile, the tips keep coming on social media.",
+  "maintenance.returnsAt": "We will be back on {time}.",
+  "maintenance.socialLabel": "Meanwhile, follow us",
+  "maintenance.logoLabel": "VolleyTip",
 } as const satisfies ErrorMessages;
 
 export const ERROR_MESSAGES: Readonly<Record<Language, ErrorMessages>> = {

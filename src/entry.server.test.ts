@@ -21,3 +21,30 @@ describe("handleDataRequest", () => {
     expect(response.headers.get("Location")).toBe("/dev/fallo");
   });
 });
+
+describe("handleDataRequest con el modo mantenimiento", () => {
+  it("pone las cabeceras de mantenimiento a un 503", async () => {
+    const request = new Request("http://localhost/tienda.data");
+
+    const response = await handleDataRequest(
+      new Response(null, { status: 503 }),
+      { request, params: {}, context: new RouterContextProvider() },
+    );
+
+    expect(response.headers.get("Retry-After")).not.toBeNull();
+    expect(response.headers.get("X-Robots-Tag")).toBe("noindex");
+    expect(response.headers.get("Cache-Control")).toBe("no-store");
+  });
+
+  it("no toca las respuestas que no son 503", async () => {
+    const request = new Request("http://localhost/tienda.data");
+
+    const response = await handleDataRequest(new Response(null), {
+      request,
+      params: {},
+      context: new RouterContextProvider(),
+    });
+
+    expect(response.headers.get("Retry-After")).toBeNull();
+  });
+});

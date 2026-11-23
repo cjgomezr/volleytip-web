@@ -1,26 +1,11 @@
-import {
-  afterAll,
-  afterEach,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
-
-import { connectToLocalDatabase, type Database } from "~/testing/database";
-import { describeIntegration } from "~/testing/describe-integration";
-import { createLocalServiceClient } from "~/testing/local-supabase.server";
+import { describe, expect, it } from "vitest";
 
 import {
   ANNOUNCEMENT_BAR_KEY,
   ANNOUNCEMENT_BAR_SETTING,
-  ANNOUNCEMENT_BAR_TIMEOUT_MS,
   MAX_ANNOUNCEMENT_MESSAGES,
-  loadAnnouncementMessages,
   pickAnnouncementMessages,
 } from "./announcement-bar.server";
-import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 describe("ajuste de la barra de anuncios", () => {
   const isValid = ANNOUNCEMENT_BAR_SETTING.isValid;
@@ -85,137 +70,5 @@ describe("mensajes de la barra por idioma", () => {
     expect(
       pickAnnouncementMessages([{ text: { es: "Hola", en: "" } }], "en"),
     ).toEqual(["Hola"]);
-  });
-});
-
-describe("carga de la barra sin romper la página", () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  function clientReturning(result: {
-    data: unknown;
-    error: unknown;
-  }): TypedSupabaseClient {
-    const query = {
-      select: () => query,
-      in: () => Promise.resolve(result),
-    };
-    return { from: () => query } as unknown as TypedSupabaseClient;
-  }
-
-  it("devuelve los mensajes del idioma", async () => {
-    const client = clientReturning({
-      data: [
-        {
-          key: ANNOUNCEMENT_BAR_KEY,
-          value: [{ text: { es: "Hola", en: "Hi" } }],
-        },
-      ],
-      error: null,
-    });
-
-    await expect(loadAnnouncementMessages("en", client)).resolves.toEqual([
-      "Hi",
-    ]);
-  });
-
-  it("devuelve lista vacía cuando el ajuste no existe", async () => {
-    const client = clientReturning({ data: [], error: null });
-
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([]);
-  });
-
-  it("registra el error y devuelve lista vacía con una forma inválida", async () => {
-    const logged = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    const client = clientReturning({
-      data: [{ key: ANNOUNCEMENT_BAR_KEY, value: "roto" }],
-      error: null,
-    });
-
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([]);
-    expect(logged).toHaveBeenCalledOnce();
-  });
-
-  it("registra el error y devuelve lista vacía cuando la base falla", async () => {
-    const logged = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    const client = clientReturning({ data: null, error: { message: "caída" } });
-
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([]);
-    expect(logged).toHaveBeenCalledOnce();
-  });
-
-  it("no hace esperar a la página cuando la base no responde", async () => {
-    vi.useFakeTimers();
-    const logged = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
-    const query = {
-      select: () => query,
-      // Una base colgada: la consulta no termina nunca.
-      in: () => new Promise(() => undefined),
-    };
-    const hungClient = { from: () => query } as unknown as TypedSupabaseClient;
-
-    const loading = loadAnnouncementMessages("es", hungClient);
-    await vi.advanceTimersByTimeAsync(ANNOUNCEMENT_BAR_TIMEOUT_MS);
-
-    await expect(loading).resolves.toEqual([]);
-    expect(logged).toHaveBeenCalledOnce();
-    vi.useRealTimers();
-  });
-
-  it("espera a la base menos de lo que tarda en cansarse una persona", () => {
-    const TWO_SECONDS_MS = 2000;
-
-    expect(ANNOUNCEMENT_BAR_TIMEOUT_MS).toBeLessThanOrEqual(TWO_SECONDS_MS);
-  });
-});
-
-describeIntegration("announcement_bar", () => {
-  let database: Database;
-  let client: TypedSupabaseClient;
-  let original: string | undefined;
-
-  beforeAll(async () => {
-    database = connectToLocalDatabase();
-    client = createLocalServiceClient();
-    const rows = await database<{ value: unknown }[]>`
-      select value from public.settings where key = ${ANNOUNCEMENT_BAR_KEY}
-    `;
-    original =
-      rows[0] === undefined ? undefined : JSON.stringify(rows[0].value);
-  });
-
-  afterAll(async () => {
-    await database`delete from public.settings where key = ${ANNOUNCEMENT_BAR_KEY}`;
-    if (original !== undefined) {
-      await database`insert into public.settings (key, value) values (${ANNOUNCEMENT_BAR_KEY}, ${original}::text::jsonb)`;
-    }
-    await database.end();
-  });
-
-  async function store(value: unknown): Promise<void> {
-    await database`
-      insert into public.settings (key, value)
-      values (${ANNOUNCEMENT_BAR_KEY}, ${JSON.stringify(value)}::text::jsonb)
-      on conflict (key) do update set value = excluded.value
-    `;
-  }
-
-  it("devuelve los mensajes de la fila y, al cambiarla, el cambio", async () => {
-    await store([{ text: { es: "Uno" } }]);
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([
-      "Uno",
-    ]);
-
-    await store([{ text: { es: "Dos" } }]);
-    await expect(loadAnnouncementMessages("es", client)).resolves.toEqual([
-      "Dos",
-    ]);
   });
 });

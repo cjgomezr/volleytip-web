@@ -428,6 +428,10 @@ const BAD_REQUEST_STATUS = 400;
 // Nadie escucha en ese puerto: el action falla rápido al buscar la base, y
 // eso basta para saber que la petición llegó hasta él.
 const UNREACHABLE_SUPABASE_URL = "http://127.0.0.1:9";
+// Una petición que llega al action arranca el servidor en otro proceso y,
+// antes, espera lo que tarde la lectura de ajustes contra esa base inalcanzable
+// (hasta SITE_SETTINGS_TIMEOUT_MS). Cabe de sobra en este límite.
+const REACHES_ACTION_TEST_TIMEOUT_MS = 20_000;
 
 /**
  * Envía el formulario de la página de muestra como llega detrás del proxy
@@ -477,11 +481,15 @@ describe("envíos de formulario detrás del proxy", () => {
     "volleytip.com",
     "www.volleytip.com",
     "production-volleytip.up.railway.app",
-  ])("un envío desde https://%s llega al action", (host) => {
-    const status = submitBehindProxy(host, `https://${host}`);
+  ])(
+    "un envío desde https://%s llega al action",
+    (host) => {
+      const status = submitBehindProxy(host, `https://${host}`);
 
-    expect(status).not.toBe(BAD_REQUEST_STATUS);
-  });
+      expect(status).not.toBe(BAD_REQUEST_STATUS);
+    },
+    REACHES_ACTION_TEST_TIMEOUT_MS,
+  );
 
   it("un envío desde un sitio ajeno se rechaza antes del action", () => {
     const status = submitBehindProxy(
@@ -492,15 +500,19 @@ describe("envíos de formulario detrás del proxy", () => {
     expect(status).toBe(BAD_REQUEST_STATUS);
   });
 
-  it("un dominio propio puede enviar a otro dominio propio", () => {
-    // Todos sirven la misma app: se acepta a propósito.
-    const status = submitBehindProxy(
-      "staging.volleytip.com",
-      "https://www.volleytip.com",
-    );
+  it(
+    "un dominio propio puede enviar a otro dominio propio",
+    () => {
+      // Todos sirven la misma app: se acepta a propósito.
+      const status = submitBehindProxy(
+        "staging.volleytip.com",
+        "https://www.volleytip.com",
+      );
 
-    expect(status).not.toBe(BAD_REQUEST_STATUS);
-  });
+      expect(status).not.toBe(BAD_REQUEST_STATUS);
+    },
+    REACHES_ACTION_TEST_TIMEOUT_MS,
+  );
 
   it("la otra dirección que Railway le dio a staging no está en la lista", () => {
     const host = "volleytip-web-staging.up.railway.app";
@@ -704,5 +716,98 @@ describe("head en el servidor construido", () => {
 
     expect(response.body).not.toContain('rel="canonical"');
     expect(response.body).not.toContain('rel="alternate"');
+  });
+});
+
+const SERVICE_UNAVAILABLE_STATUS = 503;
+const FAKE_SETTINGS_PORT = 54399;
+
+interface MaintenanceResponse {
+  readonly status: number;
+  readonly headers: Readonly<Record<string, string>>;
+  readonly body: string;
+}
+
+/**
+ * Pide una página al servidor construido, con una base falsa que responde que
+ * el modo mantenimiento está encendido. Prueba el documento real de punta a
+ * punta: estado, cabeceras y página pintada por la raíz.
+ */
+function requestWhileInMaintenance(
+  pathname: string,
+  method = "GET",
+): MaintenanceResponse {
+  const script = `
+    import http from "node:http";
+    import { createRequestHandler } from "react-router";
+    const settings = [{ key: "maintenance_mode", value: { enabled: true } }];
+    const fakeDatabase = http.createServer((_request, response) => {
+      response.setHeader("Content-Type", "application/json");
+      response.end(JSON.stringify(settings));
+    });
+    await new Promise((resolve) => fakeDatabase.listen(${FAKE_SETTINGS_PORT}, "127.0.0.1", resolve));
+    const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
+    const handle = createRequestHandler(build, "production");
+    const response = await handle(
+      new Request(${JSON.stringify(`http://localhost${pathname}`)}, { method: ${JSON.stringify(method)}, ${method === "POST" ? 'headers: { Origin: "http://localhost" }, body: new FormData(),' : ""} }),
+    );
+    const body = await response.text();
+    fakeDatabase.close();
+    process.stdout.write("${RESULT_MARKER}" + JSON.stringify({
+      status: response.status,
+      headers: Object.fromEntries(response.headers),
+      body,
+    }));
+  `;
+  const result = spawnSync(
+    process.execPath,
+    ["--input-type=module", "--eval", script],
+    {
+      cwd: REPO_ROOT,
+      env: {
+        ...process.env,
+        ...SENTINEL_ENV,
+        APP_ENV: "production",
+        SUPABASE_URL: `http://127.0.0.1:${FAKE_SETTINGS_PORT}`,
+      },
+      encoding: "utf8",
+      timeout: BUILD_TIMEOUT_MS,
+    },
+  );
+  const [, json] = result.stdout.split(RESULT_MARKER);
+  if (result.status !== 0 || json === undefined) {
+    throw new Error(`El servidor no respondió:\n${result.stderr}`);
+  }
+  return JSON.parse(json) as MaintenanceResponse;
+}
+
+describe("modo mantenimiento en el servidor construido", () => {
+  it("responde 503 con la página y las cabeceras de mantenimiento", () => {
+    const response = requestWhileInMaintenance("/tienda");
+
+    expect(response.status).toBe(SERVICE_UNAVAILABLE_STATUS);
+    expect(response.body).toContain("Estamos calentando");
+    expect(response.headers["retry-after"]).toBeDefined();
+    expect(response.headers["x-robots-tag"]).toBe("noindex");
+    expect(response.headers["cache-control"]).toBe("no-store");
+  });
+
+  it("sale en inglés bajo /en/", () => {
+    const response = requestWhileInMaintenance("/en/no-existe");
+
+    expect(response.status).toBe(SERVICE_UNAVAILABLE_STATUS);
+    expect(response.body).toContain("We are warming up");
+  });
+
+  it("responde 503 a un POST", () => {
+    const response = requestWhileInMaintenance("/dev/componentes", "POST");
+
+    expect(response.status).toBe(SERVICE_UNAVAILABLE_STATUS);
+  });
+
+  it("deja libre /healthz", () => {
+    const response = requestWhileInMaintenance("/healthz");
+
+    expect(response.status).toBe(200);
   });
 });

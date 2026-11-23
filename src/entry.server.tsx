@@ -12,6 +12,11 @@ import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
 
 import { ReferenceCodeContext } from "~/lib/error-reference";
+import { applyMaintenanceHeaders } from "~/lib/maintenance-mode.server";
+import {
+  MAINTENANCE_STATUS,
+  findMaintenanceNotice,
+} from "~/lib/maintenance-notice";
 import {
   findRequestReferenceCode,
   reportServerError,
@@ -26,6 +31,13 @@ export default function handleRequest(
   responseHeaders: Headers,
   routerContext: EntryContext,
 ): Promise<Response> | Response {
+  // El 503 del modo mantenimiento lo lanza el middleware de la raíz; sus
+  // cabeceras se ponen aquí porque una respuesta lanzada no lleva las suyas.
+  const errors = routerContext.staticHandlerContext.errors;
+  if (findMaintenanceNotice(errors?.root) !== undefined) {
+    applyMaintenanceHeaders(responseHeaders);
+  }
+
   // https://httpwg.org/specs/rfc9110.html#HEAD
   if (request.method.toUpperCase() === "HEAD") {
     return new Response(null, {
@@ -110,4 +122,12 @@ export const handleError: HandleErrorFunction = (error, { request }) => {
 export const handleDataRequest: HandleDataRequestFunction = (
   response,
   { request },
-) => sendFailedNavigationToDocument(response, request);
+) => {
+  // Con el mantenimiento encendido todo dato pedido responde 503; lleva las
+  // mismas cabeceras que el documento. Ninguna otra parte del sitio responde
+  // 503, así que el estado basta para reconocerlo.
+  if (response.status === MAINTENANCE_STATUS) {
+    applyMaintenanceHeaders(response.headers);
+  }
+  return sendFailedNavigationToDocument(response, request);
+};
