@@ -8,7 +8,11 @@ import {
   useRouteLoaderData,
 } from "react-router";
 
-import { ErrorContent } from "~/components/error-content";
+import {
+  ErrorContent,
+  isServerError,
+  ServerErrorPage,
+} from "~/components/error-content";
 import { LanguageAlternates } from "~/components/language-alternates";
 import type { LanguageSuggestionTexts } from "~/components/language-suggestion";
 import { serverEnv } from "~/lib/env.server";
@@ -166,13 +170,14 @@ export default function App({
   );
 }
 
-// Respaldo para cuando falla la raíz o el layout del sitio: sin textos ni
-// header. El 404 y los errores de una página los pinta el límite de
-// `site-layout.tsx`, con la cáscara. Las páginas 404, 500 y mantenimiento del
-// diseño (FR-056) llegan con W3.
+// Respaldo para cuando falla la raíz o el layout del sitio, y la página del
+// 500: sin textos ni header, para que se pinte aunque lo que falló fuera leer
+// la base. El 404 y los errores controlados de una página los pinta el límite
+// de `site-layout.tsx`, con la cáscara.
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
+  if (isServerError(error)) return <ServerErrorPage />;
   return (
     <main>
       <ErrorContent error={error} />
