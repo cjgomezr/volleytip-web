@@ -24,7 +24,8 @@ export const TEST_ENV = {
     "secreto-solo-para-pruebas-no-usar-en-ningun-entorno-real",
   CLIENT_IP_HEADER: "X-Forwarded-For",
   CLIENT_IP_TRUSTED_HOPS: "1",
-  // No existe: ninguna prueba pide una imagen al CDN.
+  // No existe: Playwright responde sus imágenes desde el disco
+  // (tests/support/test.ts) y las demás pruebas no piden ninguna.
   IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
   // A propósito distinto de la dirección donde corren las pruebas: las
   // direcciones absolutas tienen que salir de aquí y no de la petición.

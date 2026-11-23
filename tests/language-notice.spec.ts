@@ -3,7 +3,7 @@
  * acepta o se rechaza, y la elección se recuerda. Las capturas del
  * aviso viven en `ui.spec.ts`, junto a las demás.
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";

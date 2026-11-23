@@ -36,7 +36,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type Page } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
 import { ANNOUNCEMENT_FIXTURES } from "./support/site-fixtures";
