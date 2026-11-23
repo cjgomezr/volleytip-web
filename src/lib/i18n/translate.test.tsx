@@ -87,9 +87,7 @@ describe("textos: plurales", () => {
 
 describe("textos: sin petición", () => {
   it("el servidor obtiene un texto pasando solo el idioma", () => {
-    expect(getTranslate("en")("error.notFoundDetails")).toBe(
-      "This page does not exist.",
-    );
+    expect(getTranslate("en")("error.serverTitle")).toBe("Timeout called");
   });
 
   it("el navegador solo recibe los textos del idioma pedido", () => {
