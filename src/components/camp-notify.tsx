@@ -35,7 +35,7 @@ export function CampNotify({
   return (
     <section
       aria-labelledby="camp-notify-title"
-      className="bg-brand-indigo text-brand-mist"
+      className="bg-brand-night text-brand-mist"
     >
       <div className="mx-auto max-w-[1280px] px-6 py-16 md:py-24">
         <h2

@@ -54,11 +54,28 @@ export async function removeSiteFixtures(
   }
 }
 
+/** Las pruebas del formulario "Avísame" envían desde la misma IP; sin esto,
+ * dos corridas seguidas chocarían con el límite de 5 envíos cada 10 minutos. */
+async function resetCampNotifyRateLimit(
+  status: LocalSupabaseStatus,
+): Promise<void> {
+  const response = await fetch(
+    `${status.API_URL}/rest/v1/rate_limits?key=like.camp_notify:*`,
+    { method: "DELETE", headers: buildHeaders(status) },
+  );
+  if (!response.ok) {
+    throw new Error(
+      `No se pudo reiniciar el límite de envíos (${response.status}): ${await response.text()}`,
+    );
+  }
+}
+
 /** Deja en la base local los ajustes que las pruebas esperan. Si la base no
  * los acepta, falla: una corrida sin sus datos no comprueba nada. */
 export async function seedSiteFixtures(
   status: LocalSupabaseStatus,
 ): Promise<void> {
+  await resetCampNotifyRateLimit(status);
   const response = await fetch(
     `${status.API_URL}/rest/v1/settings?on_conflict=key`,
     {
