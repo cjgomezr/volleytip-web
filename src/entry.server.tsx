@@ -124,7 +124,8 @@ export const handleDataRequest: HandleDataRequestFunction = (
   { request },
 ) => {
   // Con el mantenimiento encendido todo dato pedido responde 503; lleva las
-  // mismas cabeceras que el documento.
+  // mismas cabeceras que el documento. Ninguna otra parte del sitio responde
+  // 503, así que el estado basta para reconocerlo.
   if (response.status === MAINTENANCE_STATUS) {
     applyMaintenanceHeaders(response.headers);
   }

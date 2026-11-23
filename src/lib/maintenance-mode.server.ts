@@ -35,9 +35,13 @@ export const MAINTENANCE_MODE_SETTING: SettingDefinition<MaintenanceMode> = {
 // Los webhooks de pago agregan la suya aquí (W6b).
 const EXEMPT_PREFIXES = ["/healthz", "/.well-known", "/admin"] as const;
 
+// React Router empareja las rutas sin distinguir mayúsculas, así que `/HEALTHZ`
+// también llega a su ruta y también tiene que quedar fuera.
 export function isExemptFromMaintenance(pathname: string): boolean {
+  const lowerCasePath = pathname.toLowerCase();
   return EXEMPT_PREFIXES.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+    (prefix) =>
+      lowerCasePath === prefix || lowerCasePath.startsWith(`${prefix}/`),
   );
 }
 

@@ -48,6 +48,8 @@ describe("qué direcciones quedan fuera", () => {
     "/.well-known/assetlinks.json",
     "/admin",
     "/admin/pedidos",
+    "/HEALTHZ",
+    "/Admin/pedidos",
   ])("deja libre %s", (path) => {
     expect(isExemptFromMaintenance(path)).toBe(true);
   });
