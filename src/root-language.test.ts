@@ -18,7 +18,9 @@ function requestFor(
 }
 
 async function runMiddleware(request: Request): Promise<Response> {
-  const [first] = middleware;
+  // El último: el de idioma e indexación. El primero es el del modo
+  // mantenimiento, que tiene su propio test.
+  const first = middleware.at(-1);
   if (first === undefined) throw new Error("Falta el middleware.");
   const next = (): Promise<Response> => Promise.resolve(new Response("pagina"));
   const result = await first(

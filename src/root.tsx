@@ -8,6 +8,7 @@ import {
   useRouteLoaderData,
 } from "react-router";
 
+import { MaintenancePage } from "~/components/maintenance-page";
 import {
   ErrorContent,
   isServerError,
@@ -31,6 +32,8 @@ import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { markAsNotIndexable } from "~/lib/indexing.server";
+import { enforceMaintenanceMode } from "~/lib/maintenance-middleware.server";
+import { findMaintenanceNotice } from "~/lib/maintenance-notice";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -72,7 +75,10 @@ const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
   return markAsNotIndexable(response, serverEnv.appEnv);
 };
 
+// Va primero: con el modo mantenimiento encendido la petición se corta antes
+// de redirigir por idioma y antes de que corra ningún loader o action.
 export const middleware: Route.MiddlewareFunction[] = [
+  enforceMaintenanceMode,
   markResponseAsNotIndexable,
 ];
 
@@ -177,6 +183,10 @@ export default function App({
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
+  const maintenance = findMaintenanceNotice(error);
+  if (maintenance !== undefined) {
+    return <MaintenancePage returnsAt={maintenance.returnsAt} />;
+  }
   if (isServerError(error)) return <ServerErrorPage />;
   return (
     <main>

@@ -428,6 +428,10 @@ const BAD_REQUEST_STATUS = 400;
 // Nadie escucha en ese puerto: el action falla rápido al buscar la base, y
 // eso basta para saber que la petición llegó hasta él.
 const UNREACHABLE_SUPABASE_URL = "http://127.0.0.1:9";
+// Una petición que llega al action arranca el servidor en otro proceso y,
+// antes, espera lo que tarde la lectura de ajustes contra esa base inalcanzable
+// (hasta SITE_SETTINGS_TIMEOUT_MS). Cabe de sobra en este límite.
+const REACHES_ACTION_TEST_TIMEOUT_MS = 20_000;
 
 /**
  * Envía el formulario de la página de muestra como llega detrás del proxy
@@ -477,11 +481,15 @@ describe("envíos de formulario detrás del proxy", () => {
     "volleytip.com",
     "www.volleytip.com",
     "production-volleytip.up.railway.app",
-  ])("un envío desde https://%s llega al action", (host) => {
-    const status = submitBehindProxy(host, `https://${host}`);
+  ])(
+    "un envío desde https://%s llega al action",
+    (host) => {
+      const status = submitBehindProxy(host, `https://${host}`);
 
-    expect(status).not.toBe(BAD_REQUEST_STATUS);
-  });
+      expect(status).not.toBe(BAD_REQUEST_STATUS);
+    },
+    REACHES_ACTION_TEST_TIMEOUT_MS,
+  );
 
   it("un envío desde un sitio ajeno se rechaza antes del action", () => {
     const status = submitBehindProxy(
@@ -492,15 +500,19 @@ describe("envíos de formulario detrás del proxy", () => {
     expect(status).toBe(BAD_REQUEST_STATUS);
   });
 
-  it("un dominio propio puede enviar a otro dominio propio", () => {
-    // Todos sirven la misma app: se acepta a propósito.
-    const status = submitBehindProxy(
-      "staging.volleytip.com",
-      "https://www.volleytip.com",
-    );
+  it(
+    "un dominio propio puede enviar a otro dominio propio",
+    () => {
+      // Todos sirven la misma app: se acepta a propósito.
+      const status = submitBehindProxy(
+        "staging.volleytip.com",
+        "https://www.volleytip.com",
+      );
 
-    expect(status).not.toBe(BAD_REQUEST_STATUS);
-  });
+      expect(status).not.toBe(BAD_REQUEST_STATUS);
+    },
+    REACHES_ACTION_TEST_TIMEOUT_MS,
+  );
 
   it("la otra dirección que Railway le dio a staging no está en la lista", () => {
     const host = "volleytip-web-staging.up.railway.app";

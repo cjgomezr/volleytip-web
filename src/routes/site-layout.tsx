@@ -8,9 +8,10 @@ import {
 } from "~/components/error-content";
 import { LanguageSuggestion } from "~/components/language-suggestion";
 import { SiteShell } from "~/components/site-shell";
-import { loadAnnouncementMessages } from "~/lib/announcement-bar.server";
+import { pickAnnouncementMessages } from "~/lib/announcement-bar.server";
 import { getRequestLanguage } from "~/lib/i18n/languages";
 import { PAGES } from "~/lib/i18n/pages";
+import { siteSettingsContext } from "~/lib/site-settings.server";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { getMenuEntries } from "~/lib/site-menu";
@@ -37,11 +38,17 @@ function LanguageNotice(): ReactElement | null {
   return suggestion ? <LanguageSuggestion {...suggestion} /> : null;
 }
 
-export async function loader({
+// La barra sale de los ajustes que el middleware de la raíz ya leyó, junto
+// con el modo mantenimiento, en una sola consulta.
+export function loader({
   request,
-}: Route.LoaderArgs): Promise<{ readonly announcements: string[] }> {
+  context,
+}: Route.LoaderArgs): { readonly announcements: string[] } {
   return {
-    announcements: await loadAnnouncementMessages(getRequestLanguage(request)),
+    announcements: pickAnnouncementMessages(
+      context.get(siteSettingsContext).announcements,
+      getRequestLanguage(request),
+    ),
   };
 }
 

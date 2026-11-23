@@ -20,6 +20,12 @@ export const errorsEs = {
   "error.homeLink": "Ir al inicio",
   "error.homeShort": "Inicio",
   "error.homeLinkLabel": "VolleyTip, ir al inicio",
+  "maintenance.title": "Estamos calentando",
+  "maintenance.details":
+    "Estamos haciendo ajustes en el sitio. Volvemos en un momento.",
+  "maintenance.returnsAt": "Volvemos hacia las {time}.",
+  "maintenance.socialLabel": "Mientras tanto, síguenos",
+  "maintenance.logoLabel": "VolleyTip",
 } as const;
 
 export type ErrorMessages = {
@@ -40,6 +46,12 @@ export const errorsEn = {
   "error.homeLink": "Go to the home page",
   "error.homeShort": "Home",
   "error.homeLinkLabel": "VolleyTip, go home",
+  "maintenance.title": "We are warming up",
+  "maintenance.details":
+    "We are making some adjustments to the site. We will be back shortly.",
+  "maintenance.returnsAt": "We will be back around {time}.",
+  "maintenance.socialLabel": "Meanwhile, follow us",
+  "maintenance.logoLabel": "VolleyTip",
 } as const satisfies ErrorMessages;
 
 export const ERROR_MESSAGES: Readonly<Record<Language, ErrorMessages>> = {

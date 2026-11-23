@@ -1340,3 +1340,50 @@ test.describe("página 500 al navegar sin recargar", () => {
     );
   });
 });
+
+// Página del modo mantenimiento (/dev/mantenimiento): se pinta sin encender
+// el modo en la base de pruebas. La hora fija es futura sin importar cuándo
+// corra la prueba: la ruta de muestra no consulta el reloj.
+const MAINTENANCE_RETURN_TIME = "2099-12-01T20:30:00Z";
+const MAINTENANCE_VARIANTS = [
+  {
+    name: "es-con-hora",
+    path: `/dev/mantenimiento?hora=${MAINTENANCE_RETURN_TIME}`,
+  },
+  { name: "es-sin-hora", path: "/dev/mantenimiento" },
+  {
+    name: "en-con-hora",
+    path: `/en/dev/mantenimiento?hora=${MAINTENANCE_RETURN_TIME}`,
+  },
+  { name: "en-sin-hora", path: "/en/dev/mantenimiento" },
+] as const;
+
+for (const variant of MAINTENANCE_VARIANTS) {
+  for (const vp of viewports) {
+    test.describe(`mantenimiento ${variant.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({ page }) => {
+        await page.goto(`${APP_URL}${variant.path}`);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        const name = `maintenance-${variant.name}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+
+      test("axe no reporta violaciones", async ({ page }) => {
+        await page.goto(`${APP_URL}${variant.path}`);
+        const results = await new AxeBuilder({ page }).analyze();
+        expect(results.violations).toEqual([]);
+      });
+    });
+  }
+}

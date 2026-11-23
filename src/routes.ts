@@ -26,4 +26,10 @@ export default [
   route("idioma", "routes/language-choice.ts"),
   // Diagnóstico de las cabeceras del proxy. En producción responde 404.
   route("dev/cabeceras", "routes/dev-headers.ts"),
+  // Pinta la página de mantenimiento sin encender el modo. En producción
+  // responde 404.
+  route("dev/mantenimiento", "routes/dev-maintenance.tsx"),
+  route("en/dev/mantenimiento", "routes/dev-maintenance.tsx", {
+    id: "dev-maintenance-en",
+  }),
 ] satisfies RouteConfig;
