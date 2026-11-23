@@ -39,7 +39,7 @@ import path from "node:path";
 import {
   test,
   expect,
-  routeCdnImages,
+  routeExternalRequests,
   waitForImages,
   type Page,
 } from "./support/test";
@@ -211,7 +211,6 @@ const MIN_TOUCH_TARGET_PX = 44;
 // Los navegadores redondean posiciones a fracciones de píxel.
 const SUBPIXEL_TOLERANCE_PX = 0.5;
 
-const TURNSTILE_SCRIPT = "https://challenges.cloudflare.com/**";
 const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 
 interface TurnstileCall {
@@ -224,25 +223,6 @@ interface TurnstileCall {
  * la página. Así ninguna prueba depende de la red, y la captura no cambia
  * con lo que Cloudflare decida dibujar ese día.
  */
-async function stubTurnstile(page: Page): Promise<void> {
-  await page.route(TURNSTILE_SCRIPT, (route) =>
-    route.fulfill({
-      contentType: "text/javascript",
-      body: `
-        window.turnstileCalls = [];
-        window.turnstile = {
-          render(container, options) {
-            window.turnstileCalls.push({ method: "render", sitekey: options.sitekey });
-            return "widget-de-prueba";
-          },
-          reset() { window.turnstileCalls.push({ method: "reset" }); },
-          remove() { window.turnstileCalls.push({ method: "remove" }); },
-        };
-      `,
-    }),
-  );
-}
-
 async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
   return page.evaluate(
     () =>
@@ -252,7 +232,6 @@ async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
 }
 
 async function openComponentsPage(page: Page): Promise<void> {
-  await stubTurnstile(page);
   await page.goto(COMPONENTS_URL);
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -882,7 +861,7 @@ for (const vp of viewports) {
           viewport: { width: vp.width, height: vp.height },
           storageState: FIRST_VISIT,
         });
-        await routeCdnImages(context);
+        await routeExternalRequests(context);
         const page = await context.newPage();
         await page.goto(url);
         await page.evaluate(async () => {
@@ -1420,7 +1399,6 @@ const CAMP_NOTIFY_LANGUAGES = [
 
 /** El widget real no corre en las pruebas: se le pone el token de prueba. */
 async function openCampNotify(page: Page, url: string): Promise<void> {
-  await stubTurnstile(page);
   await page.goto(url);
   await page.evaluate((token) => {
     const input = document.createElement("input");
