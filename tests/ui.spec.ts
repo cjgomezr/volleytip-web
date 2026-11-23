@@ -36,7 +36,13 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { test, expect, type Page } from "@playwright/test";
+import {
+  test,
+  expect,
+  routeCdnImages,
+  waitForImages,
+  type Page,
+} from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
 import { ANNOUNCEMENT_FIXTURES } from "./support/site-fixtures";
@@ -153,6 +159,7 @@ for (const vp of viewports) {
       await page.evaluate(async () => {
         await document.fonts.ready;
       });
+      await waitForImages(page);
       const name = `home-${vp.name}.png`;
       await createMissingLocalBaseline(name, () =>
         page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
@@ -679,6 +686,7 @@ for (const vp of viewports) {
       await page.evaluate(async () => {
         await document.fonts.ready;
       });
+      await waitForImages(page);
       const name = `home-en-${vp.name}.png`;
       await createMissingLocalBaseline(name, () =>
         page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
@@ -874,11 +882,13 @@ for (const vp of viewports) {
           viewport: { width: vp.width, height: vp.height },
           storageState: FIRST_VISIT,
         });
+        await routeCdnImages(context);
         const page = await context.newPage();
         await page.goto(url);
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        await waitForImages(page);
         // Sin esto la captura podría ser la de la home sin aviso y pasar.
         await expect(
           page.getByRole("region", { name: LANGUAGE_NOTICE_NAME }),
@@ -1086,6 +1096,10 @@ for (const vp of viewports) {
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        // Sin el contenido de la página: su alto puede traer fracciones de
+        // píxel, y entonces el pie empieza a media fila y su captura cambia
+        // cada vez que cambia la home, sin que el pie haya cambiado.
+        await page.addStyleTag({ content: "main { display: none; }" });
         const footer = page.locator("footer");
         // El logo del pie carga aparte: sin esperarlo, la captura sale a medias.
         await footer

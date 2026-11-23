@@ -7,7 +7,9 @@
     "uiReviewer": "sonnet",
     "planning": "opus"
   },
+  "_readme_themes": "review.themes dice en qué temas captura `npm run ui:screenshots` para el ui-reviewer. Sin el ajuste son los dos: [\"light\", \"dark\"]. Un proyecto con un solo tema declara solo ese; si no, las capturas en claro y en oscuro salen idénticas y el script falla siempre. Este sitio no tiene modo oscuro.",
   "review": {
-    "uiReview": "label"
+    "uiReview": "label",
+    "themes": ["light"]
   }
 }

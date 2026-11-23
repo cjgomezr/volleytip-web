@@ -7,13 +7,22 @@ export const en = {
   "home.title": "VolleyTip",
   "home.description":
     "Volleyball tips in 60 seconds, plus the VolleyTip shop and camps.",
-  "home.eyebrow": "Site under construction",
+  "home.eyebrow": "Short videos · educational · free",
   "home.headingStart": "Learn volleyball in",
   "home.headingHighlight": "60",
   "home.headingEnd": "seconds",
   "home.intro":
-    "We are rebuilding volleytip.com. This page is the foundation of the new site.",
-  "home.healthLink": "Check service status",
+    "Technique, tactics and training for players and coaches of every level.",
+  "home.hero.cta": "Watch the tips",
+  "home.hero.opensInNewTab": "(opens in a new tab)",
+  "home.stats.label": "VolleyTip in numbers",
+  "home.about.eyebrow": "Who we are",
+  "home.about.title": "Volleyball is for everyone",
+  "home.about.text":
+    "We started in 2019 with one idea: bring Colombian volleyball to everyone's screen.",
+  "home.about.link": "Meet the team",
+  "home.about.photoAlt":
+    "Camilo, founder of VolleyTip, sitting in his recording studio",
   "header.skipLink": "Skip to content",
   "header.homeLink": "VolleyTip, go home",
   "header.menuLabel": "Main menu",

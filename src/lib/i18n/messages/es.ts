@@ -8,13 +8,22 @@ export const es = {
   "home.title": "VolleyTip",
   "home.description":
     "Tips de voleibol en 60 segundos, tienda y camps de VolleyTip.",
-  "home.eyebrow": "Sitio en construcción",
+  "home.eyebrow": "Videos cortos · educativos · gratis",
   "home.headingStart": "Aprende voley en",
   "home.headingHighlight": "60",
   "home.headingEnd": "segundos",
   "home.intro":
-    "Estamos reconstruyendo volleytip.com. Esta página es la base del sitio nuevo.",
-  "home.healthLink": "Ver estado del servicio",
+    "Técnica, táctica y entrenamiento para jugadores y entrenadores de todos los niveles.",
+  "home.hero.cta": "Ver los tips",
+  "home.hero.opensInNewTab": "(se abre en otra pestaña)",
+  "home.stats.label": "VolleyTip en cifras",
+  "home.about.eyebrow": "Quiénes somos",
+  "home.about.title": "El voley es para todos",
+  "home.about.text":
+    "Empezamos en 2019 con una idea: llevar el voleibol colombiano a la pantalla de todos.",
+  "home.about.link": "Conoce al equipo",
+  "home.about.photoAlt":
+    "Camilo, fundador de VolleyTip, sentado en su estudio de grabación",
   "header.skipLink": "Saltar al contenido",
   "header.homeLink": "VolleyTip, ir al inicio",
   "header.menuLabel": "Menú principal",

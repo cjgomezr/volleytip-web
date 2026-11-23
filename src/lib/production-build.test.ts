@@ -543,7 +543,7 @@ describe("textos por idioma en el servidor construido", () => {
 
     expect(body).toContain("Learn volleyball in");
     expect(body).not.toContain("Aprende voley");
-    expect(body).not.toContain("Sitio en construcción");
+    expect(body).not.toContain("Videos cortos");
   });
 
   it("la home en español no contiene los textos en inglés", () => {
@@ -691,13 +691,13 @@ describe("head en el servidor construido", () => {
   );
 
   it("ninguna dirección sale de la petición", () => {
-    const body = findServed(served(), ENGLISH_HOME_SEARCH).body;
+    // Una sola vez: cada llamada a served() arranca un servidor, y la home
+    // espera a la base hasta su límite en cada petición.
+    const response = findServed(served(), ENGLISH_HOME_SEARCH);
 
-    expect(body).not.toContain('href="http://localhost');
-    expect(headOf(findServed(served(), ENGLISH_HOME_SEARCH))).not.toContain(
-      "talla",
-    );
-    expect(body).toContain(ORIGIN);
+    expect(response.body).not.toContain('href="http://localhost');
+    expect(headOf(response)).not.toContain("talla");
+    expect(response.body).toContain(ORIGIN);
   });
 
   it.each([MISSING_PAGE, MISSING_ENGLISH_PAGE, UNSUPPORTED_PREFIX])(
