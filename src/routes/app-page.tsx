@@ -243,8 +243,8 @@ function Hero({
 }: AppPageProps): ReactElement {
   const translate = useTranslate();
   return (
-    <section data-zone="dark" className="px-6 pt-10 pb-20">
-      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-14">
+    <section data-zone="dark" className="pt-10 pb-20">
+      <div className="mx-auto flex max-w-[1280px] flex-wrap items-center gap-14 px-6">
         <div className="min-w-0 flex-[999_1_520px]">
           {availability.state === "waitlist" ? (
             <p className="inline-block rounded-md bg-brand-lime px-3 py-1.5 text-[13px] font-bold tracking-[0.08em] text-brand-night uppercase">
