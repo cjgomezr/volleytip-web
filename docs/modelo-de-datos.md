@@ -101,7 +101,7 @@ Un perfil por usuario de Supabase Auth (FR-077). El de comprador se crea solo, s
 `id`, `market_id`, `name`, `matcher` (jsonb: lista de departamentos o ciudades; una zona con `matcher` vacío es "resto del país"), `fee` + `currency`, `eta_min_days`, `eta_max_days`, `sort_order` (FR-120).
 
 ### `settings`
-`key` (PK text), `value` (jsonb), `updated_by`. Claves iniciales: `free_shipping_threshold`, `annual_cap` (FR-129), `invoicing_enabled` (FR-127), `maintenance_mode` (FR-056), `tour_counter_public` (FR-134), `announcement_bar`, `usd_reference_rate` (tasa manual para el precio aproximado, FR-122).
+`key` (PK text), `value` (jsonb), `updated_by`. Claves iniciales: `free_shipping_threshold`, `annual_cap` (FR-129), `invoicing_enabled` (FR-127), `maintenance_mode` (FR-056), `tour_counter_public` (FR-134), `announcement_bar`, `usd_reference_rate` (tasa manual para el precio aproximado, FR-122), `app_availability` (FR-054: `{"status":"waitlist"}` o `{"status":"available","appStoreUrl":"https://apps.apple.com/...","playStoreUrl":"https://play.google.com/..."}`; sin fila, la página de la app está en lista de espera).
 
 ### `site_texts`
 `key`, `locale`, `value`. Clave única (`key`, `locale`). Textos editables sin código (FR-065). Los textos fijos de la interfaz viven en archivos de traducción, no aquí.

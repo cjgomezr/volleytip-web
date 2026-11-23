@@ -63,3 +63,10 @@ export default function DevApp({
 }: Route.ComponentProps): ReactElement {
   return <AppPage {...loaderData} />;
 }
+
+export function meta(): Route.MetaDescriptors {
+  return [
+    { title: "App · VolleyTip (muestra)" },
+    { name: "robots", content: "noindex" },
+  ];
+}
