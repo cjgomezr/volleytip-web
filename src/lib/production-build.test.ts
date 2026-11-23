@@ -543,7 +543,7 @@ describe("textos por idioma en el servidor construido", () => {
 
     expect(body).toContain("Learn volleyball in");
     expect(body).not.toContain("Aprende voley");
-    expect(body).not.toContain("Sitio en construcción");
+    expect(body).not.toContain("Videos cortos");
   });
 
   it("la home en español no contiene los textos en inglés", () => {
