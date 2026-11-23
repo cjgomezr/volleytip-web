@@ -1096,6 +1096,10 @@ for (const vp of viewports) {
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        // Sin el contenido de la página: su alto puede traer fracciones de
+        // píxel, y entonces el pie empieza a media fila y su captura cambia
+        // cada vez que cambia la home, sin que el pie haya cambiado.
+        await page.addStyleTag({ content: "main { display: none; }" });
         const footer = page.locator("footer");
         // El logo del pie carga aparte: sin esperarlo, la captura sale a medias.
         await footer
