@@ -32,7 +32,7 @@ export function StatsStrip({
       aria-label={translate("home.stats.label")}
       className="border-t-2 border-brand-red bg-brand-indigo"
     >
-      <ul className="m-0 mx-auto grid max-w-[1280px] list-none grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:grid-cols-4 md:py-12">
+      <ul className="m-0 mx-auto grid max-w-[1280px] list-none grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:py-12 lg:grid-cols-4">
         {stats.map((stat) => (
           <li key={stat.id} className="text-center">
             <p
