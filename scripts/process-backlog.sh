@@ -471,6 +471,75 @@ Antes de mezclar conviene revisar el PR a mano o pedirle al worker que lo comple
   gh pr comment "$pr_number" --body "$body" || true
 }
 
+# True if the review section carries the verdict line CLAUDE.md step 7 asks
+# for: the reviewer's name, a colon and APPROVED, at the start of a line.
+# "La ronda 2 no emitió APPROVED" has the word but not the shape, and that is
+# the whole point: a sentence about the verdict is not the verdict. List
+# marker, backticks and bold are optional so a tidy PR is not punished.
+review_verdict_is_approved() {  # reviewer name, PR body
+  echo "$2" | grep -qE "^[[:space:]]*([-*+][[:space:]]+)?[*\`]*$1[*\`]*:[[:space:]]*[*\`]*APPROVED"
+}
+
+# The reviewers this ticket had to pass. `code-reviewer` always. The
+# `ui-reviewer` when the policy is "label" and the issue carries `ui-review`.
+# Under "always" the rule depends on whether the diff touched UI, which this
+# script cannot tell from here, so that case stays with the worker.
+reviewers_required_for() {  # issue labels (one per line)
+  local policy
+  policy=$(jq -r '.review.uiReview // "label"' factory-models.json 2>/dev/null | tr -d '\r') || policy="label"
+  echo "code-reviewer"
+  if [ "$policy" = "label" ] && echo "$1" | grep -qx "ui-review"; then
+    echo "ui-reviewer"
+  fi
+}
+
+# CLAUDE.md step 5: no APPROVED, no PR. The worker of #87 opened its PR with
+# neither reviewer's approval and said so in the description, which a human
+# only finds by reading it. Here the ticket goes to needs-human, where the
+# board shows it, and the PR gets a note so nobody merges it by mistake.
+# Like the other checks, a `gh` failure is a silent return: never accuse a
+# worker because GitHub hiccuped.
+WORKER_APPROVAL_MARKER="<!-- aprobacion-revisores -->"
+check_worker_reviews_approved() {  # issue number
+  local n="$1" prs pr pr_number pr_body issue_json labels reviewer previous
+  local -a unapproved=()
+  prs=$(prs_closing_issue open "$n") || return 0
+  pr=$(echo "$prs" | jq -c '.[0] // empty' 2>/dev/null | tr -d '\r') || return 0
+  [ -n "$pr" ] || return 0
+  pr_number=$(echo "$pr" | jq -r '.number' 2>/dev/null | tr -d '\r') || return 0
+  [ -n "$pr_number" ] || return 0
+  pr_body=$(echo "$pr" | jq -r '.body // ""' 2>/dev/null | tr -d '\r') || return 0
+  issue_json=$(gh issue view "$n" --json labels 2>/dev/null) || return 0
+  labels=$(echo "$issue_json" | jq -r '.labels[]?.name' 2>/dev/null | tr -d '\r') || return 0
+
+  while IFS= read -r reviewer; do
+    review_verdict_is_approved "$reviewer" "$pr_body" || unapproved+=("$reviewer")
+  done < <(reviewers_required_for "$labels")
+  [ "${#unapproved[@]}" -gt 0 ] || return 0
+
+  local names
+  names=$(printf '`%s`, ' "${unapproved[@]}")
+  names="${names%, }"
+  echo "⚠ El PR #$pr_number de #$n no trae APPROVED de: ${unapproved[*]}. needs-human + aviso en el PR"
+  flag_needs_human "$n" "🤖 **El worker abrió el PR #$pr_number sin la aprobación de $names.** La descripción no trae su línea de veredicto (\`- code-reviewer: APPROVED (N rondas)\`), así que no hay constancia de que el revisor aprobara.
+
+**Qué hacer:** leer la sección Revisión del PR. Si el revisor sí aprobó y solo falta la línea, agregarla. Si no aprobó, terminar la revisión antes de mezclar.
+
+**Para que la fábrica lo retome:**
+\`\`\`
+gh issue edit $n --remove-label needs-human --add-label pending
+bash scripts/process-backlog.sh
+\`\`\`"
+
+  previous=$(gh pr view "$pr_number" --json comments 2>/dev/null) || return 0
+  previous=$(echo "$previous" | jq -r '.comments[]?.body // ""' 2>/dev/null) || return 0
+  if echo "$previous" | grep -qF -- "$WORKER_APPROVAL_MARKER"; then
+    return 0
+  fi
+  gh pr comment "$pr_number" --body "$WORKER_APPROVAL_MARKER
+🚫 **No mezclar todavía: falta el APPROVED de $names.** El ticket #$n quedó en \`needs-human\`. CLAUDE.md, paso 5: sin aprobación del revisor no se abre PR." || true
+}
+
 # Single decision point for what happens after the worker process ends, so a
 # crash (exit != 0) and a silent success (exit 0, no PR) share the same
 # needs-human path and never both fire for the same run.
@@ -493,6 +562,7 @@ El nuevo worker puede continuar desde la rama existente."
   else
     check_worker_left_no_pr "$n"
     check_worker_left_record "$n"
+    check_worker_reviews_approved "$n"
   fi
 }
 
@@ -513,10 +583,14 @@ run_worker() {
   only when the UI-review policy in factory-models.json applies to this issue) until
   APPROVED. Brief the reviewer with the requirements and the changed files, never with
   your own conclusions ('tests pass'): it has to check by itself.
+  If a reviewer has not replied APPROVED after 3 rounds, do NOT open a PR, not even a
+  draft: commit and push the branch, add label needs-human and comment the rounds run
+  and the findings still open.
   Then check in the issue the acceptance criteria a passing test proves, and comment on
   the ones you leave unchecked. Then open a draft PR with 'Closes #$n' whose body has a
-  '## Revisión' section: which reviewer ran, how many rounds, the verdict, the findings
-  you fixed and every finding you did NOT apply, with the reason.
+  '## Revisión' section that opens with one verdict line per reviewer, exactly like
+  '- code-reviewer: APPROVED (2 rondas)', followed by the findings you fixed and every
+  finding you did NOT apply, with the reason.
   Commit as you go: every time a piece is green (tests passing, lint and types clean),
   commit it before starting the next one. Your turn budget can run out without warning,
   and uncommitted work is lost work.

@@ -1,13 +1,27 @@
 import { spawnSync } from "node:child_process";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
-const CLIENT_BUILD = path.join(REPO_ROOT, "build/client");
-const SERVER_BUNDLE = path.join(REPO_ROOT, "build/server/index.js");
+// Cada corrida construye en su propia carpeta. Con una sola carpeta `build/`,
+// dos corridas a la vez (el Stop gate y un revisor, o dos workers) se borraban
+// el build una a la otra y la prueba fallaba sin que nada estuviera roto.
+// Va dentro de `node_modules` para que el servidor construido encuentre sus
+// dependencias y para que ni git, ni el lint, ni Vitest la miren.
+const BUILD_DIRECTORY = `node_modules/.cache/production-build-test/${String(process.pid)}`;
+const BUILD_ROOT = path.join(REPO_ROOT, BUILD_DIRECTORY);
+const CLIENT_BUILD = path.join(BUILD_ROOT, "client");
+const SERVER_BUNDLE = path.join(BUILD_ROOT, "server/index.js");
+// En Windows un proceso recién cerrado puede tardar en soltar la carpeta.
+const REMOVE_BUILD_OPTIONS = {
+  recursive: true,
+  force: true,
+  maxRetries: 5,
+  retryDelay: 200,
+} as const;
 const SERVER_ENV_NAMES = Object.keys({
   APP_ENV: true,
   SUPABASE_URL: true,
@@ -63,7 +77,7 @@ interface ClientAsset {
 function buildWithSentinels(): void {
   const result = spawnSync(process.execPath, [REACT_ROUTER_CLI, "build"], {
     cwd: REPO_ROOT,
-    env: { ...process.env, ...SENTINEL_ENV },
+    env: { ...process.env, ...SENTINEL_ENV, BUILD_DIRECTORY },
     encoding: "utf8",
     timeout: BUILD_TIMEOUT_MS,
   });
@@ -91,6 +105,7 @@ function findLeaks(assets: readonly ClientAsset[]): string[] {
 
 // Un solo build para todo el archivo: los dos bloques leen lo que dejó.
 beforeAll(buildWithSentinels, BUILD_TIMEOUT_MS);
+afterAll(() => rmSync(BUILD_ROOT, REMOVE_BUILD_OPTIONS));
 
 describe("secretos en el cliente", () => {
   it("ningún valor secreto del entorno aparece en build/client", () => {

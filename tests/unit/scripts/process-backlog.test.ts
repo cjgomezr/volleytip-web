@@ -338,7 +338,8 @@ function prListClosing(issue: number, createdAt = new Date()): string {
   return JSON.stringify([
     {
       number: 7,
-      body: `Closes #${issue}\n\nAlgo.`,
+      // Un PR completo: con la línea de veredicto que el script exige.
+      body: `Closes #${issue}\n\nAlgo.\n\n## Revisión\n\n- code-reviewer: APPROVED (1 ronda)`,
       createdAt: createdAt.toISOString().replace(/\.\d+Z$/, "Z"),
     },
   ]);
@@ -2375,5 +2376,215 @@ describe("lo que se le pide al worker", () => {
 
     expect(reviewer).toMatch(/## Verify, do not trust/);
     expect(reviewer).toMatch(/Not verified/);
+  });
+});
+
+/**
+ * El worker del #87 abrió su PR con dos rondas de `code-reviewer` y una de
+ * `ui-reviewer`, ninguna con `APPROVED`. Lo dijo en la descripción, pero la
+ * regla es que sin aprobación no hay PR. Una instrucción se puede saltar, así
+ * que el script lo comprueba al salir el worker.
+ */
+describe("aprobación de los revisores", () => {
+  let workDir = "";
+
+  afterEach(async () => {
+    if (workDir) {
+      await rm(workDir, REMOVE_TEMP_DIR_OPTIONS);
+      workDir = "";
+    }
+  });
+
+  const PR_NUMBER = 7;
+  const CODE_APPROVED = "- code-reviewer: APPROVED (2 rondas)";
+  const UI_APPROVED = "- ui-reviewer: APPROVED (1 ronda)";
+
+  function prWithReview(...lines: string[]): string {
+    const body = `Closes #42\n\n## Revisión\n\n${lines.join("\n")}\n`;
+    return JSON.stringify([{ number: PR_NUMBER, body }]);
+  }
+
+  function issueWithLabels(...labels: string[]): string {
+    return JSON.stringify({
+      state: "OPEN",
+      labels: labels.map((name) => ({ name })),
+      body: "",
+    });
+  }
+
+  async function checkApproval(
+    env: Record<string, string>,
+    uiReviewPolicy = "label",
+  ): Promise<{ code: number | null; log: string; stdout: string }> {
+    workDir = await setupWorkDir();
+    await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+    await writeFile(
+      path.join(workDir, "factory-models.json"),
+      JSON.stringify({ review: { uiReview: uiReviewPolicy } }),
+    );
+    const { binDir, logFile } = await installFakeGh(workDir);
+    const { code, stdout } = await runBash(
+      "source scripts/process-backlog.sh; ME=tester; check_worker_reviews_approved 42",
+      workDir,
+      {
+        ...process.env,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+        ...env,
+      },
+    );
+    return { code, log: await readLog(logFile), stdout };
+  }
+
+  it(
+    "no hace nada cuando el code-reviewer aprobó y el ticket no pide revisión visual",
+    async () => {
+      const { code, log } = await checkApproval({
+        PR_LIST_JSON: prWithReview(CODE_APPROVED),
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress"),
+      });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/needs-human/);
+      expect(log).not.toMatch(/pr comment/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "marca needs-human y avisa en el PR cuando el code-reviewer no aprobó",
+    async () => {
+      const { code, log, stdout } = await checkApproval({
+        PR_LIST_JSON: prWithReview(
+          "- `code-reviewer`: 2 rondas. La ronda 2 no emitió APPROVED.",
+        ),
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress"),
+      });
+
+      expect(code).toBe(0);
+      expect(log).toMatch(/issue edit 42 --add-label needs-human/);
+      expect(log).toMatch(/issue comment 42 --body [\s\S]*code-reviewer/);
+      expect(log).toMatch(
+        new RegExp(`pr comment ${String(PR_NUMBER)} --body [\\s\\S]*APPROVED`),
+      );
+      expect(stdout).toMatch(/#42/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "exige también el ui-reviewer cuando el ticket lleva la etiqueta ui-review",
+    async () => {
+      const { log } = await checkApproval({
+        PR_LIST_JSON: prWithReview(CODE_APPROVED),
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress", "ui-review"),
+      });
+
+      expect(log).toMatch(/issue edit 42 --add-label needs-human/);
+      expect(log).toMatch(/issue comment 42 --body [\s\S]*ui-reviewer/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "pasa cuando los dos revisores aprobaron en un ticket con ui-review",
+    async () => {
+      const { log } = await checkApproval({
+        PR_LIST_JSON: prWithReview(CODE_APPROVED, UI_APPROVED),
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress", "ui-review"),
+      });
+
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "con la política de revisión visual apagada no exige el ui-reviewer",
+    async () => {
+      const { log } = await checkApproval(
+        {
+          PR_LIST_JSON: prWithReview(CODE_APPROVED),
+          ISSUE_VIEW_JSON: issueWithLabels("in-progress", "ui-review"),
+        },
+        "off",
+      );
+
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it.each([
+    "code-reviewer: APPROVED en la primera ronda.",
+    "* **code-reviewer**: **APPROVED**",
+    "- `code-reviewer`: APPROVED (3 rondas)",
+  ])(
+    "acepta la línea de veredicto %j",
+    async (line) => {
+      const { log } = await checkApproval({
+        PR_LIST_JSON: prWithReview(line),
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress"),
+      });
+
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no marca nada si no hay PR abierto: de eso se ocupa otra comprobación",
+    async () => {
+      const { log } = await checkApproval({
+        PR_LIST_JSON: "[]",
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress"),
+      });
+
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "no acusa al worker si GitHub no responde",
+    async () => {
+      const { code, log } = await checkApproval({ FAIL_PR_LIST: "1" });
+
+      expect(code).toBe(0);
+      expect(log).not.toMatch(/needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it("CLAUDE.md prohíbe abrir un PR sin APPROVED y fija la línea de veredicto", async () => {
+    const claudeMd = await readFile(path.join(REPO_ROOT, "CLAUDE.md"), "utf8");
+    const reviewStep = claudeMd.slice(
+      claudeMd.indexOf("5. **Review**"),
+      claudeMd.indexOf("6. **Check the boxes**"),
+    );
+    const prStep = claudeMd.slice(
+      claudeMd.indexOf("7. **PR**"),
+      claudeMd.indexOf("8. **Blockers.**"),
+    );
+
+    expect(reviewStep).toMatch(/do NOT open a PR/);
+    expect(reviewStep).toMatch(/needs-human/);
+    expect(prStep).toMatch(/- code-reviewer: APPROVED/);
+  });
+
+  it("las órdenes de arranque dicen que sin APPROVED no se abre PR", async () => {
+    const workflow = await readFile(
+      path.join(REPO_ROOT, ".github/workflows/claude-backlog.yml"),
+      "utf8",
+    );
+    const script = await readFile(PROCESS_BACKLOG_SCRIPT, "utf8");
+    const cloudPrompts = workflow
+      .split("\n")
+      .filter((line) => /Process (GitHub issue|up to)/.test(line));
+
+    expect(cloudPrompts).toHaveLength(2);
+    for (const prompt of cloudPrompts) {
+      expect(prompt).toMatch(/do NOT open a PR/);
+    }
+    expect(script).toMatch(/do NOT open a PR/);
   });
 });
