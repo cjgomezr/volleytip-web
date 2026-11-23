@@ -4,7 +4,6 @@ import { fileURLToPath } from "node:url";
 import { chromium, type Browser } from "@playwright/test";
 import { decodePng, isUniformImage } from "./ui-review/png.ts";
 import {
-  THEMES,
   VIEWPORTS,
   buildCaptureName,
   type Theme,
@@ -12,6 +11,7 @@ import {
 } from "./ui-review/matrix.ts";
 import { parseCapturePath } from "./ui-review/cli.ts";
 import { withDevServer } from "./ui-review/server.ts";
+import { assertThemesDiffer, readReviewThemes } from "./ui-review/themes.ts";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DEFAULT_OUTPUT_DIR = path.join(HERE, "..", ".factory", "ui-screenshots");
@@ -23,12 +23,14 @@ export interface CaptureUiOptions {
 }
 
 /**
- * Captura la matriz completa de viewports por temas en una sola invocación,
+ * Captura la matriz completa de viewports por temas (los de `review.themes`
+ * en `factory-models.json`, o claro y oscuro) en una sola invocación,
  * con el dev server arrancado y apagado dentro de este mismo proceso.
  */
 export async function captureUi(options: CaptureUiOptions = {}): Promise<string[]> {
   const outputDir = options.outputDir ?? DEFAULT_OUTPUT_DIR;
   const capturePath = options.capturePath ?? "/";
+  const themes = await readReviewThemes();
 
   return withDevServer(async (appUrl) => {
     await mkdir(outputDir, { recursive: true });
@@ -37,8 +39,12 @@ export async function captureUi(options: CaptureUiOptions = {}): Promise<string[
     try {
       const written: string[] = [];
       for (const viewport of VIEWPORTS) {
-        const byTheme = await captureThemes(browser, new URL(capturePath, appUrl).href, viewport);
-        assertThemesDiffer(viewport, byTheme);
+        const byTheme = await captureThemes(browser, {
+          url: new URL(capturePath, appUrl).href,
+          viewport,
+          themes,
+        });
+        assertThemesDiffer(viewport.name, byTheme);
 
         for (const [theme, buffer] of byTheme) {
           const fileName = buildCaptureName(viewport, theme);
@@ -54,14 +60,19 @@ export async function captureUi(options: CaptureUiOptions = {}): Promise<string[
   });
 }
 
+interface CaptureTarget {
+  readonly url: string;
+  readonly viewport: Viewport;
+  readonly themes: readonly Theme[];
+}
+
 async function captureThemes(
   browser: Browser,
-  url: string,
-  viewport: Viewport,
+  { url, viewport, themes }: CaptureTarget,
 ): Promise<Map<Theme, Buffer>> {
   const byTheme = new Map<Theme, Buffer>();
 
-  for (const theme of THEMES) {
+  for (const theme of themes) {
     // colorScheme, no localStorage: cada proyecto persiste su tema a su
     // manera, pero todos responden a la preferencia del sistema.
     const context = await browser.newContext({
@@ -106,17 +117,6 @@ function assertNotBlank(buffer: Buffer, fileName: string): void {
   if (isUniformImage(decodePng(buffer))) {
     throw new Error(
       `La captura de "${fileName}" salió en blanco (contenido uniforme). La aplicación no pintó nada.`,
-    );
-  }
-}
-
-// Dos capturas idénticas significan que el tema no llegó a aplicarse, y un
-// revisor que compare la misma imagen dos veces aprueba lo que nunca vio.
-function assertThemesDiffer(viewport: Viewport, byTheme: Map<Theme, Buffer>): void {
-  const [light, dark] = [byTheme.get("light"), byTheme.get("dark")];
-  if (light && dark && light.equals(dark)) {
-    throw new Error(
-      `Las capturas de ${viewport.name} en claro y en oscuro son idénticas: el tema no se aplicó.`,
     );
   }
 }

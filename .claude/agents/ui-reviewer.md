@@ -38,20 +38,25 @@ One command does all of it, in a single process:
 npm run ui:screenshots
 ```
 
-It boots the dev server, captures every viewport (375, 768, 1440) in BOTH
-themes, and shuts the server down, even when a capture fails. The six PNGs land
-in `.factory/ui-screenshots/`, named `ui-<viewport>-<light|dark>.png`.
+It boots the dev server, captures every viewport (375, 768, 1440) in every
+theme the project has, and shuts the server down, even when a capture fails.
+The PNGs land in `.factory/ui-screenshots/`, named
+`ui-<viewport>-<light|dark>.png`. The themes come from `review.themes` in
+`factory-models.json`: both by default (six PNGs), or only the one a
+single-theme project declares (three PNGs). When only one theme is declared,
+the other does not exist: do not ask for it and do not report its absence.
 
 **Never split this into several Bash calls.** A dev server started in one call
 does not survive to the next one, and that is exactly why this command exists:
 it keeps the whole lifecycle inside one process. If you find yourself reaching
 for the Playwright MCP browser to click a theme toggle, stop: the command
-already gave you both themes.
+already gave you every theme the project has.
 
 The command also refuses to hand you a false green. It fails loudly if a
 capture comes out blank, and if the light and dark captures of a viewport are
 byte-identical, because that means the theme never applied and you would be
-reviewing the same image twice.
+reviewing the same image twice. In a project with a single theme that failure
+means `review.themes` is missing: reply `BLOCKED` naming that setting.
 
 For a screen other than home, pass its path:
 `npm run ui:screenshots -- --path /settings`.
