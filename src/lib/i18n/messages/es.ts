@@ -23,6 +23,23 @@ export const es = {
   "home.about.link": "Conoce al equipo",
   "home.about.photoAlt":
     "Camilo, fundador de VolleyTip, sentado en su estudio de grabación",
+  "notify.title": "Avísame del próximo camp",
+  "notify.text":
+    "Todavía no hay camps programados. Deja tu correo y te escribimos cuando abramos inscripciones.",
+  "notify.emailLabel": "Correo",
+  "notify.cityLabel": "Ciudad (opcional)",
+  "notify.submit": "Avísame",
+  "notify.submitting": "Enviando",
+  "notify.privacyPrefix": "Al enviar aceptas la ",
+  "notify.privacyLink": "política de privacidad",
+  "notify.privacySuffix": ".",
+  "notify.confirmation": "Listo, te avisaremos cuando haya un camp nuevo.",
+  "notify.error.email": "Escribe un correo válido",
+  "notify.error.city": "La ciudad puede tener hasta 80 caracteres",
+  "notify.error.verification":
+    "No pudimos verificar el envío. Intenta de nuevo.",
+  "notify.error.rateLimited":
+    "Hiciste muchos intentos. Espera unos minutos e intenta de nuevo.",
   "header.skipLink": "Saltar al contenido",
   "header.homeLink": "VolleyTip, ir al inicio",
   "header.menuLabel": "Menú principal",
