@@ -3,7 +3,7 @@
  * acepta o se rechaza, y la elección se recuerda. Las capturas del
  * aviso viven en `ui.spec.ts`, junto a las demás.
  */
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, routeCdnImages, type Page } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
@@ -108,6 +108,7 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
       locale: "en-US",
       userAgent: GOOGLEBOT,
     });
+    await routeCdnImages(context);
     const page = await context.newPage();
     const response = await page.goto(APP_URL);
 
@@ -157,6 +158,7 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
       userAgent: BROWSER_USER_AGENT,
       javaScriptEnabled: false,
     });
+    await routeCdnImages(context);
     const page = await context.newPage();
     await page.goto(APP_URL);
     await page.getByRole("button", { name: "View in English" }).click();

@@ -3,7 +3,7 @@
  * en las cuatro direcciones y los cuatro anchos. No toma capturas: la línea
  * base de Linux la aprueba una persona con el flujo de visual-baselines.
  */
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";

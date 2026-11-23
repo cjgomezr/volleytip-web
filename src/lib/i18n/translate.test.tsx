@@ -30,8 +30,12 @@ function translateOf(
 
 describe("textos", () => {
   it("entrega el texto de cada idioma para una clave que existe", () => {
-    expect(getTranslate("es")("home.eyebrow")).toBe("Sitio en construcción");
-    expect(getTranslate("en")("home.eyebrow")).toBe("Site under construction");
+    expect(getTranslate("es")("home.eyebrow")).toBe(
+      "Videos cortos · educativos · gratis",
+    );
+    expect(getTranslate("en")("home.eyebrow")).toBe(
+      "Short videos · educational · free",
+    );
   });
 
   it("incluye las variables que se piden", () => {
@@ -92,6 +96,6 @@ describe("textos: sin petición", () => {
 
   it("el navegador solo recibe los textos del idioma pedido", () => {
     const sent = JSON.stringify(getMessages("en"));
-    expect(sent).not.toContain("Sitio en construcción");
+    expect(sent).not.toContain("Videos cortos");
   });
 });
