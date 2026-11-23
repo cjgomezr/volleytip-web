@@ -220,6 +220,11 @@ Execute these steps IN ORDER:
    it your conclusions ("tests already pass"): a reviewer told the answer
    stops checking. A finding rated `Low` is still a finding: fix it or carry
    it to the PR with the reason you did not (step 7).
+   No `APPROVED` after 3 rounds means you do NOT open a PR, not even a draft:
+   commit and push the branch, label `needs-human`, move the card to `Blocked`
+   (`bash scripts/task-status.sh N Blocked`) and comment the rounds run and
+   the findings still open. A draft that says "not approved" in its
+   description still looks like finished work on the board.
 
 6. **Check the boxes**: update the issue body marking each acceptance criterion
    `[x]`, ONLY those a passing test actually proves (`gh issue view N --json
@@ -231,11 +236,15 @@ body -q .body` → edit → `gh issue edit N --body-file`). A box you cannot bac
    `Closes #N`, a summary of what was implemented, a one-line justification for
    any new runtime dependency, a `## Revisión` section, and a loud
    **⚠ Not verified** section if anything could not be checked. The
-   `## Revisión` section says which reviewer ran, how many rounds, the
-   verdict, the findings you fixed and every finding you did not apply, with
-   the reason. A review nobody can read did not happen as far as the human is
-   concerned, and `process-backlog.sh` comments on any PR that lacks it. A
-   human merges; never merge yourself.
+   `## Revisión` section opens with one verdict line per reviewer that ran,
+   written exactly like this: `- code-reviewer: APPROVED (2 rondas)`. After
+   those lines it lists the findings you fixed and every finding you
+   did not apply, with the reason. `process-backlog.sh` reads the verdict
+   lines: a PR without the one for `code-reviewer` (and for `ui-reviewer`
+   when the issue carries `ui-review`) is labeled `needs-human`. A review
+   nobody can read did not happen as far as the human is concerned, and
+   `process-backlog.sh` comments on any PR that lacks it. A human merges;
+   never merge yourself.
    EXCEPTION: if the issue carries the `auto-merge` label (a human put it there
    on purpose), once the PR is green run `gh pr ready && gh pr merge --auto
 --squash`. If that command fails or the PR stays `BLOCKED` (auto-merge not
@@ -256,7 +265,8 @@ body -q .body` → edit → `gh issue edit N --body-file`). A box you cannot bac
    and where to put it (e.g. "falta SUPABASE_SERVICE_ROLE_KEY en .env.local:
    dashboard → Settings → API"). Attempt #2 against a missing key is identical
    to attempt #1. Partial work may be delivered ONLY if the PR and the issue
-   state loudly what was NOT verified and why.
+   state loudly what was NOT verified and why, and never without the
+   reviewers' `APPROVED` (step 5).
 
 ## Project skills (load them, don't improvise)
 

@@ -6,6 +6,10 @@ export default {
   // gate ya cuentan con esa carpeta.
   appDirectory: "src",
   ssr: true,
+  // `build` salvo que quien construye pida otra carpeta. La prueba del build
+  // de producción pide una propia por corrida, para que dos corridas a la vez
+  // no se pisen (`src/lib/production-build.test.ts`).
+  buildDirectory: process.env.BUILD_DIRECTORY ?? "build",
   // React Router rechaza un envío de formulario cuyo origen no coincide con
   // la dirección de la petición. Detrás del proxy del hosting nunca
   // coinciden: el proxy termina el HTTPS y el servidor ve la petición por
