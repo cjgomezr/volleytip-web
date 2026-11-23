@@ -2531,6 +2531,50 @@ describe("aprobación de los revisores", () => {
     REAL_PROCESS_TEST_TIMEOUT_MS,
   );
 
+  it.each([
+    "- code-reviewer: NOT APPROVED",
+    "- code-reviewer: APPROVED_PENDIENTE",
+    "- code-reviewer: 2 rondas, sin APPROVED",
+    "El code-reviewer: APPROVED lo dio en la ronda 1",
+  ])(
+    "no acepta %j como veredicto",
+    async (line) => {
+      const { log } = await checkApproval({
+        PR_LIST_JSON: prWithReview(line),
+        ISSUE_VIEW_JSON: issueWithLabels("in-progress"),
+      });
+
+      expect(log).toMatch(/issue edit 42 --add-label needs-human/);
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
+  it(
+    "la comprobación corre al salir el worker, no solo cuando se la llama",
+    async () => {
+      workDir = await setupWorkDir();
+      await writeProjectConfig(workDir, FULL_STATUS_OPTIONS);
+      const { binDir, logFile } = await installFakeGh(workDir);
+
+      const { code } = await runBash(
+        "source scripts/process-backlog.sh; ME=tester; handle_worker_exit 42 0",
+        workDir,
+        {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH}`,
+          ISSUE_VIEW_JSON: issueWithLabels("in-progress"),
+          PR_LIST_JSON: prWithReview("- code-reviewer: 2 rondas, sin APPROVED"),
+        },
+      );
+
+      expect(code).toBe(0);
+      expect(await readLog(logFile)).toMatch(
+        /issue edit 42 --add-label needs-human/,
+      );
+    },
+    REAL_PROCESS_TEST_TIMEOUT_MS,
+  );
+
   it(
     "no marca nada si no hay PR abierto: de eso se ocupa otra comprobación",
     async () => {

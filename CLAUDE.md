@@ -241,9 +241,10 @@ body -q .body` → edit → `gh issue edit N --body-file`). A box you cannot bac
    those lines it lists the findings you fixed and every finding you
    did not apply, with the reason. `process-backlog.sh` reads the verdict
    lines: a PR without the one for `code-reviewer` (and for `ui-reviewer`
-   when the issue carries `ui-review`) is labeled `needs-human`. A review nobody can read did not happen as far as the human is
-   concerned, and `process-backlog.sh` comments on any PR that lacks it. A
-   human merges; never merge yourself.
+   when the issue carries `ui-review`) is labeled `needs-human`. A review
+   nobody can read did not happen as far as the human is concerned, and
+   `process-backlog.sh` comments on any PR that lacks it. A human merges;
+   never merge yourself.
    EXCEPTION: if the issue carries the `auto-merge` label (a human put it there
    on purpose), once the PR is green run `gh pr ready && gh pr merge --auto
 --squash`. If that command fails or the PR stays `BLOCKED` (auto-merge not

@@ -476,8 +476,11 @@ Antes de mezclar conviene revisar el PR a mano o pedirle al worker que lo comple
 # "La ronda 2 no emitió APPROVED" has the word but not the shape, and that is
 # the whole point: a sentence about the verdict is not the verdict. List
 # marker, backticks and bold are optional so a tidy PR is not punished.
+# Deliberately strict on the rest: uppercase, no space before the colon, and
+# the word must end there (`APPROVED_PENDIENTE` is not a verdict). The line
+# may sit anywhere in the body; step 7 puts it under `## Revisión`.
 review_verdict_is_approved() {  # reviewer name, PR body
-  echo "$2" | grep -qE "^[[:space:]]*([-*+][[:space:]]+)?[*\`]*$1[*\`]*:[[:space:]]*[*\`]*APPROVED"
+  echo "$2" | grep -qE "^[[:space:]]*([-*+][[:space:]]+)?[*\`]*$1[*\`]*:[[:space:]]*[*\`]*APPROVED([^[:alnum:]_]|\$)"
 }
 
 # The reviewers this ticket had to pass. `code-reviewer` always. The
