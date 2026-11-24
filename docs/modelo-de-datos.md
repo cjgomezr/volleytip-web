@@ -327,7 +327,7 @@ Los códigos de 6 dígitos y los enlaces de un solo uso los maneja Supabase Auth
 ## 11. Mensajes, listas y correos (W3, W10a, W11a)
 
 ### `messages`
-`id`, `reason` (`order`, `camps`, `brands`, `suggest_tip`, `vball_tour`, `other`), `name`, `email`, `whatsapp`, `payload` (jsonb con los campos propios del motivo: número de pedido, organización, formas de participar…), `locale`, `status` (`message_status`), `answered_by`, `answered_at` (FR-053, FR-064, FR-132).
+`id`, `reason` (`order`, `camps`, `brands`, `suggest_tip`, `vball_tour`, `other`), `name` (hasta 120), `email` (en minúsculas y sin espacios), `whatsapp`, `country_code` (nulo o dos letras mayúsculas), `body` (el mensaje, hasta 2.000 caracteres; fuera de `payload` para poder limitarlo y buscarlo), `payload` (jsonb, siempre un objeto, con los campos propios del motivo: número de pedido, organización, formas de participar…), `locale`, `privacy_version` (la versión de la política que aceptó la persona), `status` (`message_status`: `new`, `answered`, `archived`), `answered_by`, `answered_at`, `created_at` (FR-053, FR-064, FR-132). Se inserta con la función `save_message`; un admin lee y cambia solo `status`, `answered_by` y `answered_at`. No guarda la IP.
 
 ### `waitlists`
 `id`, `kind` (`app`, `camp_notify`), `email` (en minúsculas y sin espacios), `locale`, `country_code`, `city`, `privacy_version` (la versión de la política que aceptó la persona), `notified_at`, `created_at`. Clave única (`kind`, `email`) (FR-035, FR-082). Se inscribe con la función `enroll_waitlist`, que no falla ni cambia nada si el correo ya estaba.

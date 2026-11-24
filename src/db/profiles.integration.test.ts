@@ -538,6 +538,10 @@ describeIntegration("enums base", () => {
         name: "item_kind",
         labels: ["physical", "digital", "event_plan", "bundle"],
       },
+      {
+        name: "message_status",
+        labels: ["new", "answered", "archived"],
+      },
       { name: "price_mode", labels: ["manual"] },
       { name: "publish_status", labels: ["draft", "published", "retired"] },
       { name: "user_role", labels: ["admin", "staff", "buyer"] },
