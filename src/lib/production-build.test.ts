@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 // Cada corrida construye en su propia carpeta. Con una sola carpeta `build/`,
@@ -102,6 +102,12 @@ function findLeaks(assets: readonly ClientAsset[]): string[] {
     ),
   );
 }
+
+// Cada prueba arranca el servidor construido en otro proceso, y la home
+// espera a una base que aquí no responde hasta agotar sus límites. Con los
+// 5 s por defecto, una máquina cargada no alcanza: en el CI se pasó por 300 ms.
+const SERVED_TEST_TIMEOUT_MS = 20_000;
+vi.setConfig({ testTimeout: SERVED_TEST_TIMEOUT_MS });
 
 // Un solo build para todo el archivo: los dos bloques leen lo que dejó.
 beforeAll(buildWithSentinels, BUILD_TIMEOUT_MS);

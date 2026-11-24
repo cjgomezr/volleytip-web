@@ -11,6 +11,8 @@ import {
 // dirección de cada enlace. Una página que no esté aquí no se puede enlazar.
 export const PAGES = [
   { id: "home", file: "routes/home.tsx", path: "" },
+  // Decisión 9 del PRD de W3: `/app` en los dos idiomas.
+  { id: "app", file: "routes/app.tsx", path: "app" },
   {
     id: "terms",
     file: "routes/terms.tsx",

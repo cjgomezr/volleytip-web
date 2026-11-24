@@ -11,6 +11,10 @@ export default [
     // Las páginas del sitio se declaran una vez en el mapa de páginas y
     // existen en todos los idiomas.
     ...buildLocalizedRoutes(PAGES),
+    // Pinta la página de la app en cada estado, sin la base, dentro de la
+    // cáscara. En producción responde 404.
+    route("dev/app", "routes/dev-app.tsx"),
+    route("en/dev/app", "routes/dev-app.tsx", { id: "dev-app-en" }),
     // Siempre al final: recibe lo que no coincidió con ninguna ruta.
     route("*", "routes/not-found.tsx"),
   ]),

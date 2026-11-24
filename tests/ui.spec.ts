@@ -1542,3 +1542,42 @@ test.describe("avísame sin JavaScript", () => {
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Página de la app (#95). Los estados se ven en /dev/app, que no toca la
+// base; axe, el desborde y el envío los cubre tests/app-page.spec.ts.
+// ---------------------------------------------------------------------------
+
+const APP_PAGE_VARIANTS = [
+  { name: "es-espera", path: "/dev/app" },
+  { name: "es-confirmacion", path: "/dev/app?resultado=unido" },
+  { name: "es-disponible", path: "/dev/app?estado=disponible" },
+  { name: "en-espera", path: "/en/dev/app" },
+  { name: "en-confirmacion", path: "/en/dev/app?resultado=unido" },
+  { name: "en-disponible", path: "/en/dev/app?estado=disponible" },
+] as const;
+
+for (const variant of APP_PAGE_VARIANTS) {
+  for (const vp of viewports) {
+    test.describe(`app ${variant.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({ page }) => {
+        await page.goto(`${APP_URL}${variant.path}`);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        await waitForImages(page);
+        const name = `app-${variant.name}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+    });
+  }
+}
