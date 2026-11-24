@@ -71,7 +71,7 @@ describe("dirección de una página", () => {
     "cada página del mapa real tiene dirección en %s",
     (language: Language) => {
       for (const { id } of PAGES) {
-        expect(getPagePath(id, language)).toMatch(/^\//);
+        expect(getPagePath(id, language, { code: "abc123" })).toMatch(/^\//);
       }
     },
   );

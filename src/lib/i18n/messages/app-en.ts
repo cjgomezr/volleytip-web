@@ -73,6 +73,14 @@ export const appEn: { readonly [Key in keyof typeof appEs]: string } = {
   "app.faq.privacy.question": "Who can see my routines?",
   "app.faq.privacy.answer":
     "Only you, unless you decide to share them with a link.",
+  "routineLink.title": "Shared routine | VolleyTip",
+  "routineLink.description":
+    "Someone shared a VolleyTip routine with you. The app is coming soon: leave your email and we will let you know.",
+  "routineLink.heading": "A routine was shared with you",
+  "routineLink.text":
+    "To open it you need the VolleyTip app, which is not out yet. Leave your email and we will tell you on launch day.",
+  "routineLink.textAvailable":
+    "Open it in the VolleyTip app. Download it and tap the link again.",
   "waitlist.emailLabel": "Let me know when it launches",
   "waitlist.emailPlaceholder": "you@email.com",
   "waitlist.countryLabel": "Country",

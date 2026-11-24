@@ -1615,3 +1615,38 @@ for (const variant of ABOUT_PAGE_VARIANTS) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Enlace de una rutina, /r/<código> (#97). Axe y desborde en
+// tests/routine-link.spec.ts.
+// ---------------------------------------------------------------------------
+
+const ROUTINE_LINK_VARIANTS = [
+  { name: "es", path: "/r/abc123" },
+  { name: "en", path: "/en/r/abc123" },
+] as const;
+
+for (const variant of ROUTINE_LINK_VARIANTS) {
+  for (const vp of viewports) {
+    test.describe(`rutina ${variant.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({ page }) => {
+        await page.goto(`${APP_URL}${variant.path}`);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        await waitForImages(page);
+        const name = `rutina-${variant.name}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+    });
+  }
+}
