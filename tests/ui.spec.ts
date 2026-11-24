@@ -1660,6 +1660,52 @@ for (const variant of FAQ_PAGE_VARIANTS) {
 }
 
 // ---------------------------------------------------------------------------
+// Contacto (#94). Los estados se ven en /dev/contact, que no toca la base;
+// axe, el desborde y el teclado los cubre tests/contact-page.spec.ts.
+// ---------------------------------------------------------------------------
+
+const CONTACT_PAGE_VARIANTS = [
+  { name: "pedido", query: "?motivo=pedido" },
+  { name: "marcas", query: "?motivo=marcas" },
+  { name: "otro", query: "?motivo=otro" },
+  { name: "errores", query: "?motivo=pedido&resultado=invalido" },
+  { name: "confirmacion", query: "?resultado=enviado" },
+] as const;
+const CONTACT_PAGE_LANGUAGES = [
+  { name: "es", prefix: "" },
+  { name: "en", prefix: "/en" },
+] as const;
+
+for (const language of CONTACT_PAGE_LANGUAGES) {
+  for (const variant of CONTACT_PAGE_VARIANTS) {
+    for (const vp of viewports) {
+      test.describe(`contacto ${language.name} ${variant.name} @ ${vp.name}`, () => {
+        test.use({ viewport: { width: vp.width, height: vp.height } });
+
+        test("coincide con la línea base aprobada", async ({ page }) => {
+          await page.goto(
+            `${APP_URL}${language.prefix}/dev/contact${variant.query}`,
+          );
+          await page.evaluate(async () => {
+            await document.fonts.ready;
+          });
+          await waitForImages(page);
+          const name = `contacto-${language.name}-${variant.name}-${vp.name}.png`;
+          await createMissingLocalBaseline(name, () =>
+            page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+          );
+          await expect(page).toHaveScreenshot(name, {
+            ...SCREENSHOT_OPTIONS,
+            fullPage: true,
+            maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+          });
+        });
+      });
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Enlace de una rutina, /r/<código> (#97). Axe y desborde en
 // tests/routine-link.spec.ts.
 // ---------------------------------------------------------------------------

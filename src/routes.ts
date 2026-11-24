@@ -19,6 +19,12 @@ export default [
     // En producción responde 404.
     route("dev/faq", "routes/dev-faq.tsx"),
     route("en/dev/faq", "routes/dev-faq.tsx", { id: "dev-faq-en" }),
+    // Pinta Contacto en cada uno de sus estados, sin la base. En producción
+    // responde 404.
+    route("dev/contact", "routes/dev-contact.tsx"),
+    route("en/dev/contact", "routes/dev-contact.tsx", {
+      id: "dev-contact-en",
+    }),
     // Siempre al final: recibe lo que no coincidió con ninguna ruta.
     route("*", "routes/not-found.tsx"),
   ]),

@@ -28,6 +28,12 @@ export const PAGES = [
     file: "routes/faq.tsx",
     path: { es: "preguntas-frecuentes", en: "faq" },
   },
+  // Decisión 9 del PRD de W3: `/contacto` y `/en/contact`.
+  {
+    id: "contact",
+    file: "routes/contact.tsx",
+    path: { es: "contacto", en: "contact" },
+  },
   {
     id: "terms",
     file: "routes/terms.tsx",
