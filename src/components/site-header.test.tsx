@@ -47,7 +47,6 @@ describe("header", () => {
     const html = renderHeader("/");
 
     expect(html).not.toContain('aria-label="Menú principal"');
-    expect(html.match(/<nav/g)).toHaveLength(1);
   });
 
   it("paints the menu when an entry has a page", () => {

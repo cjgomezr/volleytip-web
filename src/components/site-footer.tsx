@@ -6,12 +6,11 @@ import { PAGES } from "~/lib/i18n/pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { getFooterColumns, type FooterColumn } from "~/lib/site-footer";
-import type { MessageKey } from "~/lib/i18n/translate";
-import { SOCIAL_NETWORKS, type SocialNetworkId } from "~/lib/social-links";
+import { SOCIAL_NETWORKS } from "~/lib/social-links";
 
 import { LanguageSwitcher } from "./language-switcher";
 import { TRANSITION_STYLES } from "./pressable-styles";
-import { SocialIcon } from "./social-icons";
+import { SOCIAL_LABEL_KEYS, SocialIcon } from "./social-icons";
 
 /** El ancla a la que salta el botón de menú sin JavaScript. */
 export const FOOTER_ID = "pie";
@@ -22,15 +21,6 @@ const WORDMARK_HEIGHT = 59;
 // Zona de toque de 44 px por lado. El ancho también: una palabra corta como "Terms" no llega.
 const LINK_STYLES = `inline-flex min-h-11 min-w-11 items-center text-[14px] font-bold no-underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
 const SOCIAL_LINK_STYLES = `inline-flex size-11 items-center justify-center rounded-pill text-brand-mist no-underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
-
-// Con la clave escrita completa, la prueba de textos ve que se usa.
-const SOCIAL_LABEL_KEYS: Readonly<Record<SocialNetworkId, MessageKey>> = {
-  tiktok: "footer.social.tiktok",
-  instagram: "footer.social.instagram",
-  youtube: "footer.social.youtube",
-  facebook: "footer.social.facebook",
-  whatsapp: "footer.social.whatsapp",
-};
 
 interface SiteFooterProps {
   /** El año de la línea legal, calculado en el servidor. */

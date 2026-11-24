@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import type { MessageKey } from "~/lib/i18n/translate";
 import type { SocialNetworkId } from "~/lib/social-links";
 
 // Los íconos oficiales de cada marca (NFR-007), tomados de los mockups
@@ -35,3 +36,13 @@ export function SocialIcon({
     </svg>
   );
 }
+
+// Con la clave escrita completa, la prueba de textos ve que se usa.
+export const SOCIAL_LABEL_KEYS: Readonly<Record<SocialNetworkId, MessageKey>> =
+  {
+    tiktok: "footer.social.tiktok",
+    instagram: "footer.social.instagram",
+    youtube: "footer.social.youtube",
+    facebook: "footer.social.facebook",
+    whatsapp: "footer.social.whatsapp",
+  };
