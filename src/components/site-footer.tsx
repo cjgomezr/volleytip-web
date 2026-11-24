@@ -79,7 +79,8 @@ export function SiteFooter({
     >
       <div className="mx-auto flex max-w-[1280px] flex-col gap-8 px-4 py-10 md:px-6">
         <div className="flex flex-col gap-6 md:flex-row md:justify-between">
-          <div className="flex flex-col gap-4">
+          {/* Sin encogerse: con tres columnas de enlaces, a 768 px el lema y las redes se partían en dos filas. */}
+          <div className="flex flex-col gap-4 md:shrink-0">
             <img
               src="/brand/wordmark.png"
               alt=""
