@@ -212,10 +212,12 @@ const MIN_TOUCH_TARGET_PX = 44;
 const SUBPIXEL_TOLERANCE_PX = 0.5;
 
 const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
+const TURNSTILE_WIDGET_HEIGHT_PX = 65;
 
 interface TurnstileCall {
   readonly method: string;
   readonly sitekey?: string;
+  readonly appearance?: string;
 }
 
 /**
@@ -596,7 +598,50 @@ test.describe("Formulario protegido", () => {
 
     await expect
       .poll(() => readTurnstileCalls(page))
-      .toEqual([{ method: "render", sitekey: TURNSTILE_TEST_SITE_KEY }]);
+      .toEqual([
+        {
+          method: "render",
+          sitekey: TURNSTILE_TEST_SITE_KEY,
+          appearance: "interaction-only",
+        },
+      ]);
+  });
+
+  test("el widget solo ocupa espacio cuando hay que tocarlo", async ({
+    page,
+  }) => {
+    await openComponentsPage(page);
+    const form = page.locator("form", { has: page.locator(HONEYPOT) });
+    // Lo que separa el último campo del botón: sin widget, una sola
+    // separación del formulario.
+    const measureSpaceBeforeButton = (): Promise<number> =>
+      form.evaluate((element) => {
+        const field = element.querySelector("input[name='email']");
+        const button = element.querySelector("button[type='submit']");
+        const fieldBlock = field?.closest("form > *");
+        if (!fieldBlock || !button)
+          throw new Error("Falta el campo o el botón");
+        return (
+          button.getBoundingClientRect().top -
+          fieldBlock.getBoundingClientRect().bottom
+        );
+      });
+    const rowGap = await form.evaluate((element) =>
+      parseFloat(getComputedStyle(element).rowGap),
+    );
+    await expect.poll(() => readTurnstileCalls(page)).toHaveLength(1);
+
+    expect(await measureSpaceBeforeButton()).toBeCloseTo(rowGap, 0);
+
+    await page.evaluate(() => {
+      (
+        window as unknown as { requireTurnstileInteraction: () => void }
+      ).requireTurnstileInteraction();
+    });
+
+    await expect
+      .poll(measureSpaceBeforeButton)
+      .toBeGreaterThanOrEqual(2 * rowGap + TURNSTILE_WIDGET_HEIGHT_PX);
   });
 
   test("lleva la marca de tiempo firmada en un campo oculto", async ({

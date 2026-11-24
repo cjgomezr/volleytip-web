@@ -46,10 +46,11 @@ describe("componente de protección", () => {
     );
   });
 
-  it("el contenedor del widget reserva su espacio antes de cargar", () => {
-    expect(renderProtection()).toMatch(
-      /<div[^>]*class="[^"]*min-h-\[65px\][^"]*"[^>]* data-sitekey=/,
-    );
+  it("el contenedor del widget no ocupa espacio antes de que haga falta", () => {
+    const container = /<div[^>]* data-sitekey=[^>]*>/.exec(renderProtection());
+
+    expect(container?.[0]).toMatch(/class="(?:[^"]* )?absolute[ "]/);
+    expect(container?.[0]).not.toContain("min-h-");
   });
 
   it("pinta el campo trampa con el nombre que lee el servidor", () => {

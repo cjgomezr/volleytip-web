@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { useNavigation } from "react-router";
 
 import { HONEYPOT_FIELD, TIMESTAMP_FIELD } from "~/lib/forms/field-names";
@@ -17,9 +17,15 @@ interface FormProtectionProps {
   readonly timestamp: string;
 }
 
+interface TurnstileOptions {
+  readonly sitekey: string;
+  readonly appearance: "interaction-only";
+  readonly "before-interactive-callback": () => void;
+}
+
 interface TurnstileApi {
   /** Dibuja el widget y devuelve su identificador. */
-  render(container: HTMLElement, options: { sitekey: string }): string;
+  render(container: HTMLElement, options: TurnstileOptions): string;
   /** Pide un token nuevo: cada token sirve para un solo envío. */
   reset(widgetId: string): void;
   remove(widgetId: string): void;
@@ -70,7 +76,16 @@ function loadTurnstile(): Promise<TurnstileApi> {
   return turnstileLoading;
 }
 
+// 65 px es el alto del widget de Cloudflare.
+const VISIBLE_WIDGET_STYLES = "min-h-[65px]";
+// Oculto, el widget mide cero pero su contenedor no queda vacío: dentro del
+// flujo sumaría una separación de más entre los campos y el botón.
+const HIDDEN_WIDGET_STYLES = "absolute";
+
 function TurnstileWidget({ siteKey }: { siteKey: string }): ReactElement {
+  // Una vez que Cloudflare muestra el widget lo deja a la vista, también
+  // después de resolverlo y de pedir otro token: el espacio no se devuelve.
+  const [isChallengeVisible, setIsChallengeVisible] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const widgetId = useRef<string | undefined>(undefined);
   const hasNavigated = useRef(false);
@@ -81,8 +96,14 @@ function TurnstileWidget({ siteKey }: { siteKey: string }): ReactElement {
     loadTurnstile().then(
       (turnstile) => {
         if (!isUnmounted && container.current !== null) {
+          // El widget verifica en silencio y solo se muestra cuando
+          // Cloudflare necesita que la persona haga algo.
           widgetId.current = turnstile.render(container.current, {
             sitekey: siteKey,
+            appearance: "interaction-only",
+            "before-interactive-callback": () => {
+              setIsChallengeVisible(true);
+            },
           });
         }
       },
@@ -114,10 +135,14 @@ function TurnstileWidget({ siteKey }: { siteKey: string }): ReactElement {
     }
   }, [navigation.state]);
 
-  // 65 px es el alto del widget de Cloudflare: el espacio se reserva para
-  // que el formulario no salte cuando aparece.
   return (
-    <div ref={container} className="min-h-[65px]" data-sitekey={siteKey} />
+    <div
+      ref={container}
+      className={
+        isChallengeVisible ? VISIBLE_WIDGET_STYLES : HIDDEN_WIDGET_STYLES
+      }
+      data-sitekey={siteKey}
+    />
   );
 }
 
