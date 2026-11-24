@@ -26,7 +26,24 @@ const TURNSTILE_STAND_IN = `
   window.turnstileCalls = [];
   window.turnstile = {
     render(container, options) {
-      window.turnstileCalls.push({ method: "render", sitekey: options.sitekey });
+      window.turnstileCalls.push({
+        method: "render",
+        sitekey: options.sitekey,
+        appearance: options.appearance,
+      });
+      // Como el de verdad: aunque no se vea, deja dentro su envoltura y el
+      // campo del token.
+      const wrapper = document.createElement("div");
+      const token = document.createElement("input");
+      token.type = "hidden";
+      token.name = "cf-turnstile-response";
+      wrapper.append(token);
+      container.append(wrapper);
+      // Lo que hace el de verdad cuando duda de alguien: avisa y se muestra.
+      window.requireTurnstileInteraction = () => {
+        options["before-interactive-callback"]();
+        wrapper.style.height = "65px";
+      };
       return "widget-de-prueba";
     },
     reset() { window.turnstileCalls.push({ method: "reset" }); },
