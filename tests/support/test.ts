@@ -31,13 +31,10 @@ const TURNSTILE_STAND_IN = `
         sitekey: options.sitekey,
         appearance: options.appearance,
       });
-      // Como el de verdad: aunque no se vea, deja dentro su envoltura y el
-      // campo del token.
+      // Como el de verdad: aunque no se vea, deja dentro su envoltura. El
+      // campo del token no: cada prueba que envía un formulario pone el suyo.
       const wrapper = document.createElement("div");
-      const token = document.createElement("input");
-      token.type = "hidden";
-      token.name = "cf-turnstile-response";
-      wrapper.append(token);
+      wrapper.append(document.createElement("div"));
       container.append(wrapper);
       // Lo que hace el de verdad cuando duda de alguien: avisa y se muestra.
       window.requireTurnstileInteraction = () => {
