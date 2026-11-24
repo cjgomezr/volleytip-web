@@ -1,5 +1,6 @@
 import {
   useEffect,
+  type KeyboardEvent,
   useRef,
   useState,
   useSyncExternalStore,
@@ -40,6 +41,23 @@ function useIsHydrated(): boolean {
     () => true,
     () => false,
   );
+}
+
+const FOCUSABLE_SELECTOR = "a[href], button:not([disabled])";
+
+/** El diálogo del navegador deja salir el foco hacia la barra del navegador:
+ * al llegar al último control (o al primero con Mayús) se da la vuelta. */
+function keepFocusInside(event: KeyboardEvent<HTMLDialogElement>): void {
+  if (event.key !== "Tab") return;
+  const controls =
+    event.currentTarget.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+  const first = controls.item(0);
+  const last = controls.item(controls.length - 1);
+  const isLeavingForward = !event.shiftKey && document.activeElement === last;
+  const isLeavingBackward = event.shiftKey && document.activeElement === first;
+  if (!isLeavingForward && !isLeavingBackward) return;
+  event.preventDefault();
+  (isLeavingForward ? first : last).focus();
 }
 
 function MenuIcon({ isClose }: { readonly isClose: boolean }): ReactElement {
@@ -143,6 +161,7 @@ export function MobileMenu({ pages = PAGES }: MobileMenuProps): ReactElement {
         ref={dialogRef}
         aria-label={translate("header.menuDialogLabel")}
         onClose={closeMenu}
+        onKeyDown={keepFocusInside}
         className="fixed inset-0 m-0 hidden h-dvh max-h-none w-full max-w-none overflow-y-auto bg-brand-night p-0 text-brand-mist open:flex open:flex-col md:hidden"
       >
         <div className="flex justify-end px-4 py-5">
