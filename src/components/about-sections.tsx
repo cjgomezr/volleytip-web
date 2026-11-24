@@ -23,22 +23,10 @@ const HOW_STEPS: readonly TitledText[] = [
 
 // El último momento es "Hoy": va resaltado.
 const STORY_MOMENTS: readonly TitledText[] = [
-  {
-    titleKey: "about.story.moment1.title",
-    textKey: "about.story.moment1.text",
-  },
-  {
-    titleKey: "about.story.moment2.title",
-    textKey: "about.story.moment2.text",
-  },
-  {
-    titleKey: "about.story.moment3.title",
-    textKey: "about.story.moment3.text",
-  },
-  {
-    titleKey: "about.story.moment4.title",
-    textKey: "about.story.moment4.text",
-  },
+  { titleKey: "about.story.moment1.title", textKey: "about.story.moment1.text" },
+  { titleKey: "about.story.moment2.title", textKey: "about.story.moment2.text" },
+  { titleKey: "about.story.moment3.title", textKey: "about.story.moment3.text" },
+  { titleKey: "about.story.moment4.title", textKey: "about.story.moment4.text" },
 ];
 
 interface Founder {
