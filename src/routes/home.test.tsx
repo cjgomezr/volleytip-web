@@ -1,4 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
+import { createRoutesStub } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { SiteStat } from "~/lib/site-stats.server";
@@ -42,6 +43,8 @@ function buildData(overrides: Partial<HomeData> = {}): HomeData {
     language: "es",
     stats: STATS,
     cdnHost: "imagenes-de-prueba.b-cdn.net",
+    showCampNotify: false,
+    protection: { siteKey: "1x00000000000000000000AA", timestamp: "1.firma" },
     ...overrides,
   };
 }
@@ -50,11 +53,20 @@ function renderHome(
   language: Language,
   data = buildData({ language }),
 ): string {
-  return renderToStaticMarkup(
-    <TranslationsProvider language={language} messages={getMessages(language)}>
-      <Home {...({ loaderData: data } as Parameters<typeof Home>[0])} />
-    </TranslationsProvider>,
-  );
+  const Page = createRoutesStub([
+    {
+      path: "/",
+      Component: () => (
+        <TranslationsProvider
+          language={language}
+          messages={getMessages(language)}
+        >
+          <Home {...({ loaderData: data } as Parameters<typeof Home>[0])} />
+        </TranslationsProvider>
+      ),
+    },
+  ]);
+  return renderToStaticMarkup(<Page />);
 }
 
 function loadHome(path: string): ReturnType<typeof loader> {
@@ -184,5 +196,26 @@ describe("home: nosotros", () => {
 
   it("no enlaza al equipo mientras Nosotros no exista en el mapa de páginas", () => {
     expect(renderHome("es")).not.toContain("Conoce al equipo");
+  });
+});
+
+describe("home: avísame", () => {
+  it("muestra la invitación cuando no hay camps próximos", () => {
+    expect(renderHome("es", buildData({ showCampNotify: true }))).toContain(
+      "Avísame del próximo camp",
+    );
+  });
+
+  it("no la muestra cuando hay camps próximos", () => {
+    expect(renderHome("es")).not.toContain("Avísame del próximo camp");
+  });
+
+  it("el loader la pide mientras no haya camps y trae la protección", async () => {
+    readSiteStatsMock.mockResolvedValue([]);
+
+    const data = await loadHome("/");
+
+    expect(data.showCampNotify).toBe(true);
+    expect(data.protection.timestamp).toMatch(/^\d+\./);
   });
 });
