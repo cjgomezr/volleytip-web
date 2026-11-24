@@ -20,6 +20,13 @@ export default [
   ]),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
+  // Los archivos con que el celular abre `/r/` en la app. Son de recurso:
+  // sin cáscara, sin idioma y sin redirección.
+  route(".well-known/assetlinks.json", "routes/assetlinks.ts"),
+  route(
+    ".well-known/apple-app-site-association",
+    "routes/apple-app-site-association.ts",
+  ),
   // Página de muestra de los componentes. En producción responde 404.
   route("dev/componentes", "routes/dev-components.tsx"),
   // Falla a propósito para ver las páginas de error. En producción responde
