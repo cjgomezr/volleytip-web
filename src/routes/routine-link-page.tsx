@@ -21,11 +21,10 @@ export function RoutineLinkPage({
   outcome,
 }: RoutineLinkPageProps): ReactElement {
   const translate = useTranslate();
-  const isAvailable = availability.state === "available";
   return (
     <section data-zone="dark" className="pt-10 pb-20">
       <div className="mx-auto max-w-[720px] px-6">
-        {isAvailable ? null : (
+        {availability.state === "available" ? null : (
           <p className="inline-block rounded-md bg-brand-lime px-3 py-1.5 text-[13px] font-bold tracking-[0.08em] text-brand-night uppercase">
             {translate("app.badge")}
           </p>
@@ -35,7 +34,9 @@ export function RoutineLinkPage({
         </h1>
         <p className="mt-6 text-[18px] leading-[1.5] text-ink-muted md:text-[20px]">
           {translate(
-            isAvailable ? "routineLink.textAvailable" : "routineLink.text",
+            availability.state === "available"
+              ? "routineLink.textAvailable"
+              : "routineLink.text",
           )}
         </p>
         {availability.state === "available" ? (
