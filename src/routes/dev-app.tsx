@@ -15,8 +15,8 @@ import { AppPage } from "./app-page";
 
 // Pinta la página de la app en cada uno de sus estados sin tocar la base, para
 // capturarla en Playwright: `?estado=disponible` (con `&tienda=app`, `play` o
-// ambas por omisión) y `?resultado=unido|invalido|rechazado`. Solo pinta: el
-// formulario sigue enviando a /app. En producción responde 404.
+// ambas por omisión) y `?resultado=unido|invalido|rechazado`. Solo pinta: no
+// recibe envíos, que son de /app. En producción responde 404.
 const NOT_FOUND_STATUS = 404;
 const SAMPLE_APP_STORE_URL = "https://apps.apple.com/app/volleytip/id0";
 const SAMPLE_PLAY_STORE_URL =
