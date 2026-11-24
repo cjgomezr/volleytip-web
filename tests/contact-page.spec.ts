@@ -178,8 +178,10 @@ test.describe("la página real", () => {
     await page.getByLabel(/^Mensaje/).fill("Quiero patrocinar un torneo.");
     await page.getByRole("button", { name: "Enviar mensaje" }).click();
 
-    const status = page.getByRole("status");
-    await expect(status).toContainText("Mensaje enviado");
+    const status = page
+      .getByRole("status")
+      .filter({ hasText: "Mensaje enviado" });
+    await expect(status).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Enviar mensaje" }),
     ).toHaveCount(0);
