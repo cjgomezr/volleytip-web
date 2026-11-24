@@ -57,11 +57,11 @@ describe("nosotros: loader", () => {
 
     expect(spanish.title).not.toBe(english.title);
     expect(spanish.description).not.toBe(english.description);
-    expect(meta({ loaderData: english } as Parameters<typeof meta>[0])).toEqual(
-      [
-        { title: english.title },
-        { name: "description", content: english.description },
-      ],
-    );
+    expect(
+      meta({ loaderData: english } as Parameters<typeof meta>[0]),
+    ).toEqual([
+      { title: english.title },
+      { name: "description", content: english.description },
+    ]);
   });
 });
