@@ -15,6 +15,10 @@ export default [
     // cáscara. En producción responde 404.
     route("dev/app", "routes/dev-app.tsx"),
     route("en/dev/app", "routes/dev-app.tsx", { id: "dev-app-en" }),
+    // Pinta las preguntas frecuentes con preguntas de muestra, sin la base.
+    // En producción responde 404.
+    route("dev/faq", "routes/dev-faq.tsx"),
+    route("en/dev/faq", "routes/dev-faq.tsx", { id: "dev-faq-en" }),
     // Siempre al final: recibe lo que no coincidió con ninguna ruta.
     route("*", "routes/not-found.tsx"),
   ]),
