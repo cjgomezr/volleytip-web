@@ -1581,3 +1581,37 @@ for (const variant of APP_PAGE_VARIANTS) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Página Nosotros (#96). Axe y desborde en tests/about-page.spec.ts.
+// ---------------------------------------------------------------------------
+
+const ABOUT_PAGE_VARIANTS = [
+  { name: "es", path: "/nosotros" },
+  { name: "en", path: "/en/about" },
+] as const;
+
+for (const variant of ABOUT_PAGE_VARIANTS) {
+  for (const vp of viewports) {
+    test.describe(`nosotros ${variant.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({ page }) => {
+        await page.goto(`${APP_URL}${variant.path}`);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        await waitForImages(page);
+        const name = `nosotros-${variant.name}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+    });
+  }
+}
