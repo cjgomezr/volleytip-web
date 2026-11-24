@@ -81,7 +81,7 @@ export function loader({ request }: Route.LoaderArgs): {
     language: getRequestLanguage(request),
     reason: resolveContactReason(params.get(CONTACT_REASON_PARAM)),
     faqs: SAMPLE_FAQS,
-    outcome: OUTCOMES[params.get("resultado") ?? ""],
+    outcome: readOutcome(params.get("resultado")),
     protection: issueFormProtection(CONTACT_FORM),
   };
 }
@@ -97,4 +97,10 @@ export function meta(): Route.MetaDescriptors {
     { title: "Contacto · VolleyTip (muestra)" },
     { name: "robots", content: "noindex" },
   ];
+}
+
+function readOutcome(key: string | null): ContactOutcome | undefined {
+  return key !== null && Object.hasOwn(OUTCOMES, key)
+    ? OUTCOMES[key]
+    : undefined;
 }
