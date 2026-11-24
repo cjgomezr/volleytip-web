@@ -22,6 +22,23 @@ export const en = {
   "home.about.link": "Meet the team",
   "home.about.photoAlt":
     "Camilo, founder of VolleyTip, sitting in his recording studio",
+  "notify.title": "Tell me about the next camp",
+  "notify.text":
+    "No camps are scheduled yet. Leave your email and we will write when registration opens.",
+  "notify.emailLabel": "Email",
+  "notify.cityLabel": "City (optional)",
+  "notify.submit": "Notify me",
+  "notify.submitting": "Sending",
+  "notify.privacyPrefix": "By submitting you accept the ",
+  "notify.privacyLink": "privacy policy",
+  "notify.privacySuffix": ".",
+  "notify.confirmation": "Done, we will let you know when there is a new camp.",
+  "notify.error.email": "Enter a valid email",
+  "notify.error.city": "The city can have up to 80 characters",
+  "notify.error.verification":
+    "We could not verify the submission. Please try again.",
+  "notify.error.rateLimited":
+    "Too many attempts. Wait a few minutes and try again.",
   "header.skipLink": "Skip to content",
   "header.homeLink": "VolleyTip, go home",
   "header.menuLabel": "Main menu",

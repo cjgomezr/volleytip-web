@@ -39,7 +39,7 @@ import path from "node:path";
 import {
   test,
   expect,
-  routeCdnImages,
+  routeExternalRequests,
   waitForImages,
   type Page,
 } from "./support/test";
@@ -211,7 +211,6 @@ const MIN_TOUCH_TARGET_PX = 44;
 // Los navegadores redondean posiciones a fracciones de píxel.
 const SUBPIXEL_TOLERANCE_PX = 0.5;
 
-const TURNSTILE_SCRIPT = "https://challenges.cloudflare.com/**";
 const TURNSTILE_TEST_SITE_KEY = "1x00000000000000000000AA";
 
 interface TurnstileCall {
@@ -220,29 +219,9 @@ interface TurnstileCall {
 }
 
 /**
- * Reemplaza el script de Cloudflare por uno propio que anota cómo lo llama
- * la página. Así ninguna prueba depende de la red, y la captura no cambia
- * con lo que Cloudflare decida dibujar ese día.
+ * Las llamadas que la página le hizo al Turnstile de mentira que reciben
+ * todas las pruebas (`tests/support/test.ts`).
  */
-async function stubTurnstile(page: Page): Promise<void> {
-  await page.route(TURNSTILE_SCRIPT, (route) =>
-    route.fulfill({
-      contentType: "text/javascript",
-      body: `
-        window.turnstileCalls = [];
-        window.turnstile = {
-          render(container, options) {
-            window.turnstileCalls.push({ method: "render", sitekey: options.sitekey });
-            return "widget-de-prueba";
-          },
-          reset() { window.turnstileCalls.push({ method: "reset" }); },
-          remove() { window.turnstileCalls.push({ method: "remove" }); },
-        };
-      `,
-    }),
-  );
-}
-
 async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
   return page.evaluate(
     () =>
@@ -252,7 +231,6 @@ async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
 }
 
 async function openComponentsPage(page: Page): Promise<void> {
-  await stubTurnstile(page);
   await page.goto(COMPONENTS_URL);
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -882,7 +860,7 @@ for (const vp of viewports) {
           viewport: { width: vp.width, height: vp.height },
           storageState: FIRST_VISIT,
         });
-        await routeCdnImages(context);
+        await routeExternalRequests(context);
         const page = await context.newPage();
         await page.goto(url);
         await page.evaluate(async () => {
@@ -1401,3 +1379,166 @@ for (const variant of MAINTENANCE_VARIANTS) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Home: invitación "Avísame" (AC-023)
+// ---------------------------------------------------------------------------
+
+const TURNSTILE_DUMMY_TOKEN = "XXXX.DUMMY.TOKEN.XXXX";
+// El servidor rechaza lo enviado en menos de 3 segundos desde que se pintó.
+const MIN_HUMAN_DELAY_MS = 3200;
+const CAMP_NOTIFY_LANGUAGES = [
+  { name: "español", url: APP_URL, heading: "Avísame del próximo camp" },
+  {
+    name: "inglés",
+    url: ENGLISH_HOME_URL,
+    heading: "Tell me about the next camp",
+  },
+] as const;
+
+/** El widget real no corre en las pruebas: se le pone el token de prueba. */
+async function openCampNotify(page: Page, url: string): Promise<void> {
+  await page.goto(url);
+  await page.evaluate((token) => {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "cf-turnstile-response";
+    input.value = token;
+    document
+      .querySelector<HTMLFormElement>(
+        "section[aria-labelledby='camp-notify-title'] form",
+      )
+      ?.append(input);
+  }, TURNSTILE_DUMMY_TOKEN);
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+  });
+  await page.waitForTimeout(MIN_HUMAN_DELAY_MS);
+}
+
+for (const language of CAMP_NOTIFY_LANGUAGES) {
+  for (const vp of viewports) {
+    test.describe(`avísame ${language.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("el formulario vacío coincide con la línea base y no desborda", async ({
+        page,
+      }) => {
+        await openCampNotify(page, language.url);
+        const section = page.locator(
+          "section[aria-labelledby='camp-notify-title']",
+        );
+        await expect(
+          section.getByRole("heading", { name: language.heading }),
+        ).toBeVisible();
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth >
+            document.documentElement.clientWidth,
+        );
+        expect(overflow, `desborde horizontal a ${vp.width}px`).toBe(false);
+        const name = `avisame-${language.name === "español" ? "es" : "en"}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          section.screenshot(SCREENSHOT_OPTIONS),
+        );
+        await expect(section).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+    });
+  }
+
+  test.describe(`avísame ${language.name}`, () => {
+    test("axe no reporta violaciones con el formulario", async ({ page }) => {
+      await openCampNotify(page, language.url);
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa"])
+        .analyze();
+      expect(
+        results.violations,
+        JSON.stringify(results.violations, null, 2),
+      ).toEqual([]);
+    });
+
+    test("un correo inválido muestra el error junto al campo y conserva lo escrito", async ({
+      page,
+    }) => {
+      await openCampNotify(page, language.url);
+      const section = page.locator(
+        "section[aria-labelledby='camp-notify-title']",
+      );
+      await section.locator("input[name='email']").fill("no-es-correo");
+      await section.locator("input[name='city']").fill("Cali");
+      await section.getByRole("button").click();
+
+      const email = section.locator("input[name='email']");
+      await expect(email).toHaveAttribute("aria-invalid", "true");
+      await expect(email).toHaveValue("no-es-correo");
+      await expect(section.locator("input[name='city']")).toHaveValue("Cali");
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa"])
+        .analyze();
+      expect(
+        results.violations,
+        JSON.stringify(results.violations, null, 2),
+      ).toEqual([]);
+    });
+
+    test("se envía con el teclado y la confirmación reemplaza al formulario", async ({
+      page,
+    }) => {
+      await openCampNotify(page, language.url);
+      const section = page.locator(
+        "section[aria-labelledby='camp-notify-title']",
+      );
+      await section.locator("input[name='email']").focus();
+      await page.keyboard.type(`e2e-${Date.now()}@example.com`);
+      await page.keyboard.press("Enter");
+
+      const confirmation = section
+        .getByRole("status")
+        .filter({ hasText: /\w/ });
+      await expect(confirmation).toBeVisible();
+      await expect(section.locator("form")).toHaveCount(0);
+      const results = await new AxeBuilder({ page })
+        .withTags(["wcag2a", "wcag2aa"])
+        .analyze();
+      expect(
+        results.violations,
+        JSON.stringify(results.violations, null, 2),
+      ).toEqual([]);
+    });
+  });
+}
+
+test.describe("avísame sin JavaScript", () => {
+  test.use({ javaScriptEnabled: false });
+
+  test("el formulario envía y la confirmación se ve", async ({ page }) => {
+    await page.goto(APP_URL);
+    const section = page.locator(
+      "section[aria-labelledby='camp-notify-title']",
+    );
+    // Sin JavaScript no hay widget: se pone el token de prueba al armar la petición.
+    await page.route("**/*", async (route) => {
+      const request = route.request();
+      if (request.method() !== "POST") {
+        await route.fallback();
+        return;
+      }
+      await route.fallback({
+        postData: `${request.postData() ?? ""}&cf-turnstile-response=${TURNSTILE_DUMMY_TOKEN}`,
+      });
+    });
+    await page.waitForTimeout(MIN_HUMAN_DELAY_MS);
+    await section
+      .locator("input[name='email']")
+      .fill(`e2e-${Date.now()}@example.com`);
+    await section.getByRole("button").click();
+
+    await expect(section.locator("div[role='status']")).toContainText(
+      "te avisaremos",
+    );
+  });
+});

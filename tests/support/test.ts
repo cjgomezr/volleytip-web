@@ -19,14 +19,40 @@ const STAND_IN_IMAGE = path.join(
   "camilo-estudio.jpg",
 );
 
+// Un Turnstile de mentira que anota lo que la página le pide. El de verdad
+// pinta su widget cuando la red se lo deja, y la página mide distinto de una
+// corrida a otra.
+const TURNSTILE_STAND_IN = `
+  window.turnstileCalls = [];
+  window.turnstile = {
+    render(container, options) {
+      window.turnstileCalls.push({ method: "render", sitekey: options.sitekey });
+      return "widget-de-prueba";
+    },
+    reset() { window.turnstileCalls.push({ method: "reset" }); },
+    remove() { window.turnstileCalls.push({ method: "remove" }); },
+  };
+`;
+
+const TURNSTILE_REQUESTS = "https://challenges.cloudflare.com/**";
+
 /**
- * Responde desde el disco las imágenes que un contexto pide al CDN. El `test`
- * de abajo lo hace solo con el contexto de cada prueba; una prueba que abre el
- * suyo con `browser.newContext()` tiene que llamarlo.
+ * Responde desde aquí lo que un contexto pide fuera del sitio: las imágenes
+ * del CDN y el script de Turnstile. El `test` de abajo lo hace solo con el
+ * contexto de cada prueba; una prueba que abre el suyo con
+ * `browser.newContext()` tiene que llamarlo.
  */
-export async function routeCdnImages(context: BrowserContext): Promise<void> {
+export async function routeExternalRequests(
+  context: BrowserContext,
+): Promise<void> {
   await context.route(`https://${TEST_ENV.IMAGE_CDN_HOST}/**`, (route) =>
     route.fulfill({ path: STAND_IN_IMAGE, contentType: "image/jpeg" }),
+  );
+  await context.route(TURNSTILE_REQUESTS, (route) =>
+    route.fulfill({
+      contentType: "text/javascript",
+      body: TURNSTILE_STAND_IN,
+    }),
   );
 }
 
@@ -49,12 +75,12 @@ export async function waitForImages(page: Page): Promise<void> {
 
 /**
  * El `test` de todas las specs. Ninguna prueba sale a la red por una imagen
- * del CDN.
+ * del CDN ni por Turnstile.
  */
-export const test = base.extend<{ cdnImages: undefined }>({
-  cdnImages: [
+export const test = base.extend<{ externalRequests: undefined }>({
+  externalRequests: [
     async ({ context }, use) => {
-      await routeCdnImages(context);
+      await routeExternalRequests(context);
       await use(undefined);
     },
     { auto: true },
