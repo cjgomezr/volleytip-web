@@ -11,9 +11,9 @@ import type { Route } from "./+types/dev-maintenance";
 // responde 404.
 const NOT_FOUND_STATUS = 404;
 
-export function loader({
-  request,
-}: Route.LoaderArgs): { readonly returnsAt: string | null } {
+export function loader({ request }: Route.LoaderArgs): {
+  readonly returnsAt: string | null;
+} {
   if (serverEnv.appEnv === "production") {
     throw data(null, { status: NOT_FOUND_STATUS });
   }

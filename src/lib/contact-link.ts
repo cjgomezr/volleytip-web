@@ -12,6 +12,21 @@ export const CONTACT_REASON_BRANDS = "marcas";
 const CONTACT_PAGE_ID = "contact";
 
 /**
+ * La dirección de Contacto sin motivo, o `undefined` mientras Contacto no
+ * esté en el mapa de páginas: quien enlaza no pinta el enlace.
+ */
+export function getContactPath(
+  pages: readonly PageDeclaration[],
+  language: Language,
+): string | undefined {
+  const page = pages.find((candidate) => candidate.id === CONTACT_PAGE_ID);
+  if (page === undefined) {
+    return undefined;
+  }
+  return buildPagePath(page, findLanguage(language));
+}
+
+/**
  * La dirección de Contacto con un motivo elegido, o `undefined` mientras
  * Contacto no esté en el mapa de páginas: quien enlaza no pinta el botón.
  */
@@ -20,10 +35,9 @@ export function getContactHref(
   language: Language,
   reason: string,
 ): string | undefined {
-  const page = pages.find((candidate) => candidate.id === CONTACT_PAGE_ID);
-  if (page === undefined) {
+  const path = getContactPath(pages, language);
+  if (path === undefined) {
     return undefined;
   }
-  const path = buildPagePath(page, findLanguage(language));
   return `${path}?${new URLSearchParams({ [CONTACT_REASON_PARAM]: reason }).toString()}`;
 }

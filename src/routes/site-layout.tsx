@@ -40,10 +40,9 @@ function LanguageNotice(): ReactElement | null {
 
 // La barra sale de los ajustes que el middleware de la raíz ya leyó, junto
 // con el modo mantenimiento, en una sola consulta.
-export function loader({
-  request,
-  context,
-}: Route.LoaderArgs): { readonly announcements: string[] } {
+export function loader({ request, context }: Route.LoaderArgs): {
+  readonly announcements: string[];
+} {
   return {
     announcements: pickAnnouncementMessages(
       context.get(siteSettingsContext).announcements,

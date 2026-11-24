@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Language } from "~/lib/i18n/languages";
 import type { PageDeclaration } from "~/lib/i18n/page-path";
+import { PAGES } from "~/lib/i18n/pages";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 
@@ -137,5 +138,17 @@ describe("pie: idioma", () => {
 describe("pie: textos", () => {
   it("writes the legal line in English under /en/", () => {
     expect(renderFooter({ at: "/en/" })).toContain("Made in Colombia");
+  });
+
+  it("enlaza a Preguntas frecuentes cuando la página está en el mapa", () => {
+    const faq = PAGES.find(({ id }) => id === "faq");
+    if (faq === undefined) throw new Error("La página faq no está en PAGES");
+
+    expect(renderFooter({ pages: [HOME, faq] })).toContain(
+      'href="/preguntas-frecuentes"',
+    );
+    expect(renderFooter({ pages: [HOME, faq], at: "/en" })).toContain(
+      'href="/en/faq"',
+    );
   });
 });

@@ -1615,3 +1615,46 @@ for (const variant of ABOUT_PAGE_VARIANTS) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Preguntas frecuentes (#93). Con preguntas y vacía se ven en /dev/faq, que
+// no toca la base; axe, el desborde y el teclado los cubre
+// tests/faq-page.spec.ts.
+// ---------------------------------------------------------------------------
+
+const FAQ_PAGE_VARIANTS = [
+  { name: "es-preguntas", path: "/dev/faq", opensFirst: false },
+  { name: "es-abierta", path: "/dev/faq", opensFirst: true },
+  { name: "es-vacia", path: "/dev/faq?estado=vacia", opensFirst: false },
+  { name: "en-preguntas", path: "/en/dev/faq", opensFirst: false },
+  { name: "en-abierta", path: "/en/dev/faq", opensFirst: true },
+  { name: "en-vacia", path: "/en/dev/faq?estado=vacia", opensFirst: false },
+] as const;
+
+for (const variant of FAQ_PAGE_VARIANTS) {
+  for (const vp of viewports) {
+    test.describe(`preguntas frecuentes ${variant.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({ page }) => {
+        await page.goto(`${APP_URL}${variant.path}`);
+        if (variant.opensFirst) {
+          await page.locator("summary").first().click();
+        }
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        await waitForImages(page);
+        const name = `preguntas-frecuentes-${variant.name}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+    });
+  }
+}
