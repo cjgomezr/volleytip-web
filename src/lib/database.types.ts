@@ -176,6 +176,73 @@ export type Database = {
           },
         ];
       };
+      messages: {
+        Row: {
+          answered_at: string | null;
+          answered_by: string | null;
+          body: string;
+          country_code: string | null;
+          created_at: string;
+          email: string;
+          id: string;
+          locale: string;
+          name: string;
+          payload: NonNullable<Json>;
+          privacy_version: string;
+          reason: string;
+          status: Database["public"]["Enums"]["message_status"];
+          whatsapp: string | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          answered_at?: string | null;
+          answered_by?: string | null;
+          body: string;
+          country_code?: string | null;
+          created_at?: string;
+          email: string;
+          id?: string;
+          locale: string;
+          name: string;
+          payload?: NonNullable<Json>;
+          privacy_version: string;
+          reason: string;
+          status?: Database["public"]["Enums"]["message_status"];
+          whatsapp?: string | null;
+        };
+        Update: {
+          answered_at?: string | null;
+          answered_by?: string | null;
+          body?: string;
+          country_code?: string | null;
+          created_at?: string;
+          email?: string;
+          id?: string;
+          locale?: string;
+          name?: string;
+          payload?: NonNullable<Json>;
+          privacy_version?: string;
+          reason?: string;
+          status?: Database["public"]["Enums"]["message_status"];
+          whatsapp?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "messages_answered_by_fkey";
+            columns: ["answered_by"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "messages_locale_fkey";
+            columns: ["locale"];
+            isOneToOne: false;
+            referencedRelation: "languages";
+            referencedColumns: ["code"];
+          },
+        ];
+      };
       prices: {
         Row: {
           amount: number;
@@ -422,9 +489,24 @@ export type Database = {
         Args: { p_form: string; p_reason: string };
         Returns: undefined;
       };
+      save_message: {
+        Args: {
+          p_body: string;
+          p_country_code?: string;
+          p_email: string;
+          p_locale: string;
+          p_name: string;
+          p_payload?: Json;
+          p_privacy_version: string;
+          p_reason: string;
+          p_whatsapp?: string;
+        };
+        Returns: undefined;
+      };
     };
     Enums: {
       item_kind: "physical" | "digital" | "event_plan" | "bundle";
+      message_status: "new" | "answered" | "archived";
       price_mode: "manual";
       publish_status: "draft" | "published" | "retired";
       user_role: "admin" | "staff" | "buyer";
@@ -556,6 +638,7 @@ export const Constants = {
   public: {
     Enums: {
       item_kind: ["physical", "digital", "event_plan", "bundle"],
+      message_status: ["new", "answered", "archived"],
       price_mode: ["manual"],
       publish_status: ["draft", "published", "retired"],
       user_role: ["admin", "staff", "buyer"],
