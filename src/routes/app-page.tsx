@@ -137,7 +137,7 @@ function StoreButton({
   );
 }
 
-function StoreButtons({
+export function StoreButtons({
   appStoreUrl,
   playStoreUrl,
 }: {

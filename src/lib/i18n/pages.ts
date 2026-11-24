@@ -13,6 +13,9 @@ export const PAGES = [
   { id: "home", file: "routes/home.tsx", path: "" },
   // Decisión 9 del PRD de W3: `/app` en los dos idiomas.
   { id: "app", file: "routes/app.tsx", path: "app" },
+  // Enlace compartido de una rutina. Sin la app, es una página "Próximamente"
+  // (FR-080); el código solo va en la dirección.
+  { id: "routineLink", file: "routes/routine-link.tsx", path: "r/:code" },
   // Decisión 9 del PRD de W3: `/nosotros` y `/en/about`.
   {
     id: "about",
@@ -78,4 +81,17 @@ export interface CurrentPage {
 export function getPageAtPath(pathname: string): CurrentPage | undefined {
   const match = findPageAtPath(pathname, PAGES, SUPPORTED_LANGUAGES);
   return match && { page: match.page.id, params: match.params };
+}
+
+// Páginas cuya dirección lleva un dato que no debe llegar a los buscadores
+// (el código de un enlace compartido): declaran la dirección de otra página.
+const ADDRESSED_AS: Readonly<Partial<Record<PageId, PageId>>> = {
+  routineLink: "app",
+};
+
+/** La página que declaran a los buscadores como canónica y sus idiomas:
+ * casi siempre ella misma, sin los parámetros de la dirección. */
+export function getAddressedPage(current: CurrentPage): CurrentPage {
+  const page = ADDRESSED_AS[current.page];
+  return page === undefined ? current : { page, params: {} };
 }

@@ -50,6 +50,14 @@ describe("versiones por idioma", () => {
     expect(canonicalOf(renderAt("/en/"))).toBe(`${ORIGIN}/en/`);
   });
 
+  it("el enlace de una rutina declara la página de la app, sin el código", () => {
+    const html = renderAt("/en/r/abc123");
+
+    expect(html).not.toContain("abc123");
+    expect(canonicalOf(html)).toBe(`${ORIGIN}/en/app`);
+    expect(hrefOf(html, "es")).toBe(`${ORIGIN}/app`);
+  });
+
   it("/en y /en/ declaran la misma canónica", () => {
     expect(canonicalOf(renderAt("/en"))).toBe(`${ORIGIN}/en/`);
   });

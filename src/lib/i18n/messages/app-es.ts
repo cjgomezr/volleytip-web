@@ -71,6 +71,14 @@ export const appEs = {
   "app.faq.privacy.question": "¿Quién puede ver mis rutinas?",
   "app.faq.privacy.answer":
     "Solo tú, a menos que decidas compartirlas con un enlace.",
+  "routineLink.title": "Rutina compartida | VolleyTip",
+  "routineLink.description":
+    "Alguien te compartió una rutina de VolleyTip. La app sale pronto: déjanos tu correo y te avisamos.",
+  "routineLink.heading": "Te compartieron una rutina",
+  "routineLink.text":
+    "Para abrirla necesitas la app de VolleyTip, que todavía no sale. Deja tu correo y te avisamos el día del lanzamiento.",
+  "routineLink.textAvailable":
+    "Ábrela en la app de VolleyTip. Descárgala y vuelve a tocar el enlace.",
   "waitlist.emailLabel": "Avísame cuando salga",
   "waitlist.emailPlaceholder": "tu@correo.com",
   "waitlist.countryLabel": "País",

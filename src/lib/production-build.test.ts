@@ -191,7 +191,19 @@ const MISSING_ENGLISH_PAGE = { method: "GET", path: "/en/no-existe" };
 // inglés. Su `lang` tiene que coincidir con lo que se pinta.
 const ENCODED_ENGLISH_HOME = { method: "GET", path: "/%65n/" };
 const UPPERCASE_PREFIX = { method: "GET", path: "/EN/" };
+const ASSET_LINKS = { method: "GET", path: "/.well-known/assetlinks.json" };
+const APP_SITE_ASSOCIATION = {
+  method: "GET",
+  path: "/.well-known/apple-app-site-association",
+};
+// `/r/` sin código y con un código inválido no son páginas.
+const ROUTINE_LINK_WITHOUT_CODE = { method: "GET", path: "/r/" };
+const ROUTINE_LINK_INVALID_CODE = { method: "GET", path: "/r/a.b" };
 const SERVED_REQUESTS: readonly ServedRequest[] = [
+  ASSET_LINKS,
+  APP_SITE_ASSOCIATION,
+  ROUTINE_LINK_WITHOUT_CODE,
+  ROUTINE_LINK_INVALID_CODE,
   HOME_PAGE,
   ENGLISH_HOME,
   { method: "GET", path: "/en" },
@@ -376,6 +388,35 @@ describe("rutas en el servidor construido", () => {
 
   it("el prefijo en mayúsculas da 404", () => {
     expect(findServed(served(), UPPERCASE_PREFIX).status).toBe(404);
+  });
+
+  it("/.well-known responde JSON vacío sin redirigir, aunque la base no responda", () => {
+    const all = served();
+
+    for (const [request, body] of [
+      [ASSET_LINKS, "[]"],
+      [APP_SITE_ASSOCIATION, `{"applinks":{"details":[]}}`],
+    ] as const) {
+      const response = findServed(all, request);
+      expect([
+        response.status,
+        response.contentType,
+        response.location,
+        response.body,
+      ]).toEqual([
+        200,
+        expect.stringContaining("application/json"),
+        null,
+        body,
+      ]);
+    }
+  });
+
+  it("/r/ sin código o con un código inválido da 404", () => {
+    const all = served();
+
+    expect(findServed(all, ROUTINE_LINK_WITHOUT_CODE).status).toBe(404);
+    expect(findServed(all, ROUTINE_LINK_INVALID_CODE).status).toBe(404);
   });
 
   it("/healthz y /dev/componentes siguen en su dirección", () => {
