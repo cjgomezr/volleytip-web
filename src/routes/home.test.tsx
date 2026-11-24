@@ -6,12 +6,9 @@ import type { SiteStat } from "~/lib/site-stats.server";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 
-import Home, {
-  HOME_STATS_TIMEOUT_MS,
-  loader,
-  meta,
-  type HomeData,
-} from "./home";
+import { SITE_STATS_TIMEOUT_MS } from "~/lib/load-site-stats.server";
+
+import Home, { loader, meta, type HomeData } from "./home";
 
 vi.mock("~/lib/site-stats.server", () => ({ readSiteStats: vi.fn() }));
 const { readSiteStats } = await import("~/lib/site-stats.server");
@@ -105,7 +102,7 @@ describe("home: loader", () => {
     readSiteStatsMock.mockReturnValue(new Promise(() => undefined));
 
     const pending = loadHome("/");
-    await vi.advanceTimersByTimeAsync(HOME_STATS_TIMEOUT_MS);
+    await vi.advanceTimersByTimeAsync(SITE_STATS_TIMEOUT_MS);
     const data = await pending;
     vi.useRealTimers();
 
@@ -194,8 +191,9 @@ describe("home: nosotros", () => {
     expect(html).toContain('loading="lazy"');
   });
 
-  it("no enlaza al equipo mientras Nosotros no exista en el mapa de páginas", () => {
-    expect(renderHome("es")).not.toContain("Conoce al equipo");
+  it("enlaza al equipo ahora que Nosotros existe en el mapa de páginas", () => {
+    expect(renderHome("es")).toContain(`href="/nosotros"`);
+    expect(renderHome("es")).toContain("Conoce al equipo");
   });
 });
 

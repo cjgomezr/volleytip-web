@@ -1,5 +1,6 @@
 import type { Messages } from "../translate";
 
+import { aboutEn } from "./about-en";
 import { appEn } from "./app-en";
 import { errorsEn } from "./errors";
 
@@ -85,6 +86,7 @@ export const en = {
   },
   "priceApproximation.spokenLessThanOne": "less than 1 dollar",
   "priceApproximation.chargeNote": "You are charged in Colombian pesos.",
+  ...aboutEn,
   ...appEn,
   ...errorsEn,
 } as const satisfies Messages;

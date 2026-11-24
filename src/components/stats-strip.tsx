@@ -8,6 +8,8 @@ interface StatsStripProps {
   readonly stats: readonly SiteStat[];
   /** Idioma de la página: un texto que cayó al español lleva su `lang`. */
   readonly pageLanguage: Language;
+  /** Nombre accesible de la franja; sin él, el de la home. */
+  readonly label?: string;
 }
 
 function langFor(
@@ -21,6 +23,7 @@ function langFor(
 export function StatsStrip({
   stats,
   pageLanguage,
+  label,
 }: StatsStripProps): ReactElement | null {
   const translate = useTranslate();
   if (stats.length === 0) {
@@ -29,7 +32,7 @@ export function StatsStrip({
 
   return (
     <section
-      aria-label={translate("home.stats.label")}
+      aria-label={label ?? translate("home.stats.label")}
       className="border-t-2 border-brand-red bg-brand-indigo"
     >
       <ul className="m-0 mx-auto grid max-w-[1280px] list-none grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:py-12 lg:grid-cols-4">
