@@ -13,6 +13,12 @@ export const PAGES = [
   { id: "home", file: "routes/home.tsx", path: "" },
   // Decisión 9 del PRD de W3: `/app` en los dos idiomas.
   { id: "app", file: "routes/app.tsx", path: "app" },
+  // Decisión 9 del PRD de W3: `/nosotros` y `/en/about`.
+  {
+    id: "about",
+    file: "routes/about.tsx",
+    path: { es: "nosotros", en: "about" },
+  },
   {
     id: "terms",
     file: "routes/terms.tsx",

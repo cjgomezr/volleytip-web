@@ -21,8 +21,8 @@ import { getRequestLanguage, type Language } from "~/lib/i18n/languages";
 import { getTranslate } from "~/lib/i18n/messages.server";
 import type { Translate } from "~/lib/i18n/translate";
 import { getCurrentLegalVersion } from "~/lib/legal/legal-documents";
-import { giveUpAfter } from "~/lib/site-settings.server";
-import { readSiteStats, type SiteStat } from "~/lib/site-stats.server";
+import { loadSiteStats } from "~/lib/load-site-stats.server";
+import type { SiteStat } from "~/lib/site-stats.server";
 import { hasUpcomingCamps } from "~/lib/upcoming-camps";
 import { joinWaitlist } from "~/lib/waitlists.server";
 
@@ -39,20 +39,6 @@ export interface HomeData {
   readonly protection: FormProtectionFields;
 }
 
-/** Lo máximo que la home espera a la base por las cifras. */
-export const HOME_STATS_TIMEOUT_MS = 1500;
-
-// Las cifras son un adorno de la home: si la base falla o tarda, la página
-// sale sin ellas en vez de caerse o hacerse esperar.
-async function loadStats(language: Language): Promise<readonly SiteStat[]> {
-  try {
-    return await giveUpAfter(HOME_STATS_TIMEOUT_MS, readSiteStats(language));
-  } catch (error) {
-    console.error("No se pudieron leer las cifras de la home", error);
-    return [];
-  }
-}
-
 export async function loader({ request }: Route.LoaderArgs): Promise<HomeData> {
   const language = getRequestLanguage(request);
   const translate = getTranslate(language);
@@ -60,7 +46,7 @@ export async function loader({ request }: Route.LoaderArgs): Promise<HomeData> {
     title: translate("home.title"),
     description: translate("home.description"),
     language,
-    stats: await loadStats(language),
+    stats: await loadSiteStats(language),
     cdnHost: serverEnv.imageCdnHost,
     showCampNotify: !hasUpcomingCamps(),
     protection: issueFormProtection(CAMP_NOTIFY_FORM),

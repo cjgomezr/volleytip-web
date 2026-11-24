@@ -1,6 +1,7 @@
 // El español es la fuente de los tipos de las claves (decisión 1 del PRD de
 // W2). `as const` conserva cada texto literal para que el compilador pueda
 // leer sus variables `{nombre}`.
+import { aboutEs } from "./about-es";
 import { appEs } from "./app-es";
 import { errorsEs } from "./errors";
 
@@ -87,6 +88,7 @@ export const es = {
   },
   "priceApproximation.spokenLessThanOne": "menos de 1 dólar",
   "priceApproximation.chargeNote": "El cobro es en pesos colombianos.",
+  ...aboutEs,
   ...appEs,
   ...errorsEs,
 } as const;
