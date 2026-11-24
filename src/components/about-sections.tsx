@@ -216,7 +216,8 @@ export function Characters({
 }
 
 /** El botón lleva a Contacto; sin `contactHref` (Contacto no existe aún) no
- * se pinta. */
+ * se pinta. Usa `Link` y no `LocalizedLink` porque la dirección ya trae el
+ * idioma y el motivo en la query, que `LocalizedLink` no arma. */
 export function WorkTogether({
   contactHref,
 }: {

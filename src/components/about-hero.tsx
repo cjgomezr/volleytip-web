@@ -1,10 +1,9 @@
 import type { ReactElement } from "react";
 
+import { ABOUT_PHOTO_PATH } from "~/components/home-about";
 import { OptimizedImage } from "~/components/optimized-image";
 import { useTranslate } from "~/lib/i18n/translations-context";
 
-/** Dónde vive la foto del héroe dentro del almacenamiento de imágenes. */
-const HERO_PHOTO_PATH = "sitio/camilo-estudio.jpg";
 const HERO_PHOTO_WIDTH = 1280;
 const HERO_PHOTO_HEIGHT = 720;
 
@@ -24,7 +23,7 @@ export function AboutHero({
     <section className="relative flex min-h-[480px] items-end overflow-hidden md:min-h-[640px]">
       <OptimizedImage
         cdnHost={cdnHost}
-        src={HERO_PHOTO_PATH}
+        src={ABOUT_PHOTO_PATH}
         alt={translate("about.hero.photoAlt")}
         width={HERO_PHOTO_WIDTH}
         height={HERO_PHOTO_HEIGHT}
