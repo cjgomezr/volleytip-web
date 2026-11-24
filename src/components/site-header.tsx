@@ -9,6 +9,7 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import { getMenuEntries, type MenuEntry } from "~/lib/site-menu";
 
 import { LanguageSwitcher } from "./language-switcher";
+import { MobileMenu } from "./mobile-menu";
 import { TRANSITION_STYLES } from "./pressable-styles";
 
 const WORDMARK_WIDTH = 312;
@@ -72,7 +73,10 @@ export function SiteHeader({ pages = PAGES }: SiteHeaderProps): ReactElement {
           </ul>
         </nav>
       )}
-      <LanguageSwitcher isCompact />
+      <div className="flex items-center gap-3">
+        <LanguageSwitcher isCompact />
+        <MobileMenu pages={pages} />
+      </div>
     </header>
   );
 }
