@@ -21,6 +21,7 @@ describe("direcciones del panel", () => {
   it.each([
     ["adminHome", "/admin", "/en/admin"],
     ["adminSignIn", "/admin/entrar", "/en/admin/sign-in"],
+    ["adminSignInLink", "/admin/entrar/enlace", "/en/admin/sign-in/link"],
     ["adminSignOut", "/admin/salir", "/en/admin/sign-out"],
     ["adminMore", "/admin/mas", "/en/admin/more"],
     ["adminLanguage", "/admin/idioma", "/en/admin/language"],
@@ -58,6 +59,7 @@ describe("rutas del panel", () => {
       "admin",
       "admin/*",
       "admin/entrar",
+      "admin/entrar/enlace",
       "admin/idioma",
       "admin/mas",
       "admin/salir",
@@ -66,6 +68,7 @@ describe("rutas del panel", () => {
       "en/admin/language",
       "en/admin/more",
       "en/admin/sign-in",
+      "en/admin/sign-in/link",
       "en/admin/sign-out",
     ]);
   });

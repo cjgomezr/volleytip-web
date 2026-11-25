@@ -1,0 +1,22 @@
+<!doctype html>
+<html>
+  <body style="margin: 0; padding: 24px; font-family: Arial, Helvetica, sans-serif; color: #140a35">
+    <div lang="es">
+      <h1 style="font-size: 22px">Entrar al panel de VolleyTip</h1>
+      <p>Abre el enlace y pulsa «Entrar». Sirve una sola vez y durante una hora.</p>
+      <p>
+        <a href="{{ .SiteURL }}/admin/entrar/enlace?token_hash={{ .TokenHash }}&next={{ .RedirectTo }}">Entrar al panel</a>
+      </p>
+      <p>Si no pediste este correo, ignóralo.</p>
+    </div>
+    <hr />
+    <div lang="en">
+      <h2 style="font-size: 22px">Sign in to the VolleyTip admin</h2>
+      <p>Open the link and press "Sign in". It works once and for one hour.</p>
+      <p>
+        <a href="{{ .SiteURL }}/en/admin/sign-in/link?token_hash={{ .TokenHash }}&next={{ .RedirectTo }}">Sign in to the admin</a>
+      </p>
+      <p>If you did not ask for this email, ignore it.</p>
+    </div>
+  </body>
+</html>

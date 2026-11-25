@@ -56,7 +56,12 @@ export async function removeSiteFixtures(
 
 // Los formularios que las pruebas envían, por el nombre con que cada uno
 // lleva su cuenta de envíos.
-const SUBMITTED_FORMS = ["camp_notify", "app_waitlist", "contact"] as const;
+const SUBMITTED_FORMS = [
+  "camp_notify",
+  "app_waitlist",
+  "contact",
+  "admin_sign_in",
+] as const;
 
 /** Las pruebas de los formularios envían desde la misma IP; sin esto, varias
  * corridas seguidas chocarían con el límite de 5 envíos cada 10 minutos. */

@@ -23,7 +23,11 @@ import { TEST_ENV } from "../../../tests/support/test-env";
 import { HomeScreen, loader as homeLoader } from "./home";
 import { loader as missingLoader } from "./missing";
 import SessionLayout from "./session-layout";
-import { loader as signInLoader, SignInScreen } from "./sign-in";
+import {
+  shouldRevalidate,
+  loader as signInLoader,
+  SignInScreen,
+} from "./sign-in";
 import { action as signOut, loader as signOutLoader } from "./sign-out";
 
 const ADMIN: PanelMember = {
@@ -108,8 +112,21 @@ describe("pantalla de entrada", () => {
   it("responde sin sesión", async () => {
     stubSupabase();
 
-    await expect(signInLoader(buildArgs("/admin/entrar"))).resolves.toBeNull();
-    expect(render(<SignInScreen />)).toContain("Entrar al panel");
+    const data = await signInLoader(buildArgs("/admin/entrar"));
+
+    expect(data.protection.timestamp).not.toBe("");
+    const html = render(<SignInScreen {...data} outcome={undefined} />);
+    expect(html).toContain("<title>Entrar al panel</title>");
+    expect(html).toMatch(/<h1[^>]*>Entrar</);
+  });
+
+  it("existe en los dos idiomas, igual que la página del enlace", () => {
+    expect(getPanelPath("adminSignIn", "es")).toBe("/admin/entrar");
+    expect(getPanelPath("adminSignIn", "en")).toBe("/en/admin/sign-in");
+    expect(getPanelPath("adminSignInLink", "es")).toBe("/admin/entrar/enlace");
+    expect(getPanelPath("adminSignInLink", "en")).toBe(
+      "/en/admin/sign-in/link",
+    );
   });
 
   it.each([
@@ -137,7 +154,21 @@ describe("pantalla de entrada", () => {
 
     await expect(
       signInLoader(buildArgs("/admin/entrar", { cookie: SIGNED_IN })),
-    ).resolves.toBeNull();
+    ).resolves.toHaveProperty("protection");
+  });
+});
+
+describe("pantalla de entrada: formulario vencido", () => {
+  it.each([
+    [{ status: "rejected", reason: "too_fast" }, true],
+    [{ status: "rejected", reason: "rate_limited" }, false],
+    [{ status: "invalid" }, false],
+  ])("tras %j pide un formulario fresco: %s", (actionResult, expected) => {
+    const args = { actionResult, defaultShouldRevalidate: false };
+
+    expect(
+      shouldRevalidate(args as Parameters<typeof shouldRevalidate>[0]),
+    ).toBe(expected);
   });
 });
 

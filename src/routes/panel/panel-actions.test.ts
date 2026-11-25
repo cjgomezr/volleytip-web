@@ -13,6 +13,10 @@ const PANEL_FOLDER = "routes/panel/";
 const ACTIONS_WITHOUT_AUDIT: Readonly<Record<string, string>> = {
   "routes/panel/sign-out.tsx":
     "Cerrar sesión no cambia datos del sitio, y el staff, que no pasa por la pieza, también tiene que poder salir.",
+  "routes/panel/sign-in.tsx":
+    "Pedir el enlace no cambia datos del sitio, y quien lo pide todavía no es admin.",
+  "routes/panel/sign-in-link.tsx":
+    "Canjear el enlace abre la sesión y no cambia datos del sitio; antes de canjear no hay actor.",
   "routes/panel/missing.tsx":
     "El comodín del panel no escribe nada: su action solo responde 404.",
 };

@@ -270,6 +270,34 @@ El panel (`/admin` y `/en/admin`) usa una sesión de Supabase Auth guardada en c
 - **El panel responde en modo mantenimiento.** Es desde donde se apaga.
 - **En las pruebas** se entra sin correo: `createTestSession` (`src/testing/local-session.ts`) para las de integración y `signInToPanel` (`tests/support/panel-session.ts`) para Playwright. Las dos solo sirven contra la base local.
 
+### El correo para entrar
+
+La persona escribe su correo en `/admin/entrar` y Supabase Auth le manda un enlace de un solo uso que vence en una hora. El enlace abre el sitio (`/admin/entrar/enlace`), que no canjea nada hasta que la persona pulsa "Entrar".
+
+**En local** no hay nada que configurar. `supabase/config.toml` declara la plantilla y el correo llega al buzón de pruebas (`http://127.0.0.1:54324`). Después de cambiar `config.toml` o la plantilla hay que reiniciar la base (`npm run db:stop` y `npm run db:start`). El enlace local apunta a `http://localhost:3740`.
+
+**En cada proyecto alojado** (`volleytip-dev` y `volleytip-prod`) lo hace Camilo en el panel de Supabase, porque ese archivo no se aplica solo. Los nombres de los menús pueden cambiar un poco entre versiones del panel.
+
+1. **Site URL.** Authentication → URL Configuration → "Site URL": el mismo valor que `SITE_ORIGIN` del servicio de Railway de ese entorno (`https://staging.volleytip.com` en `volleytip-dev`). El enlace del correo se arma con él. Cuando cambie el dominio de producción (W13) hay que cambiarlo aquí también.
+2. **Redirect URLs** (las direcciones de retorno). En la misma pantalla, "Redirect URLs" → "Add URL": el mismo origen seguido de `/**`, por ejemplo `https://staging.volleytip.com/**`. Sin esto Supabase cambia la dirección de retorno por la Site URL y, al entrar, siempre se llega al inicio del panel.
+3. **SMTP de Resend.** Authentication → Emails → "SMTP Settings" → activar "Enable custom SMTP":
+   - Host: `smtp.resend.com`. Puerto: `465`.
+   - Usuario: `resend`.
+   - Contraseña: una llave de API de Resend con permiso solo de envío (Resend → API Keys), una por entorno. Se guarda en el gestor de contraseñas; nunca en el repositorio.
+   - Sender email: una dirección del dominio verificado en Resend. Sender name: `VolleyTip`.
+4. **Límite de correos.** Authentication → Rate Limits → "emails per hour": comprobar que alcanza para el equipo (Supabase pone un tope bajo al activar el SMTP propio).
+5. **Plantilla.** Authentication → Emails → "Templates" → "Magic Link":
+   - Subject: `Tu enlace para entrar a VolleyTip / Your VolleyTip sign-in link`.
+   - Body: pegar completo el contenido de `supabase/templates/magic_link.html`.
+   - Cada vez que ese archivo cambie en el repositorio hay que pegarlo de nuevo en los dos proyectos.
+6. **Vencimiento.** Authentication → Sign In / Providers → Email: "Email OTP Expiration" en `3600` segundos, que es lo que dice el correo.
+7. **Registro público apagado.** Authentication → Sign In / Providers → "Allow new users to sign up": desactivado.
+8. **Comprobar.** Con un admin ya creado (ver abajo), pedir el enlace en el sitio del entorno, abrir el correo y entrar. Probar también con un correo ajeno: la pantalla responde igual y no llega nada.
+
+Una cuenta del equipo tiene que tener el correo confirmado (el comando de abajo lo deja así): con el registro apagado, a una sin confirmar no le llega el enlace.
+
+**Si el correo no llega.** La pantalla responde "revisa tu correo" aunque el envío falle, para no delatar quién es del equipo. El fallo queda en el registro del servidor ("Supabase Auth no envió el enlace de entrada", con su estado) y en el panel de Supabase, en Logs → Auth. Solo cuando Supabase Auth no responde la pantalla dice que no se pudo enviar.
+
 ### El primer admin de cada entorno
 
 Un entorno recién creado no tiene a nadie que pueda entrar al panel. El primer admin se crea con un comando, una vez por entorno (#121):

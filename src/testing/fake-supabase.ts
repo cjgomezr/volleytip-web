@@ -42,6 +42,8 @@ export interface FakeSupabaseOptions {
   readonly profileUpdateFailureStatus?: number;
   /** El cambio del perfil no toca ninguna fila, como cuando RLS lo tapa. */
   readonly isProfileUpdateIgnored?: boolean;
+  /** Estado con que falla el canje de un enlace. */
+  readonly verifyFailureStatus?: number;
   /** Estado con que falla la escritura en la bitácora. */
   readonly auditFailureStatus?: number;
 }
@@ -62,6 +64,8 @@ export interface FakeSupabase {
   readonly profileUpdates: FakeProfileUpdate[];
   /** Las filas que se mandaron a `audit_log`, aceptadas o no. */
   readonly auditRows: unknown[];
+  /** El cuerpo de cada canje de enlace pedido, aceptado o no. */
+  readonly verifications: unknown[];
 }
 
 function buildUser(): Record<string, unknown> {
@@ -133,12 +137,19 @@ async function readProfileUpdate(request: Request): Promise<FakeProfileUpdate> {
   };
 }
 
+function answerVerify(options: FakeSupabaseOptions): Response {
+  return options.verifyFailureStatus
+    ? authError(options.verifyFailureStatus, "otp_expired")
+    : Response.json(buildSession(VALID_ACCESS_TOKEN, ONE_HOUR_IN_SECONDS));
+}
+
 export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const { profile = ADMIN_PROFILE } = options;
   const requests: string[] = [];
   const profileAuthorizations: (string | null)[] = [];
   const profileUpdates: FakeProfileUpdate[] = [];
   const auditRows: unknown[] = [];
+  const verifications: unknown[] = [];
 
   async function answerAuditInsert(request: Request): Promise<Response> {
     auditRows.push(await request.json());
@@ -155,6 +166,10 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     }
     if (url.pathname === "/auth/v1/token") return answerRefresh(request);
     if (url.pathname === "/auth/v1/user") return answerUser(request);
+    if (url.pathname === "/auth/v1/verify") {
+      verifications.push(await request.json());
+      return answerVerify(options);
+    }
     if (url.pathname === "/auth/v1/logout") {
       if (options.logoutFailureStatus) {
         return authError(options.logoutFailureStatus, "unexpected_failure");
@@ -184,7 +199,13 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
       answer(new Request(input, init)),
   );
-  return { requests, profileAuthorizations, profileUpdates, auditRows };
+  return {
+    requests,
+    profileAuthorizations,
+    profileUpdates,
+    auditRows,
+    verifications,
+  };
 }
 
 interface SessionCookieOptions {

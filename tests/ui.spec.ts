@@ -1796,9 +1796,9 @@ for (const variant of ROUTINE_LINK_VARIANTS) {
 }
 
 // ---------------------------------------------------------------------------
-// El panel: su entrada y la pantalla del staff (#119), y la cáscara (#122).
-// Axe, desborde y comportamiento en tests/admin-panel.spec.ts y
-// tests/admin-shell.spec.ts.
+// El panel: su entrada (#120), la pantalla del staff (#119) y la cáscara
+// (#122). Axe, desborde y comportamiento en tests/admin-sign-in.spec.ts,
+// tests/admin-panel.spec.ts y tests/admin-shell.spec.ts.
 // ---------------------------------------------------------------------------
 
 const PANEL_PROVISIONAL_VIEWPORTS = viewports.filter(({ name }) =>
@@ -1833,13 +1833,31 @@ interface PanelVariant {
   readonly sizes: readonly (typeof viewports)[number][];
 }
 
+// La entrada y la página de su enlace (#120), cada estado en los dos idiomas.
+// La muestra no usa la base ni manda correos.
+const SIGN_IN_STATES = [
+  "vacio",
+  "error",
+  "enviado",
+  "enlace",
+  "vencido",
+] as const;
+
+const SIGN_IN_VARIANTS: readonly PanelVariant[] = SIGN_IN_STATES.flatMap(
+  (state) =>
+    [
+      { suffix: "", path: "/dev/entrar" },
+      { suffix: "-en", path: "/en/dev/entrar" },
+    ].map(({ suffix, path }) => ({
+      name: `entrada-${state}${suffix}`,
+      path: `${path}?estado=${state}`,
+      role: undefined,
+      sizes: viewports,
+    })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
-  {
-    name: "entrada",
-    path: "/admin/entrar",
-    role: undefined,
-    sizes: PANEL_PROVISIONAL_VIEWPORTS,
-  },
+  ...SIGN_IN_VARIANTS,
   {
     name: "staff",
     path: "/admin",

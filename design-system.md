@@ -187,6 +187,13 @@ Rules:
 - Placeholder text is `ink-subtle`.
 - A long label or a long error message wraps; it is never cut.
 
+**Admin sign-in** (ticket #120; `src/components/panel/sign-in-*.tsx`; sample at
+`/dev/entrar`). Drawn in `AdminLogin.png`. From 768px two columns: `brand-night`
+with the logo and the panel title (Anton 48px under 768px, 64px from 768px,
+96px from 1024px), and `line-light` with the form, 400px wide. Under 768px the
+dark column becomes a band over the form. The column heading is Anton 44px, 48px
+from 768px.
+
 **Admin shell** (ticket #122; `src/components/panel/`; sample at
 `/dev/panel`). The admin content sits on `line-light`, as drawn in the admin
 mockups, with white cards.

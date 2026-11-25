@@ -190,7 +190,8 @@ export function issueFormProtection<Data>(
   };
 }
 
-async function readFormData(request: Request): Promise<FormData> {
+/** El formulario de un envío; vacío si el cuerpo no es un formulario. */
+export async function readFormData(request: Request): Promise<FormData> {
   try {
     return await request.formData();
   } catch (error) {

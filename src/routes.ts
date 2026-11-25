@@ -49,6 +49,10 @@ export default [
   // En producción responde 404.
   route("dev/panel/*", "routes/dev-panel.tsx"),
   route("en/dev/panel/*", "routes/dev-panel.tsx", { id: "dev-panel-en" }),
+  // Pinta la entrada del panel y la página de su enlace en cada estado, sin la
+  // base. En producción responde 404.
+  route("dev/entrar", "routes/dev-sign-in.tsx"),
+  route("en/dev/entrar", "routes/dev-sign-in.tsx", { id: "dev-sign-in-en" }),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
   // Los archivos con que el celular abre `/r/` en la app. Son de recurso:
