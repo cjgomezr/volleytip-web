@@ -24,6 +24,15 @@ const STATS: readonly SiteStat[] = [
   },
 ];
 
+/** El texto del h1, sin las etiquetas que lo parten en líneas. */
+function readHeading(html: string): string {
+  const [, inner = ""] = /<h1[^>]*>(.*?)<\/h1>/s.exec(html) ?? [];
+  return inner
+    .replace(/<[^>]+>/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function render({
   language = "es",
   stats = STATS,
@@ -61,7 +70,7 @@ describe("nosotros: página", () => {
     const html = render();
 
     expect(html.match(/<h1[ >]/g)).toHaveLength(1);
-    expect(html).toMatch(/<h1[^>]*>El voley es para/);
+    expect(readHeading(html)).toBe("El voley es para todos");
     const levels = [...html.matchAll(/<h([1-6])[ >]/g)].map((m) => m[1]);
     expect(levels[0]).toBe("1");
     levels.forEach((level, index) => {
@@ -92,6 +101,29 @@ describe("nosotros: página", () => {
     expect(order.every((position) => position > -1)).toBe(true);
     expect([...order].sort((a, b) => a - b)).toEqual(order);
   });
+
+  it("parte el titular después de la primera línea, como el diseño", () => {
+    expect(render()).toMatch(/<h1[^>]*><span class="block">El voley<\/span>/);
+    expect(render({ language: "en" })).toMatch(
+      /<h1[^>]*><span class="block">Volleyball<\/span>/,
+    );
+  });
+
+  it.each([
+    { language: "es", position: "Comunicador audiovisual" },
+    { language: "en", position: "Audiovisual communicator" },
+  ] as const)(
+    "de cada fundador muestra nombre y cargo, sin párrafo ($language)",
+    ({ language, position }) => {
+      const lists = render({ language }).match(/<ul[^>]*>.*?<\/ul>/gs) ?? [];
+      const founders = lists.find((list) => list.includes("piza.webp")) ?? "";
+
+      expect(founders).toContain("Andrés Piza");
+      expect(founders).toContain(position);
+      // Lo único que queda en un <p> es la etiqueta y el cargo.
+      expect(founders.match(/<p[ >]/g)).toHaveLength(4);
+    },
+  );
 
   it("muestra a los dos fundadores con foto y alt", () => {
     const html = render();
@@ -143,7 +175,7 @@ describe("nosotros: página", () => {
   it("sale en inglés con los textos de las traducciones", () => {
     const html = render({ language: "en" });
 
-    expect(html).toMatch(/<h1[^>]*>Volleyball is for/);
+    expect(readHeading(html)).toBe("Volleyball is for everyone");
     expect(html).toContain("The founders");
     expect(html).toContain("Let&#x27;s keep playing!");
     expect(html).not.toContain("Cómo lo hacemos");

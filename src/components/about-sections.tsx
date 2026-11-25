@@ -23,10 +23,22 @@ const HOW_STEPS: readonly TitledText[] = [
 
 // El último momento es "Hoy": va resaltado.
 const STORY_MOMENTS: readonly TitledText[] = [
-  { titleKey: "about.story.moment1.title", textKey: "about.story.moment1.text" },
-  { titleKey: "about.story.moment2.title", textKey: "about.story.moment2.text" },
-  { titleKey: "about.story.moment3.title", textKey: "about.story.moment3.text" },
-  { titleKey: "about.story.moment4.title", textKey: "about.story.moment4.text" },
+  {
+    titleKey: "about.story.moment1.title",
+    textKey: "about.story.moment1.text",
+  },
+  {
+    titleKey: "about.story.moment2.title",
+    textKey: "about.story.moment2.text",
+  },
+  {
+    titleKey: "about.story.moment3.title",
+    textKey: "about.story.moment3.text",
+  },
+  {
+    titleKey: "about.story.moment4.title",
+    textKey: "about.story.moment4.text",
+  },
 ];
 
 interface Founder {
@@ -34,7 +46,6 @@ interface Founder {
   readonly photoFile: string;
   readonly nameKey: MessageKey;
   readonly positionKey: MessageKey;
-  readonly textKey: MessageKey;
   readonly photoAltKey: MessageKey;
 }
 
@@ -45,7 +56,6 @@ const FOUNDERS: readonly Founder[] = [
     photoFile: "piza.webp",
     nameKey: "about.founders.piza.name",
     positionKey: "about.founders.piza.position",
-    textKey: "about.founders.piza.text",
     photoAltKey: "about.founders.piza.photoAlt",
   },
   {
@@ -53,7 +63,6 @@ const FOUNDERS: readonly Founder[] = [
     photoFile: "gomez.webp",
     nameKey: "about.founders.gomez.name",
     positionKey: "about.founders.gomez.position",
-    textKey: "about.founders.gomez.text",
     photoAltKey: "about.founders.gomez.photoAlt",
   },
 ];
@@ -150,7 +159,7 @@ export function Founders({
         {FOUNDERS.map((founder) => (
           <li
             key={founder.id}
-            className="grid overflow-hidden rounded-3xl bg-brand-indigo sm:grid-cols-2"
+            className="grid overflow-hidden rounded-3xl bg-brand-indigo sm:grid-cols-[2fr_3fr]"
           >
             <OptimizedImage
               cdnHost={cdnHost}
@@ -158,21 +167,18 @@ export function Founders({
               alt={translate(founder.photoAltKey)}
               width={FOUNDER_PHOTO_WIDTH}
               height={FOUNDER_PHOTO_HEIGHT}
-              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              sizes="(min-width: 1024px) 20vw, (min-width: 640px) 40vw, 100vw"
               className="aspect-[4/5] h-full w-full object-cover"
             />
-            <div className="flex min-w-0 flex-col justify-end p-6 md:p-8">
+            <div className="flex min-w-0 flex-col justify-center p-6">
               <p className="m-0 text-[13px] font-bold tracking-[0.1em] text-brand-lime uppercase">
                 {translate("about.founders.role")}
               </p>
-              <h3 className="mt-2.5 mb-0 font-display text-[36px] leading-none font-normal uppercase md:text-[44px]">
+              <h3 className="mt-2.5 mb-0 font-display text-[36px] leading-none font-normal uppercase xl:text-[44px]">
                 {translate(founder.nameKey)}
               </h3>
               <p className="mt-2 mb-0 font-semibold">
                 {translate(founder.positionKey)}
-              </p>
-              <p className="mt-3.5 mb-0 leading-[1.6] text-ink-muted">
-                {translate(founder.textKey)}
               </p>
             </div>
           </li>
