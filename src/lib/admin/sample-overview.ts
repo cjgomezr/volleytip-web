@@ -1,6 +1,10 @@
 import type { Language } from "../i18n/languages";
+import type { AdminModule } from "./modules";
 import {
+  APP_WAITLIST_CARD,
   buildOverviewView,
+  CAMP_NOTIFY_CARD,
+  NEW_MESSAGES_CARD,
   type ActivityEntry,
   type CardData,
   type Loaded,
@@ -8,7 +12,6 @@ import {
   type OverviewView,
   type RejectionCount,
 } from "./overview";
-import type { AdminModule } from "./modules";
 import { SAMPLE_MODULES } from "./sample-modules";
 
 // El resumen de la página de muestra (/dev/panel?resumen=...): sin sesión ni
@@ -53,28 +56,15 @@ const SAMPLE_REJECTIONS: readonly RejectionCount[] = [
   { form: "admin_sign_in", reason: "validation", count: 1 },
 ];
 
-function sampleCards(counts: readonly Loaded<number>[]): readonly CardData[] {
-  const [messages, app, camps] = counts;
-  const failed: Loaded<number> = { status: "failed" };
+function sampleCards(
+  messages: Loaded<number>,
+  app: Loaded<number>,
+  camps: Loaded<number>,
+): readonly CardData[] {
   return [
-    {
-      id: "new-messages",
-      labelKey: "panel.overview.card.newMessages",
-      link: { moduleId: "messages", search: "?estado=new" },
-      count: messages ?? failed,
-    },
-    {
-      id: "app-waitlist",
-      labelKey: "panel.overview.card.appWaitlist",
-      link: { moduleId: "app-waitlist" },
-      count: app ?? failed,
-    },
-    {
-      id: "camp-notify",
-      labelKey: "panel.overview.card.campNotify",
-      link: { moduleId: "camp-notify" },
-      count: camps ?? failed,
-    },
+    { ...NEW_MESSAGES_CARD, count: messages },
+    { ...APP_WAITLIST_CARD, count: app },
+    { ...CAMP_NOTIFY_CARD, count: camps },
   ];
 }
 
@@ -84,17 +74,17 @@ function ok<Value>(value: Value): Loaded<Value> {
 
 const SAMPLE_DATA: Readonly<Record<SampleOverviewState, OverviewData>> = {
   datos: {
-    cards: sampleCards([ok(3), ok(12840), ok(112)]),
+    cards: sampleCards(ok(3), ok(12840), ok(112)),
     activity: ok(SAMPLE_ACTIVITY),
     rejections: ok(SAMPLE_REJECTIONS),
   },
   vacio: {
-    cards: sampleCards([ok(0), ok(0), ok(0)]),
+    cards: sampleCards(ok(0), ok(0), ok(0)),
     activity: ok([]),
     rejections: ok([]),
   },
   fallo: {
-    cards: sampleCards([{ status: "failed" }, ok(12840), ok(112)]),
+    cards: sampleCards({ status: "failed" }, ok(12840), ok(112)),
     activity: { status: "failed" },
     rejections: { status: "failed" },
   },

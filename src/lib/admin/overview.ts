@@ -17,12 +17,32 @@ export interface CardLink {
   readonly search?: string;
 }
 
-export interface CardData {
+export interface CardDefinition {
   readonly id: string;
   readonly labelKey: MessageKey;
-  readonly link: CardLink;
+  /** Ausente en una tarjeta que no tiene a dónde llevar. */
+  readonly link?: CardLink;
+}
+
+export interface CardData extends CardDefinition {
   readonly count: Loaded<number>;
 }
+
+// Las tarjetas de lo que el sitio ya guarda. La de mensajes enlaza cuando la
+// bandeja se registre como módulo `messages`; la bandeja lee `?estado=`.
+export const NEW_MESSAGES_CARD: CardDefinition = {
+  id: "new-messages",
+  labelKey: "panel.overview.card.newMessages",
+  link: { moduleId: "messages", search: "?estado=new" },
+};
+export const APP_WAITLIST_CARD: CardDefinition = {
+  id: "app-waitlist",
+  labelKey: "panel.overview.card.appWaitlist",
+};
+export const CAMP_NOTIFY_CARD: CardDefinition = {
+  id: "camp-notify",
+  labelKey: "panel.overview.card.campNotify",
+};
 
 export interface ActivityEntry {
   readonly id: string;
@@ -122,9 +142,11 @@ function mapLoaded<Value, Result>(
 }
 
 function buildHref(
-  { moduleId, search = "" }: CardLink,
+  link: CardLink | undefined,
   { modules, language }: ViewOptions,
 ): string | undefined {
+  if (link === undefined) return undefined;
+  const { moduleId, search = "" } = link;
   const target = modules.find(({ id }) => id === moduleId);
   if (target === undefined) return undefined;
   return `${buildPagePath(target.page, findLanguage(language))}${search}`;

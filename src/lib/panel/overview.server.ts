@@ -1,10 +1,13 @@
 import type { AdminModule, ModuleOverviewCard } from "../admin/modules";
-import type {
-  ActivityEntry,
-  CardLink,
-  Loaded,
-  OverviewData,
-  RejectionCount,
+import {
+  APP_WAITLIST_CARD,
+  CAMP_NOTIFY_CARD,
+  NEW_MESSAGES_CARD,
+  type ActivityEntry,
+  type CardDefinition,
+  type Loaded,
+  type OverviewData,
+  type RejectionCount,
 } from "../admin/overview";
 import type { TypedSupabaseClient } from "../supabase/typed-client";
 
@@ -15,10 +18,7 @@ const MILLISECONDS_PER_DAY = 86_400_000;
 const ISO_DATE_LENGTH = "2026-01-01".length;
 const COUNT_ONLY = { count: "exact", head: true } as const;
 
-interface LinkedCard extends ModuleOverviewCard {
-  readonly id: string;
-  readonly link: CardLink;
-}
+type CountedCard = CardDefinition & Pick<ModuleOverviewCard, "count">;
 
 interface CountResult {
   readonly count: number | null;
@@ -47,33 +47,22 @@ function countWaitlist(
   );
 }
 
-// Las tarjetas de lo que el sitio ya guarda. Cada una enlaza cuando su
-// sección se registre con ese id; la bandeja de mensajes lee `?estado=`.
-const BASE_CARDS: readonly LinkedCard[] = [
+const BASE_CARDS: readonly CountedCard[] = [
   {
-    id: "new-messages",
-    labelKey: "panel.overview.card.newMessages",
-    link: { moduleId: "messages", search: "?estado=new" },
+    ...NEW_MESSAGES_CARD,
     count: (client) =>
       takeCount(
         client.from("messages").select("id", COUNT_ONLY).eq("status", "new"),
       ),
   },
+  { ...APP_WAITLIST_CARD, count: (client) => countWaitlist(client, "app") },
   {
-    id: "app-waitlist",
-    labelKey: "panel.overview.card.appWaitlist",
-    link: { moduleId: "app-waitlist" },
-    count: (client) => countWaitlist(client, "app"),
-  },
-  {
-    id: "camp-notify",
-    labelKey: "panel.overview.card.campNotify",
-    link: { moduleId: "camp-notify" },
+    ...CAMP_NOTIFY_CARD,
     count: (client) => countWaitlist(client, "camp_notify"),
   },
 ];
 
-function listCards(modules: readonly AdminModule[]): readonly LinkedCard[] {
+function listCards(modules: readonly AdminModule[]): readonly CountedCard[] {
   const moduleCards = modules.flatMap(({ id, overviewCard }) =>
     overviewCard ? [{ ...overviewCard, id, link: { moduleId: id } }] : [],
   );
@@ -151,11 +140,9 @@ export async function readOverview(
 ): Promise<OverviewData> {
   const [cards, activity, rejections] = await Promise.all([
     Promise.all(
-      listCards(modules).map(async ({ id, labelKey, link, count }) => ({
-        id,
-        labelKey,
-        link,
-        count: await settle(id, () => count(client)),
+      listCards(modules).map(async ({ count, ...card }) => ({
+        ...card,
+        count: await settle(card.id, () => count(client)),
       })),
     ),
     settle("audit_log", () => readActivity(client)),
