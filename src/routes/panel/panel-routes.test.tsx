@@ -98,6 +98,35 @@ describe("inicio del panel", () => {
     },
   );
 
+  it.each(["/en/admin", "/en/admin.data"])(
+    "en %s formatea las fechas y los números en inglés",
+    async (path) => {
+      const api = createOverviewApi({
+        appWaitlist: 12040,
+        auditRows: [
+          {
+            id: "1",
+            action: "faq.update",
+            created_at: "2026-11-26T19:30:00Z",
+            actor: null,
+          },
+        ],
+      });
+      vi.stubGlobal("fetch", api.fetch);
+
+      const data = await homeLoader(buildArgs(path, { member: ADMIN }));
+
+      expect(data).toMatchObject({
+        overview: {
+          cards: [{}, { value: { value: "12,040" } }, {}],
+          activity: {
+            value: [{ date: expect.stringMatching(/^11\/26\/26.*PM$/) }],
+          },
+        },
+      });
+    },
+  );
+
   it("al staff no le consulta ningún dato del resumen", async () => {
     const api = createOverviewApi();
     vi.stubGlobal("fetch", api.fetch);

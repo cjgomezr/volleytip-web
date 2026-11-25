@@ -19,14 +19,18 @@ const NOW = new Date("2026-11-26T20:00:00Z");
 
 async function loadView(
   data: FakeOverviewData = {},
-  options: { modules?: readonly AdminModule[]; language?: Language } = {},
+  options: {
+    modules?: readonly AdminModule[];
+    language?: Language;
+    now?: Date;
+  } = {},
 ): Promise<{ api: FakeOverviewApi; view: OverviewView }> {
-  const { modules = [], language = "es" } = options;
+  const { modules = [], language = "es", now = NOW } = options;
   const api = createOverviewApi(data);
   const client = createClient<Database>("http://supabase.test", "llave", {
     global: { fetch: api.fetch },
   });
-  const overview = await readOverview(client, { modules, now: NOW });
+  const overview = await readOverview(client, { modules, now });
   return { api, view: buildOverviewView(overview, { modules, language }) };
 }
 
@@ -270,15 +274,22 @@ describe("resumen: fallo parcial", () => {
 });
 
 describe("resumen: envíos descartados", () => {
-  it("pide los últimos siete días, contando hoy en UTC", async () => {
-    const { api } = await loadView();
+  it.each([
+    ["a media tarde", "2026-11-26T20:00:00Z", "gte.2026-11-20"],
+    // En Colombia todavía es 26: cuenta el día de la base, que va en UTC.
+    ["ya de noche en Colombia", "2026-11-27T02:00:00Z", "gte.2026-11-21"],
+  ])(
+    "%s, pide los últimos siete días contando hoy en UTC",
+    async (_when, now, filter) => {
+      const { api } = await loadView({}, { now: new Date(now) });
 
-    const rejections = api.requests.find(({ url }) =>
-      url.pathname.endsWith("/form_rejections"),
-    );
+      const rejections = api.requests.find(({ url }) =>
+        url.pathname.endsWith("/form_rejections"),
+      );
 
-    expect(rejections?.url.searchParams.get("day")).toBe("gte.2026-11-20");
-  });
+      expect(rejections?.url.searchParams.get("day")).toBe(filter);
+    },
+  );
 
   it("agrupa por formulario y motivo, de mayor a menor", async () => {
     const { view } = await loadView({

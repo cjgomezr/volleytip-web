@@ -6,6 +6,7 @@ export const panelEs = {
   "panel.overview.card.appWaitlist": "Lista de espera de la app",
   "panel.overview.card.campNotify": "Inscritos en «Avísame»",
   "panel.overview.card.failed": "No se pudo cargar este dato.",
+  "panel.overview.retry": "Reintentar",
   "panel.overview.activity.title": "Actividad reciente",
   "panel.overview.activity.system": "Sistema",
   "panel.overview.activity.empty": "Todavía no hay actividad.",

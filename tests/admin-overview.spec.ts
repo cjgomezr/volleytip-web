@@ -30,6 +30,7 @@ const LANGUAGES = [
     activity: "Actividad reciente",
     empty: "Todavía no hay actividad.",
     failed: "No se pudo cargar este dato.",
+    retry: "Reintentar",
   },
   {
     code: "en",
@@ -41,6 +42,7 @@ const LANGUAGES = [
     activity: "Recent activity",
     empty: "There is no activity yet.",
     failed: "Could not load this number.",
+    retry: "Try again",
   },
 ] as const;
 
@@ -134,6 +136,11 @@ for (const language of LANGUAGES) {
         await expect(page.locator("[data-overview-value]")).toHaveCount(
           BASE_CARDS - 1,
         );
+        const retry = page.getByRole("link", { name: language.retry });
+        const box = await retry.boundingBox();
+        expect(box?.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
+        await retry.click();
+        await expect(page).toHaveURL(`${language.shell}?resumen=fallo`);
       });
 
       test("con el teclado, la tarjeta de mensajes abre la bandeja filtrada", async ({

@@ -154,7 +154,8 @@ describe("resumen: pantalla", () => {
   it("solo es enlace la tarjeta que tiene a dónde ir", () => {
     const html = render(WITH_DATA);
 
-    expect(html.match(/<a /g)).toHaveLength(1);
+    // El otro enlace es "Reintentar": esta vista trae una tarjeta con fallo.
+    expect(html.match(/<a /g)).toHaveLength(2);
     expect(html).toContain('href="/admin/mensajes?estado=new"');
   });
 
@@ -175,6 +176,36 @@ describe("resumen: pantalla", () => {
     expect(html).toContain("No se pudo cargar la actividad.");
     expect(html).toContain("No se pudieron cargar los envíos descartados.");
     expect(html).not.toContain("Todavía no hay actividad.");
+  });
+
+  it("los avisos de fallo salen en el rojo de error, no en el tono de vacío", () => {
+    const html = render({
+      ...EMPTY,
+      activity: { status: "failed" },
+      rejections: { status: "failed" },
+    });
+
+    const notices = [...html.matchAll(/<p class="([^"]*)">No se pud/g)].map(
+      ([, classes]) => classes,
+    );
+
+    expect(notices).toHaveLength(2);
+    for (const classes of notices) {
+      expect(classes).toContain("text-brand-red-deep");
+      expect(classes).not.toContain("text-ink-subtle");
+    }
+  });
+
+  it.each([
+    ["una tarjeta", WITH_DATA],
+    ["la actividad", { ...EMPTY, activity: { status: "failed" } as const }],
+    ["los descartes", { ...EMPTY, rejections: { status: "failed" } as const }],
+  ])("si falla %s, ofrece reintentar en la misma pantalla", (_what, view) => {
+    expect(render(view)).toMatch(/<a [^>]*href="\/"[^>]*>Reintentar<\/a>/);
+  });
+
+  it("sin fallos no ofrece reintentar", () => {
+    expect(render(EMPTY)).not.toContain("Reintentar");
   });
 
   it("muestra los descartes por formulario y motivo", () => {

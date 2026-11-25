@@ -6,6 +6,7 @@ export const panelEn = {
   "panel.overview.card.appWaitlist": "App waitlist",
   "panel.overview.card.campNotify": "“Notify me” sign-ups",
   "panel.overview.card.failed": "Could not load this number.",
+  "panel.overview.retry": "Try again",
   "panel.overview.activity.title": "Recent activity",
   "panel.overview.activity.system": "System",
   "panel.overview.activity.empty": "There is no activity yet.",
