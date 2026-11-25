@@ -1684,7 +1684,17 @@ for (const variant of FAQ_PAGE_VARIANTS) {
       test("coincide con la línea base aprobada", async ({ page }) => {
         await page.goto(`${APP_URL}${variant.path}`);
         if (variant.opensFirst) {
-          await page.locator("summary").first().click();
+          const firstQuestion = page.locator("details").first();
+          // Un clic que llega mientras la página termina de cargar puede no
+          // dejarla abierta, y la captura saldría con la pregunta cerrada.
+          await expect(async () => {
+            if (
+              !(await firstQuestion.evaluate((el) => "open" in el && el.open))
+            ) {
+              await firstQuestion.locator("summary").click();
+            }
+            await expect(firstQuestion).toHaveAttribute("open", "");
+          }).toPass();
         }
         await page.evaluate(async () => {
           await document.fonts.ready;
