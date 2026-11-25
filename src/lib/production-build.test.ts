@@ -485,13 +485,20 @@ const REACHES_ACTION_TEST_TIMEOUT_MS = 20_000;
  * del hosting: el proxy termina el HTTPS, así que el servidor ve la petición
  * por http, pero el navegador manda su origen con https.
  */
-function submitBehindProxy(host: string, origin: string): number {
+function submitBehindProxy(
+  host: string,
+  origin: string,
+  {
+    pathname = "/dev/componentes.data",
+    siteOrigin = SENTINEL_ENV.SITE_ORIGIN,
+  }: { readonly pathname?: string; readonly siteOrigin?: string } = {},
+): number {
   const script = `
     import { createRequestHandler } from "react-router";
     const build = await import(${JSON.stringify(pathToFileURL(SERVER_BUNDLE).href)});
     const handle = createRequestHandler(build, "production");
     const response = await handle(
-      new Request(${JSON.stringify(`http://${host}/dev/componentes.data`)}, {
+      new Request(${JSON.stringify(`http://${host}${pathname}`)}, {
         method: "POST",
         headers: { Origin: ${JSON.stringify(origin)} },
         body: new FormData(),
@@ -509,6 +516,7 @@ function submitBehindProxy(host: string, origin: string): number {
         ...process.env,
         ...SENTINEL_ENV,
         APP_ENV: "staging",
+        SITE_ORIGIN: siteOrigin,
         SUPABASE_URL: UNREACHABLE_SUPABASE_URL,
       },
       encoding: "utf8",
@@ -856,5 +864,61 @@ describe("modo mantenimiento en el servidor construido", () => {
     const response = requestWhileInMaintenance("/healthz");
 
     expect(response.status).toBe(200);
+  });
+});
+
+describe("panel en el servidor construido", () => {
+  const SIGN_OUT = "/admin/salir.data";
+  const HOST = "staging.volleytip.com";
+  const SITE = { pathname: SIGN_OUT, siteOrigin: `https://${HOST}` };
+  const FORBIDDEN_STATUS = 403;
+
+  it.each([
+    ["/admin", "/admin/entrar?next=%2Fadmin"],
+    ["/en/admin", "/en/admin/sign-in?next=%2Fen%2Fadmin"],
+    ["/en/admin/x", "/en/admin/sign-in?next=%2Fen%2Fadmin%2Fx"],
+  ])(
+    "con mantenimiento y sin sesión, %s redirige a la entrada",
+    (path, destination) => {
+      const response = requestWhileInMaintenance(path);
+
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toBe(destination);
+      expect(response.headers["x-robots-tag"]).toBe("noindex, nofollow");
+    },
+  );
+
+  it.each(["/admin/entrar", "/en/admin/sign-in"])(
+    "con mantenimiento, %s responde 200 y pide no indexar",
+    (path) => {
+      const response = requestWhileInMaintenance(path);
+
+      expect(response.status).toBe(200);
+      expect(response.headers["x-robots-tag"]).toBe("noindex, nofollow");
+      expect(response.body).toContain(
+        '<meta name="robots" content="noindex, nofollow"/>',
+      );
+    },
+  );
+
+  it("un envío desde el origen del sitio pasa la guardia del origen", () => {
+    const status = submitBehindProxy(HOST, `https://${HOST}`, SITE);
+
+    expect(status).not.toBe(FORBIDDEN_STATUS);
+    expect(status).not.toBe(BAD_REQUEST_STATUS);
+  });
+
+  it("un envío desde otro dominio propio responde 403", () => {
+    const status = submitBehindProxy(HOST, "https://www.volleytip.com", SITE);
+
+    expect(status).toBe(FORBIDDEN_STATUS);
+  });
+
+  // React Router corta antes que cualquier middleware lo que venga de un
+  // dominio que no está en `allowedActionOrigins`, y responde 400.
+  it("un envío desde un sitio ajeno se rechaza antes de la guardia", () => {
+    const status = submitBehindProxy(HOST, "https://sitio-ajeno.test", SITE);
+
+    expect(status).toBe(BAD_REQUEST_STATUS);
   });
 });

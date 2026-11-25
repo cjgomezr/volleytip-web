@@ -260,6 +260,16 @@ El servidor no ve la conexión del visitante: la ve el proxy de Railway, que la 
 
 En local no hay proxy delante, así que la cabecera de IP no llega y la IP del visitante sale como error. Qué hace un formulario con ese error lo decide el ticket #35.
 
+## Acceso al panel
+
+El panel (`/admin` y `/en/admin`) usa una sesión de Supabase Auth guardada en cookies `HttpOnly`, `SameSite=Lax` y `Secure` fuera de `local` y `test`. No necesita variables nuevas.
+
+- **El registro público va apagado en cada proyecto.** En local lo hace `enable_signup = false` en `supabase/config.toml`. En los proyectos alojados ese archivo no se aplica solo: se apaga a mano en el panel de Supabase, en Authentication → Sign In / Providers → "Allow new users to sign up".
+- **Las cuentas las crea el servidor** con la llave de servicio, nunca el navegador.
+- **Los envíos del panel solo se aceptan desde `SITE_ORIGIN`.** Es más estricto que los formularios públicos: desde otro dominio propio (`www.volleytip.com` cuando `SITE_ORIGIN` es `volleytip.com`) un envío responde 403, y desde un dominio ajeno React Router responde 400 antes. El panel de staging se usa en `staging.volleytip.com`. En `local` y `test` también se acepta la dirección donde corre el servidor.
+- **El panel responde en modo mantenimiento.** Es desde donde se apaga.
+- **En las pruebas** se entra sin correo: `createTestSession` (`src/testing/local-session.ts`) para las de integración y `signInToPanel` (`tests/support/panel-session.ts`) para Playwright. Las dos solo sirven contra la base local.
+
 ## Imágenes
 
 Las fotos de productos, camps y tips se sirven por Bunny Optimizer, que las entrega en el ancho que cada pantalla pide (FR-123). El código que arma las direcciones lo construyó el ticket #36: `src/lib/images/image-url.ts` y el componente `src/components/optimized-image.tsx`.

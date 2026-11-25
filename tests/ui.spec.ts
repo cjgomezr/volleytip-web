@@ -36,8 +36,8 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { test } from "./support/panel-session";
 import {
-  test,
   expect,
   routeExternalRequests,
   waitForImages,
@@ -1772,6 +1772,50 @@ for (const variant of ROUTINE_LINK_VARIANTS) {
         });
         await waitForImages(page);
         const name = `rutina-${variant.name}-${vp.name}.png`;
+        await createMissingLocalBaseline(name, () =>
+          page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+        );
+        await expect(page).toHaveScreenshot(name, {
+          ...SCREENSHOT_OPTIONS,
+          fullPage: true,
+          maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+        });
+      });
+    });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pantallas provisionales del panel y de su entrada (#119), a 390 y 1440 px.
+// Axe, desborde y comportamiento en tests/admin-panel.spec.ts.
+// ---------------------------------------------------------------------------
+
+const PANEL_VARIANTS = [
+  { name: "entrada", path: "/admin/entrar", role: undefined },
+  { name: "inicio", path: "/admin", role: "admin" },
+  { name: "staff", path: "/admin", role: "staff" },
+] as const;
+
+for (const variant of PANEL_VARIANTS) {
+  for (const vp of viewports.filter(({ name }) =>
+    ["mobile", "desktop"].includes(name),
+  )) {
+    test.describe(`panel ${variant.name} @ ${vp.name}`, () => {
+      test.use({ viewport: { width: vp.width, height: vp.height } });
+
+      test("coincide con la línea base aprobada", async ({
+        page,
+        signInToPanel,
+      }) => {
+        if (variant.role !== undefined) {
+          // El nombre se ve en la captura: siempre el mismo.
+          await signInToPanel({ role: variant.role, fullName: "Andrés Gómez" });
+        }
+        await page.goto(`${APP_URL}${variant.path}`);
+        await page.evaluate(async () => {
+          await document.fonts.ready;
+        });
+        const name = `panel-${variant.name}-${vp.name}.png`;
         await createMissingLocalBaseline(name, () =>
           page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
         );
