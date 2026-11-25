@@ -124,7 +124,8 @@ async function isEmailConfirmed(
  * Deja en la cuenta un acceso que nadie más tiene: el correo confirmado, sin
  * el que no se puede pedir el enlace, y una contraseña al azar. Con el
  * registro abierto un tercero pudo crear la cuenta con ese correo, y su
- * contraseña le abriría el panel.
+ * contraseña le abriría el panel. No cierra las sesiones que la cuenta ya
+ * tenga abiertas: eso se revisa a mano (docs/entornos.md).
  */
 async function secureAccount(
   client: TypedSupabaseClient,
