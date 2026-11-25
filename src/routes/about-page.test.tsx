@@ -109,17 +109,21 @@ describe("nosotros: página", () => {
     );
   });
 
-  it("de cada fundador muestra nombre y cargo, sin párrafo", () => {
-    const html = render();
-    const founders = html.slice(
-      html.indexOf("Los fundadores"),
-      html.indexOf("¡Sigamos jugando!"),
-    );
+  it.each([
+    { language: "es", position: "Comunicador audiovisual" },
+    { language: "en", position: "Audiovisual communicator" },
+  ] as const)(
+    "de cada fundador muestra nombre y cargo, sin párrafo ($language)",
+    ({ language, position }) => {
+      const lists = render({ language }).match(/<ul[^>]*>.*?<\/ul>/gs) ?? [];
+      const founders = lists.find((list) => list.includes("piza.webp")) ?? "";
 
-    expect(founders).toContain("Comunicador audiovisual");
-    expect(founders).not.toContain("creatividad");
-    expect(founders).not.toContain("democratizar");
-  });
+      expect(founders).toContain("Andrés Piza");
+      expect(founders).toContain(position);
+      // Lo único que queda en un <p> es la etiqueta y el cargo.
+      expect(founders.match(/<p[ >]/g)).toHaveLength(4);
+    },
+  );
 
   it("muestra a los dos fundadores con foto y alt", () => {
     const html = render();
