@@ -110,6 +110,7 @@ describe("pantalla de entrada: página del enlace", () => {
     const html = render(
       <SignInLinkScreen
         tokenHash="token-de-prueba"
+        returnPath="/admin/mas"
         signInPath="/admin/entrar"
         outcome={undefined}
       />,
@@ -118,6 +119,8 @@ describe("pantalla de entrada: página del enlace", () => {
     expect(html).toMatch(/<form[^>]*method="post"/);
     expect(html).toContain('value="token-de-prueba"');
     expect(html).toMatch(/<button[^>]*type="submit"[^>]*>Entrar</);
+    expect(html).toContain('action="/admin/entrar/enlace"');
+    expect(html).toContain('name="next" value="/admin/mas"');
   });
 
   it.each([
@@ -127,6 +130,7 @@ describe("pantalla de entrada: página del enlace", () => {
     const html = render(
       <SignInLinkScreen
         tokenHash={token}
+        returnPath={null}
         signInPath="/admin/entrar"
         outcome={outcome}
       />,
@@ -141,6 +145,7 @@ describe("pantalla de entrada: página del enlace", () => {
     const html = render(
       <SignInLinkScreen
         tokenHash="t"
+        returnPath={null}
         signInPath="/admin/entrar"
         outcome={{ status: "unavailable" }}
       />,

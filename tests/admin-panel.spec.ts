@@ -44,7 +44,7 @@ for (const viewport of VIEWPORTS) {
 
       await expect(page).toHaveURL("/admin/entrar?next=%2Fadmin");
       await expect(
-        page.getByRole("heading", { level: 1, name: "Entrar al panel" }),
+        page.getByRole("heading", { level: 1, name: "Entrar" }),
       ).toBeVisible();
       await expectAccessibleWithoutOverflow(page);
     });

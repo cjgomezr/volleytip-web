@@ -82,6 +82,7 @@ export default function DevSignIn({
   return (
     <SignInLinkScreen
       tokenHash={SAMPLE_TOKEN}
+      returnPath={null}
       signInPath={loaderData.signInPath}
       outcome={loaderData.outcome}
     />

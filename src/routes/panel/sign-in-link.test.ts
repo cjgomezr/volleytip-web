@@ -75,7 +75,11 @@ describe("entrada: canje", () => {
 
     const data = openLink(LINK);
 
-    expect(data).toEqual({ tokenHash: TOKEN, signInPath: "/admin/entrar" });
+    expect(data).toEqual({
+      tokenHash: TOKEN,
+      returnPath: null,
+      signInPath: "/admin/entrar",
+    });
     expect(supabase.requests).toEqual([]);
   });
 
@@ -92,7 +96,18 @@ describe("entrada: canje", () => {
     const next = encodeURIComponent(`${TEST_ENV.SITE_ORIGIN}/admin/mensajes`);
 
     expect(openLink(`${LINK}&next=${next}`)).toMatchObject({
+      returnPath: "/admin/mensajes",
       signInPath: "/admin/entrar?next=%2Fadmin%2Fmensajes",
+    });
+  });
+
+  // Sin página pedida, Supabase escribe en el correo la dirección del sitio.
+  it("sin una página concreta no arrastra ninguna dirección", () => {
+    const next = encodeURIComponent(TEST_ENV.SITE_ORIGIN);
+
+    expect(openLink(`${LINK}&next=${next}`)).toMatchObject({
+      returnPath: null,
+      signInPath: "/admin/entrar",
     });
   });
 
@@ -134,9 +149,7 @@ describe("entrada: canje", () => {
   ])("con next=%s lleva a %s", async (next, destination) => {
     stubSupabase({ profileLocale: "en" });
 
-    const { result } = await runRedeem(
-      `${LINK}&next=${encodeURIComponent(next)}`,
-    );
+    const { result } = await runRedeem(LINK, { token_hash: TOKEN, next });
 
     expect(readDestination(result)).toBe(destination);
   });

@@ -2,7 +2,10 @@ import type { ReactElement } from "react";
 import { Form, Link, useNavigation } from "react-router";
 
 import { Button, getButtonLinkClassName } from "~/components/button";
+import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
+import { useLanguage } from "~/lib/i18n/use-language";
+import { RETURN_PARAM } from "~/lib/panel/return-path";
 
 import { SignInLayout } from "./sign-in-layout";
 
@@ -14,6 +17,8 @@ export interface SignInLinkOutcome {
 interface SignInLinkScreenProps {
   /** El token que trae la dirección; `null` si no trae uno con forma válida. */
   readonly tokenHash: string | null;
+  /** La página a la que ir al entrar, si se pidió una. */
+  readonly returnPath: string | null;
   /** La pantalla de entrada, para pedir otro enlace. */
   readonly signInPath: string;
   readonly outcome: SignInLinkOutcome | undefined;
@@ -51,10 +56,12 @@ function DeadLink({
  */
 export function SignInLinkScreen({
   tokenHash,
+  returnPath,
   signInPath,
   outcome,
 }: SignInLinkScreenProps): ReactElement {
   const translate = useTranslate();
+  const language = useLanguage();
   const navigation = useNavigation();
   if (tokenHash === null || outcome?.status === "invalid_link") {
     return <DeadLink signInPath={signInPath} />;
@@ -64,13 +71,22 @@ export function SignInLinkScreen({
       <p className="mt-3 text-[16px] leading-[1.5] text-ink-subtle">
         {translate("panel.signInLink.intro")}
       </p>
-      <Form method="post" className="mt-6 flex flex-col gap-4">
+      {/* La dirección del envío no lleva el token ni nada de la del correo:
+          van en campos ocultos. */}
+      <Form
+        method="post"
+        action={getPanelPath("adminSignInLink", language)}
+        className="mt-6 flex flex-col gap-4"
+      >
         {outcome?.status === "unavailable" ? (
           <p role="alert" className="font-semibold text-brand-red-deep">
             {translate("panel.signInLink.unavailable")}
           </p>
         ) : null}
         <input type="hidden" name="token_hash" value={tokenHash} />
+        {returnPath === null ? null : (
+          <input type="hidden" name={RETURN_PARAM} value={returnPath} />
+        )}
         <Button
           type="submit"
           zone="light"

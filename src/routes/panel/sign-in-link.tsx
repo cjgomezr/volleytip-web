@@ -10,8 +10,8 @@ import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
 import { redeemSignInLink } from "~/lib/panel/redeem-sign-in-link.server";
 import {
   buildSignInPathFor,
+  findRequestedPage,
   readReturnTarget,
-  resolveReturnPath,
   resolveSignedInPath,
   RETURN_PARAM,
 } from "~/lib/panel/return-path";
@@ -29,24 +29,28 @@ function readToken(value: unknown): string | null {
   return typeof value === "string" && TOKEN_FORMAT.test(value) ? value : null;
 }
 
-function readRequestedPage(request: Request): string | null {
-  const url = new URL(request.url);
-  return readReturnTarget(url.searchParams.get(RETURN_PARAM));
+// La dirección de regreso llega completa desde el correo y como ruta desde el
+// formulario.
+function readRequestedPage(value: unknown): string | null {
+  return typeof value === "string"
+    ? findRequestedPage(readReturnTarget(value))
+    : null;
 }
 
 // Solo mira la dirección: no llama a Supabase, así que abrir el enlace no lo
 // gasta.
 export function loader({ request }: Route.LoaderArgs): {
   readonly tokenHash: string | null;
+  /** La página pedida antes de entrar, si fue una en particular. */
+  readonly returnPath: string | null;
   readonly signInPath: string;
 } {
-  const language = getRequestLanguage(request);
-  const requested = readRequestedPage(request);
-  const returnPath =
-    requested === null ? null : resolveReturnPath(requested, language);
+  const params = new URL(request.url).searchParams;
+  const returnPath = readRequestedPage(params.get(RETURN_PARAM));
   return {
-    tokenHash: readToken(new URL(request.url).searchParams.get(TOKEN_PARAM)),
-    signInPath: buildSignInPathFor(returnPath, language),
+    tokenHash: readToken(params.get(TOKEN_PARAM)),
+    returnPath,
+    signInPath: buildSignInPathFor(returnPath, getRequestLanguage(request)),
   };
 }
 
@@ -62,14 +66,14 @@ export async function action({
   request,
   context,
 }: Route.ActionArgs): Promise<ReturnType<typeof data<SignInLinkOutcome>>> {
-  const tokenHash = readToken((await request.formData()).get(TOKEN_PARAM));
+  const formData = await request.formData();
+  const tokenHash = readToken(formData.get(TOKEN_PARAM));
   if (tokenHash === null) return refuse("invalid_link");
   const { client } = context.get(panelSessionContext);
   const result = await redeemSignInLink(client, tokenHash);
   if (result.status !== "signed_in") return refuse(result.status);
-  throw redirect(
-    resolveSignedInPath(readRequestedPage(request), result.language),
-  );
+  const requested = readRequestedPage(formData.get(RETURN_PARAM));
+  throw redirect(resolveSignedInPath(requested, result.language));
 }
 
 export default function SignInLink({

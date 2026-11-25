@@ -1,5 +1,6 @@
 import { getDocumentPath } from "../i18n/document-path";
 import {
+  DEFAULT_LANGUAGE,
   getRequestLanguage,
   SUPPORTED_LANGUAGES,
   type Language,
@@ -61,18 +62,28 @@ export function readReturnTarget(value: string | null): string | null {
 }
 
 /**
- * Adónde va quien acaba de entrar: a la página que había pedido y, si solo
- * pidió el panel, a su inicio en el idioma guardado en su perfil.
+ * La página concreta del panel que se pidió antes de entrar, o `null` si no
+ * se pidió ninguna o solo el inicio, en cualquier idioma.
+ */
+export function findRequestedPage(requested: string | null): string | null {
+  const path = resolveReturnPath(requested, DEFAULT_LANGUAGE);
+  const isJustHome = SUPPORTED_LANGUAGES.some(
+    ({ code }) => path === getPanelPath("adminHome", code),
+  );
+  return isJustHome ? null : path;
+}
+
+/**
+ * Adónde va quien acaba de entrar: a la página que había pedido y, si no pidió
+ * ninguna en particular, al inicio en el idioma guardado en su perfil.
  */
 export function resolveSignedInPath(
   requested: string | null,
   profileLanguage: Language,
 ): string {
-  const path = resolveReturnPath(requested, profileLanguage);
-  const isJustHome = SUPPORTED_LANGUAGES.some(
-    ({ code }) => path === getPanelPath("adminHome", code),
+  return (
+    findRequestedPage(requested) ?? getPanelPath("adminHome", profileLanguage)
   );
-  return isJustHome ? getPanelPath("adminHome", profileLanguage) : path;
 }
 
 /** La pantalla de entrada con la dirección a la que volver, si la hay. */
