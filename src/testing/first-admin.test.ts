@@ -24,7 +24,15 @@ interface ProfileRow {
   is_active: boolean;
 }
 
-type Failure = "lookup" | "createUser" | "update" | "audit" | "restore";
+type Failure =
+  | "lookup"
+  | "createUser"
+  | "readUser"
+  | "confirm"
+  | "update"
+  /** La base aplica el cambio y la respuesta se pierde. */
+  | "lostUpdateResponse"
+  | "audit";
 
 interface FakeProject {
   readonly client: TypedSupabaseClient;
@@ -32,6 +40,8 @@ interface FakeProject {
   /** Cada petición que escribe, como `MÉTODO /ruta`. */
   readonly writes: string[];
   readonly createdAccounts: unknown[];
+  /** Lo que se le cambió a cada cuenta de Auth. */
+  readonly accountUpdates: Record<string, unknown>[];
   readonly auditRows: unknown[];
 }
 
@@ -44,12 +54,13 @@ function fail(): Response {
 function createFakeProject(
   initialProfiles: readonly ProfileRow[] = [],
   failures: readonly Failure[] = [],
+  { isEmailConfirmed = true } = {},
 ): FakeProject {
   const profiles = initialProfiles.map((profile) => ({ ...profile }));
   const writes: string[] = [];
   const createdAccounts: unknown[] = [];
   const auditRows: unknown[] = [];
-  let updateCount = 0;
+  const accountUpdates: Record<string, unknown>[] = [];
 
   function filterProfiles(url: URL): ProfileRow[] {
     const byId = url.searchParams.get("id")?.replace("eq.", "");
@@ -72,14 +83,29 @@ function createFakeProject(
     return Response.json({ id: NEW_USER_ID, email: body.email });
   }
 
+  async function answerAccount(request: Request): Promise<Response> {
+    if (request.method === "GET") {
+      return failures.includes("readUser")
+        ? fail()
+        : Response.json({
+            id: PROFILE_ID,
+            email_confirmed_at: isEmailConfirmed
+              ? "2026-11-01T00:00:00Z"
+              : null,
+          });
+    }
+    if (failures.includes("confirm")) return fail();
+    accountUpdates.push((await request.json()) as Record<string, unknown>);
+    return Response.json({ id: PROFILE_ID });
+  }
+
   async function updateProfile(request: Request, url: URL): Promise<Response> {
-    updateCount += 1;
     if (failures.includes("update")) return fail();
-    if (updateCount > 1 && failures.includes("restore")) return fail();
     const changes = (await request.json()) as Partial<ProfileRow>;
     const [profile] = filterProfiles(url);
     if (profile === undefined) return fail();
     Object.assign(profile, changes);
+    if (failures.includes("lostUpdateResponse")) return fail();
     return Response.json({ id: profile.id });
   }
 
@@ -89,6 +115,9 @@ function createFakeProject(
       writes.push(`${request.method} ${url.pathname}`);
     }
     if (url.pathname === "/auth/v1/admin/users") return createAccount(request);
+    if (url.pathname.startsWith("/auth/v1/admin/users/")) {
+      return answerAccount(request);
+    }
     if (url.pathname === "/rest/v1/audit_log") {
       if (failures.includes("audit")) return fail();
       auditRows.push(await request.json());
@@ -107,7 +136,14 @@ function createFakeProject(
       fetch: (input, init) => answer(new Request(input, init)),
     },
   });
-  return { client, profiles, writes, createdAccounts, auditRows };
+  return {
+    client,
+    profiles,
+    writes,
+    createdAccounts,
+    accountUpdates,
+    auditRows,
+  };
 }
 
 interface RunOptions {
@@ -182,7 +218,11 @@ describe("primer admin: crear", () => {
         action: "profile.grant_admin",
         entity: "profile",
         entity_id: NEW_USER_ID,
-        details: { createdAccount: true, previous: null },
+        details: {
+          createdAccount: true,
+          confirmedEmail: false,
+          previous: null,
+        },
       },
     ]);
   });
@@ -231,6 +271,7 @@ describe("primer admin: subir de rol", () => {
         entity_id: PROFILE_ID,
         details: {
           createdAccount: false,
+          confirmedEmail: false,
           previous: { role: "staff", isActive: false },
         },
       },
@@ -245,6 +286,55 @@ describe("primer admin: subir de rol", () => {
     expect(status).toBe(0);
     expect(output).toContain("ya es admin activo");
     expect(project.writes).toEqual([]);
+  });
+});
+
+describe("primer admin: cuenta sin confirmar", () => {
+  function createUnconfirmed(profile: ProfileRow): FakeProject {
+    return createFakeProject([profile], [], { isEmailConfirmed: false });
+  }
+
+  it.each([
+    ["un comprador", buildProfile("buyer", true)],
+    ["quien ya es admin activo", buildProfile("admin", true)],
+  ])("a %s le confirma el correo y lo deja admin", async (_case, profile) => {
+    const project = createUnconfirmed(profile);
+
+    const { status } = await run({ project });
+
+    expect(status).toBe(0);
+    expect(project.accountUpdates).toEqual([
+      expect.objectContaining({ email_confirm: true }),
+    ]);
+    expect(project.profiles).toEqual([buildProfile("admin", true)]);
+    expect(project.auditRows).toEqual([
+      expect.objectContaining({
+        details: expect.objectContaining({ confirmedEmail: true }),
+      }),
+    ]);
+  });
+
+  // Quien haya registrado ese correo antes conoce la contraseña: confirmar
+  // la cuenta sin cambiarla le abriría el panel.
+  it("le cambia la contraseña por una al azar que no se imprime", async () => {
+    const first = createUnconfirmed(buildProfile("buyer", true));
+    const second = createUnconfirmed(buildProfile("buyer", true));
+
+    const { output } = await run({ project: first });
+    await run({ project: second });
+
+    const password = String(first.accountUpdates[0]?.password);
+    expect(password.length).toBeGreaterThanOrEqual(32);
+    expect(second.accountUpdates[0]?.password).not.toBe(password);
+    expect(output).not.toContain(password);
+  });
+
+  it("a una cuenta confirmada no le toca la contraseña", async () => {
+    const project = createFakeProject([buildProfile("buyer", true)]);
+
+    await run({ project });
+
+    expect(project.accountUpdates).toEqual([]);
   });
 });
 
@@ -348,6 +438,35 @@ describe("primer admin: entradas inválidas", () => {
     expect(output).toContain("Falta SUPABASE_SERVICE_ROLE_KEY");
   });
 
+  it.each([
+    `http://${PROJECT_REF}.supabase.co`,
+    "http://127.0.0.1.example.com",
+  ])("no manda la llave sin cifrar a %s", async (url) => {
+    const { status, output, questions, clientConfigs } = await run({
+      env: { SUPABASE_URL: url, SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY },
+    });
+
+    expect(status).not.toBe(0);
+    expect(output).toContain("https");
+    expect(questions).toEqual([]);
+    expect(clientConfigs).toEqual([]);
+  });
+
+  it.each(["localhost:54321", "[::1]:54321"])(
+    "acepta http en la propia máquina (%s)",
+    async (host) => {
+      const { status } = await run({
+        env: {
+          SUPABASE_URL: `http://${host}`,
+          SUPABASE_SERVICE_ROLE_KEY: SERVICE_KEY,
+        },
+        answer: host,
+      });
+
+      expect(status).toBe(0);
+    },
+  );
+
   it("rechaza una dirección que no es una URL sin imprimirla", async () => {
     const { status, output } = await run({
       env: {
@@ -390,8 +509,7 @@ describe("primer admin: fallos de Supabase", () => {
   it.each<[Failure, string]>([
     ["lookup", "No se pudo buscar el perfil"],
     ["createUser", "No se pudo crear la cuenta"],
-    ["update", "No se pudo poner el rol admin"],
-  ])("si falla %s lo dice y sale con error", async (failure, message) => {
+  ])("si falla %s lo dice y no registra nada", async (failure, message) => {
     const project = createFakeProject([], [failure]);
 
     const { status, output } = await run({ project });
@@ -401,7 +519,24 @@ describe("primer admin: fallos de Supabase", () => {
     expect(project.auditRows).toEqual([]);
   });
 
-  it("si la bitácora falla, deja el perfil como estaba para poder repetir", async () => {
+  it.each<[Failure, string]>([
+    ["readUser", "No se pudo leer la cuenta"],
+    ["confirm", "No se pudo confirmar el correo"],
+  ])("si falla %s no cambia el rol", async (failure, message) => {
+    const project = createFakeProject(
+      [buildProfile("buyer", true)],
+      [failure],
+      { isEmailConfirmed: false },
+    );
+
+    const { status, output } = await run({ project });
+
+    expect(status).not.toBe(0);
+    expect(output).toContain(message);
+    expect(project.profiles).toEqual([buildProfile("buyer", true)]);
+  });
+
+  it("si la bitácora falla, no cambia nada y dice por qué", async () => {
     const project = createFakeProject(
       [buildProfile("staff", false)],
       ["audit"],
@@ -410,22 +545,37 @@ describe("primer admin: fallos de Supabase", () => {
     const { status, output } = await run({ project });
 
     expect(status).not.toBe(0);
-    expect(output).toContain("bitácora");
+    expect(output).toContain("bitácora: falló a propósito");
     expect(project.profiles).toEqual([buildProfile("staff", false)]);
   });
 
-  it("si tampoco puede deshacer, avisa que quedó admin sin registro", async () => {
-    const project = createFakeProject(
-      [buildProfile("buyer", true)],
-      ["audit", "restore"],
-    );
+  it("si la bitácora falla con una cuenta nueva, avisa que quedó creada", async () => {
+    const project = createFakeProject([], ["audit"]);
 
     const { status, output } = await run({ project });
 
     expect(status).not.toBe(0);
-    expect(output).toContain(PROFILE_ID);
-    expect(output).toContain("quedó como admin sin entrada en la bitácora");
+    expect(output).toContain("La cuenta quedó creada");
+    expect(output).toContain(NEW_USER_ID);
+    expect(project.profiles[0]?.role).toBe("buyer");
   });
+
+  it.each<Failure>(["update", "lostUpdateResponse"])(
+    "con %s la entrada ya está en la bitácora y pide repetir",
+    async (failure) => {
+      const project = createFakeProject(
+        [buildProfile("buyer", true)],
+        [failure],
+      );
+
+      const { status, output } = await run({ project });
+
+      expect(status).not.toBe(0);
+      expect(output).toContain("Repite el comando");
+      expect(output).toContain("falló a propósito");
+      expect(project.auditRows).toHaveLength(1);
+    },
+  );
 });
 
 describe("primer admin: el comando", () => {

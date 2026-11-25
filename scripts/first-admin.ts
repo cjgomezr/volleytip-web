@@ -6,6 +6,7 @@
  *
  * Las importaciones llevan extensión porque Node corre esto sin Vite.
  */
+import { randomBytes } from "node:crypto";
 import { z } from "zod";
 
 import { recordAuditEntry } from "../src/lib/audit-log.server.ts";
@@ -29,9 +30,9 @@ export interface FirstAdminOutcome {
 }
 
 const ADMIN_STATE: ProfileState = { role: "admin", isActive: true };
-// Como nace un perfil: lo pone el disparador de alta de la base.
-const NEW_PROFILE_STATE: ProfileState = { role: "buyer", isActive: true };
 const AUDIT_ACTION = "profile.grant_admin";
+// Nadie usa esa contraseña: al panel se entra con enlace o con Google.
+const DISCARDED_PASSWORD_BYTES = 32;
 // La forma en que se guarda un correo (DR-008).
 const adminEmail = z.string().trim().toLowerCase().pipe(z.email());
 
@@ -93,55 +94,102 @@ async function setProfileState(
   failOn(error, `poner el rol ${role} al perfil ${profileId}`);
 }
 
+async function isEmailConfirmed(
+  client: TypedSupabaseClient,
+  userId: string,
+): Promise<boolean> {
+  const { data, error } = await client.auth.admin.getUserById(userId);
+  failOn(error, "leer la cuenta");
+  return Boolean(data.user?.email_confirmed_at);
+}
+
+/**
+ * Confirma el correo de una cuenta que nunca lo confirmó: sin eso no puede
+ * pedir el enlace para entrar. La contraseña se cambia en la misma llamada
+ * porque quien haya registrado ese correo la conoce, y confirmarlo le abriría
+ * el panel.
+ */
+async function confirmEmail(
+  client: TypedSupabaseClient,
+  userId: string,
+): Promise<void> {
+  const { error } = await client.auth.admin.updateUserById(userId, {
+    email_confirm: true,
+    password: randomBytes(DISCARDED_PASSWORD_BYTES).toString("base64url"),
+  });
+  failOn(error, "confirmar el correo");
+}
+
 interface Grant {
   readonly profileId: string;
   /** Cómo estaba el perfil; `null` si la cuenta es nueva. */
   readonly previous: ProfileState | null;
+  readonly needsEmailConfirmation: boolean;
+}
+
+async function recordGrant(
+  client: TypedSupabaseClient,
+  { profileId, previous, needsEmailConfirmation }: Grant,
+): Promise<void> {
+  await recordAuditEntry(
+    {
+      actorId: null,
+      action: AUDIT_ACTION,
+      entity: "profile",
+      entityId: profileId,
+      details: {
+        createdAccount: previous === null,
+        confirmedEmail: needsEmailConfirmation,
+        previous: previous && { ...previous },
+      },
+    },
+    client,
+  );
+}
+
+async function applyGrant(
+  client: TypedSupabaseClient,
+  { profileId, needsEmailConfirmation }: Grant,
+): Promise<void> {
+  if (needsEmailConfirmation) {
+    await confirmEmail(client, profileId);
+  }
+  await setProfileState(client, profileId, ADMIN_STATE);
+}
+
+/** Corre un paso y, si falla, le dice a quien opera en qué quedó todo. */
+async function explainFailure(
+  situation: string,
+  step: () => Promise<void>,
+): Promise<void> {
+  try {
+    await step();
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`${reason}\n${situation} Repite el comando.`, {
+      cause: error,
+    });
+  }
 }
 
 /**
- * Sube el perfil a admin y lo registra. Si la bitácora falla, deja el perfil
- * como estaba: así al repetir el comando el cambio vuelve a hacerse y queda
- * registrado, en vez de responder "ya es admin".
+ * Registra el cambio y después lo hace. En ese orden ningún fallo, ni un
+ * proceso cortado a la mitad, deja un admin sin entrada en la bitácora. Lo
+ * peor que queda es una entrada de más, y al repetir se registra otra.
  */
 async function grantAdmin(
   client: TypedSupabaseClient,
-  { profileId, previous }: Grant,
+  grant: Grant,
 ): Promise<void> {
-  await setProfileState(client, profileId, ADMIN_STATE);
-  try {
-    await recordAuditEntry(
-      {
-        actorId: null,
-        action: AUDIT_ACTION,
-        entity: "profile",
-        entityId: profileId,
-        details: {
-          createdAccount: previous === null,
-          previous: previous && { ...previous },
-        },
-      },
-      client,
-    );
-  } catch (auditError) {
-    await restoreProfile(client, profileId, previous ?? NEW_PROFILE_STATE);
-    throw auditError;
-  }
-}
-
-async function restoreProfile(
-  client: TypedSupabaseClient,
-  profileId: string,
-  state: ProfileState,
-): Promise<void> {
-  try {
-    await setProfileState(client, profileId, state);
-  } catch (error) {
-    throw new Error(
-      `El perfil ${profileId} quedó como admin sin entrada en la bitácora: falló el registro y también deshacer el cambio. Anótalo a mano.`,
-      { cause: error },
-    );
-  }
+  const account =
+    grant.previous === null
+      ? `La cuenta quedó creada (perfil ${grant.profileId}), sin permisos de admin.`
+      : `No se cambió el perfil ${grant.profileId}.`;
+  await explainFailure(account, () => recordGrant(client, grant));
+  await explainFailure(
+    "El cambio ya está en la bitácora, pero puede no haber quedado completo.",
+    () => applyGrant(client, grant),
+  );
 }
 
 /** Crea la cuenta si hace falta y deja su perfil como admin activo. */
@@ -152,13 +200,22 @@ export async function ensureFirstAdmin(
   const profile = await findProfile(client, email);
   if (profile === null) {
     const profileId = await createAccount(client, email);
-    await grantAdmin(client, { profileId, previous: null });
+    await grantAdmin(client, {
+      profileId,
+      previous: null,
+      needsEmailConfirmation: false,
+    });
     return { kind: "created", profileId };
   }
   const { id: profileId, role, isActive } = profile;
-  if (role === ADMIN_STATE.role && isActive) {
+  const needsEmailConfirmation = !(await isEmailConfirmed(client, profileId));
+  if (role === ADMIN_STATE.role && isActive && !needsEmailConfirmation) {
     return { kind: "unchanged", profileId };
   }
-  await grantAdmin(client, { profileId, previous: { role, isActive } });
+  await grantAdmin(client, {
+    profileId,
+    previous: { role, isActive },
+    needsEmailConfirmation,
+  });
   return { kind: "promoted", profileId };
 }

@@ -38,7 +38,7 @@ export interface AdminCreateDependencies {
 const SUCCESS_STATUS = 0;
 const FAILURE_STATUS = 1;
 const HOSTED_PROJECT_SUFFIX = ".supabase.co";
-const HTTP_PROTOCOLS: readonly string[] = ["http:", "https:"];
+const LOOPBACK_HOSTS: readonly string[] = ["127.0.0.1", "localhost", "[::1]"];
 const USAGE = [
   "Uso: npm run admin:create -- correo",
   "Recibe un solo correo y lo deja como admin activo del panel.",
@@ -82,13 +82,22 @@ function readServiceConfig(env: AdminCreateDependencies["env"]): ServiceConfig {
       [...problems, "De dónde sale cada valor: docs/entornos.md."].join("\n"),
     );
   }
-  if (
-    !URL.canParse(supabaseUrl) ||
-    !HTTP_PROTOCOLS.includes(new URL(supabaseUrl).protocol)
-  ) {
-    throw new Error("SUPABASE_URL no es una URL http o https.");
+  if (!isSafeSupabaseUrl(supabaseUrl)) {
+    throw new Error(
+      "SUPABASE_URL no es una URL válida. Va con https; http solo se admite en la propia máquina.",
+    );
   }
   return { supabaseUrl, serviceRoleKey };
+}
+
+/** La llave de servicio nunca viaja sin cifrar fuera de esta máquina. */
+function isSafeSupabaseUrl(value: string): boolean {
+  if (!URL.canParse(value)) return false;
+  const { protocol, hostname } = new URL(value);
+  return (
+    protocol === "https:" ||
+    (protocol === "http:" && LOOPBACK_HOSTS.includes(hostname))
+  );
 }
 
 /** El identificador de un proyecto alojado es su subdominio. Cualquier otra

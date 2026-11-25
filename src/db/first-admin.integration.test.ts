@@ -62,6 +62,21 @@ describeIntegration("primer admin contra la base local", () => {
     return client;
   }
 
+  /** Pide el enlace como lo hará la pantalla de entrada: sin crear cuentas.
+   * Devuelve el código del rechazo, o `null` si Supabase lo envía. */
+  async function requestSignInLink(): Promise<string | null> {
+    const client = createClient<DatabaseSchema>(
+      status.API_URL,
+      status.PUBLISHABLE_KEY,
+      { auth: { persistSession: false, autoRefreshToken: false } },
+    );
+    const { error } = await client.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: false },
+    });
+    return error === null ? null : (error.code ?? error.message);
+  }
+
   async function readAuditActions(): Promise<
     { action: string; actor_id: string | null }[]
   > {
@@ -78,8 +93,8 @@ describeIntegration("primer admin contra la base local", () => {
     database = connectToLocalDatabase();
   });
 
-  // El perfil queda: la entrada de la bitácora no tiene actor, así que se
-  // puede borrar la cuenta; la entrada se queda.
+  // Borrar la cuenta se lleva su perfil. Las entradas de la bitácora, que no
+  // tienen actor, se quedan.
   afterAll(async () => {
     await database`delete from auth.users where email = ${email}`;
     await database.end();
@@ -97,6 +112,8 @@ describeIntegration("primer admin contra la base local", () => {
   });
 
   it("al repetirlo no duplica la cuenta ni la entrada de la bitácora", async () => {
+    await runCommand();
+
     const run = await runCommand();
 
     expect(run.status, run.output).toBe(0);
@@ -106,7 +123,21 @@ describeIntegration("primer admin contra la base local", () => {
     ]);
   });
 
+  it("a una cuenta sin confirmar la deja pedir el enlace", async () => {
+    await runCommand();
+    await database`
+      update auth.users set email_confirmed_at = null where email = ${email}
+    `;
+    expect(await requestSignInLink()).not.toBeNull();
+
+    const run = await runCommand();
+
+    expect(run.status, run.output).toBe(0);
+    expect(await requestSignInLink()).toBeNull();
+  });
+
   it("reactiva como admin a quien estaba desactivado", async () => {
+    await runCommand();
     await database`
       update public.profiles set role = 'staff', is_active = false
       where email = ${email}
