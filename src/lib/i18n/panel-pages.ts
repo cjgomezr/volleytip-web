@@ -1,0 +1,55 @@
+import { SUPPORTED_LANGUAGES, type Language } from "./languages";
+import { buildPagePath, type PageDeclaration } from "./page-path";
+import { findLanguage } from "./pages";
+
+// El mapa de páginas del panel (decisión 4 del PRD de W10a). Tiene la forma
+// del mapa del sitio, pero va aparte: estas páginas viven fuera de la
+// cáscara, no se enlazan desde el sitio y no entran en el sitemap. Se
+// agrupan por quién puede verlas, que es como se anidan en `src/routes.ts`.
+
+/** Abiertas a quien no tiene sesión. */
+export const PANEL_ENTRY_PAGES = [
+  {
+    id: "adminSignIn",
+    file: "routes/panel/sign-in.tsx",
+    path: { es: "admin/entrar", en: "admin/sign-in" },
+  },
+] as const satisfies readonly PageDeclaration[];
+
+/** Para todo el equipo: admin y staff. */
+export const PANEL_MEMBER_PAGES = [
+  { id: "adminHome", file: "routes/panel/home.tsx", path: "admin" },
+  {
+    id: "adminSignOut",
+    file: "routes/panel/sign-out.tsx",
+    path: { es: "admin/salir", en: "admin/sign-out" },
+  },
+] as const satisfies readonly PageDeclaration[];
+
+/** Solo para admin. Cada sección del panel se agrega aquí, antes del
+ * comodín que responde por las direcciones que no existen. */
+export const PANEL_ADMIN_PAGES = [
+  { id: "adminMissing", file: "routes/panel/missing.tsx", path: "admin/*" },
+] as const satisfies readonly PageDeclaration[];
+
+const PANEL_PAGES = [...PANEL_ENTRY_PAGES, ...PANEL_MEMBER_PAGES] as const;
+
+export type PanelPageId = (typeof PANEL_PAGES)[number]["id"];
+
+/** La dirección de una página del panel en un idioma: `/en/admin/sign-in`. */
+export function getPanelPath(id: PanelPageId, language: Language): string {
+  const page = PANEL_PAGES.find((candidate) => candidate.id === id);
+  if (page === undefined) {
+    throw new Error(`La página "${id}" no está en el mapa del panel.`);
+  }
+  return buildPagePath(page, findLanguage(language));
+}
+
+/** Dice si una dirección es del panel o cuelga de él, en cualquier idioma.
+ * Va por segmento completo: `/administracion` no es del panel. */
+export function isPanelPath(pathname: string): boolean {
+  return SUPPORTED_LANGUAGES.some(({ code }) => {
+    const home = getPanelPath("adminHome", code);
+    return pathname === home || pathname.startsWith(`${home}/`);
+  });
+}

@@ -1,6 +1,11 @@
 import { type RouteConfig, layout, route } from "@react-router/dev/routes";
 
 import { PAGES } from "./lib/i18n/pages";
+import {
+  PANEL_ADMIN_PAGES,
+  PANEL_ENTRY_PAGES,
+  PANEL_MEMBER_PAGES,
+} from "./lib/i18n/panel-pages";
 import { buildLocalizedRoutes } from "./lib/i18n/route-map";
 
 export default [
@@ -27,6 +32,18 @@ export default [
     }),
     // Siempre al final: recibe lo que no coincidió con ninguna ruta.
     route("*", "routes/not-found.tsx"),
+  ]),
+  // El panel y su entrada: en los dos idiomas, sin la cáscara del sitio.
+  // Cada nivel de layout agrega una exigencia: sesión en cookies y origen,
+  // después ser del equipo y, en las secciones, ser admin.
+  layout("routes/panel/session-layout.tsx", [
+    ...buildLocalizedRoutes(PANEL_ENTRY_PAGES),
+    layout("routes/panel/member-layout.tsx", [
+      ...buildLocalizedRoutes(PANEL_MEMBER_PAGES),
+      layout("routes/panel/admin-layout.tsx", [
+        ...buildLocalizedRoutes(PANEL_ADMIN_PAGES),
+      ]),
+    ]),
   ]),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),

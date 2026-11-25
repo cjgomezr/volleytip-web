@@ -87,6 +87,10 @@ describe("direcciones exentas", () => {
     "/.well-known/assetlinks.json",
     "/admin",
     "/admin/pedidos",
+    "/admin/entrar",
+    "/en/admin",
+    "/en/admin/sign-in",
+    "/en/admin.data",
   ])(
     "responde %s como con el modo apagado, sin consultar la base",
     async (path) => {

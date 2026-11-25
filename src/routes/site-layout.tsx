@@ -1,28 +1,17 @@
 import type { ReactElement } from "react";
-import { Link, Outlet, useRouteLoaderData } from "react-router";
+import { Outlet, useRouteLoaderData } from "react-router";
 
-import {
-  ErrorContent,
-  isServerError,
-  ServerErrorPage,
-} from "~/components/error-content";
+import { isServerError, ServerErrorPage } from "~/components/error-content";
+import { ErrorInShell } from "~/components/error-in-shell";
 import { LanguageSuggestion } from "~/components/language-suggestion";
 import { SiteShell } from "~/components/site-shell";
 import { pickAnnouncementMessages } from "~/lib/announcement-bar.server";
 import { getRequestLanguage } from "~/lib/i18n/languages";
-import { PAGES } from "~/lib/i18n/pages";
 import { siteSettingsContext } from "~/lib/site-settings.server";
-import { useTranslate } from "~/lib/i18n/translations-context";
-import { useLanguage } from "~/lib/i18n/use-language";
-import { getMenuEntries } from "~/lib/site-menu";
 
 import type { loader as rootLoader } from "../root";
 
 import type { Route } from "./+types/site-layout";
-
-// 44 px de alto como mínimo: zona de toque en celular.
-const SECTION_LINK_STYLES =
-  "inline-flex min-h-11 items-center px-1 text-[14px] font-bold underline hovered:text-brand-lime transition-colors motion-reduce:transition-none";
 
 function useCurrentYear(): number {
   const year = useRouteLoaderData<typeof rootLoader>("root")?.currentYear;
@@ -40,10 +29,9 @@ function LanguageNotice(): ReactElement | null {
 
 // La barra sale de los ajustes que el middleware de la raíz ya leyó, junto
 // con el modo mantenimiento, en una sola consulta.
-export function loader({
-  request,
-  context,
-}: Route.LoaderArgs): { readonly announcements: string[] } {
+export function loader({ request, context }: Route.LoaderArgs): {
+  readonly announcements: string[];
+} {
   return {
     announcements: pickAnnouncementMessages(
       context.get(siteSettingsContext).announcements,
@@ -77,36 +65,21 @@ export default function SiteLayout({
   );
 }
 
-// Los enlaces del 404 a las secciones que ya existen en el mapa de páginas.
-// Una sección que todavía no tiene página no se pinta.
-function SectionLinks(): ReactElement {
-  const translate = useTranslate();
-  const entries = getMenuEntries(PAGES, useLanguage());
-  return (
-    <>
-      {entries.map((entry) => (
-        <Link key={entry.id} to={entry.href} className={SECTION_LINK_STYLES}>
-          {translate(entry.labelKey)}
-        </Link>
-      ))}
-    </>
-  );
-}
-
-function ErrorInShell({ error }: { readonly error: unknown }): ReactElement {
+function SiteErrorInShell({
+  error,
+}: {
+  readonly error: unknown;
+}): ReactElement {
   const year = useCurrentYear();
   const announcements =
     useRouteLoaderData<typeof loader>("routes/site-layout")?.announcements;
   return (
-    <SiteShell
+    <ErrorInShell
+      error={error}
       announcements={announcements}
       notice={<LanguageNotice />}
       year={year}
-    >
-      <ErrorContent error={error}>
-        <SectionLinks />
-      </ErrorContent>
-    </SiteShell>
+    />
   );
 }
 
@@ -118,6 +91,6 @@ export function ErrorBoundary({
   return isServerError(error) ? (
     <ServerErrorPage />
   ) : (
-    <ErrorInShell error={error} />
+    <SiteErrorInShell error={error} />
   );
 }

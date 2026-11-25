@@ -14,6 +14,7 @@ import {
   isServerError,
   ServerErrorPage,
 } from "~/components/error-content";
+import { ErrorInShell } from "~/components/error-in-shell";
 import { LanguageAlternates } from "~/components/language-alternates";
 import type { LanguageSuggestionTexts } from "~/components/language-suggestion";
 import { serverEnv } from "~/lib/env.server";
@@ -34,6 +35,7 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import { markAsNotIndexable } from "~/lib/indexing.server";
 import { enforceMaintenanceMode } from "~/lib/maintenance-middleware.server";
 import { findMaintenanceNotice } from "~/lib/maintenance-notice";
+import { findPanelNotFound } from "~/lib/panel/panel-not-found";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -179,10 +181,28 @@ export default function App({
 // Respaldo para cuando falla la raíz o el layout del sitio, y la página del
 // 500: sin textos ni header, para que se pinte aunque lo que falló fuera leer
 // la base. El 404 y los errores controlados de una página los pinta el límite
-// de `site-layout.tsx`, con la cáscara.
+// de `site-layout.tsx`, con la cáscara. La excepción es el 404 del panel, que
+// trae consigo lo que la cáscara necesita: para quien no es del equipo tiene
+// que verse como cualquier página que no existe (AC-033).
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
+  const language = useLanguage();
+  const panelNotFound = findPanelNotFound(error);
+  if (panelNotFound !== undefined) {
+    return (
+      <TranslationsProvider
+        language={language}
+        messages={panelNotFound.messages}
+      >
+        <ErrorInShell
+          error={error}
+          announcements={panelNotFound.announcements}
+          year={panelNotFound.year}
+        />
+      </TranslationsProvider>
+    );
+  }
   const maintenance = findMaintenanceNotice(error);
   if (maintenance !== undefined) {
     return <MaintenancePage returnsAt={maintenance.returnsAt} />;

@@ -33,7 +33,13 @@ export const MAINTENANCE_MODE_SETTING: SettingDefinition<MaintenanceMode> = {
 // Direcciones que siguen respondiendo con el modo encendido. Van por
 // segmento completo: `/administracion` no queda fuera por empezar parecido.
 // Los webhooks de pago agregan la suya aquí (W6b).
-const EXEMPT_PREFIXES = ["/healthz", "/.well-known", "/admin"] as const;
+const EXEMPT_PREFIXES = [
+  "/healthz",
+  "/.well-known",
+  // El panel y su entrada, en cada idioma (FR-056).
+  "/admin",
+  "/en/admin",
+] as const;
 
 // React Router empareja las rutas sin distinguir mayúsculas, así que `/HEALTHZ`
 // también llega a su ruta y también tiene que quedar fuera.

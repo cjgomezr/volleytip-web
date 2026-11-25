@@ -4,6 +4,7 @@ import { aboutEn } from "./about-en";
 import { contactEn } from "./contact-en";
 import { faqEn } from "./faq-en";
 import { appEn } from "./app-en";
+import { panelEn } from "./panel-en";
 import { errorsEn } from "./errors";
 
 export const en = {
@@ -96,5 +97,6 @@ export const en = {
   ...contactEn,
   ...faqEn,
   ...appEn,
+  ...panelEn,
   ...errorsEn,
 } as const satisfies Messages;

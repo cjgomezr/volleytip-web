@@ -5,6 +5,7 @@ import { aboutEs } from "./about-es";
 import { contactEs } from "./contact-es";
 import { faqEs } from "./faq-es";
 import { appEs } from "./app-es";
+import { panelEs } from "./panel-es";
 import { errorsEs } from "./errors";
 
 export const es = {
@@ -98,5 +99,6 @@ export const es = {
   ...contactEs,
   ...faqEs,
   ...appEs,
+  ...panelEs,
   ...errorsEs,
 } as const;
