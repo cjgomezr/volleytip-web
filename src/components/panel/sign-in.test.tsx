@@ -7,6 +7,8 @@ import type { Language } from "~/lib/i18n/languages";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 
+import { SignInScreen } from "~/routes/panel/sign-in";
+
 import { SignInForm } from "./sign-in-form";
 import { SignInLinkScreen } from "./sign-in-link-screen";
 
@@ -41,13 +43,17 @@ describe("pantalla de entrada: formulario", () => {
     expect(html).not.toContain("Google");
   });
 
-  it("enviado, pide revisar el correo en una región de estado", () => {
+  it("enviado, pide revisar el correo y deja usar otro", () => {
     const html = render(
-      <SignInForm protection={PROTECTION} outcome={{ status: "sent" }} />,
+      <SignInScreen protection={PROTECTION} outcome={{ status: "sent" }} />,
     );
 
-    expect(html).toMatch(/role="status".*Revisa tu correo/);
+    expect(html).toMatch(/<h1[^>]*>Revisa tu correo</);
+    expect(html).toMatch(/role="status".*te llega un enlace/);
+    expect(html).toContain('href="/admin/entrar"');
+    expect(html).toContain("Usar otro correo");
     expect(html).not.toContain('name="email"');
+    expect(html).not.toContain("Sin contraseñas");
   });
 
   it("marca el error junto al campo y conserva lo escrito", () => {

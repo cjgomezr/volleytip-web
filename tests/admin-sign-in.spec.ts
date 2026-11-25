@@ -26,7 +26,7 @@ const SCREENS = [
     headings: {
       vacio: "Entrar",
       error: "Entrar",
-      enviado: "Entrar",
+      enviado: "Revisa tu correo",
       enlace: "Entrar",
       vencido: "Este enlace ya no sirve",
     },
@@ -36,7 +36,7 @@ const SCREENS = [
     headings: {
       vacio: "Sign in",
       error: "Sign in",
-      enviado: "Sign in",
+      enviado: "Check your email",
       enlace: "Sign in",
       vencido: "This link no longer works",
     },
@@ -130,7 +130,7 @@ test.describe("entrada al panel con el correo", () => {
     await page.keyboard.press("Enter");
 
     await expect(
-      page.getByRole("status").filter({ hasText: "Revisa tu correo" }),
+      page.getByRole("heading", { level: 1, name: "Revisa tu correo" }),
     ).toBeVisible();
     const link = findLink(await waitForEmail(email), "/admin/entrar/enlace");
     // Otro navegador: sin ninguna cookie del que pidió el enlace.
@@ -192,7 +192,17 @@ test.describe("entrada al panel con el correo", () => {
     await page.getByLabel(/^Correo/).press("Enter");
 
     await expect(
-      page.getByRole("status").filter({ hasText: "Revisa tu correo" }),
+      page.getByRole("heading", { level: 1, name: "Revisa tu correo" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("status").filter({ hasText: "te llega un enlace" }),
+    ).toBeVisible();
+
+    // La confirmación deja volver al formulario, vacío.
+    await page.getByRole("link", { name: "Usar otro correo" }).click();
+    await expect(page.getByLabel(/^Correo/)).toHaveValue("");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Entrar" }),
     ).toBeVisible();
   });
 });

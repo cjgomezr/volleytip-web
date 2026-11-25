@@ -22,6 +22,7 @@ export const panelEs = {
   "panel.signIn.sent.title": "Revisa tu correo",
   "panel.signIn.sent.details":
     "Si el correo es del equipo, te llega un enlace de un solo uso. Vence en una hora.",
+  "panel.signIn.sent.another": "Usar otro correo",
   "panel.signIn.error.email": "Escribe un correo válido.",
   "panel.signIn.error.emailTooLong": "El correo es demasiado largo.",
   "panel.signIn.rejected.tooFast":

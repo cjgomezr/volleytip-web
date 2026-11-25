@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Form, useNavigation } from "react-router";
+import { Form, Link, useNavigation, useSearchParams } from "react-router";
 
 import { Button } from "~/components/button";
 import { FormProtection } from "~/components/form-protection";
@@ -12,6 +12,8 @@ import type {
 import type { FormProtectionFields } from "~/lib/forms/protected-form.server";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
+import { useLanguage } from "~/lib/i18n/use-language";
+import { buildSignInPathFor, RETURN_PARAM } from "~/lib/panel/return-path";
 
 interface SignInFormProps {
   /** Lo que `issueFormProtection(ADMIN_SIGN_IN_FORM)` entregó en el `loader`. */
@@ -42,17 +44,19 @@ function findFailureMessage(
     : undefined;
 }
 
-function Confirmation(): ReactElement {
+// Vuelve a la entrada sin la respuesta del envío, para corregir el correo o
+// pedir otro enlace. Conserva la página a la que se iba.
+function UseAnotherEmail(): ReactElement {
   const translate = useTranslate();
+  const language = useLanguage();
+  const [params] = useSearchParams();
   return (
-    <div className="mt-6 rounded-card bg-surface-light p-5">
-      <p className="text-[18px] font-bold">
-        {translate("panel.signIn.sent.title")}
-      </p>
-      <p className="mt-2 text-[15px] leading-[1.5] text-ink-subtle">
-        {translate("panel.signIn.sent.details")}
-      </p>
-    </div>
+    <Link
+      to={buildSignInPathFor(params.get(RETURN_PARAM), language)}
+      className="mt-2 inline-flex min-h-[48px] items-center text-[15px] font-bold underline focused:outline-brand-night hovered:text-brand-red-deep"
+    >
+      {translate("panel.signIn.sent.another")}
+    </Link>
   );
 }
 
@@ -68,7 +72,7 @@ function EmailForm({ protection, outcome }: SignInFormProps): ReactElement {
     outcome?.status === "invalid" ? outcome.fieldErrors.email : undefined;
 
   return (
-    <Form method="post" noValidate className="mt-6 flex flex-col gap-4">
+    <Form method="post" noValidate className="mt-6 flex flex-col gap-3.5">
       {failure === undefined ? null : (
         <p role="alert" className="font-semibold text-brand-red-deep">
           {translate(failure)}
@@ -114,22 +118,30 @@ function EmailForm({ protection, outcome }: SignInFormProps): ReactElement {
 }
 
 /**
- * El formulario que pide el enlace. Con un envío aceptado lo reemplaza el
- * aviso de revisar el correo, que vive en una región de estado para que un
- * lector de pantalla lo anuncie.
+ * El formulario que pide el enlace. Con un envío aceptado lo reemplaza la
+ * explicación de que revise su correo, que vive en una región de estado para
+ * que un lector de pantalla la anuncie. El título lo cambia la pantalla.
  */
 export function SignInForm(props: SignInFormProps): ReactElement {
   const translate = useTranslate();
   const isSent = props.outcome?.status === "sent";
   return (
     <>
-      <p className="mt-3 text-[16px] leading-[1.5] text-ink-subtle">
-        {translate("panel.signIn.intro")}
-      </p>
+      {isSent ? null : (
+        <p className="mt-2.5 text-[16px] leading-[1.5] text-ink-subtle">
+          {translate("panel.signIn.intro")}
+        </p>
+      )}
       {/* La región existe siempre: un lector de pantalla solo anuncia lo que
           cambia dentro de una región que ya estaba en la página. */}
-      <div role="status">{isSent ? <Confirmation /> : null}</div>
-      {isSent ? null : <EmailForm {...props} />}
+      <div role="status">
+        {isSent ? (
+          <p className="mt-2.5 text-[16px] leading-[1.5] text-ink-subtle">
+            {translate("panel.signIn.sent.details")}
+          </p>
+        ) : null}
+      </div>
+      {isSent ? <UseAnotherEmail /> : <EmailForm {...props} />}
     </>
   );
 }

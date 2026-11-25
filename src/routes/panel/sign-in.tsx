@@ -61,8 +61,12 @@ export function SignInScreen({
   readonly outcome: SignInOutcome | undefined;
 }): ReactElement {
   const translate = useTranslate();
+  const heading =
+    outcome?.status === "sent"
+      ? "panel.signIn.sent.title"
+      : "panel.signIn.heading";
   return (
-    <SignInLayout heading={translate("panel.signIn.heading")}>
+    <SignInLayout heading={translate(heading)}>
       <SignInForm protection={protection} outcome={outcome} />
     </SignInLayout>
   );

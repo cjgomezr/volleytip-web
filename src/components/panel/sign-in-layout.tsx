@@ -20,7 +20,7 @@ function SignInHero(): ReactElement {
         height={WORDMARK_HEIGHT}
         className="h-[30px] w-auto self-start"
       />
-      <p className="font-display text-[48px] leading-[0.95] uppercase md:text-[64px] lg:text-[104px]">
+      <p className="font-display text-[48px] leading-[0.95] uppercase md:text-[64px] lg:text-[96px]">
         <span className="block">{translate("panel.signIn.hero.first")}</span>
         <span className="block text-brand-red">
           {translate("panel.signIn.hero.second")}
@@ -52,7 +52,7 @@ export function SignInLayout({
         className="flex flex-col items-center bg-line-light px-4 py-10 text-brand-night [color-scheme:light] md:justify-center md:p-12"
       >
         <div className="w-full max-w-[400px]">
-          <h1 className="font-display text-[44px] leading-[0.95] uppercase md:text-[56px]">
+          <h1 className="font-display text-[44px] leading-[0.95] uppercase md:text-[48px]">
             {heading}
           </h1>
           {children}

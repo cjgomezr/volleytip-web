@@ -42,7 +42,7 @@ function DeadLink({
     <SignInLayout heading={translate("panel.signInLink.invalid.title")}>
       <p
         role="alert"
-        className="mt-3 text-[16px] leading-[1.5] text-ink-subtle"
+        className="mt-2.5 text-[16px] leading-[1.5] text-ink-subtle"
       >
         {translate("panel.signInLink.invalid.details")}
       </p>
@@ -75,7 +75,7 @@ export function SignInLinkScreen({
   }
   return (
     <SignInLayout heading={translate("panel.signIn.heading")}>
-      <p className="mt-3 text-[16px] leading-[1.5] text-ink-subtle">
+      <p className="mt-2.5 text-[16px] leading-[1.5] text-ink-subtle">
         {translate("panel.signInLink.intro")}
       </p>
       {/* La dirección del envío no lleva el token ni nada de la del correo:
@@ -83,7 +83,7 @@ export function SignInLinkScreen({
       <Form
         method="post"
         action={getPanelPath("adminSignInLink", language)}
-        className="mt-6 flex flex-col gap-4"
+        className="mt-6 flex flex-col gap-3.5"
       >
         {outcome?.status === "unavailable" ? (
           <p role="alert" className="font-semibold text-brand-red-deep">

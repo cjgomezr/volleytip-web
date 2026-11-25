@@ -21,6 +21,7 @@ export const panelEn = {
   "panel.signIn.sent.title": "Check your email",
   "panel.signIn.sent.details":
     "If the address belongs to the team, a single-use link is on its way. It expires in one hour.",
+  "panel.signIn.sent.another": "Use another email",
   "panel.signIn.error.email": "Enter a valid email address.",
   "panel.signIn.error.emailTooLong": "The email address is too long.",
   "panel.signIn.rejected.tooFast": "That was too fast. Please try again.",
