@@ -1,7 +1,30 @@
 // Textos del panel de administración y de su entrada.
 export const panelEn = {
   "panel.eyebrow": "VolleyTip admin",
-  "panel.home.pending": "The admin sections are coming soon.",
+  "panel.overview.greeting": "Hi, {name}",
+  "panel.overview.card.newMessages": "Unanswered messages",
+  "panel.overview.card.appWaitlist": "App waitlist",
+  "panel.overview.card.campNotify": "“Notify me” sign-ups",
+  "panel.overview.card.failed": "Could not load this number.",
+  "panel.overview.activity.title": "Recent activity",
+  "panel.overview.activity.system": "System",
+  "panel.overview.activity.empty": "There is no activity yet.",
+  "panel.overview.activity.failed": "Could not load the activity.",
+  "panel.overview.rejections.title": "Discarded submissions",
+  "panel.overview.rejections.total": "Last 7 days: {total}",
+  "panel.overview.rejections.empty":
+    "No submissions were discarded in the last 7 days.",
+  "panel.overview.rejections.failed":
+    "Could not load the discarded submissions.",
+  "panel.overview.form.contact": "Contact",
+  "panel.overview.form.appWaitlist": "App waitlist",
+  "panel.overview.form.campNotify": "Next camp “Notify me”",
+  "panel.overview.form.adminSignIn": "Admin sign-in",
+  "panel.overview.reason.turnstile": "Failed verification",
+  "panel.overview.reason.honeypot": "Honeypot field filled",
+  "panel.overview.reason.tooFast": "Submitted too fast",
+  "panel.overview.reason.rateLimit": "Too many attempts",
+  "panel.overview.reason.validation": "Invalid data",
   "panel.staff.title": "Staff access",
   "panel.staff.details":
     "Your account is for the ticket scanner of a camp. The scanner is not available yet, and the admin cannot be seen from here.",

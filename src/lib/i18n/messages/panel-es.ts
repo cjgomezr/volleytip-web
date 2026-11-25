@@ -1,7 +1,30 @@
 // Textos del panel de administración y de su entrada.
 export const panelEs = {
   "panel.eyebrow": "Panel de VolleyTip",
-  "panel.home.pending": "Las secciones del panel llegan pronto.",
+  "panel.overview.greeting": "Hola, {name}",
+  "panel.overview.card.newMessages": "Mensajes sin responder",
+  "panel.overview.card.appWaitlist": "Lista de espera de la app",
+  "panel.overview.card.campNotify": "Inscritos en «Avísame»",
+  "panel.overview.card.failed": "No se pudo cargar este dato.",
+  "panel.overview.activity.title": "Actividad reciente",
+  "panel.overview.activity.system": "Sistema",
+  "panel.overview.activity.empty": "Todavía no hay actividad.",
+  "panel.overview.activity.failed": "No se pudo cargar la actividad.",
+  "panel.overview.rejections.title": "Envíos descartados",
+  "panel.overview.rejections.total": "Últimos 7 días: {total}",
+  "panel.overview.rejections.empty":
+    "No se descartó ningún envío en los últimos 7 días.",
+  "panel.overview.rejections.failed":
+    "No se pudieron cargar los envíos descartados.",
+  "panel.overview.form.contact": "Contacto",
+  "panel.overview.form.appWaitlist": "Lista de espera de la app",
+  "panel.overview.form.campNotify": "Avísame del próximo camp",
+  "panel.overview.form.adminSignIn": "Entrada al panel",
+  "panel.overview.reason.turnstile": "Verificación fallida",
+  "panel.overview.reason.honeypot": "Campo trampa lleno",
+  "panel.overview.reason.tooFast": "Envío demasiado rápido",
+  "panel.overview.reason.rateLimit": "Demasiados intentos",
+  "panel.overview.reason.validation": "Datos inválidos",
   "panel.staff.title": "Acceso de staff",
   "panel.staff.details":
     "Tu cuenta es para el escáner de entradas de un camp. El escáner todavía no está disponible y desde aquí no se ve el panel.",

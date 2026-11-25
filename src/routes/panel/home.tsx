@@ -1,20 +1,48 @@
 import type { ReactElement } from "react";
 
-import { PanelHeading } from "~/components/panel/panel-heading";
+import { OverviewScreen } from "~/components/panel/overview-screen";
 import { PanelScreen } from "~/components/panel-screen";
 import { PanelSignOut } from "~/components/panel-sign-out";
-import type { PanelRole } from "~/lib/admin/modules";
+import { ADMIN_MODULES } from "~/lib/admin/modules";
+import { buildOverviewView, type OverviewView } from "~/lib/admin/overview";
+import { getRequestLanguage } from "~/lib/i18n/languages";
 import { useTranslate } from "~/lib/i18n/translations-context";
-import { panelMemberContext } from "~/lib/panel/panel-middleware.server";
+import { readOverview } from "~/lib/panel/overview.server";
+import {
+  panelMemberContext,
+  panelSessionContext,
+} from "~/lib/panel/panel-middleware.server";
 
 import type { Route } from "./+types/home";
 
-interface PanelHome {
-  readonly view: PanelRole;
-}
+type PanelHome =
+  | { readonly view: "staff" }
+  | {
+      readonly view: "admin";
+      /** El nombre del perfil o, si no tiene, el correo. */
+      readonly greetingName: string;
+      readonly overview: OverviewView;
+    };
 
-export function loader({ context }: Route.LoaderArgs): PanelHome {
-  return { view: context.get(panelMemberContext).role };
+export async function loader({
+  request,
+  context,
+}: Route.LoaderArgs): Promise<PanelHome> {
+  const member = context.get(panelMemberContext);
+  // El staff no ve ningún dato del panel: ni se consultan.
+  if (member.role === "staff") return { view: "staff" };
+  const data = await readOverview(context.get(panelSessionContext).client, {
+    modules: ADMIN_MODULES,
+    now: new Date(),
+  });
+  return {
+    view: "admin",
+    greetingName: member.fullName ?? member.email,
+    overview: buildOverviewView(data, {
+      modules: ADMIN_MODULES,
+      language: getRequestLanguage(request),
+    }),
+  };
 }
 
 /** El staff solo tiene esta pantalla, sin la cáscara (decisión 11 del PRD de
@@ -33,21 +61,11 @@ function StaffScreen(): ReactElement {
   );
 }
 
-/** Provisional para el admin: el resumen lo construye su ticket. */
-function OverviewScreen(): ReactElement {
-  const translate = useTranslate();
+export function HomeScreen(home: PanelHome): ReactElement {
+  if (home.view === "staff") return <StaffScreen />;
   return (
-    <>
-      <PanelHeading title={translate("panel.module.overview")} />
-      <p className="mt-5 text-[16px] leading-[1.5] text-ink-subtle">
-        {translate("panel.home.pending")}
-      </p>
-    </>
+    <OverviewScreen greetingName={home.greetingName} overview={home.overview} />
   );
-}
-
-export function HomeScreen({ view }: PanelHome): ReactElement {
-  return view === "staff" ? <StaffScreen /> : <OverviewScreen />;
 }
 
 export default function Home({
