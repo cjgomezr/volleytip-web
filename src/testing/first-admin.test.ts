@@ -329,8 +329,37 @@ describe("primer admin: cuenta sin confirmar", () => {
     expect(output).not.toContain(password);
   });
 
-  it("a una cuenta confirmada no le toca la contraseña", async () => {
-    const project = createFakeProject([buildProfile("buyer", true)]);
+  it("dice que confirmó el correo y cambió la contraseña", async () => {
+    const project = createUnconfirmed(buildProfile("admin", true));
+
+    const { output } = await run({ project });
+
+    expect(output).toContain("Se confirmó su correo");
+    expect(output).toContain("contraseña");
+  });
+});
+
+// Con el registro abierto, un tercero pudo crear la cuenta con ese correo y
+// confirmarla: al subirla a admin no puede conservar su contraseña.
+describe("primer admin: contraseña de una cuenta que ya existía", () => {
+  it.each([
+    ["un comprador", buildProfile("buyer", true)],
+    ["alguien del staff", buildProfile("staff", true)],
+    ["un admin desactivado", buildProfile("admin", false)],
+  ])("a %s confirmado se la cambia y lo dice", async (_case, profile) => {
+    const project = createFakeProject([profile]);
+
+    const { output } = await run({ project });
+
+    expect(project.accountUpdates).toEqual([
+      { email_confirm: true, password: expect.any(String) },
+    ]);
+    expect(output).toContain("contraseña");
+    expect(output).not.toContain("Se confirmó su correo");
+  });
+
+  it("a un admin activo y confirmado no le toca la cuenta", async () => {
+    const project = createFakeProject([buildProfile("admin", true)]);
 
     await run({ project });
 
@@ -521,7 +550,7 @@ describe("primer admin: fallos de Supabase", () => {
 
   it.each<[Failure, string]>([
     ["readUser", "No se pudo leer la cuenta"],
-    ["confirm", "No se pudo confirmar el correo"],
+    ["confirm", "No se pudo cambiar el acceso"],
   ])("si falla %s no cambia el rol", async (failure, message) => {
     const project = createFakeProject(
       [buildProfile("buyer", true)],
@@ -534,6 +563,15 @@ describe("primer admin: fallos de Supabase", () => {
     expect(status).not.toBe(0);
     expect(output).toContain(message);
     expect(project.profiles).toEqual([buildProfile("buyer", true)]);
+  });
+
+  it("si falla la creación avisa que la cuenta pudo quedar creada", async () => {
+    const project = createFakeProject([], ["createUser"]);
+
+    const { output } = await run({ project });
+
+    expect(output).toContain("Puede que la cuenta haya quedado creada");
+    expect(output).toContain("Repite el comando");
   });
 
   it("si la bitácora falla, no cambia nada y dice por qué", async () => {

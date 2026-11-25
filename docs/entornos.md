@@ -280,7 +280,8 @@ npm run admin:create -- <correo>
 
 Si el correo no tiene cuenta, la crea con el correo confirmado y la deja como `admin` activo. Si ya tiene una (comprador, staff o admin desactivado), la sube a `admin` activo sin crear otra. Si ya es admin activo, lo dice y no cambia nada. Cada cambio deja una entrada `profile.grant_admin` en `audit_log`, sin actor.
 
-- **Una cuenta que nunca confirmó su correo** queda confirmada y con una contraseña al azar que nadie conoce, aunque ya fuera admin. Sin confirmar no podría pedir el enlace para entrar.
+- **Una cuenta que ya existía** recibe, al subir a admin, una contraseña al azar que nadie conoce. Si alguien más la había creado con ese correo, no puede entrar con la suya. Al panel se entra con el enlace o con Google.
+- **Una cuenta que nunca confirmó su correo** queda además confirmada, aunque ya fuera admin activo: sin confirmar no podría pedir el enlace. Es el único caso en que el comando cambia algo de un admin activo.
 - **Si el comando falla**, dice en qué quedó todo y se repite. La entrada de la bitácora se escribe antes del cambio, así que un fallo a la mitad puede dejar una entrada de más, nunca un admin sin registro.
 
 El comando solo necesita `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`. Las toma de la terminal y, las que falten ahí, de `.env.local`. Antes de escribir muestra a qué proyecto apunta y pide su identificador: en un proyecto alojado es el Project ID (el subdominio de la URL); en local, el host con su puerto, como `127.0.0.1:54321`. Con otra respuesta no escribe nada. Hay que leerlo: es la última defensa contra escribir en el proyecto equivocado.

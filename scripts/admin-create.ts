@@ -45,7 +45,8 @@ const USAGE = [
 ].join("\n");
 const OUTCOME_MESSAGES: Record<FirstAdminOutcome["kind"], string> = {
   created: "Se creó la cuenta y quedó como admin activo.",
-  promoted: "La cuenta ya existía y quedó como admin activo.",
+  promoted:
+    "La cuenta ya existía y quedó como admin activo. Su contraseña se cambió por una al azar: se entra con el enlace al correo o con Google.",
   unchanged: "Esa cuenta ya es admin activo. No se cambió nada.",
 };
 
@@ -130,6 +131,16 @@ function describeError(error: unknown, secret: string): string {
   return secret === "" ? message : message.replaceAll(secret, "[oculto]");
 }
 
+function printOutcome(
+  { kind, profileId, confirmedEmail }: FirstAdminOutcome,
+  print: AdminCreateDependencies["print"],
+): void {
+  print(`${OUTCOME_MESSAGES[kind]} Id del perfil: ${profileId}`);
+  if (confirmedEmail) {
+    print("Se confirmó su correo, que estaba sin confirmar.");
+  }
+}
+
 /** Corre el comando completo y devuelve el código de salida. */
 export async function runAdminCreate(
   dependencies: AdminCreateDependencies,
@@ -140,8 +151,7 @@ export async function runAdminCreate(
     const config = readServiceConfig(env);
     await confirmTarget(dependencies, config.supabaseUrl);
     const client = (dependencies.createClient ?? createServiceClient)(config);
-    const { kind, profileId } = await ensureFirstAdmin(client, email);
-    print(`${OUTCOME_MESSAGES[kind]} Id del perfil: ${profileId}`);
+    printOutcome(await ensureFirstAdmin(client, email), print);
     return SUCCESS_STATUS;
   } catch (error) {
     print(describeError(error, env.SUPABASE_SERVICE_ROLE_KEY?.trim() ?? ""));

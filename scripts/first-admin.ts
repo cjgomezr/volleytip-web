@@ -27,6 +27,8 @@ interface Profile extends ProfileState {
 export interface FirstAdminOutcome {
   readonly kind: "created" | "promoted" | "unchanged";
   readonly profileId: string;
+  /** La cuenta estaba sin confirmar y quedó confirmada. */
+  readonly confirmedEmail: boolean;
 }
 
 const ADMIN_STATE: ProfileState = { role: "admin", isActive: true };
@@ -79,6 +81,21 @@ async function createAccount(
   return data.user.id;
 }
 
+/** Corre un paso y, si falla, le dice a quien opera en qué quedó todo. */
+async function explainFailure<Result>(
+  situation: string,
+  step: () => Promise<Result>,
+): Promise<Result> {
+  try {
+    return await step();
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`${reason}\n${situation} Repite el comando.`, {
+      cause: error,
+    });
+  }
+}
+
 async function setProfileState(
   client: TypedSupabaseClient,
   profileId: string,
@@ -104,12 +121,12 @@ async function isEmailConfirmed(
 }
 
 /**
- * Confirma el correo de una cuenta que nunca lo confirmó: sin eso no puede
- * pedir el enlace para entrar. La contraseña se cambia en la misma llamada
- * porque quien haya registrado ese correo la conoce, y confirmarlo le abriría
- * el panel.
+ * Deja en la cuenta un acceso que nadie más tiene: el correo confirmado, sin
+ * el que no se puede pedir el enlace, y una contraseña al azar. Con el
+ * registro abierto un tercero pudo crear la cuenta con ese correo, y su
+ * contraseña le abriría el panel.
  */
-async function confirmEmail(
+async function secureAccount(
   client: TypedSupabaseClient,
   userId: string,
 ): Promise<void> {
@@ -117,7 +134,7 @@ async function confirmEmail(
     email_confirm: true,
     password: randomBytes(DISCARDED_PASSWORD_BYTES).toString("base64url"),
   });
-  failOn(error, "confirmar el correo");
+  failOn(error, "cambiar el acceso de la cuenta");
 }
 
 interface Grant {
@@ -149,27 +166,13 @@ async function recordGrant(
 
 async function applyGrant(
   client: TypedSupabaseClient,
-  { profileId, needsEmailConfirmation }: Grant,
+  { profileId, previous }: Grant,
 ): Promise<void> {
-  if (needsEmailConfirmation) {
-    await confirmEmail(client, profileId);
+  // Una cuenta recién creada ya nace confirmada y sin contraseña.
+  if (previous !== null) {
+    await secureAccount(client, profileId);
   }
   await setProfileState(client, profileId, ADMIN_STATE);
-}
-
-/** Corre un paso y, si falla, le dice a quien opera en qué quedó todo. */
-async function explainFailure(
-  situation: string,
-  step: () => Promise<void>,
-): Promise<void> {
-  try {
-    await step();
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
-    throw new Error(`${reason}\n${situation} Repite el comando.`, {
-      cause: error,
-    });
-  }
 }
 
 /**
@@ -199,23 +202,30 @@ export async function ensureFirstAdmin(
 ): Promise<FirstAdminOutcome> {
   const profile = await findProfile(client, email);
   if (profile === null) {
-    const profileId = await createAccount(client, email);
+    const profileId = await explainFailure(
+      "Puede que la cuenta haya quedado creada.",
+      () => createAccount(client, email),
+    );
     await grantAdmin(client, {
       profileId,
       previous: null,
       needsEmailConfirmation: false,
     });
-    return { kind: "created", profileId };
+    return { kind: "created", profileId, confirmedEmail: false };
   }
   const { id: profileId, role, isActive } = profile;
   const needsEmailConfirmation = !(await isEmailConfirmed(client, profileId));
   if (role === ADMIN_STATE.role && isActive && !needsEmailConfirmation) {
-    return { kind: "unchanged", profileId };
+    return { kind: "unchanged", profileId, confirmedEmail: false };
   }
   await grantAdmin(client, {
     profileId,
     previous: { role, isActive },
     needsEmailConfirmation,
   });
-  return { kind: "promoted", profileId };
+  return {
+    kind: "promoted",
+    profileId,
+    confirmedEmail: needsEmailConfirmation,
+  };
 }

@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, afterEach, beforeAll, beforeEach, expect, it } from "vitest";
 
 import { runAdminCreate } from "../../scripts/admin-create.ts";
 import type { Database as DatabaseSchema } from "~/lib/database.types";
@@ -13,9 +13,12 @@ import {
   type LocalSupabaseStatus,
 } from "~/testing/local-supabase-status";
 
+const WITHOUT_STORED_SESSION = {
+  auth: { persistSession: false, autoRefreshToken: false },
+} as const;
+
 describeIntegration("primer admin contra la base local", () => {
-  // Dominio reservado: no es de nadie.
-  const email = `primer-admin-${randomUUID()}@example.com`;
+  let email: string;
   let database: Database;
   let status: LocalSupabaseStatus;
 
@@ -36,13 +39,10 @@ describeIntegration("primer admin contra la base local", () => {
   /** Entra como lo haría la persona: con un enlace de un solo uso. El token se
    * saca con la llave de servicio, así no hace falta leer ningún correo. */
   async function signInWithLink(): Promise<TypedSupabaseClient> {
-    const options = {
-      auth: { persistSession: false, autoRefreshToken: false },
-    };
     const service = createClient<DatabaseSchema>(
       status.API_URL,
       status.SECRET_KEY,
-      options,
+      WITHOUT_STORED_SESSION,
     );
     const link = await service.auth.admin.generateLink({
       type: "magiclink",
@@ -52,7 +52,7 @@ describeIntegration("primer admin contra la base local", () => {
     const client = createClient<DatabaseSchema>(
       status.API_URL,
       status.PUBLISHABLE_KEY,
-      options,
+      WITHOUT_STORED_SESSION,
     );
     const { error } = await client.auth.verifyOtp({
       type: "email",
@@ -68,7 +68,7 @@ describeIntegration("primer admin contra la base local", () => {
     const client = createClient<DatabaseSchema>(
       status.API_URL,
       status.PUBLISHABLE_KEY,
-      { auth: { persistSession: false, autoRefreshToken: false } },
+      WITHOUT_STORED_SESSION,
     );
     const { error } = await client.auth.signInWithOtp({
       email,
@@ -93,10 +93,24 @@ describeIntegration("primer admin contra la base local", () => {
     database = connectToLocalDatabase();
   });
 
+  beforeAll(() => {
+    status = readLocalSupabaseStatus();
+    database = connectToLocalDatabase();
+  });
+
+  // Cada prueba usa su propio correo, así no dependen del orden.
+  beforeEach(() => {
+    // Dominio reservado: no es de nadie.
+    email = `primer-admin-${randomUUID()}@example.com`;
+  });
+
   // Borrar la cuenta se lleva su perfil. Las entradas de la bitácora, que no
   // tienen actor, se quedan.
-  afterAll(async () => {
+  afterEach(async () => {
     await database`delete from auth.users where email = ${email}`;
+  });
+
+  afterAll(async () => {
     await database.end();
   });
 
@@ -121,6 +135,26 @@ describeIntegration("primer admin contra la base local", () => {
     expect(await readAuditActions()).toEqual([
       { action: "profile.grant_admin", actor_id: null },
     ]);
+  });
+
+  it("a una cuenta que ya tenía contraseña no se la deja usar", async () => {
+    const password = randomUUID();
+    const { error } = await createClient<DatabaseSchema>(
+      status.API_URL,
+      status.SECRET_KEY,
+      WITHOUT_STORED_SESSION,
+    ).auth.admin.createUser({ email, password, email_confirm: true });
+    expect(error).toBeNull();
+
+    const run = await runCommand();
+
+    expect(run.status, run.output).toBe(0);
+    const attempt = await createClient<DatabaseSchema>(
+      status.API_URL,
+      status.PUBLISHABLE_KEY,
+      WITHOUT_STORED_SESSION,
+    ).auth.signInWithPassword({ email, password });
+    expect(attempt.error?.code).toBe("invalid_credentials");
   });
 
   it("a una cuenta sin confirmar la deja pedir el enlace", async () => {
