@@ -14,7 +14,11 @@ import { SignInLinkScreen } from "./sign-in-link-screen";
 
 const PROTECTION = { siteKey: "llave", timestamp: "marca" };
 
-function render(element: ReactElement, language: Language = "es"): string {
+function render(
+  element: ReactElement,
+  language: Language = "es",
+  entry = "/",
+): string {
   const Stub = createRoutesStub([
     {
       path: "/",
@@ -28,7 +32,7 @@ function render(element: ReactElement, language: Language = "es"): string {
       ),
     },
   ]);
-  return renderToStaticMarkup(<Stub initialEntries={["/"]} />);
+  return renderToStaticMarkup(<Stub initialEntries={[entry]} />);
 }
 
 describe("pantalla de entrada: formulario", () => {
@@ -54,6 +58,16 @@ describe("pantalla de entrada: formulario", () => {
     expect(html).toContain("Usar otro correo");
     expect(html).not.toContain('name="email"');
     expect(html).not.toContain("Sin contraseñas");
+  });
+
+  it("al volver a usar otro correo conserva la página pedida", () => {
+    const html = render(
+      <SignInForm protection={PROTECTION} outcome={{ status: "sent" }} />,
+      "es",
+      "/?next=%2Fadmin%2Fmas",
+    );
+
+    expect(html).toContain('href="/admin/entrar?next=%2Fadmin%2Fmas"');
   });
 
   it("marca el error junto al campo y conserva lo escrito", () => {
