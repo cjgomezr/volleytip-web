@@ -63,6 +63,33 @@ function chooseStateStyles(
   return isInert(target) ? DISABLED_STYLES : interactiveStyles;
 }
 
+function joinStyles(
+  variant: ButtonVariant,
+  zone: Zone,
+  stateStyles: string,
+): string {
+  return [
+    SHARED_STYLES,
+    TRANSITION_STYLES,
+    VARIANT_STYLES[variant],
+    ZONE_STYLES[variant][zone],
+    stateStyles,
+  ]
+    .filter((styles) => styles !== "")
+    .join(" ");
+}
+
+/**
+ * El aspecto del botón para un enlace a una dirección que no es una página
+ * del sitio (las del panel), y que por eso `Button` no puede pintar.
+ */
+export function getButtonLinkClassName(
+  variant: ButtonVariant,
+  zone: Zone,
+): string {
+  return joinStyles(variant, zone, INTERACTIVE_STYLES[variant][zone]);
+}
+
 /**
  * Botón de texto. Con `to` es un enlace; sin `to` es un `<button>`.
  * El primario es la única acción principal de una pantalla.
@@ -77,18 +104,8 @@ export function Button({
     target,
     INTERACTIVE_STYLES[variant][zone],
   );
-  const className = [
-    SHARED_STYLES,
-    TRANSITION_STYLES,
-    VARIANT_STYLES[variant],
-    ZONE_STYLES[variant][zone],
-    stateStyles,
-  ]
-    .filter((styles) => styles !== "")
-    .join(" ");
-
   return (
-    <Pressable {...target} className={className}>
+    <Pressable {...target} className={joinStyles(variant, zone, stateStyles)}>
       {isSubmitting(target) ? (
         <span aria-hidden="true" className={SPINNER_STYLES} />
       ) : null}

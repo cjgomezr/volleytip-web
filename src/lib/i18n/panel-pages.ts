@@ -14,6 +14,13 @@ export const PANEL_ENTRY_PAGES = [
     file: "routes/panel/sign-in.tsx",
     path: { es: "admin/entrar", en: "admin/sign-in" },
   },
+  // Adonde lleva el enlace del correo: la plantilla de
+  // `supabase/templates/` escribe estas direcciones.
+  {
+    id: "adminSignInLink",
+    file: "routes/panel/sign-in-link.tsx",
+    path: { es: "admin/entrar/enlace", en: "admin/sign-in/link" },
+  },
 ] as const satisfies readonly PageDeclaration[];
 
 /** Para todo el equipo: admin y staff. */

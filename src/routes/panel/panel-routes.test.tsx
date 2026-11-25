@@ -108,8 +108,21 @@ describe("pantalla de entrada", () => {
   it("responde sin sesión", async () => {
     stubSupabase();
 
-    await expect(signInLoader(buildArgs("/admin/entrar"))).resolves.toBeNull();
-    expect(render(<SignInScreen />)).toContain("Entrar al panel");
+    const data = await signInLoader(buildArgs("/admin/entrar"));
+
+    expect(data.protection.timestamp).not.toBe("");
+    const html = render(<SignInScreen {...data} outcome={undefined} />);
+    expect(html).toContain("<title>Entrar al panel</title>");
+    expect(html).toMatch(/<h1[^>]*>Entrar</);
+  });
+
+  it("existe en los dos idiomas, igual que la página del enlace", () => {
+    expect(getPanelPath("adminSignIn", "es")).toBe("/admin/entrar");
+    expect(getPanelPath("adminSignIn", "en")).toBe("/en/admin/sign-in");
+    expect(getPanelPath("adminSignInLink", "es")).toBe("/admin/entrar/enlace");
+    expect(getPanelPath("adminSignInLink", "en")).toBe(
+      "/en/admin/sign-in/link",
+    );
   });
 
   it.each([
@@ -137,7 +150,7 @@ describe("pantalla de entrada", () => {
 
     await expect(
       signInLoader(buildArgs("/admin/entrar", { cookie: SIGNED_IN })),
-    ).resolves.toBeNull();
+    ).resolves.toHaveProperty("protection");
   });
 });
 

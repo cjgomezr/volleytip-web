@@ -70,3 +70,12 @@ describe("guardia del panel: dirección de entrada", () => {
     expect(buildSignInPath(request)).toBe("/en/admin/sign-in");
   });
 });
+
+describe("regreso: la página del enlace", () => {
+  it.each(["/admin/entrar/enlace", "/en/admin/sign-in/link"])(
+    "no vuelve a %s",
+    (path) => {
+      expect(resolveReturnPath(path, "es")).toBe("/admin");
+    },
+  );
+});
