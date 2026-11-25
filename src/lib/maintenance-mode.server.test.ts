@@ -50,6 +50,9 @@ describe("qué direcciones quedan fuera", () => {
     "/admin/pedidos",
     "/HEALTHZ",
     "/Admin/pedidos",
+    "/en/admin",
+    "/en/admin/sign-in",
+    "/EN/Admin",
   ])("deja libre %s", (path) => {
     expect(isExemptFromMaintenance(path)).toBe(true);
   });
@@ -60,7 +63,7 @@ describe("qué direcciones quedan fuera", () => {
     "/administracion",
     "/healthzz",
     "/tienda",
-    "/en/admin",
+    "/en/administration",
   ])("no deja libre %s", (path) => {
     expect(isExemptFromMaintenance(path)).toBe(false);
   });
