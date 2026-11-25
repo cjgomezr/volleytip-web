@@ -229,11 +229,36 @@ describe("cáscara del panel", () => {
   });
 
   it("'Más' sin módulos fuera de la barra solo ofrece cerrar sesión", () => {
-    const html = render({ path: "/admin/mas", isMore: true });
+    const modules = ADMIN_MODULES.filter(({ bottomBar }) => bottomBar);
+
+    const html = render({ modules, path: "/admin/mas", isMore: true });
 
     expect(html).not.toContain('data-panel-region="more-list"');
     expect(region(html, "more")).toContain("Cerrar sesión");
   });
+});
+
+describe("módulo Ajustes", () => {
+  it.each([
+    ["es", "/admin", "/admin/ajustes", "Ajustes"],
+    ["en", "/en/admin", "/en/admin/settings", "Settings"],
+  ] as const)(
+    "en %s aparece en el menú lateral y en 'Más'",
+    (language, path, href, label) => {
+      const morePath = language === "es" ? "/admin/mas" : "/en/admin/more";
+
+      const sidebar = region(render({ language, path }), "sidebar-nav");
+      const more = region(
+        render({ language, path: morePath, isMore: true }),
+        "more-list",
+      );
+
+      for (const html of [sidebar, more]) {
+        expect(html).toContain(`href="${href}"`);
+        expect(html).toContain(label);
+      }
+    },
+  );
 });
 
 describe("idioma del panel: selector", () => {

@@ -76,6 +76,53 @@ export const panelEn = {
     other: "{count} pending",
   },
   "panel.module.overview": "Overview",
+  "panel.module.settings": "Settings",
+  "panel.settings.currentState": "Current state:",
+  "panel.settings.state.on": "On",
+  "panel.settings.state.off": "Off",
+  "panel.settings.state.waitlist": "Waitlist",
+  "panel.settings.state.available": "Available",
+  "panel.settings.state.invalid": "Invalid value",
+  "panel.settings.saving": "Saving",
+  "panel.settings.saved.maintenance": "Maintenance mode was saved.",
+  "panel.settings.saved.app": "The app status was saved.",
+  "panel.settings.maintenance.title": "Maintenance mode",
+  "panel.settings.maintenance.on":
+    "The public site shows the maintenance page. The admin panel keeps working.",
+  "panel.settings.maintenance.off": "The public site is showing as usual.",
+  "panel.settings.maintenance.invalid":
+    "The saved value can't be read, so the site treats it as off. Turn it on or off to fix it.",
+  "panel.settings.maintenance.turnOn": "Turn on maintenance",
+  "panel.settings.maintenance.turnOff": "Turn off maintenance",
+  "panel.settings.confirm.title": "Turn on maintenance",
+  "panel.settings.confirm.warning":
+    "The public site will no longer be visible.",
+  "panel.settings.confirm.details":
+    "Visitors will see the maintenance page in less than a minute. The admin panel and its sign-in screen will keep working, and you can turn it off at any time.",
+  "panel.settings.confirm.submit": "Yes, turn it on",
+  "panel.settings.confirm.cancel": "Cancel",
+  "panel.settings.app.title": "App status",
+  "panel.settings.app.details":
+    "Choose what the app page shows: the waitlist form or the store buttons.",
+  "panel.settings.app.invalid":
+    "The saved value doesn't work, so the app page can't show it properly. Fix it and save.",
+  "panel.settings.app.statusLabel": "The app is",
+  "panel.settings.app.appStoreLabel": "App Store address",
+  "panel.settings.app.appStoreHint":
+    "Starts with https://apps.apple.com/. On waitlist, an empty field keeps the saved address.",
+  "panel.settings.app.playStoreLabel": "Google Play address",
+  "panel.settings.app.playStoreHint":
+    "Starts with https://play.google.com/. On waitlist, an empty field keeps the saved address.",
+  "panel.settings.app.save": "Save app status",
+  "panel.settings.app.error.summary":
+    "Nothing was saved. Check the marked fields.",
+  "panel.settings.app.error.status": "Choose waitlist or available.",
+  "panel.settings.app.error.missingUrl":
+    "To mark it available, enter at least one store address.",
+  "panel.settings.app.error.appStoreUrl":
+    "Enter an App Store address that starts with https://apps.apple.com/ and has no spaces.",
+  "panel.settings.app.error.playStoreUrl":
+    "Enter a Google Play address that starts with https://play.google.com/ and has no spaces.",
   "panel.role.admin": "Administrator",
   "panel.role.staff": "Staff",
   "panel.language.label": "Admin language",
@@ -86,7 +133,6 @@ export const panelEn = {
   "panel.sample.siteTexts": "Site texts",
   "panel.sample.faqs": "Frequently asked questions",
   "panel.sample.markets": "Languages and markets",
-  "panel.sample.settings": "Settings",
   "panel.sample.team": "Team",
   "panel.sample.auditLog": "Audit log",
 };

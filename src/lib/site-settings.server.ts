@@ -8,7 +8,11 @@ import {
   MAINTENANCE_MODE_SETTING,
   type MaintenanceMode,
 } from "./maintenance-mode.server";
-import { readSettings, type SettingDefinition } from "./settings.server";
+import {
+  rawSetting,
+  readSettings,
+  type SettingDefinition,
+} from "./settings.server";
 import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 /** Los ajustes que lee cada petición a una página: el modo mantenimiento y
@@ -35,16 +39,6 @@ const SAFE_SITE_SETTINGS: SiteSettings = {
 
 // Se lee el valor crudo y cada ajuste se valida por separado: una barra mal
 // guardada no puede apagar un mantenimiento bien guardado, ni al revés.
-function rawSetting(key: string): SettingDefinition<unknown> {
-  return {
-    key,
-    // Acepta cualquier valor: la forma se comprueba en `parseSetting`.
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    isValid: (_value): _value is unknown => true,
-    fallback: undefined,
-  };
-}
-
 function parseSetting<Value>(
   definition: SettingDefinition<Value>,
   raw: unknown,

@@ -46,6 +46,12 @@ export interface FakeSupabaseOptions {
   readonly verifyFailureStatus?: number;
   /** Estado con que falla la escritura en la bitácora. */
   readonly auditFailureStatus?: number;
+  /** Las filas de `settings`: clave y valor guardado. */
+  readonly settings?: Readonly<Record<string, unknown>>;
+  /** Estado con que falla la lectura de `settings`. */
+  readonly settingsReadFailureStatus?: number;
+  /** Estado con que falla la escritura en `settings`. */
+  readonly settingsWriteFailureStatus?: number;
 }
 
 export interface FakeProfileUpdate {
@@ -66,6 +72,13 @@ export interface FakeSupabase {
   readonly auditRows: unknown[];
   /** El cuerpo de cada canje de enlace pedido, aceptado o no. */
   readonly verifications: unknown[];
+  /** Cada ajuste que se mandó a guardar, aceptado o no. */
+  readonly settingsWrites: FakeSettingWrite[];
+}
+
+export interface FakeSettingWrite {
+  readonly body: unknown;
+  readonly authorization: string | null;
 }
 
 function buildUser(): Record<string, unknown> {
@@ -143,6 +156,19 @@ function answerVerify(options: FakeSupabaseOptions): Response {
     : Response.json(buildSession(VALID_ACCESS_TOKEN, ONE_HOUR_IN_SECONDS));
 }
 
+function answerSettingsRead(
+  url: URL,
+  { settings = {}, settingsReadFailureStatus }: FakeSupabaseOptions,
+): Response {
+  if (settingsReadFailureStatus) return apiFailure(settingsReadFailureStatus);
+  const filter = url.searchParams.get("key") ?? "";
+  return Response.json(
+    Object.entries(settings)
+      .filter(([key]) => filter.includes(key))
+      .map(([key, value]) => ({ key, value })),
+  );
+}
+
 export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const { profile = ADMIN_PROFILE } = options;
   const requests: string[] = [];
@@ -150,6 +176,21 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const profileUpdates: FakeProfileUpdate[] = [];
   const auditRows: unknown[] = [];
   const verifications: unknown[] = [];
+  const settingsWrites: FakeSettingWrite[] = [];
+
+  async function answerSettings(request: Request): Promise<Response> {
+    if (request.method === "GET") {
+      return answerSettingsRead(new URL(request.url), options);
+    }
+    const body = (await request.json()) as { key?: string };
+    settingsWrites.push({
+      body,
+      authorization: request.headers.get("authorization"),
+    });
+    return options.settingsWriteFailureStatus
+      ? apiFailure(options.settingsWriteFailureStatus)
+      : Response.json([{ key: body.key }], { status: 201 });
+  }
 
   async function answerAuditInsert(request: Request): Promise<Response> {
     auditRows.push(await request.json());
@@ -190,7 +231,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     if (url.pathname === "/rest/v1/audit_log") {
       return answerAuditInsert(request);
     }
-    // Los ajustes del sitio (la barra de anuncios del 404).
+    if (url.pathname === "/rest/v1/settings") return answerSettings(request);
     return Response.json([]);
   }
 
@@ -205,6 +246,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     profileUpdates,
     auditRows,
     verifications,
+    settingsWrites,
   };
 }
 

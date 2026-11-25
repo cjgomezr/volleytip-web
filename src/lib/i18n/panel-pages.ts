@@ -46,6 +46,21 @@ export const PANEL_ADMIN_PAGES = [
     file: "routes/panel/language.ts",
     path: { es: "admin/idioma", en: "admin/language" },
   },
+  {
+    id: "adminSettings",
+    file: "routes/panel/settings.tsx",
+    path: { es: "admin/ajustes", en: "admin/settings" },
+  },
+  // La confirmación para encender el mantenimiento, y a donde envían sus
+  // botones.
+  {
+    id: "adminSettingsMaintenance",
+    file: "routes/panel/maintenance.tsx",
+    path: {
+      es: "admin/ajustes/mantenimiento",
+      en: "admin/settings/maintenance",
+    },
+  },
   { id: "adminMissing", file: "routes/panel/missing.tsx", path: "admin/*" },
 ] as const satisfies readonly PageDeclaration[];
 
