@@ -1,4 +1,3 @@
-import { recordAuditEntry } from "../audit-log.server";
 import type { Language } from "../i18n/languages";
 import type { TypedSupabaseClient } from "../supabase/typed-client";
 
@@ -7,9 +6,6 @@ interface PanelLocaleChange {
   readonly client: TypedSupabaseClient;
   readonly memberId: string;
   readonly locale: Language;
-  /** Solo las pruebas lo cambian. La bitácora se escribe con la llave de
-   * servicio porque `audit_log` no deja insertar a ninguna sesión. */
-  readonly auditClient?: TypedSupabaseClient;
 }
 
 function failToSave(reason: string, cause?: unknown): never {
@@ -47,49 +43,17 @@ async function writeLocale(
   if (data.length !== 1) failToSave("no cambió ningún perfil");
 }
 
-// Un cambio sin entrada en la bitácora se deshace. Si se quedara, el
-// reintento vería el idioma ya puesto y no lo registraría nunca.
-async function recordOrRevert(
-  { client, memberId, locale, auditClient }: PanelLocaleChange,
-  previous: string,
-): Promise<void> {
-  try {
-    await recordAuditEntry(
-      {
-        actorId: memberId,
-        action: "profile.set_locale",
-        entity: "profile",
-        entityId: memberId,
-        details: { before: { locale: previous }, after: { locale } },
-      },
-      auditClient,
-    );
-  } catch (auditError) {
-    try {
-      await writeLocale(client, memberId, previous);
-    } catch (revertError) {
-      throw new AggregateError(
-        [auditError, revertError],
-        `El idioma de ${memberId} quedó en "${locale}" sin entrada en la bitácora`,
-      );
-    }
-    throw auditError;
-  }
-}
-
 /**
- * Guarda en `profiles.locale` el idioma elegido en el panel y lo deja en la
- * bitácora (FR-067). Si ya era ese, no escribe nada. Lanza si el cambio o su
- * registro no quedan hechos. Si falla el registro intenta dejar el idioma como
- * estaba; si tampoco puede, lanza los dos errores y dice qué quedó guardado.
- * No son una sola transacción.
+ * Guarda en `profiles.locale` el idioma elegido en el panel y devuelve el que
+ * había, para que quien llama deje el cambio en la bitácora. Si ya era ese, no
+ * escribe nada. Lanza si el cambio no queda hecho.
  */
-export async function savePanelLocale(
-  change: PanelLocaleChange,
-): Promise<void> {
-  const { client, memberId, locale } = change;
+export async function savePanelLocale({
+  client,
+  memberId,
+  locale,
+}: PanelLocaleChange): Promise<string> {
   const previous = await readLocale(client, memberId);
-  if (previous === locale) return;
-  await writeLocale(client, memberId, locale);
-  await recordOrRevert(change, previous);
+  if (previous !== locale) await writeLocale(client, memberId, locale);
+  return previous;
 }

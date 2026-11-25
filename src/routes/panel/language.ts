@@ -4,6 +4,10 @@ import { getPanelPathInLanguage } from "~/lib/admin/path-in-language";
 import { getRequestLanguage, isSupportedLanguage } from "~/lib/i18n/languages";
 import { getPanelPath, PANEL_PAGES } from "~/lib/i18n/panel-pages";
 import {
+  defineAdminAction,
+  type AdminActionOutcome,
+} from "~/lib/panel/admin-action.server";
+import {
   panelMemberContext,
   panelSessionContext,
 } from "~/lib/panel/panel-middleware.server";
@@ -24,18 +28,21 @@ export function loader({ request }: Route.LoaderArgs): Response {
   return redirect(getPanelPath("adminHome", getRequestLanguage(request)));
 }
 
-export async function action({
+type LanguageResult = Response | ReturnType<typeof data<null>>;
+
+async function changeLanguage({
   request,
   context,
-}: Route.ActionArgs): Promise<Response | ReturnType<typeof data<null>>> {
+}: Route.ActionArgs): Promise<AdminActionOutcome<LanguageResult, "locale">> {
   const formData = await request.formData();
   const language = readText(formData, "language");
   if (!isSupportedLanguage(language)) {
-    return data(null, { status: BAD_REQUEST });
+    return { result: data(null, { status: BAD_REQUEST }), change: null };
   }
-  await savePanelLocale({
+  const memberId = context.get(panelMemberContext).id;
+  const previous = await savePanelLocale({
     client: context.get(panelSessionContext).client,
-    memberId: context.get(panelMemberContext).id,
+    memberId,
     locale: language,
   });
   const destination = getPanelPathInLanguage(
@@ -43,8 +50,21 @@ export async function action({
     language,
     { pages: PANEL_PAGES, fallback: getPanelPath("adminHome", language) },
   );
-  return redirect(destination, SEE_OTHER);
+  return {
+    result: redirect(destination, SEE_OTHER),
+    change: {
+      entityId: memberId,
+      before: { locale: previous },
+      after: { locale: language },
+    },
+  };
 }
+
+export const action = defineAdminAction({
+  name: "profile.set_locale",
+  auditedFields: ["locale"],
+  run: changeLanguage,
+});
 
 // Nunca se pinta: el loader y el action siempre responden antes. Hace falta
 // para que la ruta sea una página y un 404 de la guardia salga con el

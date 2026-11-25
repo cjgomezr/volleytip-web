@@ -70,7 +70,7 @@ describe("idioma del panel", () => {
 
     await action(buildArgs("/admin/idioma", TO_ENGLISH));
 
-    const update = supabase.writes.find(({ method }) => method === "PATCH");
+    const [update] = supabase.profileUpdates;
     expect(update?.path).toContain(`id=eq.${FAKE_USER_ID}`);
     expect(update?.body).toEqual({ locale: "en" });
     expect(update?.authorization).toContain("acceso-vigente");
@@ -81,10 +81,8 @@ describe("idioma del panel", () => {
 
     await action(buildArgs("/admin/idioma", TO_ENGLISH));
 
-    const entry = supabase.writes.find(({ path }) =>
-      path.startsWith("/rest/v1/audit_log"),
-    );
-    expect(entry?.body).toMatchObject({
+    expect(supabase.auditRows).toHaveLength(1);
+    expect(supabase.auditRows[0]).toMatchObject({
       actor_id: FAKE_USER_ID,
       action: "profile.set_locale",
       entity: "profile",
@@ -100,7 +98,8 @@ describe("idioma del panel", () => {
       buildArgs("/admin/idioma", { language: "es", from: "/admin" }),
     );
 
-    expect(supabase.writes).toEqual([]);
+    expect(supabase.profileUpdates).toEqual([]);
+    expect(supabase.auditRows).toEqual([]);
   });
 
   it("un idioma que no existe responde 400 y no escribe", async () => {
@@ -111,19 +110,29 @@ describe("idioma del panel", () => {
     );
 
     expect(response).toMatchObject({ init: { status: 400 } });
-    expect(supabase.writes).toEqual([]);
+    expect(supabase.profileUpdates).toEqual([]);
+    expect(supabase.auditRows).toEqual([]);
   });
 
   it.each([
     ["no tocó ningún perfil", { isProfileUpdateIgnored: true }],
     ["la base lo rechazó", { profileUpdateFailureStatus: 500 }],
-    ["no se pudo leer el actual", { profileFailureStatus: 500 }],
   ])("no da por guardado el idioma si %s", async (_name, options) => {
-    stubSupabase(options);
+    const supabase = stubSupabase(options);
 
     await expect(
       action(buildArgs("/admin/idioma", TO_ENGLISH)),
     ).rejects.toThrow(/idioma/);
+    expect(supabase.auditRows).toEqual([]);
+  });
+
+  it("si no se puede leer el perfil, no cambia nada", async () => {
+    const supabase = stubSupabase({ profileFailureStatus: 500 });
+
+    await expect(
+      action(buildArgs("/admin/idioma", TO_ENGLISH)),
+    ).rejects.toThrow(/perfil/);
+    expect(supabase.profileUpdates).toEqual([]);
   });
 
   it("falla si la bitácora no recibe la entrada", async () => {
@@ -134,37 +143,32 @@ describe("idioma del panel", () => {
     ).rejects.toThrow(/bitácora/);
   });
 
-  it("si la bitácora falla, devuelve el idioma a como estaba", async () => {
+  // La pieza de la bitácora no deshace: avisa de que el cambio quedó hecho.
+  it("si la bitácora falla, el idioma queda cambiado y el error lo dice", async () => {
     const supabase = stubSupabase({ auditFailureStatus: 500 });
 
     await expect(
       action(buildArgs("/admin/idioma", TO_ENGLISH)),
-    ).rejects.toThrow(/bitácora/);
+    ).rejects.toThrow(/se hizo, pero no quedó en la bitácora/);
 
-    const updates = supabase.writes.filter(({ method }) => method === "PATCH");
-    expect(updates.map(({ body }) => body)).toEqual([
+    expect(supabase.profileUpdates.map(({ body }) => body)).toEqual([
       { locale: "en" },
-      { locale: "es" },
     ]);
   });
 
-  it("si tampoco puede devolverlo, informa los dos fallos y lo que quedó", async () => {
-    stubSupabase({
-      auditFailureStatus: 500,
-      secondProfileUpdateFailureStatus: 500,
+  it("al staff lo devuelve al inicio sin guardar nada", async () => {
+    const supabase = stubSupabase({
+      profile: { ...ADMIN_PROFILE, role: "staff" },
     });
 
     const thrown: unknown = await action(
-      buildArgs("/admin/idioma", TO_ENGLISH),
+      buildArgs("/en/admin/language", TO_ENGLISH),
     ).catch((error: unknown) => error);
 
-    expect(thrown).toBeInstanceOf(AggregateError);
-    const { message, errors } = thrown as AggregateError;
-    expect(message).toContain('quedó en "en" sin entrada en la bitácora');
-    expect(errors.map((error: Error) => error.message)).toEqual([
-      expect.stringContaining("bitácora"),
-      expect.stringContaining("idioma"),
-    ]);
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).headers.get("Location")).toBe("/en/admin");
+    expect(supabase.profileUpdates).toEqual([]);
+    expect(supabase.auditRows).toEqual([]);
   });
 
   it("abrir la dirección sin enviar nada lleva al inicio del panel", () => {
