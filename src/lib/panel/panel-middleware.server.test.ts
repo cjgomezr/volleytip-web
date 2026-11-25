@@ -290,6 +290,46 @@ describe("guardia del panel", () => {
   });
 });
 
+describe("guardia del panel: cuenta desactivada", () => {
+  const DEACTIVATED = { ...ADMIN_PROFILE, is_active: false };
+
+  it.each([
+    ["al pedir una página", "GET", "/admin"],
+    ["al enviar Cerrar sesión", "POST", "/admin/salir"],
+  ])("%s cierra la sesión y borra las cookies", async (_n, method, path) => {
+    const supabase = stubSupabase({ profile: DEACTIVATED });
+
+    const { response, reachedRoute } = await runPanel({
+      method,
+      path,
+      cookie: SIGNED_IN,
+      origin: TEST_ENV.SITE_ORIGIN,
+    });
+
+    expect(supabase.requests).toContain("POST /auth/v1/logout?scope=local");
+    expect(response.headers.getSetCookie().join()).toMatch(/Max-Age=0/i);
+    expect(response.headers.get("Location")).toContain("/admin/entrar");
+    expect(reachedRoute).toBe(false);
+  });
+
+  it("falla en voz alta si Supabase no pudo cerrar la sesión", async () => {
+    stubSupabase({ profile: DEACTIVATED, logoutFailureStatus: 500 });
+
+    const { response, thrown } = await runPanel({ cookie: SIGNED_IN });
+
+    expect(response.status).toBe(500);
+    expect(thrown).toBeInstanceOf(Error);
+  });
+
+  it("sin sesión no intenta cerrar nada", async () => {
+    const supabase = stubSupabase();
+
+    await runPanel({});
+
+    expect(supabase.requests).toEqual([]);
+  });
+});
+
 describe("guardia del panel: POST", () => {
   it("un envío del propio sitio llega al action", async () => {
     stubSupabase();

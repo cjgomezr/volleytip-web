@@ -7,12 +7,17 @@ import { getMessages } from "~/lib/i18n/messages.server";
 
 import { ErrorBoundary } from "./root";
 
-function renderHiddenPage(language: Language, path: string): string {
+function renderHiddenPage(
+  language: Language,
+  path: string,
+  languageSuggestion: object | null = null,
+): string {
   const error = new UNSAFE_ErrorResponseImpl(404, "Not Found", {
     kind: "panel-not-found",
     messages: getMessages(language),
     year: 2026,
     announcements: ["Aviso de prueba"],
+    languageSuggestion,
   });
   const Stub = createRoutesStub([
     { path, Component: () => <ErrorBoundary error={error} params={{}} /> },
@@ -29,6 +34,21 @@ describe("404 que ve un buyer en el panel (AC-033)", () => {
     expect(html).toContain("<header");
     expect(html).toContain("<footer");
     expect(html).not.toContain("Cerrar sesión");
+  });
+
+  it("lleva el aviso de idioma como cualquier página que no existe", () => {
+    const html = renderHiddenPage("es", "/admin", {
+      proposed: "en",
+      pageLanguage: "es",
+      texts: {
+        label: "Language",
+        message: "This page is also in English.",
+        accept: "View in English",
+        stay: "Stay",
+      },
+    });
+
+    expect(html).toContain("This page is also in English.");
   });
 
   it("sale en inglés bajo /en/", () => {

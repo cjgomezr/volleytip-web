@@ -1,5 +1,6 @@
 import { isRouteErrorResponse } from "react-router";
 
+import type { LanguageSuggestionData } from "../i18n/language-suggestion.server";
 import type { Messages } from "../i18n/translate";
 
 const PANEL_NOT_FOUND = "panel-not-found";
@@ -12,6 +13,7 @@ export interface PanelNotFound {
   readonly messages: Messages;
   readonly year: number;
   readonly announcements: readonly string[];
+  readonly languageSuggestion: LanguageSuggestionData | null;
 }
 
 export function buildPanelNotFoundData(

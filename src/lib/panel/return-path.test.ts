@@ -29,6 +29,10 @@ describe("guardia del panel: dirección de regreso", () => {
     ["la pantalla de entrada", "/admin/entrar"],
     ["la pantalla de entrada con barra", "/en/admin/sign-in/"],
     ["la salida", "/admin/salir"],
+    ["la entrada con mayúsculas", "/admin/Entrar"],
+    ["la salida con mayúsculas", "/EN/admin/Sign-Out"],
+    ["los datos de la entrada", "/admin/entrar.data"],
+    ["los datos de una sección", "/admin/mensajes.data"],
   ])("ignora %s y usa el inicio del panel", (_name, path) => {
     expect(resolveReturnPath(path, "es")).toBe("/admin");
     expect(resolveReturnPath(path, "en")).toBe("/en/admin");

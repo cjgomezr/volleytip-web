@@ -13,6 +13,7 @@ import {
   createSessionSupabaseClient,
   type SessionSupabase,
 } from "../supabase/session-client.server";
+import { closeSession } from "./close-session.server";
 import { buildPanelNotFound } from "./panel-not-found.server";
 import { buildSignInPath } from "./return-path";
 import { isTrustedSubmission } from "./trusted-origin.server";
@@ -60,22 +61,26 @@ export const rejectForeignOrigin: MiddlewareFunction<Response> = ({
 
 /**
  * La guardia del panel, para páginas y envíos por igual. Corre antes que
- * cualquier loader o action: sin sesión (o con la cuenta desactivada) lleva a
- * la entrada, a quien no es del equipo le responde 404, y al equipo lo deja
- * pasar con su perfil en el contexto.
+ * cualquier loader o action: sin sesión lleva a la entrada, a quien no es del
+ * equipo le responde 404, y al equipo lo deja pasar con su perfil en el
+ * contexto. A una cuenta desactivada además le cierra la sesión: si no,
+ * "Cerrar sesión" no llegaría a su action y las cookies volverían a servir al
+ * reactivarla.
  */
 export const requirePanelMember: MiddlewareFunction<Response> = async ({
   request,
   context,
 }) => {
-  const visitor = await identifyVisitor(
-    context.get(panelSessionContext).client,
-  );
-  if (visitor.kind === "withoutAccess") {
-    throw redirect(buildSignInPath(request));
-  }
+  const { client } = context.get(panelSessionContext);
+  const visitor = await identifyVisitor(client);
   if (visitor.kind === "outsider") {
     throw await buildPanelNotFound(request);
+  }
+  if (visitor.kind === "deactivated") {
+    await closeSession(client);
+  }
+  if (visitor.kind !== "member") {
+    throw redirect(buildSignInPath(request));
   }
   context.set(panelMemberContext, visitor.member);
 };

@@ -18,7 +18,8 @@ const TRAILING_SLASHES = /\/+$/;
 
 // Volver a la entrada o a la salida no lleva a ninguna parte.
 function isEntryOrExit(pathname: string): boolean {
-  const path = pathname.replace(TRAILING_SLASHES, "");
+  // `/admin/Entrar` no es una sección: caería en el comodín del panel.
+  const path = pathname.replace(TRAILING_SLASHES, "").toLowerCase();
   return SUPPORTED_LANGUAGES.some(
     ({ code }) =>
       path === getPanelPath("adminSignIn", code) ||
@@ -41,6 +42,8 @@ export function resolveReturnPath(
   const isAllowed =
     url.origin === PARSING_ORIGIN &&
     isPanelPath(url.pathname) &&
+    // Una dirección de datos serviría el flujo de React Router, no la página.
+    getDocumentPath(url) === url.pathname &&
     !isEntryOrExit(url.pathname);
   return isAllowed ? `${url.pathname}${url.search}` : home;
 }

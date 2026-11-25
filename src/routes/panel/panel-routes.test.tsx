@@ -190,6 +190,23 @@ describe("dirección del panel que no existe", () => {
   });
 });
 
+describe("404 del panel: aviso de idioma", () => {
+  it("propone el idioma del navegador, como el 404 del sitio", async () => {
+    stubSupabase();
+    const args = buildArgs<Parameters<typeof missingLoader>[0]>("/admin/x");
+    args.request.headers.set("Accept-Language", "en-US");
+    args.request.headers.set("User-Agent", "Mozilla/5.0 (Windows NT 10.0)");
+
+    const thrown: unknown = await missingLoader(args).catch(
+      (error: unknown) => error,
+    );
+
+    expect(thrown).toMatchObject({
+      data: { languageSuggestion: { proposed: "en", pageLanguage: "es" } },
+    });
+  });
+});
+
 describe("noindex del panel", () => {
   it("lo declara en todas sus páginas", () => {
     const Stub = createRoutesStub([{ path: "/", Component: SessionLayout }]);

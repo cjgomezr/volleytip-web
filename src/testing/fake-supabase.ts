@@ -32,6 +32,8 @@ export interface FakeSupabaseOptions {
   readonly profile?: FakeProfile | null;
   /** Estado con que fallan todas las peticiones a Auth (servicio caído). */
   readonly authFailureStatus?: number;
+  /** Estado con que falla solo el cierre de sesión. */
+  readonly logoutFailureStatus?: number;
   /** Estado con que falla la lectura del perfil. */
   readonly profileFailureStatus?: number;
 }
@@ -104,6 +106,9 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     if (url.pathname === "/auth/v1/token") return answerRefresh(request);
     if (url.pathname === "/auth/v1/user") return answerUser(request);
     if (url.pathname === "/auth/v1/logout") {
+      if (options.logoutFailureStatus) {
+        return authError(options.logoutFailureStatus, "unexpected_failure");
+      }
       return new Response(null, { status: 204 });
     }
     if (url.pathname === "/rest/v1/profiles") {

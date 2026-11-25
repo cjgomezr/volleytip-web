@@ -148,7 +148,7 @@ describeIntegration("sesión del panel contra la base local", () => {
     await deactivateTestUser(status, userId);
 
     expect(await identifyVisitor(openRequest(cookies).client)).toEqual({
-      kind: "withoutAccess",
+      kind: "deactivated",
     });
   });
 
@@ -180,7 +180,7 @@ describeIntegration("sesión del panel contra la base local", () => {
 
     expect(error).toBeNull();
     expect(await identifyVisitor(openRequest(cookies).client)).toEqual({
-      kind: "withoutAccess",
+      kind: "anonymous",
     });
   });
 });

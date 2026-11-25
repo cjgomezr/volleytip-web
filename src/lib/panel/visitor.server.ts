@@ -16,8 +16,9 @@ export interface PanelMember {
 
 /** Quién pide una página del panel. */
 export type Visitor =
-  /** Sin sesión, o de alguien del equipo que está desactivado. */
-  | { readonly kind: "withoutAccess" }
+  | { readonly kind: "anonymous" }
+  /** Del equipo, con la sesión abierta y la cuenta desactivada. */
+  | { readonly kind: "deactivated" }
   /** Con sesión, pero no es del equipo: para esa persona el panel no existe. */
   | { readonly kind: "outsider" }
   | { readonly kind: "member"; readonly member: PanelMember };
@@ -54,7 +55,7 @@ export async function identifyVisitor(
   client: TypedSupabaseClient,
 ): Promise<Visitor> {
   const user = await verifyUser(client);
-  if (user === null) return { kind: "withoutAccess" };
+  if (user === null) return { kind: "anonymous" };
   const { data: profile, error } = await client
     .from("profiles")
     .select("role, is_active, full_name, email")
@@ -64,7 +65,7 @@ export async function identifyVisitor(
     throw new Error("No se pudo leer el perfil de la sesión", { cause: error });
   }
   if (profile === null || profile.role === "buyer") return { kind: "outsider" };
-  if (!profile.is_active) return { kind: "withoutAccess" };
+  if (!profile.is_active) return { kind: "deactivated" };
   return {
     kind: "member",
     member: {

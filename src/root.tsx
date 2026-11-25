@@ -16,18 +16,21 @@ import {
 } from "~/components/error-content";
 import { ErrorInShell } from "~/components/error-in-shell";
 import { LanguageAlternates } from "~/components/language-alternates";
-import type { LanguageSuggestionTexts } from "~/components/language-suggestion";
+import { LanguageSuggestion } from "~/components/language-suggestion";
 import { serverEnv } from "~/lib/env.server";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
   addVaryHeaders,
-  getLanguageProposal,
   redirectRootToChosenLanguage,
 } from "~/lib/i18n/language-choice.server";
-import { getRequestLanguage, type Language } from "~/lib/i18n/languages";
+import {
+  loadLanguageSuggestion,
+  type LanguageSuggestionData,
+} from "~/lib/i18n/language-suggestion.server";
+import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getSiteYear } from "~/lib/i18n/format";
-import { getMessages, getTranslate } from "~/lib/i18n/messages.server";
+import { getMessages } from "~/lib/i18n/messages.server";
 import { getPageAtPath } from "~/lib/i18n/pages";
 import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
@@ -94,32 +97,6 @@ export const links: Route.LinksFunction = () => [
 // idioma. Lo vigila una prueba de Playwright.
 // `siteOrigin` no es un secreto: es el dominio público, y el navegador lo
 // necesita para pintar las mismas direcciones que el servidor.
-interface LanguageSuggestionData {
-  readonly proposed: Language;
-  readonly pageLanguage: Language;
-  readonly texts: LanguageSuggestionTexts;
-}
-
-// Los textos del aviso van en el idioma que propone, no en el de la página:
-// es el que lee quien lo recibe.
-async function loadLanguageSuggestion(
-  request: Request,
-): Promise<LanguageSuggestionData | null> {
-  const proposed = await getLanguageProposal(request);
-  if (proposed === undefined) return null;
-  const translate = getTranslate(proposed);
-  return {
-    proposed,
-    pageLanguage: getRequestLanguage(request),
-    texts: {
-      label: translate("languageSuggestion.label"),
-      message: translate("languageSuggestion.message"),
-      accept: translate("languageSuggestion.accept"),
-      stay: translate("languageSuggestion.stay"),
-    },
-  };
-}
-
 export async function loader({ request }: Route.LoaderArgs): Promise<{
   readonly messages: Messages;
   readonly siteOrigin: string;
@@ -198,6 +175,11 @@ export function ErrorBoundary({
         <ErrorInShell
           error={error}
           announcements={panelNotFound.announcements}
+          notice={
+            panelNotFound.languageSuggestion ? (
+              <LanguageSuggestion {...panelNotFound.languageSuggestion} />
+            ) : null
+          }
           year={panelNotFound.year}
         />
       </TranslationsProvider>
