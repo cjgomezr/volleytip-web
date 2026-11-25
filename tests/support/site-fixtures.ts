@@ -1,4 +1,5 @@
 import type { LocalSupabaseStatus } from "../../src/testing/local-supabase-status";
+import { removeSettingRows } from "./settings-rows";
 
 /**
  * Los datos de la base que las pruebas de Playwright esperan ver en las
@@ -85,6 +86,8 @@ export async function seedSiteFixtures(
   status: LocalSupabaseStatus,
 ): Promise<void> {
   await resetFormRateLimits(status);
+  // Una corrida cortada a medias pudo dejar el sitio en mantenimiento.
+  await removeSettingRows(status, ["maintenance_mode"]);
   const response = await fetch(
     `${status.API_URL}/rest/v1/settings?on_conflict=key`,
     {
