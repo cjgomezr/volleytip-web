@@ -42,14 +42,11 @@ export interface FakeSupabaseOptions {
   readonly profileUpdateFailureStatus?: number;
   /** El cambio del perfil no toca ninguna fila, como cuando RLS lo tapa. */
   readonly isProfileUpdateIgnored?: boolean;
-  /** Estado con que falla el segundo cambio del perfil y los siguientes. */
-  readonly secondProfileUpdateFailureStatus?: number;
   /** Estado con que falla la escritura en la bitácora. */
   readonly auditFailureStatus?: number;
 }
 
-export interface FakeWrite {
-  readonly method: string;
+export interface FakeProfileUpdate {
   /** La ruta con su búsqueda. */
   readonly path: string;
   readonly body: unknown;
@@ -61,8 +58,10 @@ export interface FakeSupabase {
   readonly requests: string[];
   /** La cabecera `Authorization` con que se leyó el perfil. */
   readonly profileAuthorizations: (string | null)[];
-  /** Cada cambio pedido a la API: al perfil y a la bitácora. */
-  readonly writes: FakeWrite[];
+  /** Cada cambio pedido al perfil, aceptado o no. */
+  readonly profileUpdates: FakeProfileUpdate[];
+  /** Las filas que se mandaron a `audit_log`, aceptadas o no. */
+  readonly auditRows: unknown[];
 }
 
 function buildUser(): Record<string, unknown> {
@@ -116,38 +115,37 @@ function apiFailure(status: number): Response {
   return Response.json({ message: "falló" }, { status });
 }
 
-function answerProfileUpdate(
-  options: FakeSupabaseOptions,
-  writes: readonly FakeWrite[],
-): Response {
-  const updates = writes.filter(({ method }) => method === "PATCH").length;
-  const failure =
-    options.profileUpdateFailureStatus ??
-    (updates > 1 ? options.secondProfileUpdateFailureStatus : undefined);
-  if (failure) return apiFailure(failure);
+function answerProfileUpdate(options: FakeSupabaseOptions): Response {
+  if (options.profileUpdateFailureStatus) {
+    return apiFailure(options.profileUpdateFailureStatus);
+  }
   return Response.json(
     options.isProfileUpdateIgnored ? [] : [{ id: FAKE_USER_ID }],
   );
 }
 
-async function recordWrite(
-  writes: FakeWrite[],
-  request: Request,
-): Promise<void> {
+async function readProfileUpdate(request: Request): Promise<FakeProfileUpdate> {
   const url = new URL(request.url);
-  writes.push({
-    method: request.method,
+  return {
     path: `${url.pathname}${url.search}`,
     body: await request.json(),
     authorization: request.headers.get("authorization"),
-  });
+  };
 }
 
 export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const { profile = ADMIN_PROFILE } = options;
   const requests: string[] = [];
   const profileAuthorizations: (string | null)[] = [];
-  const writes: FakeWrite[] = [];
+  const profileUpdates: FakeProfileUpdate[] = [];
+  const auditRows: unknown[] = [];
+
+  async function answerAuditInsert(request: Request): Promise<Response> {
+    auditRows.push(await request.json());
+    return options.auditFailureStatus
+      ? apiFailure(options.auditFailureStatus)
+      : new Response(null, { status: 201 });
+  }
 
   async function answer(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -165,8 +163,8 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     }
     if (url.pathname === "/rest/v1/profiles") {
       if (request.method === "PATCH") {
-        await recordWrite(writes, request);
-        return answerProfileUpdate(options, writes);
+        profileUpdates.push(await readProfileUpdate(request));
+        return answerProfileUpdate(options);
       }
       profileAuthorizations.push(request.headers.get("authorization"));
       const locale = options.profileLocale ?? "es";
@@ -175,10 +173,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
         : Response.json(profile === null ? [] : [{ ...profile, locale }]);
     }
     if (url.pathname === "/rest/v1/audit_log") {
-      await recordWrite(writes, request);
-      return options.auditFailureStatus
-        ? apiFailure(options.auditFailureStatus)
-        : new Response(null, { status: 201 });
+      return answerAuditInsert(request);
     }
     // Los ajustes del sitio (la barra de anuncios del 404).
     return Response.json([]);
@@ -189,7 +184,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
       answer(new Request(input, init)),
   );
-  return { requests, profileAuthorizations, writes };
+  return { requests, profileAuthorizations, profileUpdates, auditRows };
 }
 
 interface SessionCookieOptions {
