@@ -19,6 +19,9 @@ describe("idioma del panel: la misma pantalla", () => {
   it.each([
     "https://sitio-ajeno.test/admin",
     "//sitio-ajeno.test",
+    "//[",
+    "//a:b",
+    "//%",
     "/admin/no-existe",
     "/contacto",
     "",

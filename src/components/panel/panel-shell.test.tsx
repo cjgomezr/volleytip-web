@@ -7,6 +7,7 @@ import { SAMPLE_MODULES } from "~/lib/admin/sample-modules";
 import type { Language } from "~/lib/i18n/languages";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
+import PanelMemberLayout from "~/routes/panel/member-layout";
 
 import { PanelMore } from "./panel-more";
 import { PanelShell, type PanelShellProps } from "./panel-shell";
@@ -249,6 +250,36 @@ describe("idioma del panel: selector", () => {
 
     expect(html).toMatch(/<button[^>]*value="en"[^>]*aria-current="true"/);
     expect(html).not.toMatch(/<button[^>]*value="es"[^>]*aria-current/);
+  });
+});
+
+describe("datos de la ruta en la cáscara", () => {
+  it("el layout real le pasa el mantenimiento y la persona", () => {
+    const loaderData = {
+      view: "admin",
+      member: { displayName: "Ana", role: "admin" },
+      pendingCounts: {},
+      isMaintenanceOn: true,
+    } as const;
+    const Stub = createRoutesStub([
+      {
+        path: "*",
+        Component: () => (
+          <TranslationsProvider language="es" messages={getMessages("es")}>
+            <PanelMemberLayout
+              {...({ loaderData } as unknown as Parameters<
+                typeof PanelMemberLayout
+              >[0])}
+            />
+          </TranslationsProvider>
+        ),
+      },
+    ]);
+
+    const html = renderToStaticMarkup(<Stub initialEntries={["/admin"]} />);
+
+    expect(html).toContain('data-panel-region="maintenance"');
+    expect(html).toContain("Ana");
   });
 });
 

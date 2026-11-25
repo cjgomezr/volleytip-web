@@ -77,3 +77,26 @@ export const SAMPLE_MODULES = defineModules([
     en: "dev/panel/audit-log",
   }),
 ]);
+
+const FULL_BAR_LAST_SLOT = "sample-faqs";
+const FULL_BAR_HIDDEN_COUNTER = "sample-team";
+
+/** La muestra con la barra llena (cuatro módulos y "Más") y contadores en el
+ * último lugar y dentro de "Más": el caso más apretado a 360 px. */
+export const FULL_BAR_SAMPLE = {
+  modules: defineModules(
+    SAMPLE_MODULES.map((module, index) => ({
+      ...module,
+      bottomBar: module.bottomBar ?? (index < 4 ? { glyph: "▤" } : undefined),
+      hasPendingCounter:
+        module.hasPendingCounter ||
+        module.id === FULL_BAR_LAST_SLOT ||
+        module.id === FULL_BAR_HIDDEN_COUNTER,
+    })),
+  ),
+  pendingCounts: {
+    "sample-messages": 3,
+    [FULL_BAR_LAST_SLOT]: 128,
+    [FULL_BAR_HIDDEN_COUNTER]: 128,
+  },
+} as const;

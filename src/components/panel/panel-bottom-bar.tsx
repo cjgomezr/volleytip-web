@@ -39,14 +39,19 @@ function BarLink({
         aria-current={current}
         className={`${LINK_STYLES} h-full focused:-outline-offset-4 ${stateStyles}`}
       >
-        <span aria-hidden="true" className="text-[20px] leading-none">
+        <span
+          aria-hidden="true"
+          className={`text-[20px] leading-none ${current ? "text-brand-red" : ""}`}
+        >
           {glyph}
         </span>
         <span className="max-w-full [overflow-wrap:anywhere]">{label}</span>
         {pendingCount === undefined ? null : (
           <PendingBadge
             count={pendingCount}
-            className="absolute top-1 left-1/2 ml-2"
+            // Pegado al borde de su lugar: con cinco lugares a 360 px cada
+            // uno mide 72 px.
+            className="absolute top-1 right-0.5 min-w-6"
           />
         )}
       </Link>

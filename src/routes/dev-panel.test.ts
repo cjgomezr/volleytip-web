@@ -52,6 +52,28 @@ describe("panel de muestra: ruta de /dev/", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it("con `barra=llena` ocupa los cinco lugares, con contador en 'Más'", async () => {
+    const route = await loadRoute("test");
+    const { buildPanelNavigation } = await import("~/lib/admin/navigation");
+
+    const { isBarFull } = route.loader(
+      buildArgs<LoaderArgs>("/dev/panel?barra=llena"),
+    );
+    const { FULL_BAR_SAMPLE } = await import("~/lib/admin/sample-modules");
+    const { bar, more } = buildPanelNavigation(FULL_BAR_SAMPLE.modules, {
+      role: "admin",
+      language: "es",
+      pathname: "/dev/panel",
+      pendingCounts: FULL_BAR_SAMPLE.pendingCounts,
+      morePath: "/dev/panel/mas",
+    });
+
+    expect(isBarFull).toBe(true);
+    expect(bar).toHaveLength(4);
+    expect(bar.at(-1)?.pendingCount).toBeGreaterThan(0);
+    expect(more.some(({ pendingCount }) => pendingCount)).toBe(true);
+  });
+
   it("una sección que no es de la muestra responde 404", async () => {
     const route = await loadRoute("test");
 

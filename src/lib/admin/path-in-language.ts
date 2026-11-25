@@ -27,7 +27,10 @@ export function getPanelPathInLanguage(
   language: Language,
   { pages, fallback }: PathOptions,
 ): string {
-  if (!requested.startsWith("/")) return fallback;
+  // `//[` empieza como una ruta y `new URL` lanza con ella.
+  const isPath =
+    requested.startsWith("/") && URL.canParse(requested, PARSING_ORIGIN);
+  if (!isPath) return fallback;
   const url = new URL(requested, PARSING_ORIGIN);
   if (url.origin !== PARSING_ORIGIN) return fallback;
   const match = findPageAtPath(url.pathname, pages, SUPPORTED_LANGUAGES);

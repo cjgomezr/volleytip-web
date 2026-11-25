@@ -29,7 +29,7 @@ function MoreRow({ entry }: { readonly entry: NavigationEntry }): ReactElement {
         </span>
         <span className="flex shrink-0 items-center gap-2 text-ink-subtle">
           {entry.pendingCount === undefined ? null : (
-            <PendingBadge count={entry.pendingCount} />
+            <PendingBadge count={entry.pendingCount} className="min-w-9" />
           )}
           <span aria-hidden="true">›</span>
         </span>

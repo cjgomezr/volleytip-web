@@ -34,7 +34,7 @@ function SidebarLink({
           {translate(entry.labelKey)}
         </span>
         {entry.pendingCount === undefined ? null : (
-          <PendingBadge count={entry.pendingCount} />
+          <PendingBadge count={entry.pendingCount} className="min-w-9" />
         )}
       </Link>
     </li>

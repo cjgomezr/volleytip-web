@@ -134,6 +134,20 @@ describe("idioma del panel", () => {
     ).rejects.toThrow(/bitácora/);
   });
 
+  it("si la bitácora falla, devuelve el idioma a como estaba", async () => {
+    const supabase = stubSupabase({ auditFailureStatus: 500 });
+
+    await expect(
+      action(buildArgs("/admin/idioma", TO_ENGLISH)),
+    ).rejects.toThrow(/bitácora/);
+
+    const updates = supabase.writes.filter(({ method }) => method === "PATCH");
+    expect(updates.map(({ body }) => body)).toEqual([
+      { locale: "en" },
+      { locale: "es" },
+    ]);
+  });
+
   it("abrir la dirección sin enviar nada lleva al inicio del panel", () => {
     const response = loader({
       request: new Request("http://localhost/en/admin/language"),

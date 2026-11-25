@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest";
 import { panelEn } from "./messages/panel-en";
 import { panelEs } from "./messages/panel-es";
 import { checkCatalogs, findUnusedKeys, type CatalogSet } from "./text-guard";
+import { findWrittenText } from "./written-text";
 
 const PANEL_DIRECTORIES = [
   "src/components/panel",
@@ -16,10 +17,6 @@ const PANEL_FILES = [
   "src/components/panel-screen.tsx",
   "src/components/panel-sign-out.tsx",
 ];
-
-// Texto escrito entre etiquetas, o en un atributo que se lee o se oye.
-const WRITTEN_TEXT =
-  />\s*\p{L}{3,}[^<>{}()=;]*<\/|(aria-label|alt|title|placeholder)="[^"]*\p{L}/u;
 
 function listSourceFiles(directory: string): string[] {
   return readdirSync(directory, { recursive: true, encoding: "utf8" })
@@ -45,8 +42,35 @@ describe("textos del panel", () => {
   it("ningún componente del panel escribe un texto a mano", () => {
     const offenders = files
       .filter((path) => path.endsWith(".tsx"))
-      .filter((path) => WRITTEN_TEXT.test(readFileSync(path, "utf8")));
+      .flatMap((path) =>
+        findWrittenText(readFileSync(path, "utf8")).map(
+          (text) => `${path}: ${text}`,
+        ),
+      );
 
     expect(offenders).toEqual([]);
+  });
+
+  it.each([
+    "<p>El modo está encendido</p>",
+    "<p>No hay datos</p>",
+    "<span>⚠ Mantenimiento activo</span>",
+    "<p>Total (hoy)</p>",
+    "<p>{'Resumen'}</p>",
+    '<nav aria-label={"Secciones"} />',
+    "<div title={`Resumen`} />",
+    '<input placeholder="Buscar" />',
+    "<p>{isOn ? 'Sí' : null}</p>",
+  ])("detecta un texto escrito a mano: %s", (element) => {
+    expect(findWrittenText(`const view = ${element};`)).toHaveLength(1);
+  });
+
+  it.each([
+    "<p>{translate('panel.nav.more')}</p>",
+    '<span aria-hidden="true">⌂ › ⚠</span>',
+    '<img alt="" className="size-4" />',
+    "<p aria-current={isOn ? 'page' : undefined}>{count}</p>",
+  ])("deja pasar lo que no es texto: %s", (element) => {
+    expect(findWrittenText(`const view = ${element};`)).toEqual([]);
   });
 });

@@ -15,7 +15,7 @@ export function PanelHeading({
     <div className="text-ink-subtle">
       <title>{title}</title>
       <Eyebrow text={translate("panel.eyebrow")} />
-      <h1 className="mt-1 font-display text-[44px] leading-[0.95] text-brand-night uppercase [overflow-wrap:anywhere]">
+      <h1 className="mt-2.5 font-display text-[44px] leading-[0.95] text-brand-night uppercase [overflow-wrap:anywhere]">
         {title}
       </h1>
     </div>

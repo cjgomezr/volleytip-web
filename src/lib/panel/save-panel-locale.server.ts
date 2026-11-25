@@ -32,11 +32,11 @@ async function readLocale(
   return data.locale;
 }
 
-async function writeLocale({
-  client,
-  memberId,
-  locale,
-}: PanelLocaleChange): Promise<void> {
+async function writeLocale(
+  client: TypedSupabaseClient,
+  memberId: string,
+  locale: string,
+): Promise<void> {
   const { data, error } = await client
     .from("profiles")
     .update({ locale })
@@ -47,26 +47,40 @@ async function writeLocale({
   if (data.length !== 1) failToSave("no cambió ningún perfil");
 }
 
+// Un cambio sin entrada en la bitácora se deshace. Si se quedara, el
+// reintento vería el idioma ya puesto y no lo registraría nunca.
+async function recordOrRevert(
+  { client, memberId, locale, auditClient }: PanelLocaleChange,
+  previous: string,
+): Promise<void> {
+  try {
+    await recordAuditEntry(
+      {
+        actorId: memberId,
+        action: "profile.set_locale",
+        entity: "profile",
+        entityId: memberId,
+        details: { before: { locale: previous }, after: { locale } },
+      },
+      auditClient,
+    );
+  } catch (error) {
+    await writeLocale(client, memberId, previous);
+    throw error;
+  }
+}
+
 /**
  * Guarda en `profiles.locale` el idioma elegido en el panel y lo deja en la
  * bitácora (FR-067). Si ya era ese, no escribe nada. Lanza si el cambio o su
- * registro no quedan hechos.
+ * registro no quedan hechos; en el segundo caso deja el idioma como estaba.
  */
 export async function savePanelLocale(
   change: PanelLocaleChange,
 ): Promise<void> {
-  const { client, memberId, locale, auditClient } = change;
+  const { client, memberId, locale } = change;
   const previous = await readLocale(client, memberId);
   if (previous === locale) return;
-  await writeLocale(change);
-  await recordAuditEntry(
-    {
-      actorId: memberId,
-      action: "profile.set_locale",
-      entity: "profile",
-      entityId: memberId,
-      details: { before: { locale: previous }, after: { locale } },
-    },
-    auditClient,
-  );
+  await writeLocale(client, memberId, locale);
+  await recordOrRevert(change, previous);
 }

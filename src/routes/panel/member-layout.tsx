@@ -8,6 +8,7 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useLanguage } from "~/lib/i18n/use-language";
 import {
   panelMemberContext,
+  panelSessionContext,
   requirePanelMember,
 } from "~/lib/panel/panel-middleware.server";
 import { loadSiteSettings } from "~/lib/site-settings.server";
@@ -38,7 +39,9 @@ export async function loader({
   if (member.role === "staff") return { view: "staff" };
   // El panel está exento del mantenimiento y el middleware de la raíz no lee
   // los ajustes para él.
-  const { maintenance } = await loadSiteSettings();
+  const { maintenance } = await loadSiteSettings(
+    context.get(panelSessionContext).client,
+  );
   return {
     view: "admin",
     member: {

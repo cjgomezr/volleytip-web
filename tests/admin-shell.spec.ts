@@ -114,6 +114,23 @@ async function expectAboveBar(page: Page, target: Locator): Promise<void> {
   );
 }
 
+async function expectBadgesInsideTheirPlace(page: Page): Promise<void> {
+  const outside = await page
+    .locator('[data-panel-region="bottom-bar"] li')
+    .evaluateAll((places) =>
+      places.flatMap((place) => {
+        const badge = place.querySelector("[data-panel-badge]");
+        if (badge === null || !place.checkVisibility()) return [];
+        const outer = place.getBoundingClientRect();
+        const inner = badge.getBoundingClientRect();
+        const isInside =
+          inner.left >= outer.left && inner.right <= outer.right + 0.5;
+        return isInside ? [] : [place.textContent];
+      }),
+    );
+  expect(outside).toEqual([]);
+}
+
 for (const language of LANGUAGES) {
   for (const viewport of VIEWPORTS) {
     const hasSidebar = viewport.width >= SIDEBAR_FROM_WIDTH;
@@ -156,6 +173,17 @@ for (const language of LANGUAGES) {
         }
         await expectTouchTargets(page.locator("button:visible"));
       });
+
+      for (const path of [`${language.shell}?barra=llena`]) {
+        test("con la barra llena, cada contador queda en su lugar", async ({
+          page,
+        }) => {
+          await page.goto(path);
+
+          await expectBadgesInsideTheirPlace(page);
+          await expectAccessibleWithoutOverflow(page);
+        });
+      }
 
       test("la franja de mantenimiento se ve", async ({ page }) => {
         await page.goto(`${language.shell}?mantenimiento=1`);
@@ -269,6 +297,31 @@ for (const javaScriptEnabled of [true, false]) {
       ).toBe("en");
     });
   });
+}
+
+// Sin nombre: en la cáscara sale el correo, que es lo más largo.
+for (const viewport of VIEWPORTS) {
+  for (const { path, more } of [
+    { path: "/admin", more: "/admin/mas" },
+    { path: "/en/admin", more: "/en/admin/more" },
+  ]) {
+    test.describe(`panel real ${path} @ ${viewport.width}`, () => {
+      test.use({ viewport });
+
+      test("axe, sin desborde ni texto fuera de su caja", async ({
+        page,
+        signInToPanel,
+      }) => {
+        await signInToPanel({ role: "admin" });
+
+        for (const url of [path, more]) {
+          await page.goto(url);
+          await expectNoOverflowingText(page);
+          await expectAccessibleWithoutOverflow(page);
+        }
+      });
+    });
+  }
 }
 
 test.describe("panel real", () => {

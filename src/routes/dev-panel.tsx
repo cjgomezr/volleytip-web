@@ -5,7 +5,11 @@ import { PanelHeading } from "~/components/panel/panel-heading";
 import { PanelMore } from "~/components/panel/panel-more";
 import { PanelShell } from "~/components/panel/panel-shell";
 import { getPanelPathInLanguage } from "~/lib/admin/path-in-language";
-import { SAMPLE_MODULES, SAMPLE_MORE_PAGE } from "~/lib/admin/sample-modules";
+import {
+  FULL_BAR_SAMPLE,
+  SAMPLE_MODULES,
+  SAMPLE_MORE_PAGE,
+} from "~/lib/admin/sample-modules";
 import { serverEnv } from "~/lib/env.server";
 import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
@@ -26,8 +30,8 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import type { Route } from "./+types/dev-panel";
 
 // Pinta la cáscara del panel con módulos de muestra, sin sesión ni base, para
-// verla llena y capturarla en Playwright. `?mantenimiento=1` pinta la franja.
-// En producción responde 404.
+// verla llena y capturarla en Playwright. `?mantenimiento=1` pinta la franja y
+// `?barra=llena`, la barra con sus cinco lugares. En producción responde 404.
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST = 400;
 const SEE_OTHER = 303;
@@ -44,6 +48,7 @@ interface DevPanel {
   /** El nombre de la sección que se pinta; en "Más" no se usa. */
   readonly titleKey: MessageKey;
   readonly isMaintenanceOn: boolean;
+  readonly isBarFull: boolean;
 }
 
 function rejectInProduction(): void {
@@ -66,6 +71,7 @@ export function loader({ request }: Route.LoaderArgs): DevPanel {
     isMore: page === SAMPLE_MORE_PAGE,
     titleKey: module?.labelKey ?? "panel.nav.more",
     isMaintenanceOn: url.searchParams.get(MAINTENANCE_PARAM) === "1",
+    isBarFull: url.searchParams.get("barra") === "llena",
   };
 }
 
@@ -98,11 +104,14 @@ export default function DevPanelPage({
 }: Route.ComponentProps): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
+  const sample = loaderData.isBarFull
+    ? FULL_BAR_SAMPLE
+    : { modules: SAMPLE_MODULES, pendingCounts: SAMPLE_PENDING_COUNTS };
   return (
     <PanelShell
-      modules={SAMPLE_MODULES}
+      modules={sample.modules}
       member={{ displayName: "Andrés Gómez", role: "admin" }}
-      pendingCounts={SAMPLE_PENDING_COUNTS}
+      pendingCounts={sample.pendingCounts}
       isMaintenanceOn={loaderData.isMaintenanceOn}
       morePath={buildPagePath(SAMPLE_MORE_PAGE, findLanguage(language))}
       languageAction={getSampleHome(language)}

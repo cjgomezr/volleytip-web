@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Form, useLocation } from "react-router";
+import { Form, useLocation, useNavigation } from "react-router";
 
 import {
   LANGUAGE_NAMES,
@@ -13,7 +13,8 @@ import { TRANSITION_STYLES } from "../pressable-styles";
 
 // 44 px de alto y de ancho: la zona de toque mínima en celular.
 const BUTTON_STYLES = `inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-pill px-3 text-[14px] font-bold ${TRANSITION_STYLES}`;
-const CURRENT_STYLES = "bg-brand-mist text-brand-night";
+const CURRENT_STYLES =
+  "bg-brand-mist text-brand-night hovered:bg-brand-lime pressed:bg-brand-lime";
 const OTHER_STYLES =
   "bg-transparent text-brand-mist hovered:text-brand-lime pressed:text-brand-lime";
 
@@ -30,6 +31,8 @@ export function PanelLanguageSwitcher({
   const translate = useTranslate();
   const currentLanguage = useLanguage();
   const { pathname, search } = useLocation();
+  // Mientras viaja un cambio, un segundo clic no envía otro.
+  const isSaving = useNavigation().formAction === action;
 
   function renderLanguage(language: Language): ReactElement {
     const isCurrent = language === currentLanguage;
@@ -41,7 +44,9 @@ export function PanelLanguageSwitcher({
         value={language}
         lang={language}
         aria-current={isCurrent ? "true" : undefined}
-        className={`${BUTTON_STYLES} ${isCurrent ? CURRENT_STYLES : OTHER_STYLES}`}
+        aria-disabled={isSaving || undefined}
+        onClick={isSaving ? (event) => event.preventDefault() : undefined}
+        className={`${BUTTON_STYLES} aria-disabled:cursor-progress ${isCurrent ? CURRENT_STYLES : OTHER_STYLES}`}
       >
         <span aria-hidden="true">{language.toUpperCase()}</span>
         <span className="sr-only">{LANGUAGE_NAMES[language]}</span>

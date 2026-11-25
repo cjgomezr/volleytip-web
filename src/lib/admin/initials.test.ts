@@ -9,6 +9,7 @@ describe("iniciales de quien entró", () => {
     ["María del Mar Gómez", "MD"],
     ["andres@prueba.volleytip.test", "A"],
     ["óscar úsuga", "ÓÚ"],
+    ["🏐 Ana", "🏐A"],
   ])("de %s saca %s", (name, initials) => {
     expect(getInitials(name)).toBe(initials);
   });

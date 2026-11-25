@@ -1,8 +1,18 @@
 import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { panelMemberContext } from "~/lib/panel/panel-middleware.server";
+import {
+  panelMemberContext,
+  panelSessionContext,
+} from "~/lib/panel/panel-middleware.server";
 import type { PanelMember } from "~/lib/panel/visitor.server";
+import { createSessionSupabaseClient } from "~/lib/supabase/session-client.server";
+import {
+  buildSessionCookie,
+  VALID_ACCESS_TOKEN,
+} from "~/testing/fake-supabase";
+
+import { TEST_ENV } from "../../../tests/support/test-env";
 
 import { loader } from "./member-layout";
 
@@ -16,13 +26,19 @@ const ADMIN: PanelMember = {
 function buildArgs(member: PanelMember): Parameters<typeof loader>[0] {
   const context = new RouterContextProvider();
   context.set(panelMemberContext, member);
-  return { context, params: {} } as unknown as Parameters<typeof loader>[0];
+  const request = new Request("http://localhost/admin", {
+    headers: { Cookie: buildSessionCookie(TEST_ENV.SUPABASE_URL) },
+  });
+  context.set(panelSessionContext, createSessionSupabaseClient(request));
+  return { request, context, params: {} } as unknown as Parameters<
+    typeof loader
+  >[0];
 }
 
-function stubSettings(rows: readonly unknown[]): string[] {
-  const requests: string[] = [];
+function stubSettings(rows: readonly unknown[]): Request[] {
+  const requests: Request[] = [];
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-    requests.push(new Request(input, init).url);
+    requests.push(new Request(input, init));
     return Promise.resolve(Response.json(rows));
   });
   return requests;
@@ -60,6 +76,16 @@ describe("datos de la cáscara del panel", () => {
     await expect(loader(buildArgs(ADMIN))).resolves.toMatchObject({
       isMaintenanceOn: true,
     });
+  });
+
+  it("lee los ajustes con la sesión de la persona", async () => {
+    const requests = stubSettings([]);
+
+    await loader(buildArgs(ADMIN));
+
+    expect(requests.map(({ headers }) => headers.get("authorization"))).toEqual(
+      [`Bearer ${VALID_ACCESS_TOKEN}`],
+    );
   });
 
   it("el staff no recibe cáscara ni consulta los ajustes", async () => {
