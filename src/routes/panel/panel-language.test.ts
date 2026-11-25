@@ -135,14 +135,6 @@ describe("idioma del panel", () => {
     expect(supabase.profileUpdates).toEqual([]);
   });
 
-  it("falla si la bitácora no recibe la entrada", async () => {
-    stubSupabase({ auditFailureStatus: 500 });
-
-    await expect(
-      action(buildArgs("/admin/idioma", TO_ENGLISH)),
-    ).rejects.toThrow(/bitácora/);
-  });
-
   // La pieza de la bitácora no deshace: avisa de que el cambio quedó hecho.
   it("si la bitácora falla, el idioma queda cambiado y el error lo dice", async () => {
     const supabase = stubSupabase({ auditFailureStatus: 500 });
