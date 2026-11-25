@@ -1805,11 +1805,30 @@ const PANEL_PROVISIONAL_VIEWPORTS = viewports.filter(({ name }) =>
   ["mobile", "desktop"].includes(name),
 );
 
-// La cáscara real y la de muestra, en los dos idiomas. La de muestra no usa la
-// base.
+// La cáscara y el resumen (#124) de la muestra, en los dos idiomas. La muestra
+// no usa la base: el panel real pinta lo que haya en ella y cambiaría en cada
+// corrida.
 const PANEL_SHELL_VARIANTS = [
-  { name: "inicio", path: "/admin", role: "admin" },
-  { name: "inicio-en", path: "/en/admin", role: "admin" },
+  {
+    name: "resumen-datos",
+    path: "/dev/panel?resumen=datos",
+    role: undefined,
+  },
+  {
+    name: "resumen-datos-en",
+    path: "/en/dev/panel?resumen=datos",
+    role: undefined,
+  },
+  {
+    name: "resumen-vacio",
+    path: "/dev/panel?resumen=vacio",
+    role: undefined,
+  },
+  {
+    name: "resumen-vacio-en",
+    path: "/en/dev/panel?resumen=vacio",
+    role: undefined,
+  },
   { name: "muestra", path: "/dev/panel", role: undefined },
   { name: "muestra-en", path: "/en/dev/panel", role: undefined },
   { name: "mas", path: "/dev/panel/mas", role: undefined },
