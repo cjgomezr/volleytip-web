@@ -39,8 +39,9 @@ export function AboutHero({
         <p className="m-0 text-[14px] font-bold tracking-[0.12em] text-white uppercase">
           {translate("about.eyebrow")}
         </p>
-        <h1 className="mt-4 mb-0 font-display text-[64px] leading-[0.9] font-normal text-white uppercase md:text-[120px] lg:text-[144px]">
-          {translate("about.heading.start")}{" "}
+        <h1 className="mt-4 mb-0 font-display text-[56px] leading-[0.95] font-normal text-white uppercase md:text-[96px]">
+          <span className="block">{translate("about.heading.firstLine")}</span>{" "}
+          {translate("about.heading.secondLine")}{" "}
           <span className="text-brand-red">
             {translate("about.heading.highlight")}
           </span>

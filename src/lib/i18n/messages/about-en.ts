@@ -6,7 +6,8 @@ export const aboutEn = {
   "about.description":
     "Who we are at VolleyTip: short, clear, free videos so anyone can learn volleyball, and the people behind them.",
   "about.eyebrow": "About us",
-  "about.heading.start": "Volleyball is for",
+  "about.heading.firstLine": "Volleyball",
+  "about.heading.secondLine": "is for",
   "about.heading.highlight": "everyone",
   "about.intro.start": "VolleyTip exists to ",
   "about.intro.emphasis": "democratize volleyball",
@@ -42,14 +43,10 @@ export const aboutEn = {
   "about.founders.role": "Co-founder",
   "about.founders.piza.name": "Andrés Piza",
   "about.founders.piza.position": "Audiovisual communicator",
-  "about.founders.piza.text":
-    "Volleyball player and audiovisual communication expert. Andrés combines creativity and sport to take VolleyTip to the next level.",
   "about.founders.piza.photoAlt":
     "Andrés Piza, co-founder of VolleyTip, wearing a VolleyTip shirt",
   "about.founders.gomez.name": "Camilo Gómez",
   "about.founders.gomez.position": "Engineer and developer",
-  "about.founders.gomez.text":
-    "Volleyball player and engineer. Camilo brings technology and sport together to democratize volleyball and build tools anyone can use.",
   "about.founders.gomez.photoAlt":
     "Camilo Gómez, co-founder of VolleyTip, wearing a VolleyTip shirt",
   "about.characters.eyebrow": "Our characters",
