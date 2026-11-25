@@ -1,5 +1,4 @@
 import type { Json } from "./database.types";
-import { createServiceSupabaseClient } from "./supabase/service-client.server";
 import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 /** Datos de contexto de una entrada. Solo valores que caben en JSON. */
@@ -19,18 +18,28 @@ export interface AuditEntry {
   readonly details?: AuditDetails | null;
 }
 
+// Se carga solo cuando hace falta: ese módulo valida todo el entorno del
+// servidor al importarse, y un comando de `scripts/` que trae su propio
+// cliente no tiene esas variables.
+async function createDefaultClient(): Promise<TypedSupabaseClient> {
+  const { createServiceSupabaseClient } =
+    await import("./supabase/service-client.server");
+  return createServiceSupabaseClient();
+}
+
 /**
  * Escribe una entrada en `audit_log`. La fecha la pone la base de datos.
  *
  * Lanza si la base rechaza la entrada: una acción del admin que no queda
  * registrada es un fallo, no algo que se pueda ignorar. El segundo argumento
- * existe para las pruebas.
+ * lo pasan las pruebas y los comandos de `scripts/`.
  */
 export async function recordAuditEntry(
   entry: AuditEntry,
-  client: TypedSupabaseClient = createServiceSupabaseClient(),
+  client?: TypedSupabaseClient,
 ): Promise<void> {
-  const { error } = await client.from("audit_log").insert({
+  const writer = client ?? (await createDefaultClient());
+  const { error } = await writer.from("audit_log").insert({
     actor_id: entry.actorId,
     action: entry.action,
     entity: entry.entity,
