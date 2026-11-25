@@ -13,6 +13,7 @@ import {
   createSessionSupabaseClient,
   type SessionSupabase,
 } from "../supabase/session-client.server";
+import type { TypedSupabaseClient } from "../supabase/typed-client";
 import { closeSession } from "./close-session.server";
 import { buildPanelNotFound } from "./panel-not-found.server";
 import { buildSignInPath } from "./return-path";
@@ -60,18 +61,16 @@ export const rejectForeignOrigin: MiddlewareFunction<Response> = ({
 };
 
 /**
- * La guardia del panel, para páginas y envíos por igual. Corre antes que
- * cualquier loader o action: sin sesión lleva a la entrada, a quien no es del
- * equipo le responde 404, y al equipo lo deja pasar con su perfil en el
- * contexto. A una cuenta desactivada además le cierra la sesión: si no,
+ * Devuelve quién del equipo hace la petición, o lanza la respuesta de la
+ * guardia: sin sesión lleva a la entrada y a quien no es del equipo le
+ * responde 404. A una cuenta desactivada además le cierra la sesión: si no,
  * "Cerrar sesión" no llegaría a su action y las cookies volverían a servir al
  * reactivarla.
  */
-export const requirePanelMember: MiddlewareFunction<Response> = async ({
-  request,
-  context,
-}) => {
-  const { client } = context.get(panelSessionContext);
+export async function verifyPanelMember(
+  request: Request,
+  client: TypedSupabaseClient,
+): Promise<PanelMember> {
   const visitor = await identifyVisitor(client);
   if (visitor.kind === "outsider") {
     throw await buildPanelNotFound(request);
@@ -82,16 +81,31 @@ export const requirePanelMember: MiddlewareFunction<Response> = async ({
   if (visitor.kind !== "member") {
     throw redirect(buildSignInPath(request));
   }
-  context.set(panelMemberContext, visitor.member);
+  return visitor.member;
+}
+
+/** Lanza si quien pasó la guardia no es admin: el staff solo tiene la
+ * pantalla del inicio (decisión 11 del PRD de W10a) y vuelve a ella. */
+export function assertAdminMember(member: PanelMember, request: Request): void {
+  if (member.role !== "admin") {
+    throw redirect(getPanelPath("adminHome", getRequestLanguage(request)));
+  }
+}
+
+/** La guardia del panel, para páginas y envíos por igual. Corre antes que
+ * cualquier loader o action y deja el perfil de la persona en el contexto. */
+export const requirePanelMember: MiddlewareFunction<Response> = async ({
+  request,
+  context,
+}) => {
+  const { client } = context.get(panelSessionContext);
+  context.set(panelMemberContext, await verifyPanelMember(request, client));
 };
 
-/** Para las secciones del panel: el staff solo tiene la pantalla del inicio
- * (decisión 11 del PRD de W10a). Va debajo de `requirePanelMember`. */
+/** Para las secciones del panel. Va debajo de `requirePanelMember`. */
 export const requireAdmin: MiddlewareFunction<Response> = ({
   request,
   context,
 }) => {
-  if (context.get(panelMemberContext).role !== "admin") {
-    throw redirect(getPanelPath("adminHome", getRequestLanguage(request)));
-  }
+  assertAdminMember(context.get(panelMemberContext), request);
 };
