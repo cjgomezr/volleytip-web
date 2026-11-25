@@ -6,18 +6,23 @@ import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 
 import { Button } from "./button";
+import type { Zone } from "./pressable";
 
 /** El botón "Cerrar sesión". Es un envío: funciona también sin JavaScript. */
-export function PanelSignOut(): ReactElement {
+export function PanelSignOut({
+  zone = "light",
+}: {
+  readonly zone?: Zone;
+}): ReactElement {
   const translate = useTranslate();
   const action = getPanelPath("adminSignOut", useLanguage());
   const isSigningOut = useNavigation().formAction === action;
   return (
-    <Form method="post" action={action} className="mt-8">
+    <Form method="post" action={action} className="flex flex-col">
       <Button
         type="submit"
         variant="secondary"
-        zone="light"
+        zone={zone}
         submittingLabel={
           isSigningOut ? translate("panel.signOut.submitting") : undefined
         }

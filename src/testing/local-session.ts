@@ -122,8 +122,19 @@ export async function deleteTestSessionUser(
   status: LocalSupabaseStatus,
   userId: string,
 ): Promise<void> {
-  const { error } =
-    await createServiceClient(status).auth.admin.deleteUser(userId);
+  const service = createServiceClient(status);
+  const entries = await service
+    .from("audit_log")
+    .select("id", { count: "exact", head: true })
+    .eq("actor_id", userId);
+  failOn(entries.error, "mirar la bitácora del usuario de prueba");
+  // `audit_log` no deja borrar a su autor: se queda, desactivado, hasta el
+  // siguiente `npm run db:reset`.
+  if (entries.count !== 0) {
+    await deactivateTestUser(status, userId);
+    return;
+  }
+  const { error } = await service.auth.admin.deleteUser(userId);
   failOn(error, "borrar el usuario de prueba");
 }
 

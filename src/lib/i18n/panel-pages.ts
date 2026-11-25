@@ -29,20 +29,40 @@ export const PANEL_MEMBER_PAGES = [
 /** Solo para admin. Cada sección del panel se agrega aquí, antes del
  * comodín que responde por las direcciones que no existen. */
 export const PANEL_ADMIN_PAGES = [
+  {
+    id: "adminMore",
+    file: "routes/panel/more.tsx",
+    path: { es: "admin/mas", en: "admin/more" },
+  },
+  {
+    id: "adminLanguage",
+    file: "routes/panel/language.ts",
+    path: { es: "admin/idioma", en: "admin/language" },
+  },
   { id: "adminMissing", file: "routes/panel/missing.tsx", path: "admin/*" },
 ] as const satisfies readonly PageDeclaration[];
 
-const PANEL_PAGES = [...PANEL_ENTRY_PAGES, ...PANEL_MEMBER_PAGES] as const;
+/** Todas las páginas del panel y de su entrada. */
+export const PANEL_PAGES = [
+  ...PANEL_ENTRY_PAGES,
+  ...PANEL_MEMBER_PAGES,
+  ...PANEL_ADMIN_PAGES,
+] as const;
 
 export type PanelPageId = (typeof PANEL_PAGES)[number]["id"];
 
-/** La dirección de una página del panel en un idioma: `/en/admin/sign-in`. */
-export function getPanelPath(id: PanelPageId, language: Language): string {
+/** La declaración de una página del panel. */
+export function findPanelPage(id: PanelPageId): PageDeclaration {
   const page = PANEL_PAGES.find((candidate) => candidate.id === id);
   if (page === undefined) {
     throw new Error(`La página "${id}" no está en el mapa del panel.`);
   }
-  return buildPagePath(page, findLanguage(language));
+  return page;
+}
+
+/** La dirección de una página del panel en un idioma: `/en/admin/sign-in`. */
+export function getPanelPath(id: PanelPageId, language: Language): string {
+  return buildPagePath(findPanelPage(id), findLanguage(language));
 }
 
 /** Dice si una dirección es del panel o cuelga de él, en cualquier idioma.

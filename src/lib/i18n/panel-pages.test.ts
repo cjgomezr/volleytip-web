@@ -22,6 +22,8 @@ describe("direcciones del panel", () => {
     ["adminHome", "/admin", "/en/admin"],
     ["adminSignIn", "/admin/entrar", "/en/admin/sign-in"],
     ["adminSignOut", "/admin/salir", "/en/admin/sign-out"],
+    ["adminMore", "/admin/mas", "/en/admin/more"],
+    ["adminLanguage", "/admin/idioma", "/en/admin/language"],
   ] as const)("%s vive en %s y %s", (page, spanish, english) => {
     expect(getPanelPath(page, "es")).toBe(spanish);
     expect(getPanelPath(page, "en")).toBe(english);
@@ -56,9 +58,13 @@ describe("rutas del panel", () => {
       "admin",
       "admin/*",
       "admin/entrar",
+      "admin/idioma",
+      "admin/mas",
       "admin/salir",
       "en/admin",
       "en/admin/*",
+      "en/admin/language",
+      "en/admin/more",
       "en/admin/sign-in",
       "en/admin/sign-out",
     ]);
@@ -68,9 +74,13 @@ describe("rutas del panel", () => {
     expect(pathsInside("routes/panel/member-layout.tsx")).toEqual([
       "admin",
       "admin/*",
+      "admin/idioma",
+      "admin/mas",
       "admin/salir",
       "en/admin",
       "en/admin/*",
+      "en/admin/language",
+      "en/admin/more",
       "en/admin/sign-out",
     ]);
   });
@@ -78,7 +88,11 @@ describe("rutas del panel", () => {
   it("lo que cuelga del panel es solo de admin", () => {
     expect(pathsInside("routes/panel/admin-layout.tsx")).toEqual([
       "admin/*",
+      "admin/idioma",
+      "admin/mas",
       "en/admin/*",
+      "en/admin/language",
+      "en/admin/more",
     ]);
   });
 
