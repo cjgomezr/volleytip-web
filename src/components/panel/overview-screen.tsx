@@ -39,7 +39,9 @@ function CardBody({ card }: { readonly card: OverviewCardView }): ReactElement {
         {translate(card.labelKey)}
       </span>
       {card.value.status === "failed" ? (
-        <span className={`mt-auto text-[15px] leading-[1.4] ${FAILURE_STYLES}`}>
+        <span
+          className={`mt-auto text-[15px] leading-[1.4] group-pressed:text-brand-mist ${FAILURE_STYLES}`}
+        >
           {translate("panel.overview.card.failed")}
         </span>
       ) : (

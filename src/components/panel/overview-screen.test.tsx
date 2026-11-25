@@ -93,7 +93,20 @@ const WITH_DATA: OverviewView = {
   },
 };
 
-function render(overview: OverviewView, language: Language = "es"): string {
+interface RenderOptions {
+  readonly language?: Language;
+  readonly greetingName?: string;
+  readonly url?: string;
+}
+
+function render(
+  overview: OverviewView,
+  {
+    language = "es",
+    greetingName = "Andrés Gómez",
+    url = "/",
+  }: RenderOptions = {},
+): string {
   const Stub = createRoutesStub([
     {
       path: "/",
@@ -102,12 +115,12 @@ function render(overview: OverviewView, language: Language = "es"): string {
           language={language}
           messages={getMessages(language)}
         >
-          <OverviewScreen greetingName="Andrés Gómez" overview={overview} />
+          <OverviewScreen greetingName={greetingName} overview={overview} />
         </TranslationsProvider>
       ),
     },
   ]);
-  return renderToStaticMarkup(<Stub />);
+  return renderToStaticMarkup(<Stub initialEntries={[url]} />);
 }
 
 describe("resumen: pantalla", () => {
@@ -201,12 +214,46 @@ describe("resumen: pantalla", () => {
     ["la actividad", { ...EMPTY, activity: { status: "failed" } as const }],
     ["los descartes", { ...EMPTY, rejections: { status: "failed" } as const }],
   ])("si falla %s, ofrece reintentar en la misma pantalla", (_what, view) => {
-    expect(render(view)).toMatch(/<a [^>]*href="\/"[^>]*>Reintentar<\/a>/);
+    const html = render(view, { url: "/?resumen=fallo" });
+
+    expect(html).toMatch(
+      /<a [^>]*href="\/\?resumen=fallo"[^>]*>Reintentar<\/a>/,
+    );
   });
 
   it("sin fallos no ofrece reintentar", () => {
     expect(render(EMPTY)).not.toContain("Reintentar");
   });
+
+  // Al presionarla, la tarjeta se rellena de índigo: el rojo no se leería.
+  it("una tarjeta con fallo que es enlace aclara su aviso al presionarla", () => {
+    const html = render({
+      ...EMPTY,
+      cards: [
+        {
+          ...MESSAGES_CARD,
+          value: { status: "failed" },
+          href: "/admin/mensajes?estado=new",
+        },
+      ],
+    });
+
+    expect(html).toMatch(
+      /<span class="[^"]*group-pressed:text-brand-mist[^"]*">No se pudo cargar este dato\./,
+    );
+  });
+
+  it.each([
+    ["un correo", "andres@volleytip.test", "text-[26px]"],
+    ["un nombre", "Andrés Gómez", "text-[44px]"],
+  ])(
+    "con %s en el saludo usa el tamaño %s que le toca",
+    (_what, name, size) => {
+      const html = render(EMPTY, { greetingName: name });
+
+      expect(/<h1 class="([^"]*)"/.exec(html)?.[1]).toContain(size);
+    },
+  );
 
   it("muestra los descartes por formulario y motivo", () => {
     const html = render(WITH_DATA);
@@ -218,7 +265,7 @@ describe("resumen: pantalla", () => {
   });
 
   it("toma sus textos de las traducciones en inglés", () => {
-    const html = render(WITH_DATA, "en");
+    const html = render(WITH_DATA, { language: "en" });
 
     for (const text of [
       "Hi, Andrés Gómez",
