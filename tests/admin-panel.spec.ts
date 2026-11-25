@@ -11,6 +11,7 @@ import { expect, test } from "./support/panel-session";
 const NOT_FOUND_STATUS = 404;
 const FULL_NAME = "Andrés Gómez";
 const MIN_TOUCH_TARGET = 44;
+const SIDEBAR_FROM_WIDTH = 768;
 const VIEWPORTS = [
   { width: 360, height: 800 },
   { width: 390, height: 844 },
@@ -57,8 +58,14 @@ for (const viewport of VIEWPORTS) {
       const response = await page.goto("/admin");
 
       expect(response?.status()).toBe(200);
-      await expect(page.getByText(`Entraste como ${FULL_NAME}.`)).toBeVisible();
-      const button = page.getByRole("button", { name: "Cerrar sesión" });
+      const hasSidebar = viewport.width >= SIDEBAR_FROM_WIDTH;
+      const person = page.getByRole(hasSidebar ? "complementary" : "banner");
+      await expect(person.getByText(FULL_NAME)).toBeVisible();
+      // En celular "Cerrar sesión" está en "Más".
+      if (!hasSidebar) await page.goto("/admin/mas");
+      const button = page
+        .getByRole(hasSidebar ? "complementary" : "main")
+        .getByRole("button", { name: "Cerrar sesión" });
       const box = await button.boundingBox();
       expect(box?.height).toBeGreaterThanOrEqual(MIN_TOUCH_TARGET);
       await expectAccessibleWithoutOverflow(page);
@@ -91,7 +98,9 @@ test.describe("panel en inglés y casos de acceso", () => {
 
     await page.goto("/en/admin");
 
-    await expect(page.getByText(`Signed in as ${email}.`)).toBeVisible();
+    await expect(
+      page.getByRole("complementary").getByText(email),
+    ).toBeVisible();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expectAccessibleWithoutOverflow(page);
   });
@@ -193,7 +202,10 @@ for (const javaScriptEnabled of [true, false]) {
       const { cookies } = await signInToPanel({ role: "admin" });
       await page.goto("/admin");
 
-      await page.getByRole("button", { name: "Cerrar sesión" }).click();
+      await page
+        .getByRole("complementary")
+        .getByRole("button", { name: "Cerrar sesión" })
+        .click();
 
       await expect(page).toHaveURL("/admin/entrar");
       const names = (await context.cookies()).map(({ name }) => name);

@@ -118,6 +118,20 @@ export async function deactivateTestUser(
   failOn(error, "desactivar al usuario de prueba");
 }
 
+export async function readProfileLocale(
+  status: LocalSupabaseStatus,
+  userId: string,
+): Promise<string> {
+  const { data, error } = await createServiceClient(status)
+    .from("profiles")
+    .select("locale")
+    .eq("id", userId)
+    .single();
+  failOn(error, "leer el idioma del perfil");
+  if (data === null) throw new Error("No hay perfil de prueba");
+  return data.locale;
+}
+
 export async function deleteTestSessionUser(
   status: LocalSupabaseStatus,
   userId: string,

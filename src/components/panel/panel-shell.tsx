@@ -89,13 +89,15 @@ export function PanelShell({
         data-panel-shell
         className="flex min-h-screen flex-col bg-line-light text-brand-night [color-scheme:light]"
       >
-        {isMaintenanceOn ? <MaintenanceStripe /> : null}
-        <PanelTopBar member={member} languageAction={languageAction} />
         <div className="flex flex-1 flex-col md:flex-row">
           <PanelSidebar member={member} languageAction={languageAction} />
-          <main className="min-w-0 flex-1 px-4 py-5 md:px-8 md:py-7">
-            {children}
-          </main>
+          {/* La franja va en la columna del contenido: encima de todo empujaría
+              el pie del menú lateral fuera de la pantalla. */}
+          <div className="flex min-w-0 flex-1 flex-col">
+            {isMaintenanceOn ? <MaintenanceStripe /> : null}
+            <PanelTopBar member={member} languageAction={languageAction} />
+            <main className="flex-1 px-4 py-5 md:px-8 md:py-7">{children}</main>
+          </div>
         </div>
         <PanelBottomBar morePath={morePath} />
       </div>
