@@ -1,4 +1,9 @@
-import { RouterContextProvider, type ActionFunctionArgs } from "react-router";
+import {
+  data,
+  redirect,
+  RouterContextProvider,
+  type ActionFunctionArgs,
+} from "react-router";
 import { afterEach, describe, expect, it, vi, type Mock } from "vitest";
 
 import { handleError } from "~/entry.server";
@@ -39,10 +44,14 @@ const STORED_FAQ: Faq = {
   secretToken: "no-debe-salir",
 };
 
-function buildArgs(cookie: string | null = SIGNED_IN): ActionFunctionArgs {
+function buildArgs(
+  cookie: string | null = SIGNED_IN,
+  signal?: AbortSignal,
+): ActionFunctionArgs {
   const request = new Request("http://localhost/admin/preguntas", {
     method: "POST",
     headers: cookie === null ? {} : { Cookie: cookie },
+    signal,
   });
   const context = new RouterContextProvider();
   context.set(panelSessionContext, createSessionSupabaseClient(request));
@@ -162,16 +171,38 @@ describe("acción del admin", () => {
     },
   );
 
-  it("acepta una entidad sin id", async () => {
+  it("una entidad sin uuid queda identificada por su clave", async () => {
     const supabase = stubSupabase();
     const { action } = buildFaqAction({
-      ...editFaq({ position: 2 }),
       entityId: null,
+      entityKey: "es:camps",
+      before: STORED_FAQ,
+      after: { ...STORED_FAQ, position: 2 },
     });
 
     await action(buildArgs());
 
-    expect(supabase.auditRows).toMatchObject([{ entity_id: null }]);
+    expect(supabase.auditRows).toMatchObject([
+      {
+        entity_id: null,
+        details: {
+          key: "es:camps",
+          before: { position: 1 },
+          after: { position: 2 },
+        },
+      },
+    ]);
+  });
+
+  it("sin uuid ni clave no compila: no se sabría qué cambió", () => {
+    // @ts-expect-error: falta `entityKey`.
+    const change: AuditedChange<FaqField> = {
+      entityId: null,
+      before: null,
+      after: STORED_FAQ,
+    };
+
+    expect(change.entityId).toBeNull();
   });
 });
 
@@ -276,6 +307,120 @@ describe("acción del admin: fallos", () => {
       thrown,
     );
   });
+
+  it("queda en el reporte aunque quien envió ya se haya ido", async () => {
+    stubSupabase({ auditFailureStatus: 500 });
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const browser = new AbortController();
+    const action = defineAdminAction({
+      name: "faq.update",
+      auditedFields: ["position"],
+      run: async () => {
+        browser.abort();
+        return { result: null, change: editFaq({ position: 2 }) };
+      },
+    });
+    const args = buildArgs(SIGNED_IN, browser.signal);
+
+    const thrown = await catchThrown(action(args));
+    await handleError(thrown, args);
+
+    expect(log).toHaveBeenCalledExactlyOnceWith(
+      expect.stringMatching(/^Error del servidor, referencia /),
+      thrown,
+    );
+  });
+
+  it.each<[string, () => unknown]>([
+    ["una redirección", () => redirect("/admin")],
+    ["un data() sin estado", () => data({ ok: true })],
+    ["un data() 201", () => data(null, { status: 201 })],
+  ])(
+    "lanzar %s desde run falla: no termina bien sin entrada",
+    async (_name, buildThrown) => {
+      const supabase = stubSupabase();
+      const thrownByRun = buildThrown();
+      const action = defineAdminAction({
+        name: "faq.update",
+        auditedFields: ["position"],
+        run: async (): Promise<never> => {
+          throw thrownByRun;
+        },
+      });
+
+      const thrown = await catchThrown(action(buildArgs()));
+
+      expect(thrown).toBeInstanceOf(Error);
+      expect(thrown).toMatchObject({
+        message: expect.stringMatching(/"faq.update".*`result`/),
+        cause: thrownByRun,
+      });
+      expect(supabase.auditRows).toEqual([]);
+    },
+  );
+
+  it.each<[string, () => unknown]>([
+    ["una Response 404", () => new Response(null, { status: 404 })],
+    ["un data() 400", () => data(null, { status: 400 })],
+  ])("%s lanzada por run llega tal cual", async (_name, buildThrown) => {
+    stubSupabase();
+    const thrownByRun = buildThrown();
+    const action = defineAdminAction({
+      name: "faq.update",
+      auditedFields: ["position"],
+      run: async (): Promise<never> => {
+        throw thrownByRun;
+      },
+    });
+
+    await expect(action(buildArgs())).rejects.toBe(thrownByRun);
+  });
+});
+
+describe("acción del admin: tipos", () => {
+  it("admite una respuesta distinta para cada desenlace", async () => {
+    stubSupabase();
+    const action = defineAdminAction({
+      name: "faq.create",
+      auditedFields: ["question"],
+      run: async ({ request }) => {
+        if (request.headers.has("X-Invalid")) {
+          const invalid = data({ errors: ["question"] }, { status: 400 });
+          return { result: invalid, change: null };
+        }
+        return {
+          result: redirect("/admin"),
+          change: {
+            entityId: FAQ_ID,
+            before: null,
+            after: { question: "¿Dónde?" },
+          },
+        };
+      },
+    });
+
+    const result = await action(buildArgs());
+
+    expect(result).toBeInstanceOf(Response);
+  });
+
+  it("run puede tipar sus parámetros como los de su ruta", async () => {
+    stubSupabase();
+    type FaqArgs = ActionFunctionArgs & { params: { faqId: string } };
+    const action = defineAdminAction({
+      name: "faq.delete",
+      auditedFields: ["question"],
+      run: async ({ params }: FaqArgs) => ({
+        result: params.faqId.toUpperCase(),
+        change: null,
+      }),
+    });
+    const args: FaqArgs = { ...buildArgs(), params: { faqId: "abc" } };
+
+    const result: string = await action(args);
+
+    expect(result).toBe("ABC");
+  });
 });
 
 describe("acción del admin: sin cambios", () => {
@@ -307,8 +452,29 @@ describe("acción del admin: sin cambios", () => {
         result: null,
         change: {
           entityId: null,
+          entityKey: "home.title",
           before: { value: { es: "Hola", en: "Hi" } },
           after: { value: { en: "Hi", es: "Hola" } },
+        },
+      }),
+    });
+
+    await action(buildArgs());
+
+    expect(supabase.auditRows).toEqual([]);
+  });
+
+  it("no registra cuando la diferencia no llegaría a la bitácora", async () => {
+    const supabase = stubSupabase();
+    const action = defineAdminAction({
+      name: "site_text.update",
+      auditedFields: ["value"],
+      run: async () => ({
+        result: null,
+        change: {
+          entityId: FAQ_ID,
+          before: { value: { es: "Hola" } },
+          after: { value: { es: "Hola", en: undefined } },
         },
       }),
     });

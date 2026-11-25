@@ -1,6 +1,7 @@
 import type { RouteConfigEntry } from "@react-router/dev/routes";
 import { describe, expect, it } from "vitest";
 
+import { isPanelPath } from "~/lib/i18n/panel-pages";
 import { isAdminAction } from "~/lib/panel/admin-action.server";
 import routes from "~/routes";
 
@@ -34,14 +35,17 @@ function listTreeFiles(entry: RouteConfigEntry): string[] {
 }
 
 /** Los archivos de rutas del panel que declara `entries`: lo que cuelga de su
- * layout y lo que viva en su carpeta, esté donde esté declarado. */
+ * layout, lo que viva en su carpeta y lo que responda en una dirección del
+ * panel. */
 function listDeclaredPanelFiles(
   entries: readonly RouteConfigEntry[],
+  parentPath = "",
 ): string[] {
   return entries.flatMap((entry): string[] => {
     if (entry.file === PANEL_LAYOUT) return listTreeFiles(entry);
-    const nested = listDeclaredPanelFiles(entry.children ?? []);
-    return entry.file.startsWith(PANEL_FOLDER)
+    const path = [parentPath, entry.path].filter(Boolean).join("/");
+    const nested = listDeclaredPanelFiles(entry.children ?? [], path);
+    return entry.file.startsWith(PANEL_FOLDER) || isPanelPath(`/${path}`)
       ? [entry.file, ...nested]
       : nested;
   });
@@ -112,6 +116,30 @@ describe("rutas del panel", () => {
       "modules/faq.tsx",
       "modules/x.tsx",
     ]);
+  });
+
+  it.each(["admin/exportar", "en/admin/export"])(
+    "incluye una ruta con dirección %s declarada fuera del panel",
+    (path) => {
+      const tree: RouteConfigEntry[] = [
+        { file: "routes/admin-export.ts", path },
+        { file: "routes/contact.tsx", path: "administracion" },
+      ];
+
+      expect(listDeclaredPanelFiles(tree)).toEqual(["routes/admin-export.ts"]);
+    },
+  );
+
+  it("arma la dirección de una ruta anidada con la de sus padres", () => {
+    const tree: RouteConfigEntry[] = [
+      {
+        file: "routes/prefix.tsx",
+        path: "en",
+        children: [{ file: "modules/export.ts", path: "admin/export" }],
+      },
+    ];
+
+    expect(listDeclaredPanelFiles(tree)).toEqual(["modules/export.ts"]);
   });
 
   it("toda action del panel usa la pieza de la bitácora", async () => {

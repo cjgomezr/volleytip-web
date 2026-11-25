@@ -19,6 +19,15 @@ export function findRequestReferenceCode(request: Request): string | undefined {
   return codesByRequest.get(request);
 }
 
+// Errores que ya quedaron en el registro antes de llegar a React Router.
+const unrecordedChangeErrors = new WeakSet<object>();
+
+function writeToLog(error: unknown, request: Request): void {
+  const code = codesByRequest.get(request) ?? createReferenceCode();
+  codesByRequest.set(request, code);
+  console.error(`Error del servidor, referencia ${code}`, error);
+}
+
 /**
  * Registra un error del servidor con el código de referencia de su petición,
  * el mismo que la página 500 le muestra a la persona. Una petición que el
@@ -26,9 +35,19 @@ export function findRequestReferenceCode(request: Request): string | undefined {
  */
 export function reportServerError(error: unknown, request: Request): void {
   if (request.signal.aborted) return;
-  const code = codesByRequest.get(request) ?? createReferenceCode();
-  codesByRequest.set(request, code);
-  console.error(`Error del servidor, referencia ${code}`, error);
+  if (unrecordedChangeErrors.has(error as object)) return;
+  writeToLog(error, request);
+}
+
+/**
+ * Registra un cambio que pudo quedar hecho sin su entrada en la bitácora. Se
+ * escribe aunque el cliente haya abortado la petición, porque el cambio no se
+ * deshace con ella. Cuando React Router entregue el mismo error a
+ * `reportServerError`, no se repite.
+ */
+export function reportUnrecordedChange(error: Error, request: Request): void {
+  writeToLog(error, request);
+  unrecordedChangeErrors.add(error);
 }
 
 const ROUTES_PARAM = "_routes";
