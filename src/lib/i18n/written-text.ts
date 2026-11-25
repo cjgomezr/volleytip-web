@@ -9,6 +9,10 @@ const READABLE_ATTRIBUTES: readonly string[] = [
   "alt",
   "title",
   "placeholder",
+  // Las props con las que un componente del panel recibe un texto.
+  "text",
+  "label",
+  "submittingLabel",
 ];
 const LETTER = /\p{L}/u;
 
@@ -28,11 +32,27 @@ function literalsOf(expression: ts.Expression): string[] {
       ...literalsOf(expression.whenFalse),
     ];
   }
-  if (ts.isBinaryExpression(expression)) return literalsOf(expression.right);
-  if (ts.isParenthesizedExpression(expression)) {
+  if (ts.isBinaryExpression(expression)) return literalsOfBinary(expression);
+  if (
+    ts.isParenthesizedExpression(expression) ||
+    ts.isAsExpression(expression) ||
+    ts.isSatisfiesExpression(expression)
+  ) {
     return literalsOf(expression.expression);
   }
   return [];
+}
+
+// Al sumar se pintan los dos lados; en `&&` o `??`, el de la izquierda es la
+// condición.
+function literalsOfBinary({
+  left,
+  operatorToken,
+  right,
+}: ts.BinaryExpression): string[] {
+  return operatorToken.kind === ts.SyntaxKind.PlusToken
+    ? [...literalsOf(left), ...literalsOf(right)]
+    : literalsOf(right);
 }
 
 function textsOfAttribute(attribute: ts.JsxAttribute): string[] {

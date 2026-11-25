@@ -61,6 +61,12 @@ describe("textos del panel", () => {
     "<div title={`Resumen`} />",
     '<input placeholder="Buscar" />',
     "<p>{isOn ? 'Sí' : null}</p>",
+    '<Eyebrow text="Panel de control" />',
+    '<Button submittingLabel="Saliendo" />',
+    '<BarLink label="Resumen" />',
+    "<p>{'Hola ' + name}</p>",
+    "<p>{('Sí' as const)}</p>",
+    "<p>{'Sí' satisfies string}</p>",
   ])("detecta un texto escrito a mano: %s", (element) => {
     expect(findWrittenText(`const view = ${element};`)).toHaveLength(1);
   });

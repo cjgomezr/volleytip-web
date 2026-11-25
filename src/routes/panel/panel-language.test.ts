@@ -148,6 +148,25 @@ describe("idioma del panel", () => {
     ]);
   });
 
+  it("si tampoco puede devolverlo, informa los dos fallos y lo que quedó", async () => {
+    stubSupabase({
+      auditFailureStatus: 500,
+      secondProfileUpdateFailureStatus: 500,
+    });
+
+    const thrown: unknown = await action(
+      buildArgs("/admin/idioma", TO_ENGLISH),
+    ).catch((error: unknown) => error);
+
+    expect(thrown).toBeInstanceOf(AggregateError);
+    const { message, errors } = thrown as AggregateError;
+    expect(message).toContain('quedó en "en" sin entrada en la bitácora');
+    expect(errors.map((error: Error) => error.message)).toEqual([
+      expect.stringContaining("bitácora"),
+      expect.stringContaining("idioma"),
+    ]);
+  });
+
   it("abrir la dirección sin enviar nada lleva al inicio del panel", () => {
     const response = loader({
       request: new Request("http://localhost/en/admin/language"),

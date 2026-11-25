@@ -16,6 +16,8 @@ const SIDEBAR_FROM_WIDTH = 768;
 const SAMPLE_SECTIONS = 8;
 const SECTIONS_OUTSIDE_BAR = 6;
 const MAX_TAB_PRESSES = 40;
+const FULL_BAR_PLACES = 5;
+const FULL_BAR_BADGES = 3;
 const VIEWPORTS = [
   { width: 360, height: 800 },
   { width: 390, height: 844 },
@@ -174,12 +176,17 @@ for (const language of LANGUAGES) {
         await expectTouchTargets(page.locator("button:visible"));
       });
 
-      for (const path of [`${language.shell}?barra=llena`]) {
+      if (!hasSidebar) {
         test("con la barra llena, cada contador queda en su lugar", async ({
           page,
         }) => {
-          await page.goto(path);
+          await page.goto(`${language.shell}?barra=llena`);
 
+          const bar = page.locator('[data-panel-region="bottom-bar"]');
+          await expect(bar.getByRole("link")).toHaveCount(FULL_BAR_PLACES);
+          await expect(bar.locator("[data-panel-badge]")).toHaveCount(
+            FULL_BAR_BADGES,
+          );
           await expectBadgesInsideTheirPlace(page);
           await expectAccessibleWithoutOverflow(page);
         });
@@ -325,6 +332,38 @@ for (const viewport of VIEWPORTS) {
 }
 
 test.describe("panel real", () => {
+  test("un segundo clic en el idioma no envía otro cambio", async ({
+    page,
+    signInToPanel,
+  }) => {
+    await signInToPanel({ role: "admin" });
+    await page.goto("/admin");
+    // El envío se detiene hasta que la prueba lo suelta.
+    let release: () => void = () => undefined;
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let submissions = 0;
+    await page.route("**/admin/idioma.data*", async (route) => {
+      submissions += 1;
+      await held;
+      await route.continue();
+    });
+    const english = page
+      .getByRole("complementary")
+      .getByRole("button", { name: "English" });
+    // Sin hidratar, el clic sería un envío del navegador.
+    await page.waitForLoadState("networkidle");
+
+    await english.click();
+    await expect(english).toHaveAttribute("aria-disabled", "true");
+    await english.click({ force: true });
+    release();
+
+    await expect(page).toHaveURL("/en/admin");
+    expect(submissions).toBe(1);
+  });
+
   test("el menú tiene solo Resumen, marcado como actual", async ({
     page,
     signInToPanel,

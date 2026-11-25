@@ -42,6 +42,8 @@ export interface FakeSupabaseOptions {
   readonly profileUpdateFailureStatus?: number;
   /** El cambio del perfil no toca ninguna fila, como cuando RLS lo tapa. */
   readonly isProfileUpdateIgnored?: boolean;
+  /** Estado con que falla el segundo cambio del perfil y los siguientes. */
+  readonly secondProfileUpdateFailureStatus?: number;
   /** Estado con que falla la escritura en la bitácora. */
   readonly auditFailureStatus?: number;
 }
@@ -114,10 +116,15 @@ function apiFailure(status: number): Response {
   return Response.json({ message: "falló" }, { status });
 }
 
-function answerProfileUpdate(options: FakeSupabaseOptions): Response {
-  if (options.profileUpdateFailureStatus) {
-    return apiFailure(options.profileUpdateFailureStatus);
-  }
+function answerProfileUpdate(
+  options: FakeSupabaseOptions,
+  writes: readonly FakeWrite[],
+): Response {
+  const updates = writes.filter(({ method }) => method === "PATCH").length;
+  const failure =
+    options.profileUpdateFailureStatus ??
+    (updates > 1 ? options.secondProfileUpdateFailureStatus : undefined);
+  if (failure) return apiFailure(failure);
   return Response.json(
     options.isProfileUpdateIgnored ? [] : [{ id: FAKE_USER_ID }],
   );
@@ -159,7 +166,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     if (url.pathname === "/rest/v1/profiles") {
       if (request.method === "PATCH") {
         await recordWrite(writes, request);
-        return answerProfileUpdate(options);
+        return answerProfileUpdate(options, writes);
       }
       profileAuthorizations.push(request.headers.get("authorization"));
       const locale = options.profileLocale ?? "es";

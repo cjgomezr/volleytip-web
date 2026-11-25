@@ -64,16 +64,25 @@ async function recordOrRevert(
       },
       auditClient,
     );
-  } catch (error) {
-    await writeLocale(client, memberId, previous);
-    throw error;
+  } catch (auditError) {
+    try {
+      await writeLocale(client, memberId, previous);
+    } catch (revertError) {
+      throw new AggregateError(
+        [auditError, revertError],
+        `El idioma de ${memberId} quedó en "${locale}" sin entrada en la bitácora`,
+      );
+    }
+    throw auditError;
   }
 }
 
 /**
  * Guarda en `profiles.locale` el idioma elegido en el panel y lo deja en la
  * bitácora (FR-067). Si ya era ese, no escribe nada. Lanza si el cambio o su
- * registro no quedan hechos; en el segundo caso deja el idioma como estaba.
+ * registro no quedan hechos. Si falla el registro intenta dejar el idioma como
+ * estaba; si tampoco puede, lanza los dos errores y dice qué quedó guardado.
+ * No son una sola transacción.
  */
 export async function savePanelLocale(
   change: PanelLocaleChange,
