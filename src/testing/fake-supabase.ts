@@ -36,6 +36,8 @@ export interface FakeSupabaseOptions {
   readonly logoutFailureStatus?: number;
   /** Estado con que falla la lectura del perfil. */
   readonly profileFailureStatus?: number;
+  /** Estado con que falla la escritura en la bitácora. */
+  readonly auditFailureStatus?: number;
 }
 
 export interface FakeSupabase {
@@ -43,6 +45,8 @@ export interface FakeSupabase {
   readonly requests: string[];
   /** La cabecera `Authorization` con que se leyó el perfil. */
   readonly profileAuthorizations: (string | null)[];
+  /** Las filas que se mandaron a `audit_log`, aceptadas o no. */
+  readonly auditRows: unknown[];
 }
 
 function buildUser(): Record<string, unknown> {
@@ -96,6 +100,17 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const { profile = ADMIN_PROFILE } = options;
   const requests: string[] = [];
   const profileAuthorizations: (string | null)[] = [];
+  const auditRows: unknown[] = [];
+
+  async function answerAuditInsert(request: Request): Promise<Response> {
+    auditRows.push(await request.json());
+    return options.auditFailureStatus
+      ? Response.json(
+          { message: "falló" },
+          { status: options.auditFailureStatus },
+        )
+      : new Response(null, { status: 201 });
+  }
 
   async function answer(request: Request): Promise<Response> {
     const url = new URL(request.url);
@@ -120,6 +135,9 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
           )
         : Response.json(profile === null ? [] : [profile]);
     }
+    if (url.pathname === "/rest/v1/audit_log") {
+      return answerAuditInsert(request);
+    }
     // Los ajustes del sitio (la barra de anuncios del 404).
     return Response.json([]);
   }
@@ -129,7 +147,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
       answer(new Request(input, init)),
   );
-  return { requests, profileAuthorizations };
+  return { requests, profileAuthorizations, auditRows };
 }
 
 interface SessionCookieOptions {
