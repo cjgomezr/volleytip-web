@@ -36,8 +36,21 @@ export interface FakeSupabaseOptions {
   readonly logoutFailureStatus?: number;
   /** Estado con que falla la lectura del perfil. */
   readonly profileFailureStatus?: number;
+  /** El idioma guardado en el perfil. */
+  readonly profileLocale?: string;
+  /** Estado con que falla el cambio del perfil. */
+  readonly profileUpdateFailureStatus?: number;
+  /** El cambio del perfil no toca ninguna fila, como cuando RLS lo tapa. */
+  readonly isProfileUpdateIgnored?: boolean;
   /** Estado con que falla la escritura en la bitácora. */
   readonly auditFailureStatus?: number;
+}
+
+export interface FakeProfileUpdate {
+  /** La ruta con su búsqueda. */
+  readonly path: string;
+  readonly body: unknown;
+  readonly authorization: string | null;
 }
 
 export interface FakeSupabase {
@@ -45,6 +58,8 @@ export interface FakeSupabase {
   readonly requests: string[];
   /** La cabecera `Authorization` con que se leyó el perfil. */
   readonly profileAuthorizations: (string | null)[];
+  /** Cada cambio pedido al perfil, aceptado o no. */
+  readonly profileUpdates: FakeProfileUpdate[];
   /** Las filas que se mandaron a `audit_log`, aceptadas o no. */
   readonly auditRows: unknown[];
 }
@@ -96,19 +111,39 @@ function answerUser(request: Request): Response {
     : authError(403, "bad_jwt");
 }
 
+function apiFailure(status: number): Response {
+  return Response.json({ message: "falló" }, { status });
+}
+
+function answerProfileUpdate(options: FakeSupabaseOptions): Response {
+  if (options.profileUpdateFailureStatus) {
+    return apiFailure(options.profileUpdateFailureStatus);
+  }
+  return Response.json(
+    options.isProfileUpdateIgnored ? [] : [{ id: FAKE_USER_ID }],
+  );
+}
+
+async function readProfileUpdate(request: Request): Promise<FakeProfileUpdate> {
+  const url = new URL(request.url);
+  return {
+    path: `${url.pathname}${url.search}`,
+    body: await request.json(),
+    authorization: request.headers.get("authorization"),
+  };
+}
+
 export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const { profile = ADMIN_PROFILE } = options;
   const requests: string[] = [];
   const profileAuthorizations: (string | null)[] = [];
+  const profileUpdates: FakeProfileUpdate[] = [];
   const auditRows: unknown[] = [];
 
   async function answerAuditInsert(request: Request): Promise<Response> {
     auditRows.push(await request.json());
     return options.auditFailureStatus
-      ? Response.json(
-          { message: "falló" },
-          { status: options.auditFailureStatus },
-        )
+      ? apiFailure(options.auditFailureStatus)
       : new Response(null, { status: 201 });
   }
 
@@ -127,13 +162,15 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
       return new Response(null, { status: 204 });
     }
     if (url.pathname === "/rest/v1/profiles") {
+      if (request.method === "PATCH") {
+        profileUpdates.push(await readProfileUpdate(request));
+        return answerProfileUpdate(options);
+      }
       profileAuthorizations.push(request.headers.get("authorization"));
+      const locale = options.profileLocale ?? "es";
       return options.profileFailureStatus
-        ? Response.json(
-            { message: "falló" },
-            { status: options.profileFailureStatus },
-          )
-        : Response.json(profile === null ? [] : [profile]);
+        ? apiFailure(options.profileFailureStatus)
+        : Response.json(profile === null ? [] : [{ ...profile, locale }]);
     }
     if (url.pathname === "/rest/v1/audit_log") {
       return answerAuditInsert(request);
@@ -147,7 +184,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
       answer(new Request(input, init)),
   );
-  return { requests, profileAuthorizations, auditRows };
+  return { requests, profileAuthorizations, profileUpdates, auditRows };
 }
 
 interface SessionCookieOptions {

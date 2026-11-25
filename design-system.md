@@ -187,6 +187,19 @@ Rules:
 - Placeholder text is `ink-subtle`.
 - A long label or a long error message wraps; it is never cut.
 
+**Admin shell** (ticket #122; `src/components/panel/`; sample at
+`/dev/panel`). The admin content sits on `line-light`, as drawn in the admin
+mockups, with white cards.
+
+| Part          | Spec                                                                                                                                                             |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Side menu     | From 768px. 248px wide, `brand-night`. Entries 44px high, 700 14px, radius 12px. Current: `brand-indigo` background and 3px `brand-red` left border              |
+| Bottom bar    | Under 768px. `brand-night`, sticks to the bottom, places 56px high, glyph over a 12px label in `ink-muted`. Current: `brand-mist` and 3px `brand-red` top border |
+| Pending badge | Pill, `brand-red` background, `brand-night` 700 11px                                                                                                             |
+| "Más" list    | White card, rows 56px high, 700 16px, `line-light` dividers                                                                                                      |
+| Maintenance   | Full-width stripe over the content, `brand-red` background, `brand-night` 700 14px, with an icon                                                                 |
+| Person        | 36px `brand-red` circle with initials, name 700 14px, role 12px `ink-muted`                                                                                      |
+
 ## Mandatory component states
 
 Every interactive component ships with ALL of: default, hover, focus-visible

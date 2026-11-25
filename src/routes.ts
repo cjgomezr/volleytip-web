@@ -45,6 +45,10 @@ export default [
       ]),
     ]),
   ]),
+  // Pinta la cáscara del panel con módulos de muestra, sin sesión ni base.
+  // En producción responde 404.
+  route("dev/panel/*", "routes/dev-panel.tsx"),
+  route("en/dev/panel/*", "routes/dev-panel.tsx", { id: "dev-panel-en" }),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
   // Los archivos con que el celular abre `/r/` en la app. Son de recurso:

@@ -71,22 +71,15 @@ afterEach(() => {
 });
 
 describe("inicio del panel", () => {
-  it("saluda al admin por su nombre", () => {
+  // El nombre, el rol y "Cerrar sesión" del admin los pone la cáscara
+  // (panel-shell.test.tsx y panel-layout.test.ts).
+  it("al admin le muestra el Resumen provisional", () => {
     const data = homeLoader(buildArgs("/admin", { member: ADMIN }));
 
-    expect(data).toEqual({ view: "admin", displayName: "Andrés Gómez" });
+    expect(data).toEqual({ view: "admin" });
     const html = render(<HomeScreen {...data} />);
-    expect(html).toContain("Andrés Gómez");
-    expect(html).toContain("Cerrar sesión");
-    expect(html).toContain('action="/admin/salir"');
-  });
-
-  it("usa el correo cuando el perfil no tiene nombre", () => {
-    const data = homeLoader(
-      buildArgs("/admin", { member: { ...ADMIN, fullName: null } }),
-    );
-
-    expect(data).toEqual({ view: "admin", displayName: ADMIN.email });
+    expect(html).toContain("<title>Resumen</title>");
+    expect(html).toContain("Las secciones del panel llegan pronto.");
   });
 
   it("al staff solo le explica que su acceso es para el escáner", () => {
@@ -99,11 +92,12 @@ describe("inicio del panel", () => {
     expect(html).toContain("escáner");
     expect(html).toContain("camp");
     expect(html).toContain("Cerrar sesión");
+    expect(html).toContain('action="/admin/salir"');
     expect(html).not.toContain("Andrés Gómez");
   });
 
   it("sale en inglés bajo /en/", () => {
-    const html = render(<HomeScreen view="admin" displayName="Ana" />, "en");
+    const html = render(<HomeScreen view="staff" />, "en");
 
     expect(html).toContain("Sign out");
     expect(html).toContain('action="/en/admin/sign-out"');

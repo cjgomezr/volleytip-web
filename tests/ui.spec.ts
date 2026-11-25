@@ -1684,7 +1684,17 @@ for (const variant of FAQ_PAGE_VARIANTS) {
       test("coincide con la línea base aprobada", async ({ page }) => {
         await page.goto(`${APP_URL}${variant.path}`);
         if (variant.opensFirst) {
-          await page.locator("summary").first().click();
+          const firstQuestion = page.locator("details").first();
+          // Un clic que llega mientras la página termina de cargar puede no
+          // dejarla abierta, y la captura saldría con la pregunta cerrada.
+          await expect(async () => {
+            if (
+              !(await firstQuestion.evaluate((el) => "open" in el && el.open))
+            ) {
+              await firstQuestion.locator("summary").click();
+            }
+            await expect(firstQuestion).toHaveAttribute("open", "");
+          }).toPass();
         }
         await page.evaluate(async () => {
           await document.fonts.ready;
@@ -1786,20 +1796,64 @@ for (const variant of ROUTINE_LINK_VARIANTS) {
 }
 
 // ---------------------------------------------------------------------------
-// Pantallas provisionales del panel y de su entrada (#119), a 390 y 1440 px.
-// Axe, desborde y comportamiento en tests/admin-panel.spec.ts.
+// El panel: su entrada y la pantalla del staff (#119), y la cáscara (#122).
+// Axe, desborde y comportamiento en tests/admin-panel.spec.ts y
+// tests/admin-shell.spec.ts.
 // ---------------------------------------------------------------------------
 
-const PANEL_VARIANTS = [
-  { name: "entrada", path: "/admin/entrar", role: undefined },
+const PANEL_PROVISIONAL_VIEWPORTS = viewports.filter(({ name }) =>
+  ["mobile", "desktop"].includes(name),
+);
+
+// La cáscara real y la de muestra, en los dos idiomas. La de muestra no usa la
+// base.
+const PANEL_SHELL_VARIANTS = [
   { name: "inicio", path: "/admin", role: "admin" },
-  { name: "staff", path: "/admin", role: "staff" },
+  { name: "inicio-en", path: "/en/admin", role: "admin" },
+  { name: "muestra", path: "/dev/panel", role: undefined },
+  { name: "muestra-en", path: "/en/dev/panel", role: undefined },
+  { name: "mas", path: "/dev/panel/mas", role: undefined },
+  { name: "mas-en", path: "/en/dev/panel/more", role: undefined },
+  {
+    name: "mantenimiento",
+    path: "/dev/panel?mantenimiento=1",
+    role: undefined,
+  },
+  {
+    name: "mantenimiento-en",
+    path: "/en/dev/panel?mantenimiento=1",
+    role: undefined,
+  },
 ] as const;
 
+interface PanelVariant {
+  readonly name: string;
+  readonly path: string;
+  readonly role: "admin" | "staff" | undefined;
+  readonly sizes: readonly (typeof viewports)[number][];
+}
+
+const PANEL_VARIANTS: readonly PanelVariant[] = [
+  {
+    name: "entrada",
+    path: "/admin/entrar",
+    role: undefined,
+    sizes: PANEL_PROVISIONAL_VIEWPORTS,
+  },
+  {
+    name: "staff",
+    path: "/admin",
+    role: "staff",
+    sizes: PANEL_PROVISIONAL_VIEWPORTS,
+  },
+  ...PANEL_SHELL_VARIANTS.map((variant) => ({
+    ...variant,
+    sizes: viewports,
+  })),
+];
+
 for (const variant of PANEL_VARIANTS) {
-  for (const vp of viewports.filter(({ name }) =>
-    ["mobile", "desktop"].includes(name),
-  )) {
+  for (const vp of variant.sizes) {
     test.describe(`panel ${variant.name} @ ${vp.name}`, () => {
       test.use({ viewport: { width: vp.width, height: vp.height } });
 
@@ -1815,6 +1869,7 @@ for (const variant of PANEL_VARIANTS) {
         await page.evaluate(async () => {
           await document.fonts.ready;
         });
+        await waitForImages(page);
         const name = `panel-${variant.name}-${vp.name}.png`;
         await createMissingLocalBaseline(name, () =>
           page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
