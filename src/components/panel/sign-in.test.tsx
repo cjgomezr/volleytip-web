@@ -125,7 +125,16 @@ describe("pantalla de entrada: página del enlace", () => {
 
   it.each([
     ["sin token", null, undefined],
-    ["con un enlace rechazado", "t", { status: "invalid_link" }],
+    [
+      "con un enlace rechazado",
+      "t",
+      {
+        status: "invalid_link",
+        tokenHash: "t",
+        returnPath: null,
+        signInPath: "/admin/entrar",
+      },
+    ],
   ] as const)("%s lo explica y ofrece pedir otro", (_name, token, outcome) => {
     const html = render(
       <SignInLinkScreen
@@ -141,17 +150,24 @@ describe("pantalla de entrada: página del enlace", () => {
     expect(html).not.toContain("<form");
   });
 
-  it("si no se pudo entrar, lo dice y deja reintentar", () => {
+  // Sin JavaScript el `loader` corre sobre la dirección del envío, sin token.
+  it("si no se pudo entrar, lo dice y deja reintentar con el mismo enlace", () => {
     const html = render(
       <SignInLinkScreen
-        tokenHash="t"
+        tokenHash={null}
         returnPath={null}
         signInPath="/admin/entrar"
-        outcome={{ status: "unavailable" }}
+        outcome={{
+          status: "unavailable",
+          tokenHash: "token-de-prueba",
+          returnPath: "/admin/mas",
+          signInPath: "/admin/entrar?next=%2Fadmin%2Fmas",
+        }}
       />,
     );
 
     expect(html).toContain('role="alert"');
-    expect(html).toContain("<form");
+    expect(html).toContain('value="token-de-prueba"');
+    expect(html).toContain('name="next" value="/admin/mas"');
   });
 });

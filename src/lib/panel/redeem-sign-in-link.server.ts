@@ -48,10 +48,32 @@ async function readProfileLanguage(
   return isSupportedLanguage(data.locale) ? data.locale : DEFAULT_LANGUAGE;
 }
 
+// Con la sesión recién abierta: se queda solo si es de alguien del equipo.
+async function admitMember(client: TypedSupabaseClient): Promise<RedeemResult> {
+  const visitor = await identifyVisitor(client);
+  if (visitor.kind !== "member") {
+    await closeSession(client);
+    return { status: "invalid_link" };
+  }
+  const language = await readProfileLanguage(client, visitor.member.id);
+  return { status: "signed_in", member: visitor.member, language };
+}
+
+// Si no se pudo comprobar quién entró, la sesión no se queda. El fallo que
+// sale es el de la comprobación; el del cierre queda en el registro.
+async function abandonSession(client: TypedSupabaseClient): Promise<void> {
+  try {
+    await closeSession(client);
+  } catch (error) {
+    console.error("No se pudo cerrar la sesión de un canje fallido", error);
+  }
+}
+
 /**
  * Cambia el token por una sesión en las cookies de `client`. Solo queda con
  * sesión un admin o staff activo: a cualquier otro se le cierra enseguida, por
- * si dejó de serlo después de pedir el enlace.
+ * si dejó de serlo después de pedir el enlace. Lanza, sin dejar sesión, si no
+ * puede leer su perfil.
  */
 export async function redeemSignInLink(
   client: TypedSupabaseClient,
@@ -69,11 +91,10 @@ export async function redeemSignInLink(
     );
     return { status: "unavailable" };
   }
-  const visitor = await identifyVisitor(client);
-  if (visitor.kind !== "member") {
-    await closeSession(client);
-    return { status: "invalid_link" };
+  try {
+    return await admitMember(client);
+  } catch (error) {
+    await abandonSession(client);
+    throw error;
   }
-  const language = await readProfileLanguage(client, visitor.member.id);
-  return { status: "signed_in", member: visitor.member, language };
 }

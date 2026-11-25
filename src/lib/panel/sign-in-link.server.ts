@@ -1,4 +1,4 @@
-import { createClient, isAuthRetryableFetchError } from "@supabase/supabase-js";
+import { createClient } from "@supabase/supabase-js";
 
 import type { Database } from "../database.types";
 import { serverEnv, type ServerEnv } from "../env.server";
@@ -30,7 +30,6 @@ export interface SignInLinkOptions {
 
 // Auth envía el correo antes de contestar, así que el margen es amplio.
 const AUTH_TIMEOUT_MS = 10_000;
-const TOO_MANY_REQUESTS_STATUS = 429;
 const SERVER_ERROR_STATUS = 500;
 
 // Se lee con la llave de servicio porque todavía no hay sesión, y sin ella
@@ -57,8 +56,8 @@ function withTimeout(timeoutMs: number): typeof fetch {
     fetch(input, { ...init, signal: AbortSignal.timeout(timeoutMs) });
 }
 
-// A quien no es del equipo no se le pide nada a Auth. Sin esta consulta, con
-// Auth caído solo los correos del equipo verían el error, y eso los delataría.
+// Se pregunta por igual para cualquier correo: es lo único que decide si la
+// pantalla dice que no se pudo enviar.
 async function isAuthReachable(
   env: ServerEnv,
   timeoutMs: number,
@@ -81,7 +80,7 @@ async function sendLink(
   { email, returnUrl }: SignInLinkRequest,
   env: ServerEnv,
   timeoutMs: number,
-): Promise<SignInLinkResult> {
+): Promise<void> {
   const client = createClient<Database>(env.supabaseUrl, env.supabaseAnonKey, {
     ...SERVER_CLIENT_OPTIONS,
     global: { fetch: withTimeout(timeoutMs) },
@@ -90,30 +89,30 @@ async function sendLink(
     email,
     options: { shouldCreateUser: false, emailRedirectTo: returnUrl },
   });
-  if (error === null) return "sent";
+  if (error === null) return;
   // El correo nunca se escribe en el registro.
-  const details = `estado ${String(error.status)}, código ${String(error.code)}`;
-  // El freno de Auth (un enlace a la misma dirección hace un momento, o el
-  // tope de correos por hora). Decirlo delataría que el correo es del equipo.
-  if (
-    !isAuthRetryableFetchError(error) &&
-    error.status === TOO_MANY_REQUESTS_STATUS
-  ) {
-    console.warn(`Supabase Auth frenó un enlace de entrada: ${details}`);
-    return "sent";
-  }
-  console.error(`Supabase Auth no envió el enlace de entrada: ${details}`);
-  return "unavailable";
+  console.error(
+    `Supabase Auth no envió el enlace de entrada: estado ${String(error.status)}, código ${String(error.code)}`,
+  );
 }
 
-/** Envía el enlace solo si el correo es de un admin o staff activo. Lanza si
- * no se puede leer la base. */
+/**
+ * Envía el enlace solo si el correo es de un admin o staff activo. Lanza si no
+ * se puede leer la base.
+ *
+ * La respuesta sale de comprobaciones iguales para cualquier correo, y el
+ * envío no se espera: ni un fallo al enviar ni lo que tarda el correo dicen
+ * quién es del equipo. Un envío fallido solo queda en el registro.
+ */
 export async function requestSignInLink(
   request: SignInLinkRequest,
   { env = serverEnv, authTimeoutMs = AUTH_TIMEOUT_MS }: SignInLinkOptions = {},
 ): Promise<SignInLinkResult> {
+  if (!(await isAuthReachable(env, authTimeoutMs))) return "unavailable";
   if (await isActiveTeamEmail(request.email, env)) {
-    return sendLink(request, env, authTimeoutMs);
+    sendLink(request, env, authTimeoutMs).catch((error: unknown) => {
+      console.error("No se pudo enviar el enlace de entrada", error);
+    });
   }
-  return (await isAuthReachable(env, authTimeoutMs)) ? "sent" : "unavailable";
+  return "sent";
 }

@@ -11,6 +11,8 @@ import { isbot } from "isbot";
 import type { RenderToPipeableStreamOptions } from "react-dom/server";
 import { renderToPipeableStream } from "react-dom/server";
 
+// Oculta el token del enlace de entrada en el log de acceso.
+import "~/lib/access-log.server";
 import { ReferenceCodeContext } from "~/lib/error-reference";
 import { applyMaintenanceHeaders } from "~/lib/maintenance-mode.server";
 import {

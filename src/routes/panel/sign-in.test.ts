@@ -147,11 +147,16 @@ async function submit(
 }
 
 beforeEach(() => {
-  vi.spyOn(console, "warn").mockImplementation(() => undefined);
   vi.spyOn(console, "error").mockImplementation(() => undefined);
 });
 
-afterEach(() => {
+/** El envío no se espera: esto le da tiempo a salir. */
+function settleSending(): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, 20));
+}
+
+afterEach(async () => {
+  await settleSending();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -167,6 +172,7 @@ describe("entrada: pedir enlace", () => {
       const result = await submit();
 
       expect(result).toEqual({ outcome: { status: "sent" }, status: 200 });
+      await settleSending();
       expect(backend.otpRequests).toHaveLength(1);
       // Sin `code_challenge`: el enlace no depende de una cookie del
       // navegador que lo pidió.
@@ -190,6 +196,7 @@ describe("entrada: pedir enlace", () => {
       const backend = stubBackend({ profiles });
 
       const result = await submit();
+      await settleSending();
 
       expect(backend.otpRequests).toEqual([]);
       expect(result).toEqual(forTeam);
@@ -200,6 +207,7 @@ describe("entrada: pedir enlace", () => {
     const backend = stubBackend();
 
     await submit({ email: `  ${TEAM_EMAIL.toUpperCase()}  ` });
+    await settleSending();
 
     expect(backend.profileReads[0]?.searchParams.get("email")).toBe(
       `eq.${TEAM_EMAIL}`,
@@ -242,7 +250,9 @@ describe("entrada: pedir enlace", () => {
     const backend = stubBackend();
 
     await submit();
+    await settleSending();
 
+    expect(backend.otpRequests).toHaveLength(1);
     expect(backend.otpRequests[0]?.url.searchParams.get("redirect_to")).toBe(
       null,
     );
@@ -257,21 +267,13 @@ describe("entrada: pedir enlace", () => {
       const backend = stubBackend();
 
       await submit({ path: `/admin/entrar?next=${next}` });
+      await settleSending();
 
       expect(backend.otpRequests[0]?.url.searchParams.get("redirect_to")).toBe(
         `${TEST_ENV.SITE_ORIGIN}${path}`,
       );
     },
   );
-
-  it("si Supabase frena otro envío al mismo correo, responde igual", async () => {
-    stubBackend({ otpStatus: TOO_MANY_REQUESTS });
-
-    await expect(submit()).resolves.toEqual({
-      outcome: { status: "sent" },
-      status: 200,
-    });
-  });
 });
 
 describe("entrada: protección", () => {
@@ -321,12 +323,25 @@ describe("entrada: protección", () => {
   });
 });
 
+/** Cambia `fetch` solo para las direcciones que contienen `fragment`. */
+function hangRequestsTo(fragment: string): void {
+  const backendFetch = fetch;
+  vi.stubGlobal(
+    "fetch",
+    (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      if (!String(input).includes(fragment)) return backendFetch(input, init);
+      return new Promise((_resolve, reject) => {
+        init?.signal?.addEventListener("abort", () => {
+          reject(new DOMException("agotado", "TimeoutError"));
+        });
+      });
+    },
+  );
+}
+
 describe("entrada: fallo de Supabase", () => {
-  it.each<[string, Scenario]>([
-    ["no contesta", { isAuthDown: true }],
-    ["responde 500", { otpStatus: 500 }],
-  ])("si Auth %s lo dice y conserva el correo", async (_name, scenario) => {
-    stubBackend(scenario);
+  it("si Auth no contesta lo dice y conserva el correo", async () => {
+    stubBackend({ isAuthDown: true });
 
     await expect(submit()).resolves.toEqual({
       status: SERVICE_UNAVAILABLE,
@@ -350,30 +365,46 @@ describe("entrada: fallo de Supabase", () => {
   ])("deja de esperar a un Auth colgado con %s", async (_name, scenario) => {
     stubBackend(scenario);
     const request = buildRequest();
-    const backendFetch = fetch;
-    vi.stubGlobal(
-      "fetch",
-      (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-        if (!String(input).includes("/auth/")) return backendFetch(input, init);
-        return new Promise((_resolve, reject) => {
-          init?.signal?.addEventListener("abort", () => {
-            reject(new DOMException("agotado", "TimeoutError"));
-          });
-        });
-      },
-    );
+    hangRequestsTo("/auth/");
 
     const response = await handleSignInRequest(request, { authTimeoutMs: 20 });
 
     expect(response.data.status).toBe("unavailable");
   });
 
-  it("deja registro del fallo sin el correo", async () => {
+  // Solo a un correo del equipo se le intenta enviar: si ese fallo cambiara
+  // la respuesta, lo delataría (AC-019).
+  it.each([422, TOO_MANY_REQUESTS, 500])(
+    "si el envío falla (%i), el equipo recibe lo mismo que un ajeno",
+    async (otpStatus) => {
+      stubBackend({ otpStatus, profiles: {} });
+      const forStranger = await submit();
+      stubBackend({ otpStatus });
+
+      const result = await submit();
+
+      expect(result).toEqual(forStranger);
+      expect(result.outcome).toEqual({ status: "sent" });
+    },
+  );
+
+  it("responde sin esperar a que salga el correo", async () => {
+    stubBackend();
+    const request = buildRequest();
+    hangRequestsTo("/auth/v1/otp");
+
+    const response = await handleSignInRequest(request, { authTimeoutMs: 20 });
+
+    expect(response.data).toEqual({ status: "sent" });
+    await vi.waitFor(() => expect(console.error).toHaveBeenCalled());
+  });
+
+  it("deja registro del envío fallido sin el correo", async () => {
     stubBackend({ otpStatus: 500 });
 
     await submit();
 
-    expect(console.error).toHaveBeenCalled();
+    await vi.waitFor(() => expect(console.error).toHaveBeenCalled());
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain(
       TEAM_EMAIL,
     );

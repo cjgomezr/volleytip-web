@@ -5,10 +5,10 @@ import {
   SignInLinkScreen,
   type SignInLinkOutcome,
 } from "~/components/panel/sign-in-link-screen";
+import { SIGN_IN_ERROR_KEYS } from "~/lib/admin/sign-in-errors";
 import { serverEnv } from "~/lib/env.server";
 import {
   ADMIN_SIGN_IN_FORM,
-  SIGN_IN_ERROR_KEYS,
   type SignInOutcome,
 } from "~/lib/forms/admin-sign-in-form.server";
 import {
@@ -33,7 +33,7 @@ type Sample =
   | { readonly screen: "form"; readonly outcome: SignInOutcome | undefined }
   | {
       readonly screen: "link";
-      readonly outcome: SignInLinkOutcome | undefined;
+      readonly status: SignInLinkOutcome["status"] | undefined;
     };
 
 const SAMPLES: Readonly<Record<string, Sample>> = {
@@ -47,8 +47,8 @@ const SAMPLES: Readonly<Record<string, Sample>> = {
     },
   },
   enviado: { screen: "form", outcome: { status: "sent" } },
-  enlace: { screen: "link", outcome: undefined },
-  vencido: { screen: "link", outcome: { status: "invalid_link" } },
+  enlace: { screen: "link", status: undefined },
+  vencido: { screen: "link", status: "invalid_link" },
 };
 
 export function loader({ request }: Route.LoaderArgs): Sample & {
@@ -79,12 +79,16 @@ export default function DevSignIn({
       />
     );
   }
+  const details = {
+    tokenHash: SAMPLE_TOKEN,
+    returnPath: null,
+    signInPath: loaderData.signInPath,
+  };
+  const { status } = loaderData;
   return (
     <SignInLinkScreen
-      tokenHash={SAMPLE_TOKEN}
-      returnPath={null}
-      signInPath={loaderData.signInPath}
-      outcome={loaderData.outcome}
+      {...details}
+      outcome={status === undefined ? undefined : { status, ...details }}
     />
   );
 }

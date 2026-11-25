@@ -23,7 +23,11 @@ import { TEST_ENV } from "../../../tests/support/test-env";
 import { HomeScreen, loader as homeLoader } from "./home";
 import { loader as missingLoader } from "./missing";
 import SessionLayout from "./session-layout";
-import { loader as signInLoader, SignInScreen } from "./sign-in";
+import {
+  shouldRevalidate,
+  loader as signInLoader,
+  SignInScreen,
+} from "./sign-in";
 import { action as signOut, loader as signOutLoader } from "./sign-out";
 
 const ADMIN: PanelMember = {
@@ -151,6 +155,20 @@ describe("pantalla de entrada", () => {
     await expect(
       signInLoader(buildArgs("/admin/entrar", { cookie: SIGNED_IN })),
     ).resolves.toHaveProperty("protection");
+  });
+});
+
+describe("pantalla de entrada: formulario vencido", () => {
+  it.each([
+    [{ status: "rejected", reason: "too_fast" }, true],
+    [{ status: "rejected", reason: "rate_limited" }, false],
+    [{ status: "invalid" }, false],
+  ])("tras %j pide un formulario fresco: %s", (actionResult, expected) => {
+    const args = { actionResult, defaultShouldRevalidate: false };
+
+    expect(
+      shouldRevalidate(args as Parameters<typeof shouldRevalidate>[0]),
+    ).toBe(expected);
   });
 });
 

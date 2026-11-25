@@ -1,3 +1,6 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
+
+import morgan from "morgan";
 import { RouterContextProvider } from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -5,6 +8,23 @@ import { handleDataRequest } from "./entry.server";
 import { reportServerError } from "./lib/server-error-report.server";
 
 afterEach(() => vi.restoreAllMocks());
+
+describe("log de acceso", () => {
+  // `react-router-serve` registra cada petición con `morgan("tiny")`, que usa
+  // este mismo `:url`.
+  it("cargar el servidor deja el token fuera de la dirección registrada", () => {
+    const request = {
+      url: "/admin/entrar/enlace?token_hash=abc123&next=x",
+    } as IncomingMessage;
+    const format = morgan.compile(":url");
+
+    const tokens = morgan as unknown as Parameters<typeof format>[0];
+
+    const line = format(tokens, request, {} as ServerResponse);
+
+    expect(line).toBe("/admin/entrar/enlace?token_hash=[oculto]&next=x");
+  });
+});
 
 describe("handleDataRequest", () => {
   it("manda al documento la petición de datos de una navegación que falló", async () => {

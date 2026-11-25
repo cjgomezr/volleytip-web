@@ -294,7 +294,9 @@ La persona escribe su correo en `/admin/entrar` y Supabase Auth le manda un enla
 7. **Registro público apagado.** Authentication → Sign In / Providers → "Allow new users to sign up": desactivado.
 8. **Comprobar.** Con un admin ya creado (ver abajo), pedir el enlace en el sitio del entorno, abrir el correo y entrar. Probar también con un correo ajeno: la pantalla responde igual y no llega nada.
 
-Una cuenta del equipo tiene que tener el correo confirmado (el comando de abajo lo deja así): a una sin confirmar Supabase le manda otra plantilla.
+Una cuenta del equipo tiene que tener el correo confirmado (el comando de abajo lo deja así): con el registro apagado, a una sin confirmar no le llega el enlace.
+
+**Si el correo no llega.** La pantalla responde "revisa tu correo" aunque el envío falle, para no delatar quién es del equipo. El fallo queda en el registro del servidor ("Supabase Auth no envió el enlace de entrada", con su estado) y en el panel de Supabase, en Logs → Auth. Solo cuando Supabase Auth no responde la pantalla dice que no se pudo enviar.
 
 ### El primer admin de cada entorno
 

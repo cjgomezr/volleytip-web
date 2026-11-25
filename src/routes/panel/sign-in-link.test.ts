@@ -192,6 +192,53 @@ describe("entrada: canje", () => {
     expect(hasLiveSession(cookies)).toBe(false);
   });
 
+  it("lo que devuelve al no entrar trae los datos del enlace", async () => {
+    stubSupabase({ verifyFailureStatus: 500 });
+
+    // El envío va a la dirección sin consulta: los datos van en los campos.
+    const { result } = await runRedeem("/admin/entrar/enlace", {
+      token_hash: TOKEN,
+      next: "/admin/mas",
+    });
+
+    expect(result).toMatchObject({
+      data: {
+        status: "unavailable",
+        tokenHash: TOKEN,
+        returnPath: "/admin/mas",
+        signInPath: "/admin/entrar?next=%2Fadmin%2Fmas",
+      },
+    });
+  });
+
+  it("si no puede leer el perfil, falla sin dejar sesión", async () => {
+    const supabase = stubSupabase({ profileFailureStatus: 500 });
+
+    const { result, cookies } = await runRedeem(LINK);
+
+    expect(result).toBeInstanceOf(Error);
+    expect(supabase.requests.join()).toContain("/auth/v1/logout");
+    expect(hasLiveSession(cookies)).toBe(false);
+  });
+
+  it("un cuerpo que no es un formulario muestra el aviso", async () => {
+    const supabase = stubSupabase();
+    const request = new Request(`http://localhost${LINK}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: "{}",
+    });
+
+    const response = await action({
+      request,
+      context: new RouterContextProvider(),
+      params: {},
+    } as unknown as Parameters<typeof action>[0]);
+
+    expect(response.data.status).toBe("invalid_link");
+    expect(supabase.requests).toEqual([]);
+  });
+
   it.each([429, 500])(
     "si Auth falla (%i) lo dice sin dar por muerto el enlace",
     async (verifyFailureStatus) => {

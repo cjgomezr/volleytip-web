@@ -4,6 +4,7 @@ import { Form, useNavigation } from "react-router";
 import { Button } from "~/components/button";
 import { FormProtection } from "~/components/form-protection";
 import { TextField } from "~/components/text-field";
+import { SIGN_IN_ERROR_KEYS } from "~/lib/admin/sign-in-errors";
 import type {
   SignInOutcome,
   SignInRejection,
@@ -26,10 +27,7 @@ const REJECTION_MESSAGES: Record<SignInRejection, MessageKey> = {
 };
 
 // El servidor devuelve claves de traducción como mensajes de error.
-const ERROR_KEYS: readonly MessageKey[] = [
-  "panel.signIn.error.email",
-  "panel.signIn.error.emailTooLong",
-];
+const ERROR_KEYS: readonly MessageKey[] = Object.values(SIGN_IN_ERROR_KEYS);
 
 function isErrorKey(message: string): message is MessageKey {
   return (ERROR_KEYS as readonly string[]).includes(message);

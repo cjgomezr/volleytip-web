@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { redirect } from "react-router";
+import { redirect, type ShouldRevalidateFunctionArgs } from "react-router";
 
 import { SignInForm } from "~/components/panel/sign-in-form";
 import { SignInLayout } from "~/components/panel/sign-in-layout";
@@ -38,6 +38,19 @@ export function action({
   request,
 }: Route.ActionArgs): ReturnType<typeof handleSignInRequest> {
   return handleSignInRequest(request);
+}
+
+// React Router no vuelve a pedir los datos tras un envío rechazado. Con la
+// marca de tiempo vencida (una pestaña abierta más de un día) cada reintento
+// fallaría igual: este rechazo pide un formulario fresco.
+export function shouldRevalidate({
+  actionResult,
+  defaultShouldRevalidate,
+}: ShouldRevalidateFunctionArgs): boolean {
+  const outcome = actionResult as SignInOutcome | undefined;
+  const isStale =
+    outcome?.status === "rejected" && outcome.reason === "too_fast";
+  return isStale || defaultShouldRevalidate;
 }
 
 export function SignInScreen({

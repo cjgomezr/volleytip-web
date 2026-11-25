@@ -1,6 +1,7 @@
 import { data } from "react-router";
 import { z } from "zod";
 
+import { SIGN_IN_ERROR_KEYS } from "../admin/sign-in-errors";
 import { serverEnv } from "../env.server";
 import { getRequestLanguage } from "../i18n/languages";
 import {
@@ -26,13 +27,6 @@ const SERVICE_UNAVAILABLE_STATUS = 503;
 const MAX_EMAIL_LENGTH = 254;
 const TEN_MINUTES_IN_SECONDS = 600;
 const MAX_LINK_REQUESTS = 5;
-
-/** Los mensajes del esquema son claves de traducción: el formulario las pinta
- * en el idioma de la página. */
-export const SIGN_IN_ERROR_KEYS = {
-  emailInvalid: "panel.signIn.error.email",
-  emailTooLong: "panel.signIn.error.emailTooLong",
-} as const;
 
 const signInSchema = z.object({
   email: z
