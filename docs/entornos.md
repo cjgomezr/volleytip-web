@@ -270,6 +270,35 @@ El panel (`/admin` y `/en/admin`) usa una sesión de Supabase Auth guardada en c
 - **El panel responde en modo mantenimiento.** Es desde donde se apaga.
 - **En las pruebas** se entra sin correo: `createTestSession` (`src/testing/local-session.ts`) para las de integración y `signInToPanel` (`tests/support/panel-session.ts`) para Playwright. Las dos solo sirven contra la base local.
 
+### El primer admin de cada entorno
+
+Un entorno recién creado no tiene a nadie que pueda entrar al panel. El primer admin se crea con un comando, una vez por entorno (#121):
+
+```
+npm run admin:create -- <correo>
+```
+
+Si el correo no tiene cuenta, la crea con el correo confirmado y la deja como `admin` activo. Si ya tiene una (comprador, staff o admin desactivado), la sube a `admin` activo sin crear otra. Si ya es admin activo, lo dice y no cambia nada. Cada cambio deja una entrada `profile.grant_admin` en `audit_log`, sin actor.
+
+El comando solo necesita `SUPABASE_URL` y `SUPABASE_SERVICE_ROLE_KEY`. Las toma de la terminal y, las que falten ahí, de `.env.local`. Antes de escribir muestra a qué proyecto apunta y pide su identificador: en un proyecto alojado es el Project ID (el subdominio de la URL); en local, el host con su puerto, como `127.0.0.1:54321`. Con otra respuesta no escribe nada. Hay que leerlo: es la última defensa contra escribir en el proyecto equivocado.
+
+**En local.** Con la base arriba (`npm run db:start`) y `.env.local` lleno, basta el comando.
+
+**En pruebas (`volleytip-dev`) y en producción (`volleytip-prod`).** Desde la raíz del repo, en Git Bash:
+
+```
+read -rsp "Llave de servicio: " SUPABASE_SERVICE_ROLE_KEY && export SUPABASE_SERVICE_ROLE_KEY
+SUPABASE_URL="https://<identificador>.supabase.co" npm run admin:create -- <correo>
+unset SUPABASE_SERVICE_ROLE_KEY
+```
+
+- La URL y la llave de servicio salen del gestor de contraseñas, las del proyecto al que se va a escribir.
+- `read -s` pide la llave sin mostrarla y la deja fuera del historial de la terminal. No se escribe en el comando, ni en `.env.local`, ni en otro archivo.
+- Las dos variables se ponen siempre juntas. Si falta una, el comando toma la de `.env.local`, que es la de la base local.
+- El `unset` final no es opcional: mientras la llave siga en la terminal, cualquier otro comando de esa sesión la ve.
+
+El correo se escribe solo en la terminal. Ningún correo del equipo va al repo.
+
 ## Imágenes
 
 Las fotos de productos, camps y tips se sirven por Bunny Optimizer, que las entrega en el ancho que cada pantalla pide (FR-123). El código que arma las direcciones lo construyó el ticket #36: `src/lib/images/image-url.ts` y el componente `src/components/optimized-image.tsx`.

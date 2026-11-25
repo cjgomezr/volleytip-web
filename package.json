@@ -14,6 +14,7 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "e2e": "playwright test",
     "ui:screenshots": "node --experimental-strip-types scripts/capture-ui.ts",
+    "admin:create": "node --env-file-if-exists=.env.local --experimental-strip-types scripts/admin-create.ts",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
