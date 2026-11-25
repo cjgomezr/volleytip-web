@@ -93,11 +93,6 @@ describeIntegration("primer admin contra la base local", () => {
     database = connectToLocalDatabase();
   });
 
-  beforeAll(() => {
-    status = readLocalSupabaseStatus();
-    database = connectToLocalDatabase();
-  });
-
   // Cada prueba usa su propio correo, así no dependen del orden.
   beforeEach(() => {
     // Dominio reservado: no es de nadie.
