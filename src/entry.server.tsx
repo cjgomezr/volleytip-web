@@ -14,7 +14,11 @@ import { renderToPipeableStream } from "react-dom/server";
 // Oculta el token del enlace de entrada en el log de acceso.
 import "~/lib/access-log.server";
 import { ReferenceCodeContext } from "~/lib/error-reference";
-import { applyMaintenanceHeaders } from "~/lib/maintenance-mode.server";
+import { getDocumentPath } from "~/lib/i18n/document-path";
+import {
+  applyMaintenanceHeaders,
+  isExemptFromMaintenance,
+} from "~/lib/maintenance-mode.server";
 import {
   MAINTENANCE_STATUS,
   findMaintenanceNotice,
@@ -126,9 +130,12 @@ export const handleDataRequest: HandleDataRequestFunction = (
   { request },
 ) => {
   // Con el mantenimiento encendido todo dato pedido responde 503; lleva las
-  // mismas cabeceras que el documento. Ninguna otra parte del sitio responde
-  // 503, así que el estado basta para reconocerlo.
-  if (response.status === MAINTENANCE_STATUS) {
+  // mismas cabeceras que el documento. En las direcciones exentas (el panel,
+  // cuando Supabase Auth falla) un 503 es de otra cosa.
+  if (
+    response.status === MAINTENANCE_STATUS &&
+    !isExemptFromMaintenance(getDocumentPath(new URL(request.url)))
+  ) {
     applyMaintenanceHeaders(response.headers);
   }
   return sendFailedNavigationToDocument(response, request);

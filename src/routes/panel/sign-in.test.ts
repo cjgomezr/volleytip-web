@@ -32,6 +32,8 @@ interface Scenario {
   readonly otpStatus?: number;
   /** Auth no contesta nada. */
   readonly isAuthDown?: boolean;
+  /** Estado con que Auth responde cuando se le pregunta si está arriba. */
+  readonly healthStatus?: number;
 }
 
 interface Recorded {
@@ -96,7 +98,9 @@ function stubBackend(scenario: Scenario = {}): Recorded {
       return Response.json(profile === undefined ? [] : [profile]);
     }
     if (url.pathname === "/auth/v1/otp") return answerOtp(url, request);
-    if (url.pathname === "/auth/v1/health") return Response.json({});
+    if (url.pathname === "/auth/v1/health") {
+      return Response.json({}, { status: scenario.healthStatus ?? 200 });
+    }
     throw new Error(`Petición inesperada: ${url.pathname}`);
   }
 
@@ -357,6 +361,31 @@ describe("entrada: fallo de Supabase", () => {
     const result = await submit();
 
     expect(result).toEqual(forTeam);
+  });
+
+  it.each([500, 502, 503])(
+    "si Auth responde %i lo dice, sea quien sea, y no pide el enlace",
+    async (healthStatus) => {
+      stubBackend({ healthStatus, profiles: {} });
+      const forStranger = await submit();
+      const backend = stubBackend({ healthStatus });
+
+      const result = await submit();
+      await settleSending();
+
+      expect(result).toEqual(forStranger);
+      expect(result.status).toBe(SERVICE_UNAVAILABLE);
+      expect(result.outcome.status).toBe("unavailable");
+      expect(backend.otpRequests).toEqual([]);
+    },
+  );
+
+  it("un Auth que frena la consulta de estado sigue contando como arriba", async () => {
+    stubBackend({ healthStatus: TOO_MANY_REQUESTS });
+
+    const result = await submit();
+
+    expect(result.outcome).toEqual({ status: "sent" });
   });
 
   it.each<[string, Scenario]>([
