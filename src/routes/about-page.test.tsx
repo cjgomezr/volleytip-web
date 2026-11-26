@@ -116,7 +116,7 @@ describe("nosotros: página", () => {
     "de cada fundador muestra nombre y cargo, sin párrafo ($language)",
     ({ language, position }) => {
       const lists = render({ language }).match(/<ul[^>]*>.*?<\/ul>/gs) ?? [];
-      const founders = lists.find((list) => list.includes("piza.webp")) ?? "";
+      const founders = lists.find((list) => list.includes("piza.jpg")) ?? "";
 
       expect(founders).toContain("Andrés Piza");
       expect(founders).toContain(position);
@@ -134,8 +134,8 @@ describe("nosotros: página", () => {
     expect(html).toContain("Ingeniero y desarrollador");
     expect(html).toMatch(/<img[^>]+alt="Andrés Piza, cofundador[^"]*"/);
     expect(html).toMatch(/<img[^>]+alt="Camilo Gómez, cofundador[^"]*"/);
-    expect(html).toContain("sitio/piza.webp");
-    expect(html).toContain("sitio/gomez.webp");
+    expect(html).toContain("sitio/piza.jpg");
+    expect(html).toContain("sitio/gomez.jpg");
   });
 
   it("pinta los personajes sin párrafo de relleno ni texto entre corchetes", () => {
