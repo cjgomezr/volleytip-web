@@ -1,5 +1,9 @@
 import { SUPPORTED_LANGUAGES, type Language } from "./languages";
-import { buildPagePath, type PageDeclaration } from "./page-path";
+import {
+  buildPagePath,
+  type PageDeclaration,
+  type PageParams,
+} from "./page-path";
 import { findLanguage } from "./pages";
 
 // El mapa de páginas del panel (decisión 4 del PRD de W10a). Tiene la forma
@@ -45,6 +49,44 @@ export const PANEL_ADMIN_PAGES = [
     id: "adminLanguage",
     file: "routes/panel/language.ts",
     path: { es: "admin/idioma", en: "admin/language" },
+  },
+  {
+    id: "adminMessages",
+    file: "routes/panel/messages.tsx",
+    path: { es: "admin/mensajes", en: "admin/messages" },
+  },
+  {
+    id: "adminMessage",
+    file: "routes/panel/message.tsx",
+    path: {
+      es: "admin/mensajes/:messageId",
+      en: "admin/messages/:messageId",
+    },
+  },
+  // Cada cambio de estado tiene su ruta: una ruta, una acción.
+  {
+    id: "adminMessageAnswer",
+    file: "routes/panel/message-answer.tsx",
+    path: {
+      es: "admin/mensajes/:messageId/responder",
+      en: "admin/messages/:messageId/answer",
+    },
+  },
+  {
+    id: "adminMessageArchive",
+    file: "routes/panel/message-archive.tsx",
+    path: {
+      es: "admin/mensajes/:messageId/archivar",
+      en: "admin/messages/:messageId/archive",
+    },
+  },
+  {
+    id: "adminMessageReopen",
+    file: "routes/panel/message-reopen.tsx",
+    path: {
+      es: "admin/mensajes/:messageId/reabrir",
+      en: "admin/messages/:messageId/reopen",
+    },
   },
   {
     id: "adminSiteTexts",
@@ -99,8 +141,12 @@ export function findPanelPage(id: PanelPageId): PageDeclaration {
 }
 
 /** La dirección de una página del panel en un idioma: `/en/admin/sign-in`. */
-export function getPanelPath(id: PanelPageId, language: Language): string {
-  return buildPagePath(findPanelPage(id), findLanguage(language));
+export function getPanelPath(
+  id: PanelPageId,
+  language: Language,
+  params?: PageParams,
+): string {
+  return buildPagePath(findPanelPage(id), findLanguage(language), params);
 }
 
 /** Dice si una dirección es del panel o cuelga de él, en cualquier idioma.

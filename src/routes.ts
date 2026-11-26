@@ -59,6 +59,12 @@ export default [
   route("en/dev/ajustes", "routes/dev-settings.tsx", {
     id: "dev-settings-en",
   }),
+  // Pinta la bandeja de mensajes y su detalle en cada estado, sin sesión ni
+  // base. En producción responde 404.
+  route("dev/mensajes", "routes/dev-messages.tsx"),
+  route("en/dev/mensajes", "routes/dev-messages.tsx", {
+    id: "dev-messages-en",
+  }),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
   // Los archivos con que el celular abre `/r/` en la app. Son de recurso:

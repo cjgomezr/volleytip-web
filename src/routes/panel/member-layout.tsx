@@ -11,7 +11,9 @@ import {
   panelSessionContext,
   requirePanelMember,
 } from "~/lib/panel/panel-middleware.server";
+import { countNewMessages } from "~/lib/panel/messages-inbox.server";
 import { loadSiteSettings } from "~/lib/site-settings.server";
+import type { TypedSupabaseClient } from "~/lib/supabase/typed-client";
 
 import type { Route } from "./+types/member-layout";
 
@@ -32,6 +34,20 @@ type PanelLayout =
       readonly isMaintenanceOn: boolean;
     };
 
+// Cada módulo con contador agrega aquí cómo se cuenta, con su ticket. Un
+// conteo que falla no puede dejar el panel sin abrir: queda en el registro y
+// la entrada sale sin número.
+async function countPending(
+  client: TypedSupabaseClient,
+): Promise<PendingCounts> {
+  try {
+    return { messages: await countNewMessages(client) };
+  } catch (error) {
+    console.error("El panel no pudo contar los mensajes nuevos", error);
+    return {};
+  }
+}
+
 export async function loader({
   context,
 }: Route.LoaderArgs): Promise<PanelLayout> {
@@ -39,17 +55,18 @@ export async function loader({
   if (member.role === "staff") return { view: "staff" };
   // El panel está exento del mantenimiento y el middleware de la raíz no lee
   // los ajustes para él.
-  const { maintenance } = await loadSiteSettings(
-    context.get(panelSessionContext).client,
-  );
+  const { client } = context.get(panelSessionContext);
+  const [{ maintenance }, pendingCounts] = await Promise.all([
+    loadSiteSettings(client),
+    countPending(client),
+  ]);
   return {
     view: "admin",
     member: {
       displayName: member.fullName ?? member.email,
       role: member.role,
     },
-    // Cada módulo con contador agrega aquí cómo se cuenta, con su ticket.
-    pendingCounts: {},
+    pendingCounts,
     isMaintenanceOn: maintenance.enabled,
   };
 }

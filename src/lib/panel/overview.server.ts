@@ -10,33 +10,16 @@ import {
   type RejectionCount,
 } from "../admin/overview";
 import type { TypedSupabaseClient } from "../supabase/typed-client";
+import { COUNT_ONLY, takeCount } from "./database-count.server";
+import { countNewMessages } from "./messages-inbox.server";
 
 const RECENT_ACTIVITY_SIZE = 10;
 /** Hoy y los seis días anteriores, en UTC como los cuenta la base. */
 const REJECTION_DAYS = 7;
 const MILLISECONDS_PER_DAY = 86_400_000;
 const ISO_DATE_LENGTH = "2026-01-01".length;
-const COUNT_ONLY = { count: "exact", head: true } as const;
 
 type CountedCard = CardDefinition & Pick<ModuleOverviewCard, "count">;
-
-interface CountResult {
-  readonly count: number | null;
-  readonly error: object | null;
-  readonly status: number;
-}
-
-// `head: true` cuenta en la base sin traer filas. Su respuesta no tiene
-// cuerpo, así que de un error solo se sabe el estado.
-async function takeCount(query: PromiseLike<CountResult>): Promise<number> {
-  const { count, error, status } = await query;
-  if (error !== null || count === null) {
-    throw new Error(`La base no devolvió el conteo (estado ${status})`, {
-      cause: error,
-    });
-  }
-  return count;
-}
 
 function countWaitlist(
   client: TypedSupabaseClient,
@@ -48,13 +31,7 @@ function countWaitlist(
 }
 
 const BASE_CARDS: readonly CountedCard[] = [
-  {
-    ...NEW_MESSAGES_CARD,
-    count: (client) =>
-      takeCount(
-        client.from("messages").select("id", COUNT_ONLY).eq("status", "new"),
-      ),
-  },
+  { ...NEW_MESSAGES_CARD, count: countNewMessages },
   { ...APP_WAITLIST_CARD, count: (client) => countWaitlist(client, "app") },
   {
     ...CAMP_NOTIFY_CARD,
