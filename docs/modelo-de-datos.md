@@ -107,7 +107,7 @@ Un perfil por usuario de Supabase Auth (FR-077). El de comprador se crea solo, s
 `key`, `locale`, `value`. Clave única (`key`, `locale`). Textos editables sin código (FR-065). Los textos fijos de la interfaz viven en archivos de traducción, no aquí.
 
 ### `audit_log`
-`id`, `actor_id` (profiles), `action` (text, por ejemplo `order.refund`), `entity` (text), `entity_id` (uuid), `details` (jsonb), `created_at`. Solo inserción; nadie la edita ni la borra.
+`id`, `actor_id` (profiles), `action` (text, por ejemplo `order.refund`), `entity` (text), `entity_id` (uuid), `details` (jsonb), `created_at`. Solo inserción; nadie la edita ni la borra. Índices por (`created_at`, `id`), solo y precedido por `actor_id` o por `action`, para la pantalla de bitácora. Sus filtros leen `audit_log_actors()` y `audit_log_actions()`, que corren con los permisos de quien consulta.
 
 ### `rate_limits` y `form_rejections`
 - `rate_limits`: `key` (texto: formulario + hash de IP), `window_start`, `expires_at` (final de la ventana, fijo desde que empieza), `count`. Solo la escribe `check_rate_limit`. Una tarea diaria borra las que vencieron hace más de un día.
