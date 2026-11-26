@@ -32,6 +32,14 @@ async function expectAccessibleWithoutOverflow(page: Page): Promise<void> {
       document.documentElement.clientWidth,
   );
   expect(overflows).toBe(false);
+  // Con la ventana tan alta como la página, la barra inferior fija no tapa a
+  // medias ningún control: axe lo contaría como una zona de toque pequeña,
+  // aunque baste con desplazar la página.
+  const width = page.viewportSize()?.width ?? 0;
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
+  await page.setViewportSize({ width, height });
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
     .analyze();
