@@ -75,6 +75,7 @@ export const panelEn = {
     one: "{count} pending",
     other: "{count} pending",
   },
+  "panel.activity.entity": "Entity: {entity}",
   "panel.module.overview": "Overview",
   "panel.module.settings": "Settings",
   "panel.settings.currentState": "Current state:",

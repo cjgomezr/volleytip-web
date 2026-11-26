@@ -77,6 +77,7 @@ export const panelEs = {
     one: "{count} pendiente",
     other: "{count} pendientes",
   },
+  "panel.activity.entity": "Entidad: {entity}",
   "panel.module.overview": "Resumen",
   "panel.module.settings": "Ajustes",
   "panel.settings.currentState": "Estado actual:",
