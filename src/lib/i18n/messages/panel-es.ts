@@ -78,6 +78,52 @@ export const panelEs = {
     other: "{count} pendientes",
   },
   "panel.module.overview": "Resumen",
+  "panel.module.settings": "Ajustes",
+  "panel.settings.currentState": "Estado actual:",
+  "panel.settings.state.on": "Encendido",
+  "panel.settings.state.off": "Apagado",
+  "panel.settings.state.waitlist": "Lista de espera",
+  "panel.settings.state.available": "Disponible",
+  "panel.settings.state.invalid": "Valor inválido",
+  "panel.settings.saving": "Guardando",
+  "panel.settings.saved.maintenance": "El modo mantenimiento quedó guardado.",
+  "panel.settings.saved.app": "El estado de la app quedó guardado.",
+  "panel.settings.maintenance.title": "Modo mantenimiento",
+  "panel.settings.maintenance.on":
+    "El sitio público muestra la página de mantenimiento. El panel sigue funcionando.",
+  "panel.settings.maintenance.off": "El sitio público se ve con normalidad.",
+  "panel.settings.maintenance.invalid":
+    "El valor guardado no se entiende y el sitio lo trata como apagado. Elige encender o apagar para corregirlo.",
+  "panel.settings.maintenance.turnOn": "Encender mantenimiento",
+  "panel.settings.maintenance.turnOff": "Apagar mantenimiento",
+  "panel.settings.confirm.title": "Encender mantenimiento",
+  "panel.settings.confirm.warning": "El sitio público dejará de verse.",
+  "panel.settings.confirm.details":
+    "Quien entre verá la página de mantenimiento en menos de un minuto. El panel y su pantalla de entrada seguirán funcionando, y puedes apagarlo cuando quieras.",
+  "panel.settings.confirm.submit": "Sí, encender",
+  "panel.settings.confirm.cancel": "Cancelar",
+  "panel.settings.app.title": "Estado de la app",
+  "panel.settings.app.details":
+    "Decide qué muestra la página de la app: el formulario de la lista de espera o los botones de las tiendas.",
+  "panel.settings.app.invalid":
+    "El valor guardado no sirve y la página de la app no lo muestra como corresponde. Corrígelo y guarda.",
+  "panel.settings.app.statusLabel": "La app está",
+  "panel.settings.app.appStoreLabel": "Dirección en App Store",
+  "panel.settings.app.appStoreHint":
+    "Empieza por https://apps.apple.com/. En lista de espera, un campo vacío conserva la dirección guardada.",
+  "panel.settings.app.playStoreLabel": "Dirección en Google Play",
+  "panel.settings.app.playStoreHint":
+    "Empieza por https://play.google.com/. En lista de espera, un campo vacío conserva la dirección guardada.",
+  "panel.settings.app.save": "Guardar estado de la app",
+  "panel.settings.app.error.summary":
+    "No se guardó. Revisa los campos marcados.",
+  "panel.settings.app.error.status": "Elige lista de espera o disponible.",
+  "panel.settings.app.error.missingUrl":
+    "Para dejarla disponible, escribe al menos una dirección de tienda.",
+  "panel.settings.app.error.appStoreUrl":
+    "Escribe una dirección de App Store que empiece por https://apps.apple.com/ y no tenga espacios.",
+  "panel.settings.app.error.playStoreUrl":
+    "Escribe una dirección de Google Play que empiece por https://play.google.com/ y no tenga espacios.",
   "panel.role.admin": "Administrador",
   "panel.role.staff": "Staff",
   "panel.language.label": "Idioma del panel",
@@ -88,7 +134,6 @@ export const panelEs = {
   "panel.sample.siteTexts": "Textos del sitio",
   "panel.sample.faqs": "Preguntas frecuentes",
   "panel.sample.markets": "Idiomas y mercados",
-  "panel.sample.settings": "Ajustes",
   "panel.sample.team": "Equipo",
   "panel.sample.auditLog": "Bitácora",
 } as const;

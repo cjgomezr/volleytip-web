@@ -207,6 +207,15 @@ mockups, with white cards.
 | Maintenance   | Full-width stripe over the content, `brand-red` background, `brand-night` 700 14px, with an icon                                                                 |
 | Person        | 36px `brand-red` circle with initials, name 700 14px, role 12px `ink-muted`                                                                                      |
 
+**Admin settings** (ticket #129; `src/components/panel/settings/`; sample at
+`/dev/ajustes`). No mockup: it follows the shell. Content up to 640px wide, one
+white card per setting (radius 16px), title 700 18px and the current state as a
+pill: `brand-red` for maintenance on and for an invalid value, `brand-lime` for
+the app available, `line-light` otherwise, always with `brand-night` text. The
+pill's text names the state; colour only supports it. Turning maintenance on
+goes through its own confirmation screen, never a dialog, so it works without
+JavaScript.
+
 ## Mandatory component states
 
 Every interactive component ships with ALL of: default, hover, focus-visible

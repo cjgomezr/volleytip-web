@@ -64,7 +64,7 @@ export const SAMPLE_MODULES = defineModules([
     es: "dev/panel/mercados",
     en: "dev/panel/markets",
   }),
-  sampleModule("settings", "panel.sample.settings", {
+  sampleModule("settings", "panel.module.settings", {
     es: "dev/panel/ajustes",
     en: "dev/panel/settings",
   }),

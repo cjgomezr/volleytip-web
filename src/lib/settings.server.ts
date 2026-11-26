@@ -19,15 +19,25 @@ export class InvalidSettingError extends Error {
   }
 }
 
+/** Un ajuste leído sin comprobar su forma, para quien la comprueba después.
+ * Sin fila, su valor es `undefined`. */
+export function rawSetting(key: string): SettingDefinition<unknown> {
+  return {
+    key,
+    // Acepta cualquier valor.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    isValid: (_value): _value is unknown => true,
+    fallback: undefined,
+  };
+}
+
 type SettingDefinitions = Readonly<Record<string, SettingDefinition<unknown>>>;
 
 /** Los valores leídos, con la misma forma que las definiciones pedidas. */
 type SettingValues<Definitions extends SettingDefinitions> = {
-  readonly [Name in keyof Definitions]: Definitions[Name] extends SettingDefinition<
-    infer Value
-  >
-    ? Value
-    : never;
+  readonly [
+    Name in keyof Definitions
+  ]: Definitions[Name] extends SettingDefinition<infer Value> ? Value : never;
 };
 
 function resolveSetting<Value>(

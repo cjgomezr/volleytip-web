@@ -9,8 +9,16 @@ export const APP_AVAILABILITY_KEY = "app_availability";
 
 // Solo las tiendas oficiales: el botón lleva a la persona a instalar algo, y
 // una dirección de otro dominio sería un enlace a cualquier parte.
-const APP_STORE_PREFIX = "https://apps.apple.com/";
-const PLAY_STORE_PREFIX = "https://play.google.com/";
+const STORE_URL_PREFIXES = {
+  appStoreUrl: "https://apps.apple.com/",
+  playStoreUrl: "https://play.google.com/",
+} as const;
+const MAX_STORE_URL_LENGTH = 2048;
+// Un carácter de control pasa `URL.canParse`, y la columna `jsonb` rechaza el
+// nulo: sin esto sería un 500 en vez de un error junto al campo.
+const SPACE_OR_CONTROL_CHARACTER = /[\s\p{Cc}]/u;
+
+export type StoreUrlField = keyof typeof STORE_URL_PREFIXES;
 
 /** La forma del ajuste `settings.app_availability`. */
 export interface AppAvailabilitySetting {
@@ -30,10 +38,21 @@ export type AppAvailability =
 
 const WAITLIST: AppAvailability = { state: "waitlist" };
 
-function isOptionalStoreUrl(value: unknown, prefix: string): boolean {
+function isOptionalStoreUrl(value: unknown, field: StoreUrlField): boolean {
   return (
     value === undefined ||
-    (typeof value === "string" && value.startsWith(prefix))
+    (typeof value === "string" && value.startsWith(STORE_URL_PREFIXES[field]))
+  );
+}
+
+/** Lo que el panel acepta como dirección de una tienda: lo mismo que lee el
+ * sitio, y además bien escrita y de un largo razonable. */
+export function isStoreUrl(value: string, field: StoreUrlField): boolean {
+  return (
+    value.length <= MAX_STORE_URL_LENGTH &&
+    !SPACE_OR_CONTROL_CHARACTER.test(value) &&
+    URL.canParse(value) &&
+    isOptionalStoreUrl(value, field)
   );
 }
 
@@ -52,8 +71,8 @@ export const APP_AVAILABILITY_SETTING: SettingDefinition<AppAvailabilitySetting>
       const playStoreUrl =
         "playStoreUrl" in value ? value.playStoreUrl : undefined;
       return (
-        isOptionalStoreUrl(appStoreUrl, APP_STORE_PREFIX) &&
-        isOptionalStoreUrl(playStoreUrl, PLAY_STORE_PREFIX)
+        isOptionalStoreUrl(appStoreUrl, "appStoreUrl") &&
+        isOptionalStoreUrl(playStoreUrl, "playStoreUrl")
       );
     },
     fallback: { status: "waitlist" },

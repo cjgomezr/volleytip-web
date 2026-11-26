@@ -25,6 +25,12 @@ describe("direcciones del panel", () => {
     ["adminSignOut", "/admin/salir", "/en/admin/sign-out"],
     ["adminMore", "/admin/mas", "/en/admin/more"],
     ["adminLanguage", "/admin/idioma", "/en/admin/language"],
+    ["adminSettings", "/admin/ajustes", "/en/admin/settings"],
+    [
+      "adminSettingsMaintenance",
+      "/admin/ajustes/mantenimiento",
+      "/en/admin/settings/maintenance",
+    ],
   ] as const)("%s vive en %s y %s", (page, spanish, english) => {
     expect(getPanelPath(page, "es")).toBe(spanish);
     expect(getPanelPath(page, "en")).toBe(english);
@@ -58,6 +64,8 @@ describe("rutas del panel", () => {
     expect(pathsInside("routes/panel/session-layout.tsx")).toEqual([
       "admin",
       "admin/*",
+      "admin/ajustes",
+      "admin/ajustes/mantenimiento",
       "admin/entrar",
       "admin/entrar/enlace",
       "admin/idioma",
@@ -67,6 +75,8 @@ describe("rutas del panel", () => {
       "en/admin/*",
       "en/admin/language",
       "en/admin/more",
+      "en/admin/settings",
+      "en/admin/settings/maintenance",
       "en/admin/sign-in",
       "en/admin/sign-in/link",
       "en/admin/sign-out",
@@ -77,6 +87,8 @@ describe("rutas del panel", () => {
     expect(pathsInside("routes/panel/member-layout.tsx")).toEqual([
       "admin",
       "admin/*",
+      "admin/ajustes",
+      "admin/ajustes/mantenimiento",
       "admin/idioma",
       "admin/mas",
       "admin/salir",
@@ -84,6 +96,8 @@ describe("rutas del panel", () => {
       "en/admin/*",
       "en/admin/language",
       "en/admin/more",
+      "en/admin/settings",
+      "en/admin/settings/maintenance",
       "en/admin/sign-out",
     ]);
   });
@@ -91,11 +105,15 @@ describe("rutas del panel", () => {
   it("lo que cuelga del panel es solo de admin", () => {
     expect(pathsInside("routes/panel/admin-layout.tsx")).toEqual([
       "admin/*",
+      "admin/ajustes",
+      "admin/ajustes/mantenimiento",
       "admin/idioma",
       "admin/mas",
       "en/admin/*",
       "en/admin/language",
       "en/admin/more",
+      "en/admin/settings",
+      "en/admin/settings/maintenance",
     ]);
   });
 

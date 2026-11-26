@@ -1875,8 +1875,32 @@ const SIGN_IN_VARIANTS: readonly PanelVariant[] = SIGN_IN_STATES.flatMap(
     })),
 );
 
+// Los ajustes y la confirmación del mantenimiento (#129), cada estado en los
+// dos idiomas. La muestra no usa la base.
+const SETTINGS_STATES = [
+  "apagado",
+  "encendido",
+  "invalido",
+  "errores",
+  "confirmar",
+] as const;
+
+const SETTINGS_VARIANTS: readonly PanelVariant[] = SETTINGS_STATES.flatMap(
+  (state) =>
+    [
+      { suffix: "", path: "/dev/ajustes" },
+      { suffix: "-en", path: "/en/dev/ajustes" },
+    ].map(({ suffix, path }) => ({
+      name: `ajustes-${state}${suffix}`,
+      path: `${path}?estado=${state}`,
+      role: undefined,
+      sizes: viewports,
+    })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SIGN_IN_VARIANTS,
+  ...SETTINGS_VARIANTS,
   {
     name: "staff",
     path: "/admin",
