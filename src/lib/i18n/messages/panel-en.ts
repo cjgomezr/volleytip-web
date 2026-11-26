@@ -105,7 +105,7 @@ export const panelEn = {
   "panel.siteTexts.bar.save": "Save bar",
   "panel.siteTexts.bar.tooMany":
     "The bar takes up to {max} messages. Remove the extra ones.",
-  "panel.siteTexts.bar.malformed":
+  "panel.siteTexts.error.malformed":
     "The form arrived incomplete. Reload the page and try again.",
   "panel.siteTexts.bar.invalidStored":
     "The saved value of the bar does not have the expected shape and the site does not show it. Check the messages and save to replace it.",

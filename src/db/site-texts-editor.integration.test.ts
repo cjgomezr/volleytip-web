@@ -135,6 +135,7 @@ describeIntegration("textos del sitio contra la base local", () => {
 
     await modules.saveBar(
       buildArgs(admin, [
+        ["messageCount", "1"],
         ["es", "Aviso de integración"],
         ["en", "Integration notice"],
       ]),

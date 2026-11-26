@@ -107,7 +107,7 @@ export const panelEs = {
   "panel.siteTexts.bar.save": "Guardar barra",
   "panel.siteTexts.bar.tooMany":
     "La barra admite máximo {max} mensajes. Quita los que sobran.",
-  "panel.siteTexts.bar.malformed":
+  "panel.siteTexts.error.malformed":
     "El envío llegó incompleto. Recarga la pantalla e inténtalo de nuevo.",
   "panel.siteTexts.bar.invalidStored":
     "El valor guardado de la barra no tiene la forma esperada y el sitio no la muestra. Revisa los mensajes y guarda para reemplazarlo.",

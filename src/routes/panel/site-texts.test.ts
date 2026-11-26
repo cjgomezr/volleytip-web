@@ -51,7 +51,30 @@ function submitBar(messages: readonly Message[]): ReturnType<typeof saveBar> {
     ["es", es],
     ["en", en],
   ]);
+  fields.unshift(["messageCount", String(messages.length)]);
   return saveBar(buildRequestArgs("/admin/textos/barra", fields));
+}
+
+/** Un envío armado a mano, que la pantalla nunca mandaría. */
+function submitRawBar(body: BodyInit): ReturnType<typeof saveBar> {
+  const args = buildRequestArgs<Parameters<typeof saveBar>[0]>(
+    "/admin/textos/barra",
+    [],
+  );
+  const request = new Request(args.request.url, {
+    method: "POST",
+    headers: { Cookie: args.request.headers.get("Cookie") ?? "" },
+    body,
+  });
+  return saveBar({ ...args, request });
+}
+
+function buildFileForm(): FormData {
+  const form = new FormData();
+  form.set("messageCount", "1");
+  form.set("es", new Blob(["Uno"]), "es.txt");
+  form.set("en", new Blob(["One"]), "en.txt");
+  return form;
 }
 
 const STORED_TEXTS: readonly FakeTextRow[] = [
@@ -230,6 +253,30 @@ describe("textos: barra de anuncios", () => {
     expect(api.settingsWrites).toEqual([]);
   });
 
+  it.each([
+    ["un cuerpo vacío", new URLSearchParams()],
+    ["solo campos ajenos", new URLSearchParams({ foo: "1" })],
+    [
+      "menos mensajes de los que anuncia",
+      new URLSearchParams({ messageCount: "2", es: "Uno", en: "One" }),
+    ],
+    ["archivos en lugar de textos", buildFileForm()],
+    [
+      "mensajes sin decir cuántos son",
+      new URLSearchParams({ es: "Uno", en: "One" }),
+    ],
+  ])("no toca la barra con %s", async (_case, body) => {
+    const api = stubSiteTextsApi({ announcementBar: storedBar(THREE) });
+
+    const result = await submitRawBar(body);
+
+    expect(readResult(result)).toMatchObject({
+      status: 400,
+      body: { status: "invalid", formError: "malformed" },
+    });
+    expect(api.settingsWrites).toEqual([]);
+  });
+
   it("guarda la barra vacía", async () => {
     const api = stubSiteTextsApi({ announcementBar: storedBar(THREE) });
 
@@ -285,7 +332,10 @@ describe("textos: cifras", () => {
       ]),
     );
 
-    expect(readResult(result).status).toBe(400);
+    expect(readResult(result)).toMatchObject({
+      status: 400,
+      body: { status: "invalid", formError: "malformed" },
+    });
     expect(api.siteTextWrites).toEqual([]);
   });
 });
@@ -346,6 +396,29 @@ describe("textos: validación", () => {
       expect(api.siteTextWrites).toEqual([]);
     },
   );
+
+  it("un mensaje de solo caracteres invisibles cuenta como vacío", async () => {
+    const api = stubSiteTextsApi();
+
+    const result = await submitBar([{ es: "\u200B \u2060" }]);
+
+    expect(readResult(result)).toMatchObject({
+      status: 400,
+      body: { fieldErrors: { "0.es": "required" } },
+    });
+    expect(api.settingsWrites).toEqual([]);
+  });
+
+  it("cuenta un emoji como un solo carácter", async () => {
+    stubSiteTextsApi();
+    const { limits } = await loadScreen();
+
+    const result = await submitBar([
+      { es: "\u{1F3D0}".repeat(limits.maxMessageLength) },
+    ]);
+
+    expect(readResult(result).status).toBe(200);
+  });
 
   it("guarda el HTML tal cual", async () => {
     const api = stubSiteTextsApi({ siteTexts: STORED_TEXTS });

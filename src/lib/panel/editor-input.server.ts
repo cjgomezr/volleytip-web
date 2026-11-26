@@ -10,18 +10,29 @@ const BAD_REQUEST = 400;
 export const LANGUAGES: readonly Language[] = SUPPORTED_LANGUAGES.map(
   ({ code }) => code,
 );
+// Espacios y caracteres de formato: un texto hecho solo de ellos no se ve.
+const INVISIBLE_ONLY = /^[\p{Cf}\s]*$/u;
+
 // Un salto de línea u otro carácter de control no se ve en el sitio, y el
 // nulo ni siquiera cabe en la base. Lo demás, HTML incluido, queda tal cual.
+// Los de formato solo se quitan si no hay nada más: unen emojis.
 export function normalizeText(text: string): string {
-  return text.replace(/\p{Cc}+/gu, " ").trim();
+  const cleaned = text.replace(/\p{Cc}+/gu, " ").trim();
+  return INVISIBLE_ONLY.test(cleaned) ? "" : cleaned;
+}
+
+export function buildByLanguage<Value>(
+  read: (language: Language) => Value,
+): Readonly<Record<Language, Value>> {
+  return Object.fromEntries(
+    LANGUAGES.map((language) => [language, read(language)]),
+  ) as Record<Language, Value>;
 }
 
 export function buildDraft(
   read: (language: Language) => string,
 ): LocalizedDraft {
-  return Object.fromEntries(
-    LANGUAGES.map((language) => [language, read(language)]),
-  ) as LocalizedDraft;
+  return buildByLanguage(read);
 }
 
 type Rejection<Outcome> = ReturnType<typeof data<Outcome>>;
@@ -44,5 +55,6 @@ export function findTextError(
 ): FieldError | undefined {
   const normalized = normalizeText(text);
   if (isRequired && normalized === "") return "required";
-  return normalized.length > maxLength ? "tooLong" : undefined;
+  // Por caracteres y no por unidades de UTF-16: un emoji cuenta uno.
+  return [...normalized].length > maxLength ? "tooLong" : undefined;
 }

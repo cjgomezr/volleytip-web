@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useFetcher } from "react-router";
 
 import {
@@ -84,6 +84,9 @@ export function StatsEditor({
   const language = useLanguage();
   const fetcher = useFetcher<StatsOutcome>();
   const outcome = fetcher.data ?? initialOutcome;
+  const [isEdited, setIsEdited] = useState(false);
+  const isMalformed =
+    outcome?.status === "invalid" && outcome.formError === "malformed";
   const intro = translate("panel.siteTexts.stats.intro", {
     value: limits.maxStatValueLength,
     label: limits.maxStatLabelLength,
@@ -98,6 +101,8 @@ export function StatsEditor({
         method="post"
         action={getPanelPath("adminSiteTextsStats", language)}
         noValidate
+        onInput={() => setIsEdited(true)}
+        onSubmit={() => setIsEdited(false)}
       >
         <div className="mt-4 flex flex-col gap-4">
           {stats.map((stat) => (
@@ -112,7 +117,13 @@ export function StatsEditor({
         <SaveBar
           submitLabel={translate("panel.siteTexts.stats.save")}
           isSaving={fetcher.state !== "idle"}
+          isEdited={isEdited}
           status={outcome?.status}
+          formError={
+            isMalformed
+              ? translate("panel.siteTexts.error.malformed")
+              : undefined
+          }
         />
       </fetcher.Form>
     </EditorSection>

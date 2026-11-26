@@ -10,6 +10,8 @@ export interface ListChange {
   readonly kind: "moved" | "removed";
   /** La posición, desde 1: donde quedó o la que se quitó. */
   readonly number: number;
+  /** Distingue dos cambios que se anuncian con las mismas palabras. */
+  readonly sequence: number;
 }
 
 export interface MessageRows {
@@ -28,8 +30,12 @@ function rowControl(id: number, action: "up" | "down"): string {
   return `[data-message-row="${id}"] [data-row-action="${action}"] button:not(:disabled)`;
 }
 
+function messageGroup(id: number): string {
+  return `[data-message-row="${id}"]`;
+}
+
 function firstField(id: number): string {
-  return `[data-message-row="${id}"] input`;
+  return `${messageGroup(id)} input`;
 }
 
 // Al reordenar o quitar, el botón que tenía el foco se mueve, se deshabilita
@@ -44,6 +50,9 @@ function useDeferredFocus(
       const target = listRef.current?.querySelector<HTMLElement>(selector);
       if (target) {
         target.focus();
+        // Al mover el nodo enfocado el navegador no siempre lo sigue, y en
+        // celular queda fuera de la pantalla o bajo la barra inferior.
+        target.scrollIntoView({ block: "nearest" });
         break;
       }
     }
@@ -77,7 +86,13 @@ export function useMessageRows(
   const [lastChange, setLastChange] = useState<ListChange | null>(null);
   const nextId = useRef(initial.length);
   const listRef = useRef<HTMLDivElement>(null);
+  const sequence = useRef(0);
   const focusAfterRender = useDeferredFocus(listRef, rows);
+
+  function announce(kind: ListChange["kind"], number: number): void {
+    sequence.current += 1;
+    setLastChange({ kind, number, sequence: sequence.current });
+  }
 
   function add(): void {
     const id = nextId.current;
@@ -98,8 +113,9 @@ export function useMessageRows(
   function remove(position: number): void {
     const left = rows.filter((_row, index) => index !== position);
     const neighbor = left[position] ?? left[position - 1];
-    focusAfterRender(neighbor ? [firstField(neighbor.id)] : [ADD_BUTTON]);
-    setLastChange({ kind: "removed", number: position + 1 });
+    // Al grupo y no a un campo: en un celular se abriría el teclado.
+    focusAfterRender(neighbor ? [messageGroup(neighbor.id)] : [ADD_BUTTON]);
+    announce("removed", position + 1);
     setRows(left);
   }
 
@@ -116,7 +132,7 @@ export function useMessageRows(
       rowControl(moved.id, action),
       rowControl(moved.id, opposite),
     ]);
-    setLastChange({ kind: "moved", number: target + 1 });
+    announce("moved", target + 1);
     setRows(swap(rows, position, target));
   }
 

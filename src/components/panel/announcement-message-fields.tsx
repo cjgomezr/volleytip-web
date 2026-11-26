@@ -81,7 +81,9 @@ export function AnnouncementMessageFields({
   return (
     <fieldset
       data-message-row={row.id}
-      className="m-0 min-w-0 rounded-card border-2 border-line-light p-3 md:p-4"
+      // Recibe el foco al quitar el mensaje de al lado.
+      tabIndex={-1}
+      className="m-0 min-w-0 rounded-card border-2 border-line-light p-3 focused:outline-brand-night md:p-4"
     >
       <legend className="px-1 text-[13px] font-bold tracking-[0.08em] uppercase">
         {translate("panel.siteTexts.bar.message", { number })}
@@ -103,7 +105,7 @@ export function AnnouncementMessageFields({
           error={errors.en}
           hint={
             isMissingEnglish
-              ? translate("panel.siteTexts.bar.missingEnglish")
+              ? `⚠ ${translate("panel.siteTexts.bar.missingEnglish")}`
               : undefined
           }
           onChange={(text) => onChange("en", text)}

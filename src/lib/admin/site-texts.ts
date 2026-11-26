@@ -57,7 +57,12 @@ export type StatsOutcome =
       /** Lo que se envió, por nombre de campo: ver `statField`. */
       readonly values: Readonly<Record<string, string>>;
       readonly fieldErrors: FieldErrors;
+      readonly formError: "malformed" | null;
     };
+
+/** Cuántos mensajes manda el formulario de la barra. Sin él no se distingue
+ * una barra vacía de un envío incompleto. */
+export const MESSAGE_COUNT_FIELD = "messageCount";
 
 /** El campo de un mensaje de la barra en los errores de un envío. */
 export function messageField(position: number, language: Language): string {

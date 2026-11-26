@@ -123,6 +123,18 @@ async function expectTouchTargets(controls: Locator): Promise<void> {
   }
 }
 
+/** El control se ve entero: dentro de la ventana y sin la barra encima. */
+async function expectFullyVisible(page: Page, target: Locator): Promise<void> {
+  await expect(target).toBeInViewport({ ratio: 1 });
+  const bar = page.locator('[data-panel-region="bottom-bar"]');
+  if (!(await bar.isVisible())) return;
+  const control = await target.boundingBox();
+  const barBox = await bar.boundingBox();
+  expect((control?.y ?? 0) + (control?.height ?? 0)).toBeLessThanOrEqual(
+    barBox?.y ?? 0,
+  );
+}
+
 async function tabUntilFocused(page: Page, target: Locator): Promise<void> {
   for (let press = 0; press < MAX_TAB_PRESSES; press += 1) {
     await page.keyboard.press("Tab");
@@ -260,6 +272,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[3]]) {
       await expectMessages(page, [SECOND, FIRST, THIRD]);
       const next = page.getByRole("button", { name: "Bajar el mensaje 2" });
       await expect(next).toBeFocused();
+      await expectFullyVisible(page, next);
       await expect(
         page.getByRole("status").filter({ hasText: "posición 2" }),
       ).toHaveCount(1);
@@ -267,9 +280,9 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[3]]) {
       // En el último lugar "Bajar" se apaga: el foco pasa a "Subir".
       await page.keyboard.press("Enter");
       await expectMessages(page, [SECOND, THIRD, FIRST]);
-      await expect(
-        page.getByRole("button", { name: "Subir el mensaje 3" }),
-      ).toBeFocused();
+      const up = page.getByRole("button", { name: "Subir el mensaje 3" });
+      await expect(up).toBeFocused();
+      await expectFullyVisible(page, up);
     });
 
     test("conserva lo escrito al mover un mensaje", async ({ page }) => {
@@ -289,7 +302,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[3]]) {
       await page.getByRole("button", { name: "Quitar el mensaje 2" }).click();
 
       await expectMessages(page, [FIRST, THIRD]);
-      await expect(spanishFields(page).nth(1)).toBeFocused();
+      // Al grupo y no a un campo: en un celular se abriría el teclado.
+      await expect(
+        page.getByRole("group", { name: "Mensaje 2" }),
+      ).toBeFocused();
 
       await add.click();
 
@@ -313,6 +329,23 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[3]]) {
         page.getByRole("button", { name: "Agregar mensaje" }),
       ).toBeFocused();
       await expectAccessibleWithoutOverflow(page);
+    });
+
+    test("la confirmación se va al seguir editando", async ({ page }) => {
+      await page.goto("/dev/panel/textos?textos=confirmacion");
+      await page.waitForLoadState("networkidle");
+      const saved = page.getByText(LANGUAGES[0].saved);
+      const unchanged = page.getByText(LANGUAGES[0].unchanged);
+      await expect(saved).toBeVisible();
+
+      await page.getByRole("button", { name: "Bajar el mensaje 1" }).click();
+
+      await expect(saved).toHaveCount(0);
+      await expect(unchanged).toBeVisible();
+
+      await page.locator('input[name="stats.tiktok.value:es"]').fill("1");
+
+      await expect(unchanged).toHaveCount(0);
     });
 
     test("el aviso de inglés aparece al borrar el texto", async ({ page }) => {
@@ -373,6 +406,41 @@ test.describe("textos: el servidor rechaza", () => {
       page.getByRole("alert").filter({ hasText: LANGUAGES[0].rejected }),
     ).toBeVisible();
     await expectAccessibleWithoutOverflow(page);
+  });
+
+  test("en la barra, el error sigue a su mensaje aunque se reordene", async ({
+    page,
+    signInToPanel,
+  }) => {
+    await signInToPanel({ role: "admin" });
+    await page.goto("/admin/textos");
+    await page.waitForLoadState("networkidle");
+    const long = "x".repeat(200);
+    const invalid = page.locator('input[aria-invalid="true"]');
+    await spanishFields(page).first().fill(long);
+    await page.getByRole("button", { name: "Bajar el mensaje 1" }).click();
+    const answer = page.waitForResponse((response) =>
+      response.url().includes("/admin/textos/barra"),
+    );
+
+    await page.getByRole("button", { name: "Guardar barra" }).click();
+
+    expect((await answer).status()).toBe(400);
+    await expect(invalid).toHaveCount(1);
+    await expect(spanishFields(page).nth(1)).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    await expect(spanishFields(page).nth(1)).toHaveValue(long);
+
+    await page.getByRole("button", { name: "Subir el mensaje 2" }).click();
+
+    await expect(invalid).toHaveCount(1);
+    await expect(spanishFields(page).first()).toHaveAttribute(
+      "aria-invalid",
+      "true",
+    );
+    await expect(spanishFields(page).first()).toHaveValue(long);
   });
 
   test("sin JavaScript, el envío rechazado vuelve a pintar la pantalla", async ({

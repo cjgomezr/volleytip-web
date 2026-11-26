@@ -53,6 +53,8 @@ export function useFieldErrorText(): (
 interface SaveBarProps {
   readonly submitLabel: string;
   readonly isSaving: boolean;
+  /** Se cambió algo después del último envío: la confirmación ya no vale. */
+  readonly isEdited: boolean;
   /** Cómo terminó el último envío; ausente si no ha habido ninguno. */
   readonly status: "saved" | "unchanged" | "invalid" | undefined;
   /** El error que no es de ningún campo. */
@@ -67,6 +69,7 @@ interface SaveBarProps {
 export function SaveBar({
   submitLabel,
   isSaving,
+  isEdited,
   status,
   formError,
 }: SaveBarProps): ReactElement {
@@ -75,12 +78,15 @@ export function SaveBar({
   return (
     <div className="mt-5 flex flex-col items-start gap-3">
       {result === "invalid" ? (
-        <div className="text-[15px] leading-[1.5] font-bold text-brand-red-deep">
-          <p role="alert" className="m-0">
-            {translate("panel.siteTexts.error.summary")}
-          </p>
-          {formError === undefined ? null : <p className="m-0">{formError}</p>}
-        </div>
+        <p
+          role="alert"
+          className="m-0 text-[15px] leading-[1.5] font-bold text-brand-red-deep"
+        >
+          {translate("panel.siteTexts.error.summary")}
+          {formError === undefined ? null : (
+            <span className="block">{formError}</span>
+          )}
+        </p>
       ) : null}
       <Button
         type="submit"
@@ -94,7 +100,7 @@ export function SaveBar({
       {/* La región existe siempre: un lector de pantalla solo anuncia lo que
           cambia dentro de una región que ya estaba en la página. */}
       <div role="status">
-        {result === "saved" || result === "unchanged" ? (
+        {!isEdited && (result === "saved" || result === "unchanged") ? (
           <p className="m-0 flex items-center gap-2 rounded-pill bg-brand-lime px-4 py-2 text-[15px] font-bold text-brand-night">
             <span aria-hidden="true">✓</span>
             {result === "saved"

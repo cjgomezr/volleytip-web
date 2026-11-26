@@ -1,6 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 
 import {
+  MESSAGE_COUNT_FIELD,
   messageField,
   type BarOutcome,
   type FieldErrors,
@@ -14,9 +15,10 @@ import {
   type AnnouncementMessage,
 } from "../announcement-bar.server";
 import type { Json } from "../database.types";
-import { DEFAULT_LANGUAGE, type Language } from "../i18n/languages";
+import { DEFAULT_LANGUAGE } from "../i18n/languages";
 import type { TypedSupabaseClient } from "../supabase/typed-client";
 import {
+  buildByLanguage,
   buildDraft,
   findTextError,
   LANGUAGES,
@@ -77,30 +79,26 @@ export function describeStoredBar(
   };
 }
 
-/** Los mensajes del envío, en su orden; `null` si los idiomas no cuadran. */
+/** Los mensajes del envío, en su orden; `null` si no llegó completo: sin
+ * decir cuántos son, o sin un texto por idioma para cada uno. */
 function readSubmittedMessages(
   formData: FormData,
 ): readonly LocalizedDraft[] | null {
-  const columns = buildColumns(formData);
+  const declared = formData.get(MESSAGE_COUNT_FIELD);
+  // Un campo por idioma (`es`, `en`), repetido una vez por mensaje.
+  const columns = buildByLanguage((language) => formData.getAll(language));
   const count = columns[DEFAULT_LANGUAGE].length;
-  if (LANGUAGES.some((language) => columns[language].length !== count)) {
-    return null;
-  }
+  const isComplete =
+    declared === String(count) &&
+    LANGUAGES.every(
+      (language) =>
+        columns[language].length === count &&
+        columns[language].every((value) => typeof value === "string"),
+    );
+  if (!isComplete) return null;
   return Array.from({ length: count }, (_, position) =>
-    buildDraft((language) => columns[language][position] ?? ""),
+    buildDraft((language) => String(columns[language][position])),
   );
-}
-
-// Un campo por idioma (`es`, `en`), repetido una vez por mensaje.
-function buildColumns(
-  formData: FormData,
-): Readonly<Record<Language, readonly string[]>> {
-  return Object.fromEntries(
-    LANGUAGES.map((language) => [
-      language,
-      formData.getAll(language).filter((value) => typeof value === "string"),
-    ]),
-  ) as unknown as Record<Language, string[]>;
 }
 
 function findMessageErrors(messages: readonly LocalizedDraft[]): FieldErrors {

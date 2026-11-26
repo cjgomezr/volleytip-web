@@ -188,6 +188,11 @@ describe("textos: pantalla", () => {
       },
     });
 
+    // Dentro de la alerta: si no, un lector de pantalla no lo anuncia.
+    expect(html).toMatch(
+      /role="alert"[^>]*>(?:(?!<\/div>).)*La barra admite máximo/,
+    );
+
     expect(inputTags(html, "es")).toHaveLength(4);
     expect(html).toContain("La barra admite máximo 3 mensajes.");
   });
@@ -198,6 +203,7 @@ describe("textos: pantalla", () => {
         status: "invalid",
         values: { "stats.instagram.value:es": "demasiado largo" },
         fieldErrors: { "stats.instagram.value:es": "tooLong" },
+        formError: null,
       },
     });
     const [field] = inputTags(html, "stats.instagram.value:es");
@@ -205,6 +211,23 @@ describe("textos: pantalla", () => {
     expect(field).toContain('aria-invalid="true"');
     expect(field).toContain('value="demasiado largo"');
     expect(html).toContain("Máximo 12 caracteres.");
+  });
+
+  it("dice que las cifras llegaron incompletas", () => {
+    const html = render({
+      statsOutcome: {
+        status: "invalid",
+        values: {},
+        fieldErrors: {},
+        formError: "malformed",
+      },
+    });
+
+    expect(html).toContain("El envío llegó incompleto.");
+  });
+
+  it("el formulario de la barra dice cuántos mensajes manda", () => {
+    expect(inputTags(render(), "messageCount")[0]).toContain('value="2"');
   });
 
   it.each([

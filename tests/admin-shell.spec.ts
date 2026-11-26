@@ -377,6 +377,7 @@ test.describe("panel real", () => {
       .getByRole("link");
     await expect(links).toHaveText(["Resumen", "Textos del sitio"]);
     await expect(links.first()).toHaveAttribute("aria-current", "page");
+    await expect(links.nth(1)).not.toHaveAttribute("aria-current", "page");
   });
 
   test("un staff no ve la cáscara", async ({ page, signInToPanel }) => {

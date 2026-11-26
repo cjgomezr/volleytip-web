@@ -165,7 +165,12 @@ export async function saveSiteStats(
     const values = Object.fromEntries(
       submitted.map(({ name, text }) => [name, text]),
     );
-    return reject<StatsOutcome>({ status: "invalid", values, fieldErrors });
+    return reject<StatsOutcome>({
+      status: "invalid",
+      values,
+      fieldErrors,
+      formError: isIncomplete ? "malformed" : null,
+    });
   }
   const stored = await readStoredStats(client);
   const changed = submitted

@@ -2,8 +2,10 @@ import { useState, type ReactElement } from "react";
 import { useFetcher } from "react-router";
 
 import {
+  MESSAGE_COUNT_FIELD,
   messageField,
   type BarOutcome,
+  type FieldErrors,
   type SiteTextsLimits,
   type SiteTextsView,
 } from "~/lib/admin/site-texts";
@@ -59,20 +61,19 @@ function InvalidStoredValue({
 function MessageList({
   messages,
   limits,
-  outcome,
-  submittedIds,
+  fieldErrors,
+  sentRows,
 }: {
   readonly messages: MessageRows;
   readonly limits: SiteTextsLimits;
-  readonly outcome: BarOutcome | undefined;
+  readonly fieldErrors: FieldErrors;
   /** Los mensajes en el orden en que se enviaron: los errores van por
    * posición y la persona puede reordenar antes de reintentar. */
-  readonly submittedIds: readonly number[];
+  readonly sentRows: MessageRows["rows"];
 }): ReactElement {
   const errorText = useFieldErrorText();
   const translate = useTranslate();
   const { rows, listRef, add, edit, apply } = messages;
-  const fieldErrors = outcome?.status === "invalid" ? outcome.fieldErrors : {};
   return (
     <div ref={listRef} className="mt-4 flex flex-col gap-4">
       {rows.length === 0 ? (
@@ -81,7 +82,7 @@ function MessageList({
         </p>
       ) : null}
       {rows.map((row, position) => {
-        const sentAt = submittedIds.indexOf(row.id);
+        const sentAt = sentRows.findIndex(({ id }) => id === row.id);
         const readError = (language: "es" | "en"): string | undefined =>
           errorText(
             fieldErrors[messageField(sentAt, language)],
@@ -130,7 +131,8 @@ function ListAnnouncer({
   }
   return (
     <p role="status" className="sr-only">
-      {text}
+      {/* Un nodo nuevo por cambio: dos iguales seguidos se anuncian. */}
+      <span key={change?.sequence}>{text}</span>
     </p>
   );
 }
@@ -145,7 +147,7 @@ function useFormError(
   }
   return outcome.formError === "tooMany"
     ? translate("panel.siteTexts.bar.tooMany", { max: maxMessages })
-    : translate("panel.siteTexts.bar.malformed");
+    : translate("panel.siteTexts.error.malformed");
 }
 
 /** La barra de anuncios: sus mensajes en cada idioma y en su orden. */
@@ -157,10 +159,13 @@ export function AnnouncementEditor(
   const fetcher = useFetcher<BarOutcome>();
   const outcome = fetcher.data ?? initialOutcome;
   const messages = useMessageRows(pickInitialMessages(props));
-  const [submittedIds, setSubmittedIds] = useState<readonly number[]>(() =>
-    messages.rows.map(({ id }) => id),
-  );
+  const [sentRows, setSentRows] = useState(messages.rows);
   const formError = useFormError(outcome, limits.maxMessages);
+  const isSaving = fetcher.state !== "idle";
+  // Mientras envía, los errores son del intento anterior y ya no cuadran.
+  const fieldErrors =
+    !isSaving && outcome?.status === "invalid" ? outcome.fieldErrors : {};
+  const action = getPanelPath("adminSiteTextsAnnouncements", useLanguage());
   return (
     <EditorSection
       id="site-texts-bar"
@@ -172,20 +177,27 @@ export function AnnouncementEditor(
       )}
       <fetcher.Form
         method="post"
-        action={getPanelPath("adminSiteTextsAnnouncements", useLanguage())}
+        action={action}
         noValidate
-        onSubmit={() => setSubmittedIds(messages.rows.map(({ id }) => id))}
+        onSubmit={() => setSentRows(messages.rows)}
       >
+        <input
+          type="hidden"
+          name={MESSAGE_COUNT_FIELD}
+          value={messages.rows.length}
+        />
         <MessageList
           messages={messages}
           limits={limits}
-          outcome={outcome}
-          submittedIds={submittedIds}
+          fieldErrors={fieldErrors}
+          sentRows={sentRows}
         />
         <ListAnnouncer change={messages.lastChange} />
         <SaveBar
           submitLabel={translate("panel.siteTexts.bar.save")}
-          isSaving={fetcher.state !== "idle"}
+          isSaving={isSaving}
+          // Cada cambio de la lista, y cada tecla, crea otra lista.
+          isEdited={messages.rows !== sentRows}
           status={outcome?.status}
           formError={formError}
         />

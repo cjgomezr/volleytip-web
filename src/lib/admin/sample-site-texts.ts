@@ -83,6 +83,7 @@ function buildRejected(
       status: "invalid",
       values: { [field]: longValue },
       fieldErrors: { [field]: "tooLong" },
+      formError: null,
     },
   };
 }
