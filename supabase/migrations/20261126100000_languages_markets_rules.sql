@@ -6,6 +6,12 @@ alter table public.languages
   add constraint languages_default_active_check
   check (is_active or not is_default);
 
+-- Cambiar cuál es el idioma por defecto no es cosa del panel: sin permiso sobre
+-- `is_default`, nadie se salta la regla de arriba quitando la marca y apagando
+-- en la misma escritura. Cambiarlo pide una migración.
+revoke update on table public.languages from authenticated;
+grant update (code, name, is_active) on table public.languages to authenticated;
+
 -- La misma lista que `src/lib/payment-methods.ts`; una prueba las compara.
 -- `<@` también rechaza un elemento nulo.
 alter table public.markets
@@ -79,9 +85,10 @@ create trigger markets_require_one_active
 -- El idioma por defecto de un mercado se elige entre los activos
 -- ---------------------------------------------------------------------------
 
--- Solo mira la elección: un mercado cuyo idioma se desactivó después se sigue
--- pudiendo editar sin cambiarlo. `for share` espera a quien esté apagando ese
--- idioma. Un idioma que no existe lo rechaza la clave foránea.
+-- La base solo mira la elección: un mercado cuyo idioma se desactivó después
+-- no queda congelado para otras escrituras. La pantalla es más estricta y al
+-- guardar pide uno activo. `for share` espera a quien esté apagando ese idioma.
+-- Un idioma que no existe lo rechaza la clave foránea.
 create function public.markets_require_active_default_locale()
 returns trigger
 language plpgsql

@@ -17,7 +17,7 @@ import {
 } from "~/testing/fake-supabase";
 
 import { TEST_ENV } from "../../../tests/support/test-env";
-import { loader } from "./markets";
+import { loader, shouldRevalidate } from "./markets";
 import { action as languageAction } from "./markets-language";
 import { action as marketAction } from "./markets-market";
 import { action as rateAction } from "./markets-rate";
@@ -158,6 +158,24 @@ describe("idiomas y mercados: la pantalla", () => {
       expect(usdRate).toEqual({ state: "invalid", value });
     },
   );
+});
+
+describe("idiomas y mercados: revalidación", () => {
+  function ask(actionStatus: number, byDefault: boolean): boolean {
+    return shouldRevalidate({
+      actionStatus,
+      defaultShouldRevalidate: byDefault,
+    } as Parameters<typeof shouldRevalidate>[0]);
+  }
+
+  it("vuelve a leer tras un rechazo, que puede traer idiomas nuevos", () => {
+    expect(ask(400, false)).toBe(true);
+  });
+
+  it("en lo demás hace lo de siempre", () => {
+    expect(ask(200, true)).toBe(true);
+    expect(ask(500, false)).toBe(false);
+  });
 });
 
 describe("idiomas", () => {

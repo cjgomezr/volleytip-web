@@ -81,7 +81,13 @@ for (const javaScriptEnabled of [true, false]) {
 
     test("apaga el inglés, el sitio deja de ofrecerlo y lo vuelve a encender", async ({
       page,
+      context,
     }) => {
+      // Alguien que ya tenía abierta una página en inglés.
+      const visitor = await context.newPage();
+      await visitor.goto("/en/");
+      if (javaScriptEnabled) await visitor.waitForLoadState("networkidle");
+
       await pressOn(page.getByRole("button", { name: "Desactivar English" }));
 
       await expect(
@@ -96,6 +102,10 @@ for (const javaScriptEnabled of [true, false]) {
       await expect(page.locator('a[hreflang="en"]')).toHaveCount(0);
       await page.goto("/contacto");
       await expect(page.locator('a[hreflang="en"]')).toHaveCount(0);
+      await visitor.locator('footer a[href^="/en/"]').first().click();
+      await expect(visitor.locator("html")).toHaveAttribute("lang", "es");
+      await expect(visitor.locator('a[hreflang="en"]')).toHaveCount(0);
+      await visitor.close();
 
       await openScreen(page);
       await pressOn(

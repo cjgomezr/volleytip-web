@@ -21,13 +21,10 @@ import { LanguageAlternates } from "~/components/language-alternates";
 import { LanguageSuggestion } from "~/components/language-suggestion";
 import { activeLanguagesContext } from "~/lib/active-languages.server";
 import { serverEnv } from "~/lib/env.server";
-import {
-  ALL_LANGUAGES,
-  getServedLanguage,
-  type ActiveLanguages,
-} from "~/lib/i18n/active-languages";
+import type { ActiveLanguages } from "~/lib/i18n/active-languages";
 import { ActiveLanguagesProvider } from "~/lib/i18n/active-languages-context";
 import { findInactiveLanguageNotFound } from "~/lib/i18n/inactive-language-not-found";
+import { readDocumentLanguages } from "~/lib/i18n/document-languages";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
@@ -45,9 +42,8 @@ import { getPageAtPath } from "~/lib/i18n/pages";
 import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
-import { enforceActiveLanguages } from "~/lib/language-middleware.server";
+import { enforceSiteAvailability } from "~/lib/language-middleware.server";
 import { markAsNotIndexable } from "~/lib/indexing.server";
-import { enforceMaintenanceMode } from "~/lib/maintenance-middleware.server";
 import { findMaintenanceNotice } from "~/lib/maintenance-notice";
 import { findPanelNotFound } from "~/lib/panel/panel-not-found";
 
@@ -80,29 +76,33 @@ async function respondWithLanguageChoice(
   return declareLanguageVariation(request, await next());
 }
 
-// El único lugar que pone `X-Robots-Tag`. Al estar en la ruta raíz envuelve
-// las respuestas de todas las rutas: páginas, datos, rutas de recurso y
-// errores. Queda fuera lo que React Router rechaza antes de buscar una ruta
-// (un método como OPTIONS), que no es contenido que un buscador indexe.
+// El único lugar que pone `X-Robots-Tag`. Al ser el primero de la ruta raíz
+// envuelve las respuestas de todas las rutas: páginas, datos, rutas de recurso
+// y errores, también los que lanzan los middleware de abajo. Queda fuera lo que
+// React Router rechaza antes de buscar una ruta (un método como OPTIONS), que
+// no es contenido que un buscador indexe.
 const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
+  _args,
+  next,
+) => markAsNotIndexable((await next()) as Response, serverEnv.appEnv);
+
+const applyLanguageChoice: Route.MiddlewareFunction = (
   { request, context },
   next,
-) => {
-  const response = await respondWithLanguageChoice(
+) =>
+  respondWithLanguageChoice(
     request,
     context.get(activeLanguagesContext),
-    next,
+    next as () => Promise<Response>,
   );
-  return markAsNotIndexable(response, serverEnv.appEnv);
-};
 
-// Va primero: con el modo mantenimiento encendido la petición se corta antes
-// de redirigir por idioma y antes de que corra ningún loader o action. El de
-// idiomas activos va antes de redirigir: la redirección depende de ellos.
+// El orden importa: con el modo mantenimiento encendido, o en un idioma
+// desactivado, la petición se corta antes de redirigir por idioma y antes de
+// que corra ningún loader o action.
 export const middleware: Route.MiddlewareFunction[] = [
-  enforceMaintenanceMode,
-  enforceActiveLanguages,
   markResponseAsNotIndexable,
+  enforceSiteAvailability,
+  applyLanguageChoice,
 ];
 
 export const links: Route.LinksFunction = () => [
@@ -135,14 +135,11 @@ export async function loader({ request, context }: Route.LoaderArgs): Promise<{
 export function Layout({ children }: { children: ReactNode }): ReactElement {
   const rootData = useRouteLoaderData<typeof loader>("root");
   const error = useRouteError();
-  // Los del error van primero: al navegar a un idioma que se acaba de
-  // desactivar, los datos de la raíz pueden ser los de antes.
-  const activeLanguages =
-    findInactiveLanguageNotFound(error)?.activeLanguages ??
-    findPanelNotFound(error)?.activeLanguages ??
-    rootData?.activeLanguages ??
-    ALL_LANGUAGES;
-  const language = getServedLanguage(useLocation().pathname, activeLanguages);
+  const { activeLanguages, language, forcedLanguage } = readDocumentLanguages({
+    pathname: useLocation().pathname,
+    error,
+    rootLanguages: rootData?.activeLanguages,
+  });
 
   return (
     <html lang={language}>
@@ -153,7 +150,10 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
         <Links />
       </head>
       <body>
-        <ActiveLanguagesProvider languages={activeLanguages}>
+        <ActiveLanguagesProvider
+          languages={activeLanguages}
+          forcedLanguage={forcedLanguage}
+        >
           {rootData === undefined ? (
             children
           ) : (

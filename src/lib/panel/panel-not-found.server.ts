@@ -6,16 +6,19 @@ import { getSiteYear } from "../i18n/format";
 import { loadLanguageSuggestion } from "../i18n/language-suggestion.server";
 import { getRequestLanguage } from "../i18n/languages";
 import { getMessages } from "../i18n/messages.server";
+import { buildInactiveLanguageNotFound } from "../inactive-language-response.server";
 import { loadSiteSettings } from "../site-settings.server";
+import type { InactiveLanguageNotFound } from "../i18n/inactive-language-not-found";
 import { buildPanelNotFoundData, type PanelNotFound } from "./panel-not-found";
 
 const NOT_FOUND_STATUS = 404;
 
 /** El 404 que se lanza en el panel: igual al de una página que no existe,
- * con su barra de anuncios y su aviso de idioma (AC-033). */
+ * con su barra de anuncios y su aviso de idioma (AC-033). En la dirección de
+ * un idioma desactivado es el 404 que dan sus demás páginas. */
 export async function buildPanelNotFound(
   request: Request,
-): Promise<ReturnType<typeof data<PanelNotFound>>> {
+): Promise<ReturnType<typeof data<PanelNotFound | InactiveLanguageNotFound>>> {
   const language = getRequestLanguage(request);
   // Las direcciones del panel están exentas de mantenimiento y los
   // middleware de la raíz no leen los ajustes ni los idiomas para ellas.
@@ -23,6 +26,9 @@ export async function buildPanelNotFound(
     loadSiteSettings(),
     loadActiveLanguages(),
   ]);
+  if (!activeLanguages.includes(language)) {
+    return buildInactiveLanguageNotFound(activeLanguages, announcements);
+  }
   return data(
     buildPanelNotFoundData({
       activeLanguages,

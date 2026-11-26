@@ -70,6 +70,16 @@ function LanguageToggle({
       {outcome?.status === "invalid" && !isSaving ? (
         <LanguageError error={outcome.error} />
       ) : null}
+      {/* La región existe siempre: un lector de pantalla solo anuncia lo que
+          cambia dentro de una región que ya estaba en la página. */}
+      <div role="status" className="w-full empty:hidden">
+        {outcome?.status === "saved" && !isSaving ? (
+          <p className="m-0 text-[14px] font-bold">
+            <span aria-hidden="true">✓ </span>
+            {translate("panel.siteTexts.saved")}
+          </p>
+        ) : null}
+      </div>
     </>
   );
 }

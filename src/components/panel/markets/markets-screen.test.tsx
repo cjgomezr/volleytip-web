@@ -189,6 +189,14 @@ describe("pantalla de idiomas y mercados", () => {
     expect(html).toContain("No se puede desactivar el idioma por defecto");
   });
 
+  it("anuncia que el cambio de un idioma quedó guardado", () => {
+    const html = render({
+      languageOutcome: { status: "saved", code: "en" },
+    });
+
+    expect(html).toMatch(/role="status"[^>]*><p[^>]*>.*?Cambios guardados/);
+  });
+
   it("sale en inglés bajo /en/", () => {
     const html = render({}, "en");
 

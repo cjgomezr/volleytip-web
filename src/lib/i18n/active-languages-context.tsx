@@ -1,30 +1,51 @@
 import {
   createContext,
   useContext,
+  useMemo,
   type ReactElement,
   type ReactNode,
 } from "react";
 
 import { ALL_LANGUAGES, type ActiveLanguages } from "./active-languages";
+import type { Language } from "./languages";
+
+interface SiteLanguages {
+  readonly activeLanguages: ActiveLanguages;
+  /** El idioma de la página cuando no sale de su dirección. */
+  readonly forcedLanguage?: Language;
+}
 
 // Sin proveedor valen todos: así se pinta cualquier página suelta.
-const ActiveLanguagesContext = createContext<ActiveLanguages>(ALL_LANGUAGES);
+const SiteLanguagesContext = createContext<SiteLanguages>({
+  activeLanguages: ALL_LANGUAGES,
+});
 
 export function ActiveLanguagesProvider({
   languages,
+  forcedLanguage,
   children,
 }: {
   readonly languages: ActiveLanguages;
+  readonly forcedLanguage?: Language;
   readonly children: ReactNode;
 }): ReactElement {
+  const value = useMemo(
+    () => ({ activeLanguages: languages, forcedLanguage }),
+    [languages, forcedLanguage],
+  );
   return (
-    <ActiveLanguagesContext.Provider value={languages}>
+    <SiteLanguagesContext.Provider value={value}>
       {children}
-    </ActiveLanguagesContext.Provider>
+    </SiteLanguagesContext.Provider>
   );
 }
 
 /** Los idiomas que el sitio ofrece ahora mismo. */
 export function useActiveLanguages(): ActiveLanguages {
-  return useContext(ActiveLanguagesContext);
+  return useContext(SiteLanguagesContext).activeLanguages;
+}
+
+/** El idioma impuesto a la página, o `undefined` si lo dice su dirección. */
+export function useForcedLanguage(): Language | undefined {
+  return useContext(SiteLanguagesContext).forcedLanguage;
 }

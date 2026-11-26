@@ -1,48 +1,44 @@
-import { data, type RouterContextProvider } from "react-router";
+import type { RouterContextProvider } from "react-router";
 
 import {
   activeLanguagesContext,
   loadActiveLanguages,
 } from "./active-languages.server";
-import { pickAnnouncementMessages } from "./announcement-bar.server";
 import { isInactiveLanguagePath } from "./i18n/active-languages";
 import { getDocumentPath } from "./i18n/document-path";
-import { getSiteYear } from "./i18n/format";
-import { buildInactiveLanguageData } from "./i18n/inactive-language-not-found";
-import { DEFAULT_LANGUAGE } from "./i18n/languages";
-import { getMessages } from "./i18n/messages.server";
+import { buildInactiveLanguageNotFound } from "./inactive-language-response.server";
 import { isExemptFromMaintenance } from "./maintenance-mode.server";
+import { enforceMaintenanceMode } from "./maintenance-middleware.server";
 import { siteSettingsContext } from "./site-settings.server";
 
-const NOT_FOUND_STATUS = 404;
-
-/**
- * Middleware de la raíz, después del de mantenimiento: lee qué idiomas están
- * activos y responde 404 a las páginas de uno desactivado antes de que corra
- * ningún loader ni action.
- */
-export async function enforceActiveLanguages({
-  request,
-  context,
-}: {
+interface MiddlewareRequest {
   readonly request: Request;
   readonly context: Readonly<RouterContextProvider>;
-}): Promise<void> {
+}
+
+/**
+ * Middleware de la raíz: corta con 503 en mantenimiento y responde 404 a las
+ * páginas de un idioma desactivado, antes de que corra ningún loader ni
+ * action. Los ajustes y los idiomas se leen a la vez: una base lenta se espera
+ * una sola vez.
+ */
+export async function enforceSiteAvailability({
+  request,
+  context,
+}: MiddlewareRequest): Promise<void> {
   const pathname = getDocumentPath(new URL(request.url));
   // Las mismas direcciones que no consultan la base en mantenimiento: el
   // panel, `/healthz` y los archivos de `.well-known`.
-  if (isExemptFromMaintenance(pathname)) return;
-  const activeLanguages = await loadActiveLanguages();
+  if (isExemptFromMaintenance(pathname)) {
+    return enforceMaintenanceMode({ request, context });
+  }
+  // Nunca rechaza: si el mantenimiento corta la petición, no queda colgando.
+  const pendingLanguages = loadActiveLanguages();
+  await enforceMaintenanceMode({ request, context });
+  const activeLanguages = await pendingLanguages;
   context.set(activeLanguagesContext, activeLanguages);
-  if (!isInactiveLanguagePath(pathname, activeLanguages)) return;
-  const { announcements } = context.get(siteSettingsContext);
-  throw data(
-    buildInactiveLanguageData({
-      activeLanguages,
-      messages: getMessages(DEFAULT_LANGUAGE),
-      year: getSiteYear(new Date()),
-      announcements: pickAnnouncementMessages(announcements, DEFAULT_LANGUAGE),
-    }),
-    { status: NOT_FOUND_STATUS },
-  );
+  if (isInactiveLanguagePath(pathname, activeLanguages)) {
+    const { announcements } = context.get(siteSettingsContext);
+    throw buildInactiveLanguageNotFound(activeLanguages, announcements);
+  }
 }

@@ -6,7 +6,12 @@
  */
 import type { ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { MemoryRouter, RouterContextProvider } from "react-router";
+import {
+  createStaticHandler,
+  MemoryRouter,
+  RouterContextProvider,
+  type MiddlewareFunction,
+} from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { LanguageAlternates } from "~/components/language-alternates";
@@ -14,16 +19,18 @@ import { LanguageSwitcher } from "~/components/language-switcher";
 import { activeLanguagesContext } from "~/lib/active-languages.server";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
-import { enforceActiveLanguages } from "~/lib/language-middleware.server";
-import { siteSettingsContext } from "~/lib/site-settings.server";
+import { enforceSiteAvailability } from "~/lib/language-middleware.server";
+import { buildPanelNotFound } from "~/lib/panel/panel-not-found.server";
 import { useLanguage } from "~/lib/i18n/use-language";
-import { ErrorBoundary } from "~/root";
+import { ErrorBoundary, middleware as rootMiddleware } from "~/root";
 import { action as chooseLanguage } from "~/routes/language-choice";
 import { stubMarketsApi } from "~/testing/fake-markets-api";
 import { ENGLISH_ROW, SPANISH_ROW } from "~/testing/fake-markets-api";
 
 import { ActiveLanguagesProvider } from "./active-languages-context";
 import { getServedLanguage, type ActiveLanguages } from "./active-languages";
+import { readDocumentLanguages } from "./document-languages";
+import { buildInactiveLanguageData } from "./inactive-language-not-found";
 import {
   getLanguageProposal,
   redirectRootToChosenLanguage,
@@ -52,15 +59,10 @@ async function runMiddleware(
   method = "GET",
 ): Promise<{ thrown: unknown; active: ActiveLanguages }> {
   const context = new RouterContextProvider();
-  // Lo deja el middleware de mantenimiento, que corre antes.
-  context.set(siteSettingsContext, {
-    maintenance: { enabled: false },
-    announcements: [],
-  });
   const request = new Request(`http://localhost${path}`, { method });
   let thrown: unknown;
   try {
-    await enforceActiveLanguages({ request, context });
+    await enforceSiteAvailability({ request, context });
   } catch (error) {
     thrown = error;
   }
@@ -163,7 +165,10 @@ describe("idiomas: el sitio con un idioma desactivado", () => {
 
     expect(thrown).toBeUndefined();
     expect(active).toEqual(BOTH);
-    expect(logged).toHaveBeenCalledOnce();
+    expect(logged).toHaveBeenCalledWith(
+      "No se pudieron leer los idiomas activos",
+      expect.any(Error),
+    );
   });
 
   it("la dirección de un idioma apagado cuenta como del idioma por defecto", () => {
@@ -227,6 +232,80 @@ describe("idiomas: el sitio con un idioma desactivado", () => {
 
     expect(response.status).toBe(400);
   });
+
+  it.each(["/en/admin", "/en/admin/no-existe"])(
+    "el 404 del panel en %s es el mismo de cualquier página de ese idioma",
+    async (path) => {
+      stubEnglishOff();
+      const request = visitorRequest(path, { "Accept-Language": "es" });
+
+      const panel = await buildPanelNotFound(request);
+      const { thrown } = await runMiddleware("/en/no-existe");
+
+      expect(panel).toEqual(thrown);
+    },
+  );
+
+  it("ese 404 se pinta en español también bajo la dirección del panel", () => {
+    const languages = readDocumentLanguages({
+      pathname: "/en/admin",
+      error: {
+        status: 404,
+        statusText: "",
+        internal: false,
+        data: buildInactiveLanguageData({
+          activeLanguages: ONLY_SPANISH,
+          messages: getMessages("es"),
+          year: 2026,
+          announcements: [],
+        }),
+      },
+      rootLanguages: undefined,
+    });
+    const html = renderToStaticMarkup(
+      <MemoryRouter initialEntries={["/en/admin"]}>
+        <ActiveLanguagesProvider
+          languages={languages.activeLanguages}
+          forcedLanguage={languages.forcedLanguage}
+        >
+          <CurrentLanguage />
+        </ActiveLanguagesProvider>
+      </MemoryRouter>,
+    );
+
+    expect(languages.language).toBe("es");
+    expect(html).toContain("<p>es</p>");
+  });
+
+  it.each(["/en/contact", "/en/_.data"])(
+    "el 404 de %s pide a los buscadores no indexarlo",
+    async (path) => {
+      stubEnglishOff();
+      const handler = createStaticHandler([
+        {
+          id: "root",
+          path: "*",
+          middleware: rootMiddleware as unknown as MiddlewareFunction[],
+          loader: () => null,
+        },
+      ]);
+
+      const response = (await handler.query(
+        new Request(`http://localhost${path}`),
+        {
+          requestContext: new RouterContextProvider(),
+          generateMiddlewareResponse: async (query) => {
+            const result = await query(new Request(`http://localhost${path}`));
+            const status = "statusCode" in result ? result.statusCode : 200;
+            return new Response(null, { status });
+          },
+        },
+      )) as Response;
+
+      expect(response.status).toBe(404);
+      expect(response.headers.get("X-Robots-Tag")).toContain("noindex");
+    },
+  );
 
   it("la página del 404 sale en español y sin enlaces a ese idioma", async () => {
     stubEnglishOff();

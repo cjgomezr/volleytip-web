@@ -140,6 +140,21 @@ describeIntegration("idiomas: reglas en la base", () => {
     ).rejects.toThrow(/languages_default_active_check/);
   });
 
+  it("un admin no puede quitar la marca de idioma por defecto", async () => {
+    const admin = await createTestUser(database, { role: "admin" });
+
+    await expect(
+      runAs(
+        database,
+        { kind: "signedIn", userId: admin.id },
+        async (transaction) => {
+          await transaction`update public.languages
+            set is_default = false, is_active = false where code = 'es'`;
+        },
+      ),
+    ).rejects.toThrow(/permission denied/);
+  });
+
   it("deja desactivar y reactivar otro idioma", async () => {
     await database`update public.languages set is_active = false where code = 'en'`;
     await database`update public.languages set is_active = true where code = 'en'`;
