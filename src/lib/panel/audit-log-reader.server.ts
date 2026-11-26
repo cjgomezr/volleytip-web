@@ -1,4 +1,4 @@
-import { describeActor, nameProfile } from "../admin/audit-actor";
+import { describeActor, listFilterActors } from "../admin/audit-actor";
 import {
   isRangeInverted,
   parseAuditFilters,
@@ -81,9 +81,7 @@ async function readFilterOptions(
   failOn(actors, "las personas");
   failOn(actions, "las acciones");
   return {
-    actors: (actors.data ?? [])
-      .map((actor) => ({ id: actor.id, name: nameProfile(actor) }))
-      .sort((first, second) => first.name.localeCompare(second.name, "es")),
+    actors: listFilterActors(actors.data ?? []),
     actions: actions.data ?? [],
   };
 }

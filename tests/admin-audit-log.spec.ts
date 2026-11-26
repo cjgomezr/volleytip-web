@@ -200,6 +200,9 @@ for (const language of LANGUAGES) {
         await expect(page).toHaveURL(
           new RegExp(`accion=${LOCALE_ACTION.replace(".", "\\.")}`),
         );
+        await expect(
+          page.getByRole("button", { name: language.apply }),
+        ).toBeFocused();
         await page.reload();
         await page.waitForLoadState("networkidle");
         await expect(action).toHaveValue(LOCALE_ACTION);
@@ -221,6 +224,11 @@ for (const language of LANGUAGES) {
         await page.getByRole("link", { name: language.back }).click();
 
         await expect(action).toHaveValue(LOCALE_ACTION);
+
+        await page.getByRole("link", { name: language.clear }).click();
+
+        await expect(page).toHaveURL(language.panel);
+        await expect(action).toHaveValue("");
       });
     });
   }

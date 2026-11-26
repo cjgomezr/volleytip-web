@@ -223,44 +223,55 @@ describeIntegration("lectura de la bitácora contra la base local", () => {
   );
 
   // Las 10.000 entradas se siembran en una transacción que se revierte: la
-  // bitácora no deja borrarlas después.
+  // bitácora no deja borrarlas después. Una de cada cien es de otra persona,
+  // para que filtrar por ella sea selectivo.
   async function withSeededLog(
-    work: (transaction: Transaction) => Promise<void>,
+    work: (transaction: Transaction, minorityId: string) => Promise<void>,
   ): Promise<void> {
     const reader = await createTestUser(database, { role: "admin" });
+    const minority = await createTestUser(database, { role: "admin" });
     const attempt = database.begin(async (transaction) => {
       await transaction`
         insert into public.audit_log (actor_id, action, entity)
-        select ${reader.id}, 'volumen.accion_' || (n % 20), 'volumen'
+        select
+          case when n % 100 = 0 then ${minority.id}::uuid
+            else ${reader.id}::uuid end,
+          'volumen.accion_' || (n % 20), 'volumen'
         from generate_series(1, ${SEEDED_ENTRIES}) as n
       `;
       await transaction`analyze public.audit_log`;
       const claims = JSON.stringify({ sub: reader.id, role: "authenticated" });
       await transaction`select set_config('request.jwt.claims', ${claims}, true)`;
       await transaction`select set_config('role', 'authenticated', true)`;
-      await work(transaction);
+      await work(transaction, minority.id);
       throw new Rollback();
     });
     await expect(attempt).rejects.toBeInstanceOf(Rollback);
   }
 
+  type ListShape = "sin filtros" | "por acción" | "por persona" | "al final";
+
   async function explainList(
     transaction: Transaction,
-    action: string | null,
+    shape: ListShape,
+    minorityId: string,
   ): Promise<Explained> {
-    const filter =
-      action === null
-        ? transaction``
-        : transaction`where entry.action = ${action}`;
+    const filters = {
+      "sin filtros": transaction``,
+      "al final": transaction``,
+      "por acción": transaction`where entry.action = 'volumen.accion_7'`,
+      "por persona": transaction`where entry.actor_id = ${minorityId}`,
+    };
+    const offset = shape === "al final" ? SEEDED_ENTRIES - PAGE_SIZE : 0;
     const rows = await transaction<{ "QUERY PLAN": Explained[] }[]>`
       explain (analyze, format json)
       select entry.id, entry.action, entry.entity, entry.created_at,
         actor.full_name, actor.email
       from public.audit_log as entry
       left join public.profiles as actor on actor.id = entry.actor_id
-      ${filter}
+      ${filters[shape]}
       order by entry.created_at desc, entry.id desc
-      limit ${PAGE_SIZE}
+      limit ${PAGE_SIZE} offset ${offset}
     `;
     const [explained] = takeOnlyRow(rows, "el plan")["QUERY PLAN"];
     if (explained === undefined) throw new Error("El plan llegó vacío");
@@ -268,30 +279,36 @@ describeIntegration("lectura de la bitácora contra la base local", () => {
   }
 
   it.each([
-    ["sin filtros", null],
-    ["filtrada por acción", "volumen.accion_7"],
-  ])(
-    "con 10.000 entradas, la lista %s usa índice y responde en menos de un segundo",
-    async (_name, action) => {
-      await withSeededLog(async (transaction) => {
-        const explained = await explainList(transaction, action);
+    ["sin filtros", "audit_log_created_at_idx"],
+    ["por acción", "audit_log_action_created_at_idx"],
+    ["por persona", "audit_log_actor_created_at_idx"],
+  ] as const)(
+    "con 10.000 entradas, la lista %s usa su índice y responde en menos de un segundo",
+    async (shape, index) => {
+      await withSeededLog(async (transaction, minorityId) => {
+        const explained = await explainList(transaction, shape, minorityId);
 
-        const onLog = listNodes(explained.Plan).filter(
-          (node) =>
-            node["Relation Name"] === "audit_log" ||
-            node["Index Name"]?.startsWith("audit_log_"),
-        );
-        expect(onLog.length).toBeGreaterThan(0);
-        expect(onLog.map((node) => node["Node Type"])).not.toContain(
-          "Seq Scan",
-        );
-        expect(onLog.some((node) => node["Index Name"] !== undefined)).toBe(
-          true,
-        );
+        const nodes = listNodes(explained.Plan);
+        expect(nodes.map((node) => node["Index Name"])).toContain(index);
+        expect(
+          nodes
+            .filter((node) => node["Relation Name"] === "audit_log")
+            .map((node) => node["Node Type"]),
+        ).not.toContain("Seq Scan");
         expect(explained["Execution Time"]).toBeLessThan(TIME_LIMIT_MS);
       });
     },
   );
+
+  // La última página recorre casi toda la tabla: ahí el planificador puede
+  // preferir leerla entera, así que solo se mide el tiempo.
+  it("con 10.000 entradas, la última página responde en menos de un segundo", async () => {
+    await withSeededLog(async (transaction, minorityId) => {
+      const explained = await explainList(transaction, "al final", minorityId);
+
+      expect(explained["Execution Time"]).toBeLessThan(TIME_LIMIT_MS);
+    });
+  });
 
   it("con 10.000 entradas, un admin lee por RLS todo lo de la pantalla en menos de un segundo", async () => {
     await withSeededLog(async (transaction) => {

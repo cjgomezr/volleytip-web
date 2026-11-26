@@ -81,6 +81,16 @@ export function hasFilters(filters: AuditFilters): boolean {
   return Object.values(filters).some((value) => value !== null);
 }
 
+/** La parte de una búsqueda que es de la lista: lo demás que traiga la
+ * dirección no vuelve con la persona. */
+export function keepAuditSearch(params: URLSearchParams): string {
+  const names: readonly string[] = Object.values(AUDIT_PARAMS);
+  const kept = new URLSearchParams(
+    [...params].filter(([name]) => names.includes(name)),
+  ).toString();
+  return kept === "" ? "" : `?${kept}`;
+}
+
 /** La búsqueda de una dirección con esos filtros y esa página: `""` o
  * `?accion=faq.publish&pagina=2`. */
 export function buildAuditSearch(filters: AuditFilters, page: number): string {

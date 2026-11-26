@@ -5,6 +5,7 @@ import {
   buildAuditEntryView,
   type AuditEntryView,
 } from "~/lib/admin/audit-log";
+import { keepAuditSearch } from "~/lib/admin/audit-filters";
 import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { readAuditEntry } from "~/lib/panel/audit-log-reader.server";
@@ -25,7 +26,7 @@ export async function loader({
   if (entry === null) throw await buildPanelNotFound(request);
   const language = getRequestLanguage(request);
   // La búsqueda trae los filtros de la lista: solo se usa para volver a ella.
-  const { search } = new URL(request.url);
+  const search = keepAuditSearch(new URL(request.url).searchParams);
   return buildAuditEntryView(entry, {
     language,
     backHref: `${getPanelPath("adminAuditLog", language)}${search}`,

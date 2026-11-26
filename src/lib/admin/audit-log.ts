@@ -181,28 +181,43 @@ function isSnapshot(value: Json | undefined): value is JsonObject | null {
   return value === null || isJsonObject(value);
 }
 
+function describeChanges(
+  before: JsonObject | null,
+  after: JsonObject | null,
+): readonly AuditChangeView[] {
+  const fields = new Set([
+    ...Object.keys(before ?? {}),
+    ...Object.keys(after ?? {}),
+  ]);
+  return [...fields].map((field) => ({
+    field,
+    before: describeValue(before?.[field]),
+    after: describeValue(after?.[field]),
+  }));
+}
+
+function describeFields(fields: JsonObject): readonly AuditFieldView[] {
+  return Object.entries(fields).map(([field, value]) => ({
+    field,
+    value: describeValue(value),
+  }));
+}
+
 function splitDetails(
   details: Json,
 ): Pick<AuditEntryView, "changes" | "extras"> {
   const all: JsonObject = isJsonObject(details) ? details : { value: details };
   const { before, after, ...rest } = all;
-  const isChange =
-    isSnapshot(before) &&
-    isSnapshot(after) &&
-    (before !== null || after !== null);
-  const fields = isChange
-    ? [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])]
-    : [];
+  if (
+    !isSnapshot(before) ||
+    !isSnapshot(after) ||
+    (before === null && after === null)
+  ) {
+    return { changes: [], extras: describeFields(all) };
+  }
   return {
-    changes: fields.map((field) => ({
-      field,
-      before: describeValue(isChange ? before?.[field] : undefined),
-      after: describeValue(isChange ? after?.[field] : undefined),
-    })),
-    extras: Object.entries(isChange ? rest : all).map(([field, value]) => ({
-      field,
-      value: describeValue(value),
-    })),
+    changes: describeChanges(before, after),
+    extras: describeFields(rest),
   };
 }
 

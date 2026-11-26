@@ -364,6 +364,23 @@ describe("bitácora: filtros", () => {
     ]);
   });
 
+  it("a dos personas con el mismo nombre las distingue el correo", async () => {
+    const twin = {
+      ...ANDRES,
+      id: "0f0f0f0f-5555-4666-8777-988889999000",
+      email: "otro@prueba.volleytip.test",
+    };
+    serve({ actors: [ANDRES, twin, UNNAMED], entries: [] });
+
+    const { options } = await loadList();
+
+    expect(options.actors.map(({ name }) => name)).toEqual([
+      `Andrés Gómez (${ANDRES.email})`,
+      `Andrés Gómez (${twin.email})`,
+      UNNAMED.email,
+    ]);
+  });
+
   it.each([
     "persona=no-es-un-id",
     "persona=00000000-0000-4000-8000-000000000000",
@@ -545,6 +562,16 @@ describe("bitácora: detalle", () => {
     );
 
     expect(backHref).toBe("/admin/bitacora?accion=faq.publish&pagina=2");
+  });
+
+  it("volver deja fuera lo que no es de la lista", async () => {
+    serve({ entries: [buildEntry()] });
+
+    const { backHref } = await loadEntry(
+      `/admin/bitacora/${ENTRY_ID}?_routes=algo&pagina=2`,
+    );
+
+    expect(backHref).toBe("/admin/bitacora?pagina=2");
   });
 
   it.each(["no-es-un-id", "00000000-0000-4000-8000-000000000000"])(

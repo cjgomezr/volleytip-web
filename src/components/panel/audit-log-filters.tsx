@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useEffect, useRef, type ReactElement, type RefObject } from "react";
 import { Form, Link, useLocation } from "react-router";
 
 import { AUDIT_PARAMS } from "~/lib/admin/audit-filters";
@@ -32,6 +32,27 @@ export function ClearFiltersLink({
   );
 }
 
+// Al navegar sin recargar, los campos conservan lo que tenían: se ponen al día
+// con la dirección sin volver a montarlos, para no perder el foco.
+function useFieldsFromAddress(
+  filters: AuditListView["filters"],
+): RefObject<HTMLFormElement | null> {
+  const form = useRef<HTMLFormElement>(null);
+  const { search } = useLocation();
+  useEffect(() => {
+    for (const key of ["actorId", "action", "fromDay", "toDay"] as const) {
+      const field = form.current?.elements.namedItem(AUDIT_PARAMS[key]);
+      if (
+        field instanceof HTMLInputElement ||
+        field instanceof HTMLSelectElement
+      ) {
+        field.value = filters[key] ?? "";
+      }
+    }
+  }, [filters, search]);
+  return form;
+}
+
 /** Los filtros de la bitácora: un formulario GET, así que quedan en la
  * dirección y sirven sin JavaScript. */
 export function AuditLogFilters({
@@ -41,11 +62,10 @@ export function AuditLogFilters({
   canClear,
 }: AuditLogFiltersProps): ReactElement {
   const translate = useTranslate();
-  const { search } = useLocation();
+  const form = useFieldsFromAddress(filters);
   return (
-    // `key`: al cambiar la dirección los campos vuelven a leer sus valores.
     <Form
-      key={search}
+      ref={form}
       method="get"
       aria-label={translate("panel.auditLog.filters.label")}
       className="mt-5 grid gap-4 rounded-card bg-surface-light p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-4"
