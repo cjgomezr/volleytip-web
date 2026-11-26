@@ -74,6 +74,44 @@ describe("panel de muestra: ruta de /dev/", () => {
     expect(more.some(({ pendingCount }) => pendingCount)).toBe(true);
   });
 
+  it.each([
+    ["datos", "ok"],
+    ["vacio", "ok"],
+    ["fallo", "failed"],
+  ])("`resumen=%s` pinta el resumen sin la base", async (state, status) => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal("fetch", fetchSpy);
+    const route = await loadRoute("test");
+
+    const { overview } = route.loader(
+      buildArgs<LoaderArgs>(`/dev/panel?resumen=${state}`),
+    );
+
+    expect(overview?.cards[0]?.value.status).toBe(status);
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it("el resumen con datos enlaza la tarjeta de mensajes y el vacío no", async () => {
+    const route = await loadRoute("test");
+    const readHref = (path: string): string | undefined =>
+      route.loader(buildArgs<LoaderArgs>(path)).overview?.cards[0]?.href;
+
+    expect(readHref("/en/dev/panel?resumen=datos")).toBe(
+      "/en/dev/panel/messages?estado=new",
+    );
+    expect(readHref("/dev/panel?resumen=vacio")).toBeUndefined();
+  });
+
+  it.each([
+    "/dev/panel",
+    "/dev/panel?resumen=otro",
+    "/dev/panel/mas?resumen=datos",
+  ])("%s no pinta el resumen", async (path) => {
+    const route = await loadRoute("test");
+
+    expect(route.loader(buildArgs<LoaderArgs>(path)).overview).toBeNull();
+  });
+
   it("una sección que no es de la muestra responde 404", async () => {
     const route = await loadRoute("test");
 

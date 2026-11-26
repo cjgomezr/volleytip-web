@@ -2,8 +2,18 @@ import type { PageDeclaration } from "../i18n/page-path";
 import { findPanelPage } from "../i18n/panel-pages";
 import type { MessageKey } from "../i18n/translate";
 import type { PanelMember } from "../panel/visitor.server";
+import type { TypedSupabaseClient } from "../supabase/typed-client";
 
 export type PanelRole = PanelMember["role"];
+
+/** La tarjeta con que un módulo muestra en el resumen algo que pide atención.
+ * Enlaza a la página del módulo. */
+export interface ModuleOverviewCard {
+  readonly labelKey: MessageKey;
+  /** Cuenta en la base con el cliente de la sesión. La lista de módulos llega
+   * al navegador: su código no importa nada de `.server`. */
+  readonly count: (client: TypedSupabaseClient) => Promise<number>;
+}
 
 /** Una sección del panel (FR-079). El menú lateral, la barra inferior y "Más"
  * se pintan de la lista de módulos: agregar una sección es agregar uno. */
@@ -19,6 +29,7 @@ export interface AdminModule {
   readonly bottomBar?: { readonly glyph: string };
   /** Su entrada muestra cuántos pendientes tiene, si hay alguno. */
   readonly hasPendingCounter?: boolean;
+  readonly overviewCard?: ModuleOverviewCard;
 }
 
 /** La lista de módulos, en el orden del menú. Falla si dos comparten id. */

@@ -1,18 +1,25 @@
 import type { ReactElement } from "react";
 import { data, redirect } from "react-router";
 
+import { OverviewScreen } from "~/components/panel/overview-screen";
 import { PanelHeading } from "~/components/panel/panel-heading";
 import { PanelMore } from "~/components/panel/panel-more";
 import { PanelShell } from "~/components/panel/panel-shell";
+import type { OverviewView } from "~/lib/admin/overview";
 import { getPanelPathInLanguage } from "~/lib/admin/path-in-language";
 import {
   FULL_BAR_SAMPLE,
   SAMPLE_MODULES,
   SAMPLE_MORE_PAGE,
 } from "~/lib/admin/sample-modules";
+import {
+  buildSampleOverview,
+  SAMPLE_OVERVIEW_STATES,
+} from "~/lib/admin/sample-overview";
 import { serverEnv } from "~/lib/env.server";
 import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
+  getRequestLanguage,
   isSupportedLanguage,
   SUPPORTED_LANGUAGES,
   type Language,
@@ -30,8 +37,9 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import type { Route } from "./+types/dev-panel";
 
 // Pinta la cáscara del panel con módulos de muestra, sin sesión ni base, para
-// verla llena y capturarla en Playwright. `?mantenimiento=1` pinta la franja y
-// `?barra=llena`, la barra con sus cinco lugares. En producción responde 404.
+// verla llena y capturarla en Playwright. `?mantenimiento=1` pinta la franja,
+// `?barra=llena` la barra con sus cinco lugares y `?resumen=datos` (o
+// `vacio`, o `fallo`) el resumen en el inicio. En producción responde 404.
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST = 400;
 const SEE_OTHER = 303;
@@ -49,12 +57,21 @@ interface DevPanel {
   readonly titleKey: MessageKey;
   readonly isMaintenanceOn: boolean;
   readonly isBarFull: boolean;
+  /** El resumen de muestra, si el inicio lo pide. */
+  readonly overview: OverviewView | null;
 }
 
 function rejectInProduction(): void {
   if (serverEnv.appEnv === "production") {
     throw data(null, { status: NOT_FOUND_STATUS });
   }
+}
+
+function readSampleOverview(url: URL, language: Language): OverviewView | null {
+  const state = SAMPLE_OVERVIEW_STATES.find(
+    (candidate) => candidate === url.searchParams.get("resumen"),
+  );
+  return state === undefined ? null : buildSampleOverview(state, language);
 }
 
 export function loader({ request }: Route.LoaderArgs): DevPanel {
@@ -72,6 +89,10 @@ export function loader({ request }: Route.LoaderArgs): DevPanel {
     titleKey: module?.labelKey ?? "panel.nav.more",
     isMaintenanceOn: url.searchParams.get(MAINTENANCE_PARAM) === "1",
     isBarFull: url.searchParams.get("barra") === "llena",
+    overview:
+      module?.id === "sample-overview"
+        ? readSampleOverview(url, getRequestLanguage(request))
+        : null,
   };
 }
 
@@ -99,10 +120,16 @@ export async function action({ request }: Route.ActionArgs): Promise<Response> {
   return redirect(destination, SEE_OTHER);
 }
 
+function SampleScreen({ isMore, titleKey, overview }: DevPanel): ReactElement {
+  const translate = useTranslate();
+  if (isMore) return <PanelMore />;
+  if (overview === null) return <PanelHeading title={translate(titleKey)} />;
+  return <OverviewScreen greetingName="Andrés Gómez" overview={overview} />;
+}
+
 export default function DevPanelPage({
   loaderData,
 }: Route.ComponentProps): ReactElement {
-  const translate = useTranslate();
   const language = useLanguage();
   const sample = loaderData.isBarFull
     ? FULL_BAR_SAMPLE
@@ -116,11 +143,7 @@ export default function DevPanelPage({
       morePath={buildPagePath(SAMPLE_MORE_PAGE, findLanguage(language))}
       languageAction={getSampleHome(language)}
     >
-      {loaderData.isMore ? (
-        <PanelMore />
-      ) : (
-        <PanelHeading title={translate(loaderData.titleKey)} />
-      )}
+      <SampleScreen {...loaderData} />
     </PanelShell>
   );
 }

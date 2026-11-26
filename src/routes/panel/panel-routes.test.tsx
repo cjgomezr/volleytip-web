@@ -13,6 +13,7 @@ import {
 } from "~/lib/panel/panel-middleware.server";
 import type { PanelMember } from "~/lib/panel/visitor.server";
 import { createSessionSupabaseClient } from "~/lib/supabase/session-client.server";
+import { createOverviewApi } from "~/testing/fake-overview-api";
 import {
   ADMIN_PROFILE,
   buildSessionCookie,
@@ -77,17 +78,68 @@ afterEach(() => {
 describe("inicio del panel", () => {
   // El nombre, el rol y "Cerrar sesión" del admin los pone la cáscara
   // (panel-shell.test.tsx y panel-layout.test.ts).
-  it("al admin le muestra el Resumen provisional", () => {
-    const data = homeLoader(buildArgs("/admin", { member: ADMIN }));
+  it.each([
+    ["con nombre en el perfil, saluda por él", "Andrés Gómez", "Andrés Gómez"],
+    ["sin nombre, saluda por el correo", null, ADMIN.email],
+  ])(
+    "al admin le muestra el resumen: %s",
+    async (_case, fullName, greeting) => {
+      vi.stubGlobal("fetch", createOverviewApi({ newMessages: 2 }).fetch);
 
-    expect(data).toEqual({ view: "admin" });
-    const html = render(<HomeScreen {...data} />);
-    expect(html).toContain("<title>Resumen</title>");
-    expect(html).toContain("Las secciones del panel llegan pronto.");
+      const data = await homeLoader(
+        buildArgs("/admin", { member: { ...ADMIN, fullName } }),
+      );
+
+      expect(data).toMatchObject({ view: "admin", greetingName: greeting });
+      const html = render(<HomeScreen {...data} />);
+      expect(html).toContain("<title>Resumen</title>");
+      expect(html).toContain(`Hola, ${greeting}`);
+      expect(html).toContain("Mensajes sin responder");
+    },
+  );
+
+  it.each(["/en/admin", "/en/admin.data"])(
+    "en %s formatea las fechas y los números en inglés",
+    async (path) => {
+      const api = createOverviewApi({
+        appWaitlist: 12040,
+        auditRows: [
+          {
+            id: "1",
+            action: "faq.update",
+            created_at: "2026-11-26T19:30:00Z",
+            actor: null,
+          },
+        ],
+      });
+      vi.stubGlobal("fetch", api.fetch);
+
+      const data = await homeLoader(buildArgs(path, { member: ADMIN }));
+
+      expect(data).toMatchObject({
+        overview: {
+          cards: [{}, { value: { value: "12,040" } }, {}],
+          activity: {
+            value: [{ date: expect.stringMatching(/^11\/26\/26.*PM$/) }],
+          },
+        },
+      });
+    },
+  );
+
+  it("al staff no le consulta ningún dato del resumen", async () => {
+    const api = createOverviewApi();
+    vi.stubGlobal("fetch", api.fetch);
+
+    await homeLoader(
+      buildArgs("/admin", { member: { ...ADMIN, role: "staff" } }),
+    );
+
+    expect(api.requests).toEqual([]);
   });
 
-  it("al staff solo le explica que su acceso es para el escáner", () => {
-    const data = homeLoader(
+  it("al staff solo le explica que su acceso es para el escáner", async () => {
+    const data = await homeLoader(
       buildArgs("/admin", { member: { ...ADMIN, role: "staff" } }),
     );
 

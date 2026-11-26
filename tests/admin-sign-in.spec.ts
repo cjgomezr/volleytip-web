@@ -145,7 +145,7 @@ test.describe("entrada al panel con el correo", () => {
 
     await expect(page).toHaveURL("/admin");
     await expect(
-      page.getByRole("heading", { level: 1, name: "Resumen" }),
+      page.getByRole("heading", { level: 1, name: `Hola, ${email}` }),
     ).toBeVisible();
 
     // El mismo enlace, otra vez: ya se usó.
