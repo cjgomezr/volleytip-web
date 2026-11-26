@@ -37,7 +37,10 @@ export function StatsStrip({
     >
       <ul className="m-0 mx-auto grid max-w-[1280px] list-none grid-cols-2 gap-x-4 gap-y-8 px-6 py-10 md:py-12 lg:grid-cols-4">
         {stats.map((stat) => (
-          <li key={stat.id} className="text-center">
+          <li
+            key={stat.id}
+            className="min-w-0 text-center [overflow-wrap:anywhere]"
+          >
             <p
               lang={langFor(stat.valueLanguage, pageLanguage)}
               className="m-0 font-display text-[40px] leading-none uppercase md:text-[56px]"

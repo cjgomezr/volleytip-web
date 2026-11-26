@@ -47,6 +47,22 @@ export const PANEL_ADMIN_PAGES = [
     path: { es: "admin/idioma", en: "admin/language" },
   },
   {
+    id: "adminSiteTexts",
+    file: "routes/panel/site-texts.tsx",
+    path: { es: "admin/textos", en: "admin/site-texts" },
+  },
+  // Cada formulario de la pantalla envía a la suya: una ruta, una acción.
+  {
+    id: "adminSiteTextsAnnouncements",
+    file: "routes/panel/site-texts-announcements.tsx",
+    path: { es: "admin/textos/barra", en: "admin/site-texts/announcements" },
+  },
+  {
+    id: "adminSiteTextsStats",
+    file: "routes/panel/site-texts-stats.tsx",
+    path: { es: "admin/textos/cifras", en: "admin/site-texts/figures" },
+  },
+  {
     id: "adminSettings",
     file: "routes/panel/settings.tsx",
     path: { es: "admin/ajustes", en: "admin/settings" },

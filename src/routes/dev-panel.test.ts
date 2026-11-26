@@ -52,6 +52,33 @@ describe("panel de muestra: ruta de /dev/", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
   });
 
+  it.each(["datos", "errores", "confirmacion", "invalido"])(
+    "pinta Textos del sitio en el estado %s, sin la base",
+    async (state) => {
+      const fetchSpy = vi.fn();
+      vi.stubGlobal("fetch", fetchSpy);
+      const route = await loadRoute("test");
+
+      const { siteTexts } = route.loader(
+        buildArgs<LoaderArgs>(`/dev/panel/textos?textos=${state}`),
+      );
+
+      expect(siteTexts?.limits.maxMessages).toBe(3);
+      expect(siteTexts?.barOutcome?.status === "invalid").toBe(
+        state === "errores",
+      );
+      expect(fetchSpy).not.toHaveBeenCalled();
+    },
+  );
+
+  it("sin pedirlo, la sección de muestra no pinta Textos del sitio", async () => {
+    const route = await loadRoute("test");
+
+    const loaded = route.loader(buildArgs<LoaderArgs>("/dev/panel/textos"));
+
+    expect(loaded.siteTexts).toBeNull();
+  });
+
   it("con `barra=llena` ocupa los cinco lugares, con contador en 'Más'", async () => {
     const route = await loadRoute("test");
     const { buildPanelNavigation } = await import("~/lib/admin/navigation");

@@ -45,7 +45,7 @@ export interface SettingReplacement {
   readonly client: TypedSupabaseClient;
   readonly key: string;
   readonly previous: StoredSetting<unknown>;
-  readonly value: { readonly [field: string]: Json | undefined };
+  readonly value: NonNullable<Json>;
 }
 
 /**

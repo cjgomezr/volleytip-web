@@ -7,6 +7,10 @@ export const ANNOUNCEMENT_BAR_KEY = "announcement_bar";
 /** Cuántos mensajes caben en la barra; los que sobren se ignoran. */
 export const MAX_ANNOUNCEMENT_MESSAGES = 3;
 
+/** Lo más largo que el admin puede escribir en un mensaje, por idioma. Más
+ * que eso ocupa varias líneas en un celular. */
+export const MAX_ANNOUNCEMENT_LENGTH = 80;
+
 /** Un mensaje de la barra: su texto por idioma. El español es obligatorio. */
 export interface AnnouncementMessage {
   readonly text: { readonly es: string } & Partial<Record<Language, string>>;
@@ -29,7 +33,7 @@ function isAnnouncementMessage(value: unknown): value is AnnouncementMessage {
 }
 
 /** La forma del ajuste `settings.announcement_bar`: una lista de mensajes.
- * Es la que va a escribir la pantalla del admin (W10a). */
+ * Es la que escribe "Textos del sitio" en el panel. */
 export const ANNOUNCEMENT_BAR_SETTING: SettingDefinition<
   readonly AnnouncementMessage[]
 > = {

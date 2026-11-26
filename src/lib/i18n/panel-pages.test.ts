@@ -71,6 +71,9 @@ describe("rutas del panel", () => {
       "admin/idioma",
       "admin/mas",
       "admin/salir",
+      "admin/textos",
+      "admin/textos/barra",
+      "admin/textos/cifras",
       "en/admin",
       "en/admin/*",
       "en/admin/language",
@@ -80,6 +83,9 @@ describe("rutas del panel", () => {
       "en/admin/sign-in",
       "en/admin/sign-in/link",
       "en/admin/sign-out",
+      "en/admin/site-texts",
+      "en/admin/site-texts/announcements",
+      "en/admin/site-texts/figures",
     ]);
   });
 
@@ -92,6 +98,9 @@ describe("rutas del panel", () => {
       "admin/idioma",
       "admin/mas",
       "admin/salir",
+      "admin/textos",
+      "admin/textos/barra",
+      "admin/textos/cifras",
       "en/admin",
       "en/admin/*",
       "en/admin/language",
@@ -99,6 +108,9 @@ describe("rutas del panel", () => {
       "en/admin/settings",
       "en/admin/settings/maintenance",
       "en/admin/sign-out",
+      "en/admin/site-texts",
+      "en/admin/site-texts/announcements",
+      "en/admin/site-texts/figures",
     ]);
   });
 
@@ -109,11 +121,17 @@ describe("rutas del panel", () => {
       "admin/ajustes/mantenimiento",
       "admin/idioma",
       "admin/mas",
+      "admin/textos",
+      "admin/textos/barra",
+      "admin/textos/cifras",
       "en/admin/*",
       "en/admin/language",
       "en/admin/more",
       "en/admin/settings",
       "en/admin/settings/maintenance",
+      "en/admin/site-texts",
+      "en/admin/site-texts/announcements",
+      "en/admin/site-texts/figures",
     ]);
   });
 

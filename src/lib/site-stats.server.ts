@@ -19,6 +19,11 @@ export const SITE_STAT_IDS = [
 
 export type SiteStatId = (typeof SITE_STAT_IDS)[number];
 
+/** Lo más largo que el admin puede escribir, por idioma. El valor se pinta
+ * enorme en media pantalla de celular. */
+export const MAX_STAT_VALUE_LENGTH = 12;
+export const MAX_STAT_LABEL_LENGTH = 60;
+
 export interface SiteStat {
   readonly id: SiteStatId;
   readonly value: string;
@@ -46,7 +51,8 @@ async function readSiteStat(
     throw error;
   }
   const { [valueKey]: value, [labelKey]: label } = texts;
-  if (value === undefined || label === undefined) {
+  // El admin deja vacío un campo para quitar la cifra.
+  if (!value?.text.trim() || !label?.text.trim()) {
     return undefined;
   }
   return {
@@ -60,7 +66,7 @@ async function readSiteStat(
 
 /**
  * Lee las cifras del sitio en el idioma pedido. Una cifra a la que le falta
- * el valor o la leyenda en todos los idiomas se omite; sin ninguna, la lista
+ * el valor o la leyenda, o que los tiene vacíos, se omite; sin ninguna, la lista
  * sale vacía. Si la base falla, lanza: quien llama decide si la página sigue.
  */
 export async function readSiteStats(
