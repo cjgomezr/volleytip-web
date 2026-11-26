@@ -221,7 +221,8 @@ JavaScript.
 reason and status, stacked under 1024px and in one row from there, with a
 secondary button. From 1024px the list is a table in a white card (name with up
 to two lines of the message, reason, date, status); under 1024px each message is
-a stacked row that is tappable as a whole. Reason badge: pill, `brand-night`
+a stacked row; on phones the status stays at the right and
+the date goes on its own line below. At every width the whole row is tappable. Reason badge: pill, `brand-night`
 background. Status badge: `brand-red` new, `brand-lime` answered, `brand-mist`
 archived, always with `brand-night` text on the light ones and the text naming
 the state. The detail has two columns from 1024px (2:1): the message and its

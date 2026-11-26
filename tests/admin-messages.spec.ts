@@ -135,6 +135,26 @@ async function pressOn(control: Locator, key = "Enter"): Promise<void> {
   await control.press(key);
 }
 
+/** Qué mensaje abre un toque en el borde derecho e inferior de cada fila,
+ * lejos de su nombre. */
+async function readRowTargets(page: Page): Promise<(string | null)[]> {
+  const rows = page.locator("[data-message-row]");
+  await expect(rows).toHaveCount(4);
+  const targets: (string | null)[] = [];
+  for (const row of await rows.all()) {
+    await row.scrollIntoViewIfNeeded();
+    targets.push(
+      await row.evaluate((element) => {
+        const box = element.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.right - 24, box.bottom - 4);
+        const href = hit?.closest("a")?.getAttribute("href") ?? "";
+        return new URLSearchParams(href.split("?")[1]).get("fila");
+      }),
+    );
+  }
+  return targets;
+}
+
 for (const language of LANGUAGES) {
   for (const viewport of VIEWPORTS) {
     test.describe(`bandeja ${language.code} @ ${viewport.width}`, () => {
@@ -197,7 +217,38 @@ test.describe("bandeja en computador", () => {
       .first()
       .click({ force: true });
 
-    await expect(page).toHaveURL("/dev/mensajes?estado=detalle-pedido");
+    await expect(page).toHaveURL("/dev/mensajes?estado=detalle-pedido&fila=1");
+  });
+
+  test("la zona de cada fila lleva a su mensaje y no sale de ella", async ({
+    page,
+  }) => {
+    await page.goto("/dev/mensajes");
+
+    expect(await readRowTargets(page)).toEqual(["1", "2", "3", "4"]);
+    await page.getByLabel("Buscar por nombre o correo").click();
+    await expect(page).toHaveURL("/dev/mensajes");
+  });
+
+  test("las columnas de cada fila caen bajo su encabezado", async ({
+    page,
+  }) => {
+    await page.goto("/dev/mensajes");
+    const readLefts = (selector: string): Promise<number[]> =>
+      page
+        .locator(selector)
+        .evaluateAll((cells) =>
+          cells.map((cell) => Math.round(cell.getBoundingClientRect().left)),
+        );
+
+    const headers = await readLefts("main thead th");
+
+    expect(new Set(headers).size).toBe(4);
+    for (const row of [1, 2, 3, 4]) {
+      expect(await readLefts(`main tbody tr:nth-child(${row}) td`)).toEqual(
+        headers,
+      );
+    }
   });
 
   test("nombre, motivo, fecha y estado se alinean", async ({ page }) => {
@@ -231,7 +282,34 @@ test.describe("bandeja en celular", () => {
       .first()
       .click({ force: true });
 
-    await expect(page).toHaveURL("/dev/mensajes?estado=detalle-pedido");
+    await expect(page).toHaveURL("/dev/mensajes?estado=detalle-pedido&fila=1");
+    await page.goBack();
+    expect(await readRowTargets(page)).toEqual(["1", "2", "3", "4"]);
+  });
+
+  test("el estado forma columna a la derecha y la fecha va debajo", async ({
+    page,
+  }) => {
+    await page.goto("/dev/mensajes");
+    await expect(page.locator("[data-message-row]")).toHaveCount(4);
+
+    const rows = await page
+      .locator("[data-message-row]")
+      .evaluateAll((elements) =>
+        elements.map((row) => {
+          const status = row.querySelector("[data-message-status]");
+          const date = row.querySelector("time");
+          const statusBox = status?.getBoundingClientRect();
+          const dateBox = date?.getBoundingClientRect();
+          return {
+            statusRight: Math.round(statusBox?.right ?? 0),
+            isDateBelow: (dateBox?.top ?? 0) >= (statusBox?.bottom ?? 0),
+          };
+        }),
+      );
+
+    expect(new Set(rows.map(({ statusRight }) => statusRight)).size).toBe(1);
+    expect(rows.every(({ isDateBelow }) => isDateBelow)).toBe(true);
   });
 
   test("Mensajes ocupa un lugar en la barra inferior con su número", async ({

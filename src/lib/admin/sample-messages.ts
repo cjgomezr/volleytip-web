@@ -77,7 +77,7 @@ function buildInbox(
 ): SampleMessages {
   const rows: readonly InboxRowView[] = ROWS.map((row) => ({
     ...row,
-    href: detailHref,
+    href: `${detailHref}&fila=${row.id}`,
     dateTime: SAMPLE_DATE_TIME,
     date: DATES[language].short,
   }));

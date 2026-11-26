@@ -9,25 +9,31 @@ import { TRANSITION_STYLES } from "../../pressable-styles";
 import { ReasonBadge, StatusBadge } from "./message-badges";
 
 const COLUMNS = [
-  { key: "panel.messages.column.name", width: "lg:w-[46%]" },
-  { key: "panel.messages.column.reason", width: "lg:w-[24%]" },
-  { key: "panel.messages.column.date", width: "lg:w-[16%]" },
-  { key: "panel.messages.column.status", width: "lg:w-[14%]" },
-] as const satisfies readonly { key: MessageKey; width: string }[];
+  "panel.messages.column.name",
+  "panel.messages.column.reason",
+  "panel.messages.column.date",
+  "panel.messages.column.status",
+] as const satisfies readonly MessageKey[];
 
-// Desde 1024 px es una tabla. Debajo, cada mensaje es una fila apilada: con
-// el menú lateral no hay ancho para cuatro columnas. Los roles van escritos
-// porque cambiar el `display` le quita a una tabla su significado.
+// Los anchos de las cuatro columnas, los mismos en el encabezado y en cada
+// fila.
+const GRID_STYLES =
+  "lg:grid lg:grid-cols-[minmax(0,46fr)_minmax(0,24fr)_minmax(0,16fr)_minmax(0,14fr)]";
+
+// Desde 1024 px se ve en columnas. Debajo, cada mensaje es una fila apilada:
+// con el menú lateral no hay ancho para cuatro. Se maqueta sin el `display` de
+// tabla porque Safari no siempre contiene en un `<tr>` el enlace que cubre la
+// fila; por eso los roles van escritos, para que siga siendo una tabla.
 const ROW_STYLES =
-  "relative hover:bg-line-light border-b border-line-light last:border-b-0 max-lg:min-h-11 max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-1.5 max-lg:px-4 max-lg:py-3";
-const CELL_STYLES = "min-w-0 text-left lg:px-4 lg:py-3 lg:align-top";
+  "relative hovered:bg-line-light border-b border-line-light last:border-b-0 max-lg:min-h-11 max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-1.5 max-lg:px-4 max-lg:py-3";
+const CELL_STYLES = "min-w-0 text-left lg:px-4 lg:py-3";
 // El enlace cubre toda la fila: esa es la zona que se toca. En la tabla mide
 // lo mismo que las insignias, para que la fila quede alineada.
 const NAME_LINK_STYLES = `inline-flex max-w-full lg:min-h-[26px] items-center text-[16px] leading-[1.35] font-bold text-brand-night underline-offset-2 [overflow-wrap:anywhere] hovered:underline pressed:text-brand-indigo focused:outline-brand-night after:absolute after:inset-0 ${TRANSITION_STYLES}`;
 
 function MessageRow({ row }: { readonly row: InboxRowView }): ReactElement {
   return (
-    <tr role="row" data-message-row className={ROW_STYLES}>
+    <tr role="row" data-message-row className={`${ROW_STYLES} ${GRID_STYLES}`}>
       <td role="cell" className={`${CELL_STYLES} max-lg:w-full`}>
         <Link to={row.href} className={NAME_LINK_STYLES}>
           {row.name}
@@ -41,7 +47,7 @@ function MessageRow({ row }: { readonly row: InboxRowView }): ReactElement {
       </td>
       <td
         role="cell"
-        className={`${CELL_STYLES} text-[13px] leading-[1.45] text-ink-subtle max-lg:order-last lg:leading-[26px]`}
+        className={`${CELL_STYLES} text-[13px] leading-[1.45] text-ink-subtle max-lg:order-last max-sm:w-full lg:leading-[26px]`}
       >
         <time dateTime={row.dateTime}>{row.date}</time>
       </td>
@@ -63,23 +69,26 @@ export function MessageList({
       <table
         role="table"
         aria-label={translate("panel.module.messages")}
-        className="w-full border-collapse max-lg:block lg:table-fixed"
+        className="block w-full"
       >
-        <thead role="rowgroup" className="max-lg:sr-only">
-          <tr role="row" className="border-b border-line-light">
-            {COLUMNS.map(({ key, width }) => (
+        <thead role="rowgroup" className="block max-lg:sr-only">
+          <tr
+            role="row"
+            className={`border-b border-line-light ${GRID_STYLES}`}
+          >
+            {COLUMNS.map((key) => (
               <th
                 key={key}
                 role="columnheader"
                 scope="col"
-                className={`px-4 py-3 text-left text-[12px] leading-[1.4] font-bold tracking-[0.08em] text-ink-subtle uppercase ${width}`}
+                className="min-w-0 px-4 py-3 text-left text-[12px] leading-[1.4] font-bold tracking-[0.08em] text-ink-subtle uppercase"
               >
                 {translate(key)}
               </th>
             ))}
           </tr>
         </thead>
-        <tbody role="rowgroup" className="max-lg:block">
+        <tbody role="rowgroup" className="block">
           {rows.map((row) => (
             <MessageRow key={row.id} row={row} />
           ))}

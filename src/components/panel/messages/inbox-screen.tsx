@@ -10,7 +10,7 @@ import { getButtonLinkClassName } from "../../button";
 import { PanelHeading } from "../panel-heading";
 import { InboxFilters } from "./inbox-filters";
 import { MessageList } from "./message-list";
-import { CARD_STYLES, TEXT_LINK_STYLES } from "./message-styles";
+import { TEXT_LINK_STYLES } from "./message-styles";
 
 function EmptyInbox({
   isFiltered,
@@ -21,7 +21,9 @@ function EmptyInbox({
 }): ReactElement {
   const translate = useTranslate();
   return (
-    <div className={`mt-4 ${CARD_STYLES} ${isFiltered ? "!pb-3" : ""}`}>
+    <div
+      className={`mt-4 rounded-card bg-surface-light px-5 pt-5 md:px-6 md:pt-6 ${isFiltered ? "pb-3" : "pb-5 md:pb-6"}`}
+    >
       <p className="m-0 text-[16px] leading-[1.5] text-ink-subtle">
         {translate(
           isFiltered ? "panel.messages.noResults" : "panel.messages.empty",
