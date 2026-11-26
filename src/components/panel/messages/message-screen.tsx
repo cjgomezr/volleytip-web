@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactElement, type ReactNode } from "react";
-import { Link } from "react-router";
+import { Link, useNavigationType } from "react-router";
 
 import {
   REASON_LABEL_KEYS,
@@ -182,9 +182,11 @@ function Notice({
 }): ReactElement {
   const translate = useTranslate();
   const text = useRef<HTMLParagraphElement>(null);
+  // "POP" es abrir o recargar la dirección: ahí el foco no se mueve.
+  const isNewPage = useNavigationType() === "POP";
   useEffect(() => {
-    text.current?.focus();
-  }, [notice]);
+    if (!isNewPage) text.current?.focus();
+  }, [notice, isNewPage]);
   return (
     <div role="status">
       {notice === null ? null : (
