@@ -284,6 +284,10 @@ for (const javaScriptEnabled of [true, false]) {
       await pressOn(page.getByRole("link", { name: "Laura Prueba" }));
 
       await expect(page).toHaveURL(`/admin/mensajes/${inbox.orderId}`);
+      // La lista sigue pintada hasta que llega el detalle.
+      await expect(
+        page.getByRole("heading", { level: 1, name: "Laura Prueba" }),
+      ).toBeVisible();
       await expect(state).toHaveText("Nuevo");
       await expect(
         page.getByRole("link", { name: "Responder por correo" }),
