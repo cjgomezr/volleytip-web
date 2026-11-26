@@ -92,10 +92,10 @@ Un perfil por usuario de Supabase Auth (FR-077). El de comprador se crea solo, s
 | `is_active` | boolean | Los admin y staff se pueden desactivar |
 
 ### `languages`
-`code` (PK, `es`, `en`), `name`, `is_default`, `is_active`. Agregar `pt` es agregar una fila (FR-004).
+`code` (PK, `es`, `en`), `name`, `is_default`, `is_active`. Agregar `pt` es agregar una fila (FR-004). La base no deja desactivar el idioma por defecto.
 
 ### `markets`
-`id`, `country_code` (ISO), `currency`, `default_locale`, `ships_physical` (boolean), `payment_methods` (text[]), `is_active`. En la fase 1 solo Colombia está activo (FR-009).
+`id`, `country_code` (ISO), `currency`, `default_locale`, `ships_physical` (boolean), `payment_methods` (text[]), `is_active`. En la fase 1 solo Colombia está activo (FR-009). La base exige al menos un mercado activo (también con escrituras simultáneas), que `default_locale` se elija entre los idiomas activos y que `payment_methods` salga de `card`, `pse`, `nequi` y `bancolombia_button`.
 
 ### `shipping_zones`
 `id`, `market_id`, `name`, `matcher` (jsonb: lista de departamentos o ciudades; una zona con `matcher` vacío es "resto del país"), `fee` + `currency`, `eta_min_days`, `eta_max_days`, `sort_order` (FR-120).
