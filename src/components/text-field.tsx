@@ -4,7 +4,7 @@ import type { PreviewState, Zone } from "./pressable";
 import { DISABLED_STYLES, TRANSITION_STYLES } from "./pressable-styles";
 
 type TextFieldType =
-  "text" | "email" | "tel" | "url" | "search" | "password" | "number";
+  "text" | "email" | "tel" | "url" | "search" | "password" | "number" | "date";
 
 interface TextFieldProps {
   /** Obligatoria: un campo sin etiqueta no es accesible. */
