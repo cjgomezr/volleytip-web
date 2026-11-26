@@ -1,3 +1,4 @@
+import { RouterContextProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { loader, middleware } from "./root";
@@ -24,9 +25,11 @@ async function runMiddleware(request: Request): Promise<Response> {
   if (first === undefined) throw new Error("Falta el middleware.");
   const next = (): Promise<Response> => Promise.resolve(new Response("pagina"));
   const result = await first(
-    { request, params: {}, context: {} } as unknown as Parameters<
-      typeof first
-    >[0],
+    {
+      request,
+      params: {},
+      context: new RouterContextProvider(),
+    } as unknown as Parameters<typeof first>[0],
     next,
   );
   if (!(result instanceof Response))
@@ -35,7 +38,10 @@ async function runMiddleware(request: Request): Promise<Response> {
 }
 
 function loadRoot(request: Request): ReturnType<typeof loader> {
-  return loader({ request } as Parameters<typeof loader>[0]);
+  return loader({
+    request,
+    context: new RouterContextProvider(),
+  } as unknown as Parameters<typeof loader>[0]);
 }
 
 describe("raíz: elección de idioma", () => {

@@ -231,9 +231,11 @@ export const panelEs = {
     "El modo mantenimiento está encendido: el sitio público no está disponible.",
   "panel.module.markets": "Idiomas y mercados",
   "panel.markets.languages.title": "Idiomas",
-  "panel.markets.languages.intro": "Un idioma desactivado sale del selector del sitio y sus páginas responden como una dirección que no existe. El panel sigue en los dos idiomas.",
+  "panel.markets.languages.intro":
+    "Un idioma desactivado sale del selector del sitio y sus páginas responden como una dirección que no existe. El panel sigue en los dos idiomas.",
   "panel.markets.languages.default": "Por defecto",
-  "panel.markets.languages.defaultReason": "Es el idioma por defecto del sitio: no se puede desactivar.",
+  "panel.markets.languages.defaultReason":
+    "Es el idioma por defecto del sitio: no se puede desactivar.",
   "panel.markets.languages.deactivate": "Desactivar",
   "panel.markets.languages.deactivateLabel": "Desactivar {language}",
   "panel.markets.languages.activate": "Activar",
@@ -241,7 +243,8 @@ export const panelEs = {
   "panel.markets.state.active": "Activo",
   "panel.markets.state.inactive": "Desactivado",
   "panel.markets.markets.title": "Mercados",
-  "panel.markets.markets.intro": "Dónde se vende y cómo. Siempre queda al menos un mercado activo.",
+  "panel.markets.markets.intro":
+    "Dónde se vende y cómo. Siempre queda al menos un mercado activo.",
   "panel.markets.market.heading": "{country} ({code})",
   "panel.markets.market.currency": "Moneda: {currency}",
   "panel.markets.market.isActive": "Mercado activo",
@@ -254,21 +257,29 @@ export const panelEs = {
   "panel.markets.method.pse": "PSE",
   "panel.markets.method.nequi": "Nequi",
   "panel.markets.method.bancolombiaButton": "Botón Bancolombia",
-  "panel.markets.error.lastActiveMarket": "Es el único mercado activo y no se puede desactivar: sin él, el sitio no tendría moneda en la que mostrar precios. Activa antes otro mercado.",
+  "panel.markets.error.lastActiveMarket":
+    "Es el único mercado activo y no se puede desactivar: sin él, el sitio no tendría moneda en la que mostrar precios. Activa antes otro mercado.",
   "panel.markets.error.inactiveLanguage": "Elige un idioma activo.",
   "panel.markets.error.unknownMethod": "Elige solo medios de pago de la lista.",
-  "panel.markets.error.defaultLanguage": "No se puede desactivar el idioma por defecto: es el que se muestra cuando no hay otro.",
-  "panel.markets.error.languageMalformed": "No se guardó. Recarga la pantalla e inténtalo de nuevo.",
+  "panel.markets.error.defaultLanguage":
+    "No se puede desactivar el idioma por defecto: es el que se muestra cuando no hay otro.",
+  "panel.markets.error.languageMalformed":
+    "No se guardó. Recarga la pantalla e inténtalo de nuevo.",
   "panel.markets.rate.title": "Tasa del dólar",
-  "panel.markets.rate.intro": "El sitio la usa para mostrar el precio aproximado en dólares. El cobro sigue en pesos.",
+  "panel.markets.rate.intro":
+    "El sitio la usa para mostrar el precio aproximado en dólares. El cobro sigue en pesos.",
   "panel.markets.rate.current": "Tasa actual: {rate} pesos por dólar.",
-  "panel.markets.rate.missing": "Sin tasa guardada: el sitio muestra solo el precio en pesos.",
-  "panel.markets.rate.invalid": "La tasa guardada no es un entero positivo. Escribe una nueva y guarda.",
+  "panel.markets.rate.missing":
+    "Sin tasa guardada: el sitio muestra solo el precio en pesos.",
+  "panel.markets.rate.invalid":
+    "La tasa guardada no es un entero positivo. Escribe una nueva y guarda.",
   "panel.markets.rate.label": "Pesos por un dólar",
-  "panel.markets.rate.hint": "Un número entero, sin puntos ni comas. Ejemplo: 4150.",
+  "panel.markets.rate.hint":
+    "Un número entero, sin puntos ni comas. Ejemplo: 4150.",
   "panel.markets.rate.save": "Guardar tasa",
   "panel.markets.rate.error.required": "Escribe la tasa.",
-  "panel.markets.rate.error.notPositiveInteger": "Escribe un número entero mayor que cero, sin puntos, comas ni letras.",
+  "panel.markets.rate.error.notPositiveInteger":
+    "Escribe un número entero mayor que cero, sin puntos, comas ni letras.",
   "panel.module.siteTexts": "Textos del sitio",
   "panel.siteTexts.bar.title": "Barra de anuncios",
   "panel.siteTexts.bar.intro":

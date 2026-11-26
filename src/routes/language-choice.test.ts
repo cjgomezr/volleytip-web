@@ -1,6 +1,14 @@
+import { RouterContextProvider } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { action } from "./language-choice";
+
+function runAction(request: Request): ReturnType<typeof action> {
+  const context = new RouterContextProvider();
+  return action({ request, context } as unknown as Parameters<
+    typeof action
+  >[0]);
+}
 
 async function submit(fields: Record<string, string>): Promise<Response> {
   const body = new URLSearchParams(fields);
@@ -8,7 +16,7 @@ async function submit(fields: Record<string, string>): Promise<Response> {
     method: "POST",
     body,
   });
-  const result = await action({ request } as Parameters<typeof action>[0]);
+  const result = await runAction(request);
   if (!(result instanceof Response))
     throw new Error("Se esperaba una Response.");
   return result;
@@ -69,12 +77,12 @@ describe("aviso de idioma: acciones", () => {
 
   it("rechaza un idioma no soportado sin guardar nada", async () => {
     for (const language of ["fr", "", "EN", "<b>"]) {
-      const result = await action({
-        request: new Request("http://localhost/idioma", {
+      const result = await runAction(
+        new Request("http://localhost/idioma", {
           method: "POST",
           body: new URLSearchParams({ language, from: "/" }),
         }),
-      } as Parameters<typeof action>[0]);
+      );
 
       expect(result).toBeInstanceOf(Response);
       expect((result as Response).status).toBe(400);

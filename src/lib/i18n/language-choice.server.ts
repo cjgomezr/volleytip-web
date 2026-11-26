@@ -3,13 +3,14 @@ import { createCookie } from "react-router";
 
 import type { AppEnvironment } from "../env.server";
 
+import {
+  ALL_LANGUAGES,
+  getServedLanguage,
+  type ActiveLanguages,
+} from "./active-languages";
 import { getPreferredLanguage } from "./browser-language";
 import { getDocumentPath } from "./document-path";
-import {
-  getLanguageFromPath,
-  isSupportedLanguage,
-  type Language,
-} from "./languages";
+import { isSupportedLanguage, type Language } from "./languages";
 import { getPagePath } from "./pages";
 
 // Decisión 7 del PRD de W2.
@@ -50,14 +51,17 @@ function createLanguageCookie(
 const READING_COOKIE = createLanguageCookie("local");
 
 /** El idioma que la persona eligió, o `undefined` si no hay cookie o su
- * valor no es un idioma soportado. */
+ * valor no es un idioma que el sitio ofrezca. */
 export async function readLanguageChoice(
   request: Request,
+  activeLanguages: ActiveLanguages = ALL_LANGUAGES,
 ): Promise<Language | undefined> {
   const value: unknown = await READING_COOKIE.parse(
     request.headers.get("Cookie"),
   );
-  return typeof value === "string" && isSupportedLanguage(value)
+  return typeof value === "string" &&
+    isSupportedLanguage(value) &&
+    activeLanguages.includes(value)
     ? value
     : undefined;
 }
@@ -86,18 +90,23 @@ function isRobot(request: Request): boolean {
 }
 
 /** El idioma que el aviso propone, o `undefined` si no debe salir: hay
- * elección guardada, es un robot, el navegador no pide un idioma soportado
- * o ya es el de la página. */
+ * elección guardada, es un robot, el navegador no pide un idioma que el sitio
+ * ofrezca o ya es el de la página. */
 export async function getLanguageProposal(
   request: Request,
+  activeLanguages: ActiveLanguages = ALL_LANGUAGES,
 ): Promise<Language | undefined> {
   if (isRobot(request)) return undefined;
-  if ((await readLanguageChoice(request)) !== undefined) return undefined;
+  if (await readLanguageChoice(request, activeLanguages)) return undefined;
   const preferred = getPreferredLanguage(
     request.headers.get("Accept-Language"),
   );
-  const pageLanguage = getLanguageFromPath(
+  if (preferred === undefined || !activeLanguages.includes(preferred)) {
+    return undefined;
+  }
+  const pageLanguage = getServedLanguage(
     getDocumentPath(new URL(request.url)),
+    activeLanguages,
   );
   return preferred === pageLanguage ? undefined : preferred;
 }
@@ -114,11 +123,12 @@ export async function getLanguageProposal(
  */
 export async function redirectRootToChosenLanguage(
   request: Request,
+  activeLanguages: ActiveLanguages = ALL_LANGUAGES,
 ): Promise<Response | null> {
   const url = new URL(request.url);
   if (getDocumentPath(url) !== ROOT_PATH || isRobot(request)) return null;
   if (comesFromThisSite(request)) return null;
-  const choice = await readLanguageChoice(request);
+  const choice = await readLanguageChoice(request, activeLanguages);
   if (choice === undefined) return null;
   const target = getPagePath("home", choice);
   if (target === ROOT_PATH) return null;

@@ -63,7 +63,9 @@ export function resolveTranslatedFields<Fields extends TranslatedFields>(
   const fields: Record<string, unknown> = {};
   const languages: Record<string, Language> = {};
   for (const [name, spanishValue] of Object.entries(spanish)) {
-    const requestedValue: unknown = (requested as Record<string, unknown>)[name];
+    const requestedValue: unknown = (requested as Record<string, unknown>)[
+      name
+    ];
     const usesRequested =
       requestedLanguage !== DEFAULT_LANGUAGE && isPresent(requestedValue);
     fields[name] = usesRequested ? requestedValue : spanishValue;

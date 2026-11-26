@@ -240,6 +240,10 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     }
     if (url.pathname === "/rest/v1/settings") return answerSettings(request);
     if (url.pathname === "/rest/v1/messages") return messages.answer(request);
+    // Como la base recién migrada: los dos idiomas del sitio, activos.
+    if (url.pathname === "/rest/v1/languages") {
+      return Response.json([{ code: "es" }, { code: "en" }]);
+    }
     return Response.json([]);
   }
 

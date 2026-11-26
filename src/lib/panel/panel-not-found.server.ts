@@ -1,5 +1,6 @@
 import { data } from "react-router";
 
+import { loadActiveLanguages } from "../active-languages.server";
 import { pickAnnouncementMessages } from "../announcement-bar.server";
 import { getSiteYear } from "../i18n/format";
 import { loadLanguageSuggestion } from "../i18n/language-suggestion.server";
@@ -16,15 +17,22 @@ export async function buildPanelNotFound(
   request: Request,
 ): Promise<ReturnType<typeof data<PanelNotFound>>> {
   const language = getRequestLanguage(request);
-  // Las direcciones del panel están exentas de mantenimiento y el middleware
-  // de la raíz no lee los ajustes para ellas.
-  const { announcements } = await loadSiteSettings();
+  // Las direcciones del panel están exentas de mantenimiento y los
+  // middleware de la raíz no leen los ajustes ni los idiomas para ellas.
+  const [{ announcements }, activeLanguages] = await Promise.all([
+    loadSiteSettings(),
+    loadActiveLanguages(),
+  ]);
   return data(
     buildPanelNotFoundData({
+      activeLanguages,
       messages: getMessages(language),
       year: getSiteYear(new Date()),
       announcements: pickAnnouncementMessages(announcements, language),
-      languageSuggestion: await loadLanguageSuggestion(request),
+      languageSuggestion: await loadLanguageSuggestion(
+        request,
+        activeLanguages,
+      ),
     }),
     { status: NOT_FOUND_STATUS },
   );

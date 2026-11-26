@@ -1,11 +1,8 @@
 import { useState, type MouseEvent, type ReactElement } from "react";
 import { Link, useLocation, useNavigate } from "react-router";
 
-import {
-  LANGUAGE_NAMES,
-  SUPPORTED_LANGUAGES,
-  type Language,
-} from "~/lib/i18n/languages";
+import { useActiveLanguages } from "~/lib/i18n/active-languages-context";
+import { LANGUAGE_NAMES, type Language } from "~/lib/i18n/languages";
 import { getPagePath, type CurrentPage } from "~/lib/i18n/pages";
 import {
   isPlainLeftClick,
@@ -66,7 +63,7 @@ const OTHER_STYLES: Record<Zone, string> = {
 };
 
 /**
- * Un enlace por idioma hacia la misma página en ese idioma, con los
+ * Un enlace por idioma activo hacia la misma página en ese idioma, con los
  * parámetros de búsqueda de la actual (FR-004). Son enlaces de verdad:
  * funciona sin JavaScript. En una dirección que no es una página del sitio
  * lleva a la home de cada idioma.
@@ -78,6 +75,7 @@ export function LanguageSwitcher({
 }: LanguageSwitcherProps): ReactElement {
   const translate = useTranslate();
   const currentLanguage = useLanguage();
+  const activeLanguages = useActiveLanguages();
   const { pathname, search, key: locationKey } = useLocation();
   const navigate = useNavigate();
   const { page, params } = useCurrentPage() ?? FALLBACK_PAGE;
@@ -146,7 +144,7 @@ export function LanguageSwitcher({
   return (
     <nav aria-label={label ?? translate("languageSwitcher.label")}>
       <ul className={`${LIST_STYLES} ${LIST_ZONE_STYLES[zone]}`}>
-        {SUPPORTED_LANGUAGES.map(({ code }) => renderLanguage(code))}
+        {activeLanguages.map(renderLanguage)}
       </ul>
     </nav>
   );
