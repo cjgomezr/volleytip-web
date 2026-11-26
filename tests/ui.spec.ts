@@ -1934,10 +1934,29 @@ const MESSAGES_VARIANTS: readonly PanelVariant[] = MESSAGES_STATES.flatMap(
     })),
 );
 
+// La bitácora (#131): la lista con entradas, vacía y el detalle, en los dos
+// idiomas. La muestra no usa la base.
+const AUDIT_LOG_VARIANTS: readonly PanelVariant[] = [
+  "datos",
+  "vacio",
+  "detalle",
+].flatMap((state) =>
+  [
+    { suffix: "", path: "/dev/panel/bitacora" },
+    { suffix: "-en", path: "/en/dev/panel/audit-log" },
+  ].map(({ suffix, path }) => ({
+    name: `bitacora-${state}${suffix}`,
+    path: `${path}?bitacora=${state}`,
+    role: undefined,
+    sizes: viewports,
+  })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SIGN_IN_VARIANTS,
   ...SETTINGS_VARIANTS,
   ...MESSAGES_VARIANTS,
+  ...AUDIT_LOG_VARIANTS,
   {
     name: "staff",
     path: "/admin",

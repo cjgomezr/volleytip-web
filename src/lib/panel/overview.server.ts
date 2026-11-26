@@ -1,3 +1,4 @@
+import { describeActor } from "../admin/audit-actor";
 import type { AdminModule, ModuleOverviewCard } from "../admin/modules";
 import {
   APP_WAITLIST_CARD,
@@ -78,8 +79,7 @@ async function readActivity(
     id,
     action,
     createdAt: created_at,
-    actorName:
-      actor === null ? null : actor.full_name?.trim() || String(actor.email),
+    actorName: describeActor(actor),
   }));
 }
 

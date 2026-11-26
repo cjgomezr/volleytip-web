@@ -2,7 +2,6 @@ import type { ReactElement, ReactNode } from "react";
 import { Link, useLocation } from "react-router";
 
 import type {
-  ActivityView,
   OverviewCardView,
   OverviewView,
   RejectionFormView,
@@ -15,6 +14,7 @@ import {
   OUTLINE_ZONE_STYLES,
   TRANSITION_STYLES,
 } from "../pressable-styles";
+import { ActivityRow } from "./activity-row";
 import { PanelHeading } from "./panel-heading";
 
 const CARD_STYLES =
@@ -100,34 +100,6 @@ function Section({
       </h2>
       {children}
     </section>
-  );
-}
-
-function ActivityRow({
-  entry,
-}: {
-  readonly entry: ActivityView;
-}): ReactElement {
-  const translate = useTranslate();
-  return (
-    <li
-      className={`${ROW_STYLES} flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between sm:gap-4`}
-    >
-      <p className="m-0 min-w-0 [overflow-wrap:anywhere]">
-        <span className="block text-[15px] leading-[1.4] font-bold">
-          {entry.action}
-        </span>
-        <span className="block text-[14px] leading-[1.4] text-ink-subtle">
-          {entry.actorName ?? translate("panel.overview.activity.system")}
-        </span>
-      </p>
-      <time
-        dateTime={entry.dateTime}
-        className="shrink-0 text-[13px] leading-[1.4] text-ink-subtle"
-      >
-        {entry.date}
-      </time>
-    </li>
   );
 }
 

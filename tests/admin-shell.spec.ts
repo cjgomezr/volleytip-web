@@ -381,6 +381,7 @@ test.describe("panel real", () => {
       /^Mensajes/,
       "Textos del sitio",
       "Ajustes",
+      "Bitácora",
     ]);
     await expect(links.first()).toHaveAttribute("aria-current", "page");
     await expect(links.nth(1)).not.toHaveAttribute("aria-current");

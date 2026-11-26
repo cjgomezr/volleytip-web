@@ -119,6 +119,16 @@ export const PANEL_ADMIN_PAGES = [
       en: "admin/settings/maintenance",
     },
   },
+  {
+    id: "adminAuditLog",
+    file: "routes/panel/audit-log.tsx",
+    path: { es: "admin/bitacora", en: "admin/audit-log" },
+  },
+  {
+    id: "adminAuditLogEntry",
+    file: "routes/panel/audit-log-entry.tsx",
+    path: { es: "admin/bitacora/:id", en: "admin/audit-log/:id" },
+  },
   { id: "adminMissing", file: "routes/panel/missing.tsx", path: "admin/*" },
 ] as const satisfies readonly PageDeclaration[];
 

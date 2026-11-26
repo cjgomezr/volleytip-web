@@ -529,6 +529,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      audit_log_actions: {
+        Args: Record<PropertyKey, never>;
+        Returns: string[];
+      };
+      audit_log_actors: {
+        Args: Record<PropertyKey, never>;
+        Returns: {
+          email: string;
+          full_name: string;
+          id: string;
+        }[];
+      };
       check_rate_limit: {
         Args: {
           p_key: string;

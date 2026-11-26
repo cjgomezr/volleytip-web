@@ -45,6 +45,7 @@ describe("módulos del panel", () => {
       "messages",
       "site-texts",
       "settings",
+      "audit-log",
     ]);
     expect(sidebar[3]?.href).toBe("/admin/ajustes");
     expect(sidebar[0]?.href).toBe("/admin");
@@ -57,7 +58,7 @@ describe("módulos del panel", () => {
     const { bar, more } = navigate(ADMIN_MODULES);
 
     expect(ids(bar)).toEqual(["overview", "messages"]);
-    expect(ids(more)).toEqual(["site-texts", "settings"]);
+    expect(ids(more)).toEqual(["site-texts", "settings", "audit-log"]);
   });
 
   it.each([
