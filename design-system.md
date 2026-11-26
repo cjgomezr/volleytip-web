@@ -216,6 +216,18 @@ pill's text names the state; colour only supports it. Turning maintenance on
 goes through its own confirmation screen, never a dialog, so it works without
 JavaScript.
 
+**Admin messages** (ticket #125; `src/components/panel/messages/`; sample at
+`/dev/mensajes`). Content up to 1100px. The filters sit in a white card: search,
+reason and status, stacked under 1024px and in one row from there, with a
+secondary button. From 1024px the list is a table in a white card (name with up
+to two lines of the message, reason, date, status); under 1024px each message is
+a stacked row that is tappable as a whole. Reason badge: pill, `brand-night`
+background. Status badge: `brand-red` new, `brand-lime` answered, `brand-mist`
+archived, always with `brand-night` text on the light ones and the text naming
+the state. The detail has two columns from 1024px (2:1): the message and its
+data, then reply and status. "Reply by email" is the primary button; WhatsApp and
+the status changes are secondary.
+
 ## Mandatory component states
 
 Every interactive component ships with ALL of: default, hover, focus-visible

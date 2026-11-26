@@ -1911,9 +1911,33 @@ const SETTINGS_VARIANTS: readonly PanelVariant[] = SETTINGS_STATES.flatMap(
     })),
 );
 
+// La bandeja y el detalle de un mensaje (#125), cada estado en los dos
+// idiomas. La muestra no usa la base.
+const MESSAGES_STATES = [
+  "lista",
+  "vacia",
+  "sin-resultados",
+  "detalle-pedido",
+  "detalle-marcas",
+] as const;
+
+const MESSAGES_VARIANTS: readonly PanelVariant[] = MESSAGES_STATES.flatMap(
+  (state) =>
+    [
+      { suffix: "", path: "/dev/mensajes" },
+      { suffix: "-en", path: "/en/dev/mensajes" },
+    ].map(({ suffix, path }) => ({
+      name: `mensajes-${state}${suffix}`,
+      path: `${path}?estado=${state}`,
+      role: undefined,
+      sizes: viewports,
+    })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SIGN_IN_VARIANTS,
   ...SETTINGS_VARIANTS,
+  ...MESSAGES_VARIANTS,
   {
     name: "staff",
     path: "/admin",
