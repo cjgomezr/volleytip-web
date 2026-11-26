@@ -317,13 +317,13 @@ describe("ajustes: estado de la app", () => {
     ["appStoreUrl", "https://apps.apple.com/co/app/una app"],
     ["appStoreUrl", "apps.apple.com/co/app/id123"],
     ["appStoreUrl", `https://apps.apple.com/${"a".repeat(2100)}`],
-    ["appStoreUrl", "https://apps.apple.com/ x"],
-    ["appStoreUrl", "https://apps.apple.com/x"],
-    ["playStoreUrl", "https://play.google.com/x"],
+    ["appStoreUrl", "https://apps.apple.com/\u0000x"],
+    ["appStoreUrl", "https://apps.apple.com/\u0001x"],
+    ["playStoreUrl", "https://play.google.com/\u007fx"],
     ["playStoreUrl", "http://play.google.com/store/apps"],
     ["playStoreUrl", APP_STORE],
     ["playStoreUrl", "no es una dirección"],
-  ])("rechaza %s = %s", async (field, url) => {
+  ])("rechaza %s = %j", async (field, url) => {
     for (const status of ["available", "waitlist"]) {
       const supabase = stubSupabase();
 
