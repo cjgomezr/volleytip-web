@@ -229,9 +229,11 @@ describe("cáscara del panel", () => {
   });
 
   it("'Más' sin módulos fuera de la barra solo ofrece cerrar sesión", () => {
-    const modules = ADMIN_MODULES.filter(({ bottomBar }) => bottomBar);
-
-    const html = render({ modules, path: "/admin/mas", isMore: true });
+    const html = render({
+      modules: ADMIN_MODULES.filter(({ bottomBar }) => bottomBar),
+      path: "/admin/mas",
+      isMore: true,
+    });
 
     expect(html).not.toContain('data-panel-region="more-list"');
     expect(region(html, "more")).toContain("Cerrar sesión");

@@ -21,6 +21,8 @@ interface TextFieldProps {
   readonly isRequired?: boolean;
   readonly isDisabled?: boolean;
   readonly zone?: Zone;
+  /** Para quien necesita seguir lo escrito; el campo sigue sin controlar. */
+  readonly onChange?: (value: string) => void;
   /** Solo para la página de muestra (ver `PreviewState`). */
   readonly previewState?: Exclude<PreviewState, "active">;
 }
@@ -97,6 +99,7 @@ export function TextField({
   isDisabled = false,
   zone = "dark",
   previewState,
+  onChange,
 }: TextFieldProps): ReactElement {
   const id = useId();
   const hintId = hasText(hint) ? `${id}-hint` : undefined;
@@ -133,6 +136,7 @@ export function TextField({
           describedBy.length === 0 ? undefined : describedBy.join(" ")
         }
         data-preview={previewState}
+        onChange={onChange && ((event) => onChange(event.currentTarget.value))}
         className={`${INPUT_STYLES} ${TRANSITION_STYLES} ${borderStyles} ${stateStyles}`}
       />
       {hintId === undefined ? null : (

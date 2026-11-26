@@ -81,6 +81,35 @@ describe("cifras del sitio", () => {
     expect(stats.map(({ id }) => id)).toEqual(["instagram", "views", "region"]);
   });
 
+  it.each(["value", "label"])(
+    "omite la cifra con el campo %s vacío en español",
+    async (part) => {
+      const blanked = ALL_STATS_IN_SPANISH.map((row) =>
+        row.key === `stats.tiktok.${part}` ? { ...row, value: "  " } : row,
+      );
+      const client = createClientWithRows(blanked);
+
+      const stats = await readSiteStats("es", client);
+
+      expect(stats.map(({ id }) => id)).toEqual([
+        "instagram",
+        "views",
+        "region",
+      ]);
+    },
+  );
+
+  it("pinta en inglés la cifra que solo tiene valor en inglés", async () => {
+    const client = createClientWithRows([
+      ...rowsFor("instagram", "es", "", "seguidores"),
+      ...rowsFor("instagram", "en", "116K", "followers"),
+    ]);
+
+    const stats = await readSiteStats("en", client);
+
+    expect(stats).toMatchObject([{ value: "116K", label: "followers" }]);
+  });
+
   it("devuelve una lista vacía cuando no hay ninguna cifra", async () => {
     const client = createClientWithRows([]);
 

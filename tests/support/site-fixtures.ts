@@ -89,6 +89,14 @@ export async function seedSiteFixtures(
   // Una corrida cortada a medias pudo dejar los ajustes que escriben las
   // pruebas del panel: el sitio en mantenimiento o la app como disponible.
   await removeSettingRows(status, ["maintenance_mode", "app_availability"]);
+  await seedSettingsFixtures(status);
+}
+
+/** Escribe los ajustes de las pruebas. La usa también la prueba que los
+ * cambia, para devolverlos. */
+export async function seedSettingsFixtures(
+  status: LocalSupabaseStatus,
+): Promise<void> {
   const response = await fetch(
     `${status.API_URL}/rest/v1/settings?on_conflict=key`,
     {

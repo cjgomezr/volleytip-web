@@ -55,6 +55,12 @@ export const ADMIN_MODULES = defineModules([
     bottomBar: { glyph: "⌂" },
   },
   {
+    id: "site-texts",
+    page: findPanelPage("adminSiteTexts"),
+    labelKey: "panel.module.siteTexts",
+    requiredRole: "admin",
+  },
+  {
     id: "settings",
     page: findPanelPage("adminSettings"),
     labelKey: "panel.module.settings",

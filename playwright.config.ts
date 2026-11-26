@@ -7,12 +7,13 @@ const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 const SERVER_BOOT_TIMEOUT_MS = 120_000;
 // Escriben ajustes que cambian el sitio entero (mantenimiento): corren solas.
 const SETTINGS_WRITES = "**/admin-settings-writes.spec.ts";
+const TEXTS_WRITES = "**/admin-site-texts-writes.spec.ts";
 
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   projects: [
-    { name: "sitio", testIgnore: SETTINGS_WRITES },
+    { name: "sitio", testIgnore: [SETTINGS_WRITES, TEXTS_WRITES] },
     // Depende de "sitio": empieza cuando las demás ya terminaron, así que
     // ninguna se cruza con el sitio en mantenimiento. Para correr solo estas:
     // `--project=ajustes-que-escriben --no-deps`.
@@ -20,6 +21,14 @@ export default defineConfig({
       name: "ajustes-que-escriben",
       testMatch: SETTINGS_WRITES,
       dependencies: ["sitio"],
+    },
+    // Cambia la barra de anuncios que las demás capturan y abre páginas
+    // públicas: corre sola, sin un mantenimiento encendido a la vez. Para
+    // correr solo esta: `--project=textos-que-escriben --no-deps`.
+    {
+      name: "textos-que-escriben",
+      testMatch: TEXTS_WRITES,
+      dependencies: ["ajustes-que-escriben"],
     },
   ],
   // El de Playwright sin el nombre del proyecto: las líneas base ya

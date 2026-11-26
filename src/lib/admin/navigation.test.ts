@@ -37,22 +37,22 @@ function ids(entries: readonly { readonly id: string }[]): string[] {
 }
 
 describe("módulos del panel", () => {
-  it("la lista real tiene Resumen, que apunta al inicio, y Ajustes", () => {
+  it("la lista real empieza en Resumen y sigue el orden del menú", () => {
     const { sidebar } = navigate(ADMIN_MODULES);
 
-    expect(ids(sidebar)).toEqual(["overview", "settings"]);
-    expect(sidebar[1]?.href).toBe("/admin/ajustes");
+    expect(ids(sidebar)).toEqual(["overview", "site-texts", "settings"]);
+    expect(sidebar[2]?.href).toBe("/admin/ajustes");
     expect(sidebar[0]?.href).toBe("/admin");
     expect(navigate(ADMIN_MODULES, { language: "en" }).sidebar[0]?.href).toBe(
       "/en/admin",
     );
   });
 
-  it("Resumen va en la barra inferior y Ajustes en 'Más'", () => {
+  it("Resumen va en la barra inferior y lo demás en 'Más'", () => {
     const { bar, more } = navigate(ADMIN_MODULES);
 
     expect(ids(bar)).toEqual(["overview"]);
-    expect(ids(more)).toEqual(["settings"]);
+    expect(ids(more)).toEqual(["site-texts", "settings"]);
   });
 
   it("el menú sale de la lista y respeta el orden", () => {
