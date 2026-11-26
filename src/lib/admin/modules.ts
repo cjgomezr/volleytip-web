@@ -69,6 +69,12 @@ export const ADMIN_MODULES = defineModules([
     requiredRole: "admin",
   },
   {
+    id: "markets",
+    page: findPanelPage("adminMarkets"),
+    labelKey: "panel.module.markets",
+    requiredRole: "admin",
+  },
+  {
     id: "settings",
     page: findPanelPage("adminSettings"),
     labelKey: "panel.module.settings",

@@ -1,0 +1,36 @@
+import type { ReactElement } from "react";
+
+import { MarketsScreen } from "~/components/panel/markets/markets-screen";
+import type { MarketsView } from "~/lib/admin/markets";
+import { defineAdminAction } from "~/lib/panel/admin-action.server";
+import {
+  MARKET_AUDITED_FIELDS,
+  saveMarket,
+} from "~/lib/panel/market-editor.server";
+import { readMarketsView } from "~/lib/panel/markets-view.server";
+import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
+
+import type { Route } from "./+types/markets-market";
+
+export function loader({ context }: Route.LoaderArgs): Promise<MarketsView> {
+  return readMarketsView(context.get(panelSessionContext).client);
+}
+
+export const action = defineAdminAction({
+  name: "market.update",
+  auditedFields: MARKET_AUDITED_FIELDS,
+  run: async ({ request, context }: Route.ActionArgs) =>
+    saveMarket(
+      context.get(panelSessionContext).client,
+      await request.formData(),
+    ),
+});
+
+// Solo se pinta sin JavaScript: con él, el formulario envía sin salir de
+// "Idiomas y mercados".
+export default function PanelMarketsMarket({
+  loaderData,
+  actionData,
+}: Route.ComponentProps): ReactElement {
+  return <MarketsScreen {...loaderData} marketOutcome={actionData} />;
+}
