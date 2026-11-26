@@ -1,6 +1,10 @@
 import { data } from "react-router";
 
-import type { FieldError, LocalizedDraft } from "../admin/site-texts";
+import {
+  isBlankText,
+  type FieldError,
+  type LocalizedDraft,
+} from "../admin/site-texts";
 import { SUPPORTED_LANGUAGES, type Language } from "../i18n/languages";
 import type { AdminActionOutcome } from "./admin-action.server";
 
@@ -10,15 +14,12 @@ const BAD_REQUEST = 400;
 export const LANGUAGES: readonly Language[] = SUPPORTED_LANGUAGES.map(
   ({ code }) => code,
 );
-// Espacios y caracteres de formato: un texto hecho solo de ellos no se ve.
-const INVISIBLE_ONLY = /^[\p{Cf}\s]*$/u;
-
 // Un salto de línea u otro carácter de control no se ve en el sitio, y el
 // nulo ni siquiera cabe en la base. Lo demás, HTML incluido, queda tal cual.
 // Los de formato solo se quitan si no hay nada más: unen emojis.
 export function normalizeText(text: string): string {
   const cleaned = text.replace(/\p{Cc}+/gu, " ").trim();
-  return INVISIBLE_ONLY.test(cleaned) ? "" : cleaned;
+  return isBlankText(cleaned) ? "" : cleaned;
 }
 
 export function buildByLanguage<Value>(

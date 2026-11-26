@@ -64,6 +64,15 @@ export type StatsOutcome =
  * una barra vacía de un envío incompleto. */
 export const MESSAGE_COUNT_FIELD = "messageCount";
 
+// Espacios, controles y caracteres de formato: no se ven en el sitio.
+const INVISIBLE_ONLY = /^[\p{Cc}\p{Cf}\s]*$/u;
+
+/** Dice si un texto se vería vacío. El servidor y la pantalla usan la misma
+ * regla. */
+export function isBlankText(text: string): boolean {
+  return INVISIBLE_ONLY.test(text);
+}
+
 /** El campo de un mensaje de la barra en los errores de un envío. */
 export function messageField(position: number, language: Language): string {
   return `${position}.${language}`;

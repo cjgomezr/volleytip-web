@@ -82,7 +82,10 @@ export function SaveBar({
           role="alert"
           className="m-0 text-[15px] leading-[1.5] font-bold text-brand-red-deep"
         >
-          {translate("panel.siteTexts.error.summary")}
+          {/* Un error del formulario entero no marca ningún campo. */}
+          {formError === undefined
+            ? translate("panel.siteTexts.error.summary")
+            : translate("panel.siteTexts.error.notSaved")}
           {formError === undefined ? null : (
             <span className="block">{formError}</span>
           )}

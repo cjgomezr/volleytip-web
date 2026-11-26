@@ -1,6 +1,6 @@
 import type { ReactElement } from "react";
 
-import type { LocalizedDraft } from "~/lib/admin/site-texts";
+import { isBlankText, type LocalizedDraft } from "~/lib/admin/site-texts";
 import type { Language } from "~/lib/i18n/languages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 
@@ -77,7 +77,7 @@ export function AnnouncementMessageFields({
   onAction,
 }: MessageFieldsProps): ReactElement {
   const translate = useTranslate();
-  const isMissingEnglish = row.es.trim() !== "" && row.en.trim() === "";
+  const isMissingEnglish = !isBlankText(row.es) && isBlankText(row.en);
   return (
     <fieldset
       data-message-row={row.id}

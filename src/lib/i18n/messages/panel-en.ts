@@ -124,6 +124,7 @@ export const panelEn = {
   "panel.siteTexts.stats.save": "Save figures",
   "panel.siteTexts.maxLength": "Up to {max} characters.",
   "panel.siteTexts.error.required": "Write the Spanish text.",
+  "panel.siteTexts.error.notSaved": "Not saved.",
   "panel.siteTexts.error.summary": "Not saved. Check what is marked.",
   "panel.siteTexts.saving": "Saving",
   "panel.siteTexts.saved": "Changes saved.",

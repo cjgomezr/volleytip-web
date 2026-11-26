@@ -126,6 +126,7 @@ export const panelEs = {
   "panel.siteTexts.stats.save": "Guardar cifras",
   "panel.siteTexts.maxLength": "Máximo {max} caracteres.",
   "panel.siteTexts.error.required": "Escribe el texto en español.",
+  "panel.siteTexts.error.notSaved": "No se guardó.",
   "panel.siteTexts.error.summary": "No se guardó. Revisa lo marcado.",
   "panel.siteTexts.saving": "Guardando",
   "panel.siteTexts.saved": "Cambios guardados.",

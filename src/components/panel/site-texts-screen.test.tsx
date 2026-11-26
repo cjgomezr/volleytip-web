@@ -151,6 +151,18 @@ describe("textos: pantalla", () => {
     );
   });
 
+  it("avisa también si el inglés solo tiene caracteres invisibles", () => {
+    const html = render({
+      bar: {
+        messages: [{ es: "Hola", en: "\u200B " }],
+        invalidValue: null,
+      },
+    });
+    const [english] = inputTags(html, "en");
+
+    expect(describedText(html, english ?? "")).toContain(ENGLISH_WARNING);
+  });
+
   it("marca el error junto al campo y conserva lo escrito", () => {
     const html = render({
       barOutcome: {
@@ -188,10 +200,12 @@ describe("textos: pantalla", () => {
       },
     });
 
-    // Dentro de la alerta: si no, un lector de pantalla no lo anuncia.
+    // Dentro de la alerta: si no, un lector de pantalla no lo anuncia. No hay
+    // nada marcado, así que el resumen tampoco manda a revisarlo.
     expect(html).toMatch(
-      /role="alert"[^>]*>(?:(?!<\/div>).)*La barra admite máximo/,
+      /<p[^>]*role="alert"[^>]*>No se guardó\.(?:(?!<\/p>).)*La barra admite máximo/,
     );
+    expect(html).not.toContain("Revisa lo marcado");
 
     expect(inputTags(html, "es")).toHaveLength(4);
     expect(html).toContain("La barra admite máximo 3 mensajes.");
