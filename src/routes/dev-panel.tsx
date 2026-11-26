@@ -1,6 +1,8 @@
 import type { ReactElement } from "react";
 import { data, redirect } from "react-router";
 
+import { AuditEntryScreen } from "~/components/panel/audit-entry-screen";
+import { AuditLogScreen } from "~/components/panel/audit-log-screen";
 import { OverviewScreen } from "~/components/panel/overview-screen";
 import { PanelHeading } from "~/components/panel/panel-heading";
 import { PanelMore } from "~/components/panel/panel-more";
@@ -8,6 +10,11 @@ import { PanelShell } from "~/components/panel/panel-shell";
 import { SiteTextsScreen } from "~/components/panel/site-texts-screen";
 import type { OverviewView } from "~/lib/admin/overview";
 import { getPanelPathInLanguage } from "~/lib/admin/path-in-language";
+import {
+  buildSampleAuditLog,
+  SAMPLE_AUDIT_STATES,
+  type SampleAuditLog,
+} from "~/lib/admin/sample-audit-log";
 import {
   FULL_BAR_SAMPLE,
   SAMPLE_MODULES,
@@ -47,7 +54,8 @@ import type { Route } from "./+types/dev-panel";
 // verla llena y capturarla en Playwright. `?mantenimiento=1` pinta la franja,
 // `?barra=llena` la barra con sus cinco lugares y `?resumen=datos` (o
 // `vacio`, o `fallo`) el resumen en el inicio, y `?textos=datos` (o
-// `errores`, `confirmacion` o `invalido`) la pantalla de Textos del sitio. En
+// `errores`, `confirmacion` o `invalido`) la pantalla de Textos del sitio, y
+// `?bitacora=datos` (o `vacio`, `rango` o `detalle`) la bitácora. En
 // producción responde 404.
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST = 400;
@@ -70,6 +78,8 @@ interface DevPanel {
   readonly overview: OverviewView | null;
   /** "Textos del sitio" de muestra, si su sección lo pide. */
   readonly siteTexts: SampleSiteTexts | null;
+  /** La bitácora de muestra, si su sección la pide. */
+  readonly auditLog: SampleAuditLog | null;
 }
 
 function rejectInProduction(): void {
@@ -94,6 +104,18 @@ function readSampleSiteTexts(url: URL): SampleSiteTexts | null {
     : buildSampleSiteTexts(state, SITE_TEXTS_LIMITS);
 }
 
+function readSampleAuditLog(
+  url: URL,
+  language: Language,
+): SampleAuditLog | null {
+  const state = SAMPLE_AUDIT_STATES.find(
+    (candidate) => candidate === url.searchParams.get("bitacora"),
+  );
+  if (state === undefined) return null;
+  const listPath = getDocumentPath(url);
+  return buildSampleAuditLog(state, { language, listPath });
+}
+
 export function loader({ request }: Route.LoaderArgs): DevPanel {
   rejectInProduction();
   const url = new URL(request.url);
@@ -115,6 +137,10 @@ export function loader({ request }: Route.LoaderArgs): DevPanel {
         : null,
     siteTexts:
       module?.id === "sample-site-texts" ? readSampleSiteTexts(url) : null,
+    auditLog:
+      module?.id === "sample-audit-log"
+        ? readSampleAuditLog(url, getRequestLanguage(request))
+        : null,
   };
 }
 
@@ -147,10 +173,15 @@ function SampleScreen({
   titleKey,
   overview,
   siteTexts,
+  auditLog,
 }: DevPanel): ReactElement {
   const translate = useTranslate();
   if (isMore) return <PanelMore />;
   if (siteTexts !== null) return <SiteTextsScreen {...siteTexts} />;
+  if (auditLog?.screen === "list") return <AuditLogScreen {...auditLog.view} />;
+  if (auditLog?.screen === "entry") {
+    return <AuditEntryScreen {...auditLog.view} />;
+  }
   if (overview === null) return <PanelHeading title={translate(titleKey)} />;
   return <OverviewScreen greetingName="Andrés Gómez" overview={overview} />;
 }

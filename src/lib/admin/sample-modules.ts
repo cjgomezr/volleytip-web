@@ -72,7 +72,7 @@ export const SAMPLE_MODULES = defineModules([
     es: "dev/panel/equipo",
     en: "dev/panel/team",
   }),
-  sampleModule("audit-log", "panel.sample.auditLog", {
+  sampleModule("audit-log", "panel.module.auditLog", {
     es: "dev/panel/bitacora",
     en: "dev/panel/audit-log",
   }),

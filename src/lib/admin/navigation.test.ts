@@ -40,7 +40,12 @@ describe("módulos del panel", () => {
   it("la lista real empieza en Resumen y sigue el orden del menú", () => {
     const { sidebar } = navigate(ADMIN_MODULES);
 
-    expect(ids(sidebar)).toEqual(["overview", "site-texts", "settings"]);
+    expect(ids(sidebar)).toEqual([
+      "overview",
+      "site-texts",
+      "settings",
+      "audit-log",
+    ]);
     expect(sidebar[2]?.href).toBe("/admin/ajustes");
     expect(sidebar[0]?.href).toBe("/admin");
     expect(navigate(ADMIN_MODULES, { language: "en" }).sidebar[0]?.href).toBe(
@@ -52,7 +57,7 @@ describe("módulos del panel", () => {
     const { bar, more } = navigate(ADMIN_MODULES);
 
     expect(ids(bar)).toEqual(["overview"]);
-    expect(ids(more)).toEqual(["site-texts", "settings"]);
+    expect(ids(more)).toEqual(["site-texts", "settings", "audit-log"]);
   });
 
   it("el menú sale de la lista y respeta el orden", () => {

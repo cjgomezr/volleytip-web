@@ -375,7 +375,12 @@ test.describe("panel real", () => {
     const links = page
       .getByRole("navigation", { name: "Secciones", exact: true })
       .getByRole("link");
-    await expect(links).toHaveText(["Resumen", "Textos del sitio", "Ajustes"]);
+    await expect(links).toHaveText([
+      "Resumen",
+      "Textos del sitio",
+      "Ajustes",
+      "Bitácora",
+    ]);
     await expect(links.first()).toHaveAttribute("aria-current", "page");
     await expect(links.nth(1)).not.toHaveAttribute("aria-current");
     await expect(links.last()).not.toHaveAttribute("aria-current");
