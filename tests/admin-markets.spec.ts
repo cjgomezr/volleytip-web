@@ -93,6 +93,9 @@ for (const viewport of VIEWPORTS) {
       await expect(
         page.getByRole("heading", { level: 1, name: "Idiomas y mercados" }),
       ).toBeVisible();
+      // Axe mira la página cargada de nuevo: recién navegada en el servidor de
+      // desarrollo puede estar todavía sin estilos (#144).
+      await page.reload({ waitUntil: "networkidle" });
       await expectAccessibleWithoutOverflow(page);
     });
   });
