@@ -83,7 +83,7 @@ export function InboxFilters({
     >
       <div
         ref={fields}
-        className="grid gap-4 lg:grid-cols-[2fr_1fr_1fr] lg:items-end"
+        className="grid gap-4 lg:grid-cols-[2fr_1.4fr_1.2fr_auto] lg:items-end"
       >
         <TextField
           zone="light"
@@ -112,17 +112,18 @@ export function InboxFilters({
           )}
           defaultValue={query.status ?? ""}
         />
+        {/* Desde 1024 px va en la misma fila, a la altura de los campos. */}
+        <div className="flex flex-col items-start lg:pb-px">
+          <Button type="submit" variant="secondary" zone="light">
+            {translate("panel.messages.filters.submit")}
+          </Button>
+        </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2">
-        <Button type="submit" variant="secondary" zone="light">
-          {translate("panel.messages.filters.submit")}
-        </Button>
-        {canClear ? (
-          <Link to={inboxPath} className={TEXT_LINK_STYLES}>
-            {translate("panel.messages.filters.clear")}
-          </Link>
-        ) : null}
-      </div>
+      {canClear ? (
+        <Link to={inboxPath} className={`mt-2 ${TEXT_LINK_STYLES}`}>
+          {translate("panel.messages.filters.clear")}
+        </Link>
+      ) : null}
     </Form>
   );
 }

@@ -136,15 +136,7 @@ export async function readMessage(
       cause: error,
     });
   }
-  const [message] = data;
-  if (message === undefined) return null;
-  return {
-    ...message,
-    answerer: message.answerer && {
-      full_name: message.answerer.full_name,
-      email: message.answerer.email as string | null,
-    },
-  };
+  return data[0] ?? null;
 }
 
 /** Los mensajes sin responder. */

@@ -9,6 +9,7 @@ import {
   type InboxView,
   type MessageFieldView,
   type MessageNotice,
+  type MessageStatus,
   type MessageView,
 } from "../admin/messages";
 import type { Json } from "../database.types";
@@ -97,7 +98,9 @@ function buildFields(payload: Json): readonly MessageFieldView[] {
   return Object.entries(payload).flatMap(([id, raw]) => {
     const value = formatFieldValue(raw ?? null);
     if (value === "") return [];
-    const labelKey = FIELD_LABEL_KEYS[id];
+    const labelKey = Object.hasOwn(FIELD_LABEL_KEYS, id)
+      ? FIELD_LABEL_KEYS[id]
+      : undefined;
     return [labelKey ? { id, labelKey, value } : { id, value }];
   });
 }
@@ -137,8 +140,22 @@ function buildAnswer(
   };
 }
 
-function readNotice(value: string | null): MessageNotice | null {
-  return MESSAGE_NOTICES.find((notice) => notice === value) ?? null;
+// En qué estados un aviso sigue siendo cierto.
+const NOTICE_STATUSES: Record<MessageNotice, readonly MessageStatus[]> = {
+  answered: ["answered"],
+  archived: ["archived"],
+  reopened: ["new", "answered"],
+  unchanged: ["new", "answered", "archived"],
+};
+
+// Viene de la dirección: al volver atrás puede hablar de un cambio que ya se
+// deshizo.
+function readNotice(
+  value: string | null,
+  status: MessageStatus,
+): MessageNotice | null {
+  const asked = MESSAGE_NOTICES.find((notice) => notice === value);
+  return asked && NOTICE_STATUSES[asked].includes(status) ? asked : null;
 }
 
 interface MessageViewOptions {
@@ -168,6 +185,6 @@ export function buildMessageView(
     whatsapp: buildWhatsapp(message.whatsapp),
     mailHref: buildMailHref(message),
     answer: buildAnswer(message, language),
-    notice: readNotice(notice),
+    notice: readNotice(notice, message.status),
   };
 }

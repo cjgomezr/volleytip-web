@@ -149,9 +149,13 @@ for (const language of LANGUAGES) {
           await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
           await expectNoOverflowingText(page);
           await expectAccessibleWithoutOverflow(page);
-          await expectTouchHeight(
-            page.getByRole("main").locator("a, button, input, select"),
-          );
+          // El enlace de una fila la cubre entera: se mide la fila.
+          const controls = page
+            .getByRole("main")
+            .locator(
+              "a:not([data-message-row] a), button, input, select, [data-message-row]",
+            );
+          await expectTouchHeight(controls);
         });
       }
 
@@ -179,6 +183,40 @@ for (const language of LANGUAGES) {
     });
   }
 }
+
+test.describe("bandeja en computador", () => {
+  test.use({ viewport: { width: 1440, height: 900 } });
+
+  test("tocar cualquier parte de una fila abre el mensaje", async ({
+    page,
+  }) => {
+    await page.goto("/dev/mensajes");
+
+    await page
+      .locator("[data-message-row] time")
+      .first()
+      .click({ force: true });
+
+    await expect(page).toHaveURL("/dev/mensajes?estado=detalle-pedido");
+  });
+
+  test("nombre, motivo, fecha y estado se alinean", async ({ page }) => {
+    await page.goto("/dev/mensajes");
+    const row = page.locator("[data-message-row]").first();
+
+    const centers = await row
+      .locator("a, time, td span.rounded-pill")
+      .evaluateAll((elements) =>
+        elements.map((element) => {
+          const { top, height } = element.getBoundingClientRect();
+          return top + height / 2;
+        }),
+      );
+
+    expect(centers).toHaveLength(4);
+    expect(Math.max(...centers) - Math.min(...centers)).toBeLessThanOrEqual(3);
+  });
+});
 
 test.describe("bandeja en celular", () => {
   test.use({ viewport: { width: 360, height: 800 } });
@@ -303,6 +341,11 @@ for (const javaScriptEnabled of [true, false]) {
       );
       await expect(state).toHaveText("Respondido");
       await expect(page.getByText("Respondido por Andrés Gómez")).toBeVisible();
+      if (javaScriptEnabled) {
+        await expect(
+          page.getByText("El mensaje quedó marcado como respondido."),
+        ).toBeFocused();
+      }
 
       await pressOn(action("Archivar"));
       await expect(state).toHaveText("Archivado");
@@ -402,8 +445,7 @@ test.describe("bandeja real", () => {
     await expect(page).toHaveURL("/admin/mensajes?estado=new");
     await expect(page.getByLabel("Estado")).toHaveValue("new");
     await expect(
-      page.getByRole("link", { name: "Laura Prueba" }).first(),
+      page.locator(`a[href="/admin/mensajes/${inbox.orderId}"]`),
     ).toBeVisible();
-    expect(inbox.orderId).not.toBe("");
   });
 });

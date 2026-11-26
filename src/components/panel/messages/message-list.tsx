@@ -19,10 +19,11 @@ const COLUMNS = [
 // el menú lateral no hay ancho para cuatro columnas. Los roles van escritos
 // porque cambiar el `display` le quita a una tabla su significado.
 const ROW_STYLES =
-  "relative border-b border-line-light last:border-b-0 max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-1.5 max-lg:px-4 max-lg:py-3";
+  "relative hover:bg-line-light border-b border-line-light last:border-b-0 max-lg:min-h-11 max-lg:flex max-lg:flex-wrap max-lg:items-center max-lg:gap-x-3 max-lg:gap-y-1.5 max-lg:px-4 max-lg:py-3";
 const CELL_STYLES = "min-w-0 text-left lg:px-4 lg:py-3 lg:align-top";
-// En celular el enlace cubre toda la fila.
-const NAME_LINK_STYLES = `inline-flex min-h-11 max-w-full items-center text-[16px] leading-[1.35] font-bold text-brand-night underline-offset-2 [overflow-wrap:anywhere] hovered:underline pressed:text-brand-indigo focused:outline-brand-night max-lg:after:absolute max-lg:after:inset-0 ${TRANSITION_STYLES}`;
+// El enlace cubre toda la fila: esa es la zona que se toca. En la tabla mide
+// lo mismo que las insignias, para que la fila quede alineada.
+const NAME_LINK_STYLES = `inline-flex max-w-full lg:min-h-[26px] items-center text-[16px] leading-[1.35] font-bold text-brand-night underline-offset-2 [overflow-wrap:anywhere] hovered:underline pressed:text-brand-indigo focused:outline-brand-night after:absolute after:inset-0 ${TRANSITION_STYLES}`;
 
 function MessageRow({ row }: { readonly row: InboxRowView }): ReactElement {
   return (
@@ -31,7 +32,7 @@ function MessageRow({ row }: { readonly row: InboxRowView }): ReactElement {
         <Link to={row.href} className={NAME_LINK_STYLES}>
           {row.name}
         </Link>
-        <span className="line-clamp-2 text-[14px] leading-[1.45] text-ink-subtle [overflow-wrap:anywhere]">
+        <span className="mt-1 line-clamp-2 text-[14px] leading-[1.45] text-ink-subtle [overflow-wrap:anywhere]">
           {row.excerpt}
         </span>
       </td>
@@ -40,7 +41,7 @@ function MessageRow({ row }: { readonly row: InboxRowView }): ReactElement {
       </td>
       <td
         role="cell"
-        className={`${CELL_STYLES} text-[13px] leading-[1.45] text-ink-subtle max-lg:order-last`}
+        className={`${CELL_STYLES} text-[13px] leading-[1.45] text-ink-subtle max-lg:order-last lg:leading-[26px]`}
       >
         <time dateTime={row.dateTime}>{row.date}</time>
       </td>

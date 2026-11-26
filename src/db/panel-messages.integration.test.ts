@@ -139,25 +139,21 @@ describeIntegration("bandeja contra la base local", () => {
     return action(args);
   }
 
-  async function explain(filter: "sin filtro" | "por estado"): Promise<string> {
+  /** El plan de una consulta, pedido con la sesión de un admin. */
+  async function explain(
+    query: string,
+    { isSeqScanAllowed = true } = {},
+  ): Promise<string> {
     // El plan sale de las estadísticas: se recalculan justo antes de pedirlo.
     await database`analyze public.messages`;
     return runAs(
       database,
       { kind: "signedIn", userId: admin.userId },
       async (transaction) => {
-        const rows =
-          filter === "sin filtro"
-            ? await transaction`
-                explain select id, name, reason, status, created_at
-                from public.messages
-                order by created_at desc, id desc limit 50
-              `
-            : await transaction`
-                explain select id, name, reason, status, created_at
-                from public.messages where status = 'answered'
-                order by created_at desc, id desc limit 50
-              `;
+        if (!isSeqScanAllowed) {
+          await transaction`select set_config('enable_seqscan', 'off', true)`;
+        }
+        const rows = await transaction.unsafe(`explain ${query}`);
         return rows.map((row) => String(row["QUERY PLAN"])).join("\n");
       },
     );
@@ -168,9 +164,9 @@ describeIntegration("bandeja contra la base local", () => {
     database = connectToLocalDatabase();
     modules = await loadModules(status);
     admin = await signIn({ role: "admin" });
-    // El 1 es el más reciente. Uno de cada diez es nuevo y de pedidos; uno de
-    // cada cien está respondido, un estado raro como para que filtrar por él
-    // pida su índice.
+    // El 1 es el más reciente. Uno de cada diez es de pedidos. Los nuevos y
+    // los respondidos son uno de cada cien, como en una bandeja al día: raros
+    // como para que filtrar por ellos pida su índice.
     await database`
       insert into public.messages
         (reason, name, email, body, locale, privacy_version, status, created_at)
@@ -180,7 +176,7 @@ describeIntegration("bandeja contra la base local", () => {
         'p' || lpad(n::text, 4, '0') || ${`@${TEST_DOMAIN}`},
         'Hola', 'es', '2026-11',
         (case
-          when n % 10 = 0 then 'new'
+          when n % 100 = 0 then 'new'
           when n % 100 = 1 then 'answered'
           else 'archived'
         end)::public.message_status,
@@ -224,14 +220,45 @@ describeIntegration("bandeja contra la base local", () => {
     expect(performance.now() - started).toBeLessThan(ONE_SECOND);
   });
 
+  const LIST =
+    "select id, name, reason, status, created_at from public.messages";
+  const NEWEST_PAGE = "order by created_at desc, id desc limit 50";
+
   it.each([
-    ["sin filtro", "messages_created_at_idx"],
-    ["por estado", "messages_answered_idx"],
-  ] as const)("la lista %s usa el índice %s", async (filter, index) => {
-    const plan = await explain(filter);
+    ["la lista", `${LIST} ${NEWEST_PAGE}`, "messages_created_at_idx"],
+    [
+      "la lista por estado",
+      `${LIST} where status = 'answered' ${NEWEST_PAGE}`,
+      "messages_answered_idx",
+    ],
+  ])("%s usa su índice", async (_, query, index) => {
+    const plan = await explain(query);
 
     expect(plan).toContain(index);
     expect(plan).not.toContain("Seq Scan on messages");
+  });
+
+  // Con 1.000 filas, contar leyendo la tabla entera le sale más barato a
+  // Postgres. Sin esa salida se ve qué índice le sirve cuando la tabla crezca.
+  it("el conteo de nuevos del menú tiene un índice que le sirve", async () => {
+    const plan = await explain(
+      "select count(*) from public.messages where status = 'new'",
+      { isSeqScanAllowed: false },
+    );
+
+    expect(plan).toContain("messages_new_idx");
+  });
+
+  it("la sesión de un admin no puede borrar un mensaje", async () => {
+    const id = await insertMessage("Sin borrar");
+
+    const { error } = await clientOf(admin)
+      .from("messages")
+      .delete()
+      .eq("id", id);
+
+    expect(error?.message).toMatch(/permission denied/i);
+    expect(await readState(id)).toBeDefined();
   });
 
   it("combina motivo, estado y búsqueda", async () => {
@@ -242,8 +269,8 @@ describeIntegration("bandeja contra la base local", () => {
       page: 1,
     });
 
-    expect(page.total).toBe(SEEDED / 10);
-    expect(page.rows[0]?.name).toBe("Persona 0010");
+    expect(page.total).toBe(SEEDED / 100);
+    expect(page.rows[0]?.name).toBe("Persona 0100");
   });
 
   it.each([

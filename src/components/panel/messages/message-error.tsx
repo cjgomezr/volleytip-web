@@ -6,6 +6,8 @@ import {
   useRouteError,
 } from "react-router";
 
+import { useReferenceCode } from "~/lib/error-reference";
+import { ERROR_MESSAGES } from "~/lib/i18n/messages/errors";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
@@ -25,6 +27,7 @@ export function MessageErrorBoundary(): ReactElement {
   const language = useLanguage();
   const error = useRouteError();
   const { messageId } = useParams();
+  const referenceCode = useReferenceCode();
   const isMissing =
     isRouteErrorResponse(error) && error.status === NOT_FOUND_STATUS;
   const retryPath =
@@ -49,6 +52,14 @@ export function MessageErrorBoundary(): ReactElement {
               : "panel.messages.failure.details",
           )}
         </p>
+        {isMissing ? null : (
+          // Como en la página 500: el servidor lo pinta y el navegador, que
+          // no lo conoce, lo conserva. Vacío, el párrafo se oculta.
+          <p className="mt-3 mb-0 text-[14px] text-ink-subtle has-[strong:empty]:hidden">
+            {ERROR_MESSAGES[language]["error.serverReference"]}:{" "}
+            <strong suppressHydrationWarning>{referenceCode ?? ""}</strong>
+          </p>
+        )}
         <div className="mt-2 flex flex-wrap gap-x-6">
           {retryPath === null ? null : (
             // Recarga el documento: así se vuelve a pedir todo al servidor.

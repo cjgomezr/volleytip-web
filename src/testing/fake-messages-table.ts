@@ -48,8 +48,8 @@ export interface FakeMessagesOptions {
   readonly messagesReadFailureStatus?: number;
   /** Estado con que falla el cambio de un mensaje. */
   readonly messageWriteFailureStatus?: number;
-  /** Otra persona cambia el estado entre la lectura y la escritura. */
-  readonly statusChangedMeanwhile?: FakeMessageRow["status"];
+  /** Lo que otra persona cambia entre la lectura y la escritura. */
+  readonly changedMeanwhile?: Partial<FakeMessageRow>;
   /** La escritura no toca ninguna fila, como cuando RLS la tapa. */
   readonly isMessageWriteIgnored?: boolean;
 }
@@ -67,12 +67,14 @@ export interface FakeMessagesTable {
   readonly messageWrites: FakeMessageWrite[];
 }
 
-const FILTERED_COLUMNS = ["id", "status", "reason"] as const;
+const FILTERED_COLUMNS = ["id", "status", "reason", "answered_at"] as const;
 
 function matches(row: FakeMessageRow, url: URL): boolean {
   return FILTERED_COLUMNS.every((column) => {
     const filter = url.searchParams.get(column);
-    return filter === null || filter === `eq.${row[column]}`;
+    if (filter === null) return true;
+    const value = row[column];
+    return filter === (value === null ? "is.null" : `eq.${value}`);
   });
 }
 
@@ -103,9 +105,9 @@ export function createMessagesTable(
     const status = options.messageWriteFailureStatus;
     if (status) return Response.json({ message: "falló" }, { status });
     if (options.isMessageWriteIgnored) return Response.json([]);
-    const meanwhile = options.statusChangedMeanwhile;
+    const meanwhile = options.changedMeanwhile;
     if (meanwhile) {
-      rows = rows.map((row) => ({ ...row, status: meanwhile }));
+      rows = rows.map((row) => ({ ...row, ...meanwhile }));
     }
     const changed = rows.filter((row) => matches(row, url));
     rows = rows.map((row) =>

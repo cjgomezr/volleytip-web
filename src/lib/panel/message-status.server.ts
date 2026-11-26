@@ -90,25 +90,37 @@ async function readState(
 interface StatusWrite {
   readonly client: TypedSupabaseClient;
   readonly id: string;
-  readonly previous: MessageStatus;
+  /** Lo que se leyó, y con lo que se decidió el cambio. */
+  readonly previous: CurrentState;
   readonly update: MessageUpdate;
 }
 
-/** Escribe solo si el estado sigue siendo el que se leyó, así el "antes" de
- * la bitácora es el que de verdad se cambió. Devuelve `false` si otra persona
- * lo cambió en medio, y lanza si la base no lo guardó. */
+function isSameState(first: CurrentState, second: CurrentState): boolean {
+  return (
+    first.status === second.status && first.answered_at === second.answered_at
+  );
+}
+
+/** Escribe solo si el mensaje sigue como se leyó: así el "antes" de la
+ * bitácora es el que de verdad se cambió, y reabrir no decide con una
+ * respuesta vieja. Devuelve `false` si otra persona lo cambió en medio, y
+ * lanza si la base no lo guardó. */
 async function writeStatus({
   client,
   id,
   previous,
   update,
 }: StatusWrite): Promise<boolean> {
-  const { data: rows, error } = await client
+  const sameStatus = client
     .from("messages")
     .update(update)
     .eq("id", id)
-    .eq("status", previous)
-    .select("id");
+    .eq("status", previous.status);
+  const { data: rows, error } = await (
+    previous.answered_at === null
+      ? sameStatus.is("answered_at", null)
+      : sameStatus.eq("answered_at", previous.answered_at)
+  ).select("id");
   if (error !== null) {
     throw new Error(`No se pudo cambiar el mensaje ${id}: ${error.message}`, {
       cause: error,
@@ -116,13 +128,11 @@ async function writeStatus({
   }
   if (rows.length > 0) return true;
   const current = await readState(client, id);
-  if (current?.status !== previous) return false;
+  if (current === null || !isSameState(current, previous)) return false;
   throw new Error(
     `No se pudo cambiar el mensaje ${id}: la base no cambió ninguna fila`,
   );
 }
-
-type TransitionArgs = ActionFunctionArgs;
 
 /**
  * Aplica un cambio de estado al mensaje de la dirección y vuelve a su
@@ -130,7 +140,7 @@ type TransitionArgs = ActionFunctionArgs;
  * mensaje no existe.
  */
 export async function changeMessageStatus(
-  { request, context, params }: TransitionArgs,
+  { request, context, params }: ActionFunctionArgs,
   transition: MessageTransition,
 ): Promise<AdminActionOutcome<Response, "status">> {
   const { client } = context.get(panelSessionContext);
@@ -139,9 +149,9 @@ export async function changeMessageStatus(
   if (current === null) throw data(null, { status: NOT_FOUND_STATUS });
   const { notice, plan } = TRANSITIONS[transition];
   const update = plan(current, context.get(panelMemberContext).id);
-  const previous = current.status;
   const isChanged =
-    update !== null && (await writeStatus({ client, id, previous, update }));
+    update !== null &&
+    (await writeStatus({ client, id, previous: current, update }));
   const path = buildMessagePath(id, getRequestLanguage(request));
   return {
     result: redirect(
@@ -152,7 +162,7 @@ export async function changeMessageStatus(
       update !== null && isChanged
         ? {
             entityId: id,
-            before: { status: previous },
+            before: { status: current.status },
             after: { status: update.status },
           }
         : null,

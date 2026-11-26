@@ -23,9 +23,18 @@ import {
 
 import { TEST_ENV } from "../../../tests/support/test-env";
 import { loader as detailLoader } from "./message";
-import { action as answerAction } from "./message-answer";
-import { action as archiveAction } from "./message-archive";
-import { action as reopenAction } from "./message-reopen";
+import {
+  action as answerAction,
+  loader as answerLoader,
+} from "./message-answer";
+import {
+  action as archiveAction,
+  loader as archiveLoader,
+} from "./message-archive";
+import {
+  action as reopenAction,
+  loader as reopenLoader,
+} from "./message-reopen";
 import { loader as listLoader } from "./messages";
 
 const MEMBER: PanelMember = {
@@ -246,6 +255,16 @@ describe("bandeja: detalle", () => {
     expect(view.fields).toEqual([{ id: "shirts", value: "S, M" }]);
   });
 
+  it("un campo con el nombre de algo del lenguaje no toma una etiqueta rara", async () => {
+    stubSupabase({
+      messages: [{ ...NEW, payload: { constructor: "x" } }],
+    });
+
+    const view = await detail();
+
+    expect(view.fields).toEqual([{ id: "constructor", value: "x" }]);
+  });
+
   it("sin país no inventa uno", async () => {
     stubSupabase({ messages: [{ ...NEW, country_code: null }] });
 
@@ -420,7 +439,7 @@ describe("bandeja: estados", () => {
   it("si otra persona lo cambió a la vez, no pisa ni registra", async () => {
     const supabase = stubSupabase({
       messages: [NEW],
-      statusChangedMeanwhile: "archived",
+      changedMeanwhile: { status: "archived" },
     });
 
     const result = await submit("responder");
@@ -428,6 +447,37 @@ describe("bandeja: estados", () => {
     expectRedirect(result, `/admin/mensajes/${ID}?saved=unchanged`);
     expect(supabase.auditRows).toEqual([]);
   });
+
+  it("reabrir no deja nuevo un mensaje que otra persona respondió en medio", async () => {
+    const supabase = stubSupabase({
+      messages: [ARCHIVED_UNANSWERED],
+      changedMeanwhile: { answered_at: ANSWERED_AT },
+    });
+
+    const result = await submit("reabrir");
+
+    expectRedirect(result, `/admin/mensajes/${ID}?saved=unchanged`);
+    expect(supabase.messageWrites[0]?.search).toContain("answered_at=is.null");
+    expect(supabase.auditRows).toEqual([]);
+  });
+
+  it.each([
+    ["es", `/admin/mensajes/${ID}`],
+    ["en", `/en/admin/messages/${ID}`],
+  ])(
+    "abrir la dirección de un cambio no cambia nada y lleva al detalle (%s)",
+    (_, path) => {
+      const supabase = stubSupabase({ messages: [NEW] });
+
+      for (const load of [answerLoader, archiveLoader, reopenLoader]) {
+        const result = load(buildArgs(`${path}/x`));
+
+        expect(result.headers.get("Location")).toBe(path);
+      }
+      expect(supabase.messageWrites).toEqual([]);
+      expect(supabase.auditRows).toEqual([]);
+    },
+  );
 
   it.each([
     { messageWriteFailureStatus: 403 },
@@ -463,14 +513,20 @@ describe("bandeja: estados", () => {
 
   it.each([
     ["answered", "answered"],
+    ["reopened", "reopened"],
+    ["unchanged", "unchanged"],
+    ["archived", null],
     ["otra-cosa", null],
-  ])("el aviso ?saved=%s es %s", async (saved, notice) => {
-    stubSupabase({ messages: [ANSWERED] });
+  ])(
+    "con el mensaje respondido, el aviso ?saved=%s es %s",
+    async (saved, notice) => {
+      stubSupabase({ messages: [ANSWERED] });
 
-    await expect(
-      detail(`/admin/mensajes/${ID}?saved=${saved}`),
-    ).resolves.toMatchObject({ notice });
-  });
+      await expect(
+        detail(`/admin/mensajes/${ID}?saved=${saved}`),
+      ).resolves.toMatchObject({ notice });
+    },
+  );
 });
 
 describe("bandeja: permisos", () => {

@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode } from "react";
+import { useEffect, useRef, type ReactElement, type ReactNode } from "react";
 import { Link } from "react-router";
 
 import {
@@ -66,13 +66,16 @@ function BodyCard({ reason, body }: MessageView): ReactElement {
 
 function Detail({
   label,
+  isWide = false,
   children,
 }: {
   readonly label: string;
+  /** Ocupa toda la fila, para un dato largo. */
+  readonly isWide?: boolean;
   readonly children: ReactNode;
 }): ReactElement {
   return (
-    <div className="min-w-0">
+    <div className={isWide ? "min-w-0 sm:col-span-2" : "min-w-0"}>
       <dt className="text-[13px] leading-[1.4] text-ink-subtle">{label}</dt>
       <dd className="m-0 text-[15px] leading-[1.5] font-bold [overflow-wrap:anywhere]">
         {children}
@@ -86,7 +89,7 @@ function DataCard(message: MessageView): ReactElement {
   return (
     <Card title={translate("panel.messages.detail.data")}>
       <dl className="mt-4 mb-0 grid gap-x-6 gap-y-3 sm:grid-cols-2">
-        <Detail label={translate("panel.messages.detail.email")}>
+        <Detail label={translate("panel.messages.detail.email")} isWide>
           {message.email}
         </Detail>
         {message.whatsapp === null ? null : (
@@ -169,6 +172,34 @@ function StatusCard({ id, status, answer }: MessageView): ReactElement {
   );
 }
 
+// La región existe siempre: un lector de pantalla solo anuncia lo que cambia
+// dentro de una región que ya estaba. Después de un cambio de estado recibe el
+// foco, porque el botón que se pulsó ya no está.
+function Notice({
+  notice,
+}: {
+  readonly notice: MessageNotice | null;
+}): ReactElement {
+  const translate = useTranslate();
+  const text = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    text.current?.focus();
+  }, [notice]);
+  return (
+    <div role="status">
+      {notice === null ? null : (
+        <p
+          ref={text}
+          tabIndex={-1}
+          className={`mt-5 mb-0 rounded-control border-2 border-brand-night px-4 py-3 text-[15px] font-bold text-brand-night focus:outline-brand-night ${notice === "unchanged" ? "bg-surface-light" : "bg-brand-lime"}`}
+        >
+          {translate(NOTICE_KEYS[notice])}
+        </p>
+      )}
+    </div>
+  );
+}
+
 /** El detalle de un mensaje. Va dentro de `PanelShell`. */
 export function MessageScreen(message: MessageView): ReactElement {
   const translate = useTranslate();
@@ -187,15 +218,7 @@ export function MessageScreen(message: MessageView): ReactElement {
         documentTitle={translate("panel.messages.detail.documentTitle")}
         isLongTitle={name.length > LONG_NAME_LENGTH}
       />
-      <div role="status">
-        {notice === null ? null : (
-          <p
-            className={`mt-5 mb-0 rounded-control border-2 border-brand-night px-4 py-3 text-[15px] font-bold text-brand-night ${notice === "unchanged" ? "bg-surface-light" : "bg-brand-lime"}`}
-          >
-            {translate(NOTICE_KEYS[notice])}
-          </p>
-        )}
-      </div>
+      <Notice notice={notice} />
       <div className="mt-5 grid gap-4 lg:grid-cols-[2fr_1fr] lg:items-start">
         <div className="flex min-w-0 flex-col gap-4">
           <BodyCard {...message} />

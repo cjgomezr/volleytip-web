@@ -21,7 +21,7 @@ function EmptyInbox({
 }): ReactElement {
   const translate = useTranslate();
   return (
-    <div className={`mt-4 ${CARD_STYLES}`}>
+    <div className={`mt-4 ${CARD_STYLES} ${isFiltered ? "!pb-3" : ""}`}>
       <p className="m-0 text-[16px] leading-[1.5] text-ink-subtle">
         {translate(
           isFiltered ? "panel.messages.noResults" : "panel.messages.empty",
