@@ -182,19 +182,19 @@ describeIntegration("ajustes del panel contra la base local", () => {
     ]);
   });
 
-  it.each(["buyer", "staff"] as const)(
-    "un %s no cambia el ajuste",
-    async (role) => {
-      const other = await createTestSession(status, { role });
+  it.each([
+    ["buyer", { init: { status: 404 } }],
+    ["staff", { status: 302 }],
+  ] as const)("un %s no cambia el ajuste", async (role, rejection) => {
+    const other = await createTestSession(status, { role });
 
-      await expect(
-        submitMaintenance({ enabled: "true", confirm: "yes" }, other),
-      ).rejects.toBeDefined();
+    await expect(
+      submitMaintenance({ enabled: "true", confirm: "yes" }, other),
+    ).rejects.toMatchObject(rejection);
 
-      const rows = await database`
-        select key from public.settings where key = 'maintenance_mode'
-      `;
-      expect([...rows]).toEqual([]);
-    },
-  );
+    const rows = await database`
+      select key from public.settings where key = 'maintenance_mode'
+    `;
+    expect([...rows]).toEqual([]);
+  });
 });

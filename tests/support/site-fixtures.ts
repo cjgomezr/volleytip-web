@@ -86,8 +86,9 @@ export async function seedSiteFixtures(
   status: LocalSupabaseStatus,
 ): Promise<void> {
   await resetFormRateLimits(status);
-  // Una corrida cortada a medias pudo dejar el sitio en mantenimiento.
-  await removeSettingRows(status, ["maintenance_mode"]);
+  // Una corrida cortada a medias pudo dejar los ajustes que escriben las
+  // pruebas del panel: el sitio en mantenimiento o la app como disponible.
+  await removeSettingRows(status, ["maintenance_mode", "app_availability"]);
   const response = await fetch(
     `${status.API_URL}/rest/v1/settings?on_conflict=key`,
     {

@@ -14,7 +14,9 @@ const STORE_URL_PREFIXES = {
   playStoreUrl: "https://play.google.com/",
 } as const;
 const MAX_STORE_URL_LENGTH = 2048;
-const WHITESPACE = /\s/;
+// Un carácter de control pasa `URL.canParse`, y la columna `jsonb` rechaza el
+// nulo: sin esto sería un 500 en vez de un error junto al campo.
+const SPACE_OR_CONTROL_CHARACTER = /[\s\p{Cc}]/u;
 
 export type StoreUrlField = keyof typeof STORE_URL_PREFIXES;
 
@@ -48,7 +50,7 @@ function isOptionalStoreUrl(value: unknown, field: StoreUrlField): boolean {
 export function isStoreUrl(value: string, field: StoreUrlField): boolean {
   return (
     value.length <= MAX_STORE_URL_LENGTH &&
-    !WHITESPACE.test(value) &&
+    !SPACE_OR_CONTROL_CHARACTER.test(value) &&
     URL.canParse(value) &&
     isOptionalStoreUrl(value, field)
   );

@@ -69,7 +69,8 @@ type AppValue = {
 };
 
 // En lista de espera un campo vacío no borra: conserva la dirección guardada
-// que sirva. Para quitarla se guarda como disponible sin ella.
+// que sirva. Una de las dos se quita guardando como disponible sin ella; la
+// última no se quita desde el panel.
 function chooseUrl(
   field: StoreUrlField,
   typed: string,

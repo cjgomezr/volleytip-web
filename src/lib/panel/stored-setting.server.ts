@@ -52,6 +52,11 @@ export interface SettingReplacement {
  * Guarda un ajuste con la sesión de la persona, así que la base solo deja a un
  * admin. Devuelve lo que `defineAdminAction` registra, o `null` si ya estaba
  * así y no se escribió nada. Lanza si la base no lo guardó.
+ *
+ * Leer `previous` y escribir son dos consultas: con dos envíos casi a la vez,
+ * el "antes" de la bitácora puede no ser lo que el segundo pisó. Se acepta
+ * mientras los ajustes los cambie un equipo mínimo; cerrarlo pide una función
+ * de Postgres que devuelva el valor anterior al escribir.
  */
 export async function replaceSetting({
   client,
