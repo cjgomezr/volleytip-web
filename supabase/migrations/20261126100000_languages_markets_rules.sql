@@ -10,7 +10,7 @@ alter table public.languages
 -- `is_default`, nadie se salta la regla de arriba quitando la marca y apagando
 -- en la misma escritura. Cambiarlo pide una migración.
 revoke update on table public.languages from authenticated;
-grant update (code, name, is_active) on table public.languages to authenticated;
+grant update (name, is_active) on table public.languages to authenticated;
 
 -- La misma lista que `src/lib/payment-methods.ts`; una prueba las compara.
 -- `<@` también rechaza un elemento nulo.

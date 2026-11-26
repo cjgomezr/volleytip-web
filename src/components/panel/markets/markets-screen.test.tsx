@@ -197,6 +197,14 @@ describe("pantalla de idiomas y mercados", () => {
     expect(html).toMatch(/role="status"[^>]*><p[^>]*>.*?Cambios guardados/);
   });
 
+  it("la región del anuncio ya está en la página antes de guardar, sin ocultarla", () => {
+    const html = render();
+
+    const [region = ""] = findTags(html, "div", 'role="status"');
+    expect(region).toContain("empty:sr-only");
+    expect(region).not.toContain("hidden");
+  });
+
   it("sale en inglés bajo /en/", () => {
     const html = render({}, "en");
 

@@ -72,7 +72,7 @@ function LanguageToggle({
       ) : null}
       {/* La región existe siempre: un lector de pantalla solo anuncia lo que
           cambia dentro de una región que ya estaba en la página. */}
-      <div role="status" className="w-full empty:hidden">
+      <div role="status" className="w-full empty:sr-only">
         {outcome?.status === "saved" && !isSaving ? (
           <p className="m-0 text-[14px] font-bold">
             <span aria-hidden="true">✓ </span>
