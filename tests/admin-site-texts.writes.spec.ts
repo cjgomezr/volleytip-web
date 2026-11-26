@@ -22,7 +22,13 @@ test.afterEach(async () => {
   await seedSettingsFixtures(readLocalSupabaseStatusOnce());
 });
 
-test("cambiar el segundo mensaje se ve en la home en los dos idiomas", async ({
+// La barra la pinta la cáscara de todas las páginas: se miran varias.
+const PUBLIC_PAGES = [
+  { language: "es", paths: ["/", "/nosotros", "/contacto"] },
+  { language: "en", paths: ["/en/", "/en/about", "/en/contact"] },
+] as const;
+
+test("cambiar el segundo mensaje se ve en las páginas públicas en los dos idiomas", async ({
   page,
   signInToPanel,
 }) => {
@@ -38,16 +44,15 @@ test("cambiar el segundo mensaje se ve en la home en los dos idiomas", async ({
   await expect(
     page.getByRole("status").filter({ hasText: "Cambios guardados." }),
   ).toBeVisible();
-  for (const [path, language] of [
-    ["/", "es"],
-    ["/en/", "en"],
-  ] as const) {
-    await page.goto(path);
-    await expect(
-      page.getByText(NEW_SECOND[language], { exact: true }),
-    ).toBeVisible();
-    await expect(
-      page.getByText(ANNOUNCEMENT_FIXTURES[1][language], { exact: true }),
-    ).toHaveCount(0);
+  for (const { language, paths } of PUBLIC_PAGES) {
+    for (const path of paths) {
+      await page.goto(path);
+      await expect(
+        page.getByText(NEW_SECOND[language], { exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByText(ANNOUNCEMENT_FIXTURES[1][language], { exact: true }),
+      ).toHaveCount(0);
+    }
   }
 });

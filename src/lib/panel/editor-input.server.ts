@@ -14,6 +14,7 @@ const BAD_REQUEST = 400;
 export const LANGUAGES: readonly Language[] = SUPPORTED_LANGUAGES.map(
   ({ code }) => code,
 );
+
 // Un salto de línea u otro carácter de control no se ve en el sitio, y el
 // nulo ni siquiera cabe en la base. Lo demás, HTML incluido, queda tal cual.
 // Los de formato solo se quitan si no hay nada más: unen emojis.
