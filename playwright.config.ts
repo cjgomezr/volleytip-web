@@ -5,10 +5,23 @@ import { readLocalSupabaseStatusOnce } from "./tests/support/local-supabase-stat
 
 const APP_URL = process.env.APP_URL ?? "http://localhost:3740";
 const SERVER_BOOT_TIMEOUT_MS = 120_000;
+// Las specs que cambian datos que las demás leen o capturan.
+const SHARED_DATA_WRITES = "**/*.writes.spec.ts";
 
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
+  // El primer proyecto no tiene nombre a propósito: el nombre de un proyecto
+  // se pega al de cada captura. El segundo corre cuando el primero terminó,
+  // así ninguna prueba ve a medias lo que otra está escribiendo.
+  projects: [
+    { name: "", testIgnore: SHARED_DATA_WRITES },
+    {
+      name: "escrituras",
+      testMatch: SHARED_DATA_WRITES,
+      dependencies: [""],
+    },
+  ],
   // Sólo Linux tiene línea base visual versionada: en cualquier otra
   // plataforma esto avisa que la comparación es informativa, y que la primera
   // corrida de un checkout limpio crea las capturas que falten sin fallar por

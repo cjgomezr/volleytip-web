@@ -85,6 +85,14 @@ export async function seedSiteFixtures(
   status: LocalSupabaseStatus,
 ): Promise<void> {
   await resetFormRateLimits(status);
+  await seedSettingsFixtures(status);
+}
+
+/** Escribe los ajustes de las pruebas. La usa también la prueba que los
+ * cambia, para devolverlos. */
+export async function seedSettingsFixtures(
+  status: LocalSupabaseStatus,
+): Promise<void> {
   const response = await fetch(
     `${status.API_URL}/rest/v1/settings?on_conflict=key`,
     {

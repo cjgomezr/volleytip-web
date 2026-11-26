@@ -1809,6 +1809,19 @@ const PANEL_PROVISIONAL_VIEWPORTS = viewports.filter(({ name }) =>
 // no usa la base: el panel real pinta lo que haya en ella y cambiaría en cada
 // corrida.
 const PANEL_SHELL_VARIANTS = [
+  // "Textos del sitio" (#126) en cada estado, en los dos idiomas.
+  ...["datos", "errores", "confirmacion", "invalido"].flatMap((state) => [
+    {
+      name: `textos-${state}`,
+      path: `/dev/panel/textos?textos=${state}`,
+      role: undefined,
+    },
+    {
+      name: `textos-${state}-en`,
+      path: `/en/dev/panel/site-texts?textos=${state}`,
+      role: undefined,
+    },
+  ]),
   {
     name: "resumen-datos",
     path: "/dev/panel?resumen=datos",

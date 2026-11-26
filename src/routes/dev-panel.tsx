@@ -5,6 +5,7 @@ import { OverviewScreen } from "~/components/panel/overview-screen";
 import { PanelHeading } from "~/components/panel/panel-heading";
 import { PanelMore } from "~/components/panel/panel-more";
 import { PanelShell } from "~/components/panel/panel-shell";
+import { SiteTextsScreen } from "~/components/panel/site-texts-screen";
 import type { OverviewView } from "~/lib/admin/overview";
 import { getPanelPathInLanguage } from "~/lib/admin/path-in-language";
 import {
@@ -16,6 +17,11 @@ import {
   buildSampleOverview,
   SAMPLE_OVERVIEW_STATES,
 } from "~/lib/admin/sample-overview";
+import {
+  buildSampleSiteTexts,
+  SAMPLE_SITE_TEXTS_STATES,
+  type SampleSiteTexts,
+} from "~/lib/admin/sample-site-texts";
 import { serverEnv } from "~/lib/env.server";
 import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
@@ -33,13 +39,16 @@ import { findLanguage } from "~/lib/i18n/pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { SITE_TEXTS_LIMITS } from "~/lib/panel/site-texts-editor.server";
 
 import type { Route } from "./+types/dev-panel";
 
 // Pinta la cáscara del panel con módulos de muestra, sin sesión ni base, para
 // verla llena y capturarla en Playwright. `?mantenimiento=1` pinta la franja,
 // `?barra=llena` la barra con sus cinco lugares y `?resumen=datos` (o
-// `vacio`, o `fallo`) el resumen en el inicio. En producción responde 404.
+// `vacio`, o `fallo`) el resumen en el inicio, y `?textos=datos` (o
+// `errores`, `confirmacion` o `invalido`) la pantalla de Textos del sitio. En
+// producción responde 404.
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST = 400;
 const SEE_OTHER = 303;
@@ -59,6 +68,8 @@ interface DevPanel {
   readonly isBarFull: boolean;
   /** El resumen de muestra, si el inicio lo pide. */
   readonly overview: OverviewView | null;
+  /** "Textos del sitio" de muestra, si su sección lo pide. */
+  readonly siteTexts: SampleSiteTexts | null;
 }
 
 function rejectInProduction(): void {
@@ -72,6 +83,15 @@ function readSampleOverview(url: URL, language: Language): OverviewView | null {
     (candidate) => candidate === url.searchParams.get("resumen"),
   );
   return state === undefined ? null : buildSampleOverview(state, language);
+}
+
+function readSampleSiteTexts(url: URL): SampleSiteTexts | null {
+  const state = SAMPLE_SITE_TEXTS_STATES.find(
+    (candidate) => candidate === url.searchParams.get("textos"),
+  );
+  return state === undefined
+    ? null
+    : buildSampleSiteTexts(state, SITE_TEXTS_LIMITS);
 }
 
 export function loader({ request }: Route.LoaderArgs): DevPanel {
@@ -93,6 +113,8 @@ export function loader({ request }: Route.LoaderArgs): DevPanel {
       module?.id === "sample-overview"
         ? readSampleOverview(url, getRequestLanguage(request))
         : null,
+    siteTexts:
+      module?.id === "sample-site-texts" ? readSampleSiteTexts(url) : null,
   };
 }
 
@@ -120,9 +142,15 @@ export async function action({ request }: Route.ActionArgs): Promise<Response> {
   return redirect(destination, SEE_OTHER);
 }
 
-function SampleScreen({ isMore, titleKey, overview }: DevPanel): ReactElement {
+function SampleScreen({
+  isMore,
+  titleKey,
+  overview,
+  siteTexts,
+}: DevPanel): ReactElement {
   const translate = useTranslate();
   if (isMore) return <PanelMore />;
+  if (siteTexts !== null) return <SiteTextsScreen {...siteTexts} />;
   if (overview === null) return <PanelHeading title={translate(titleKey)} />;
   return <OverviewScreen greetingName="Andrés Gómez" overview={overview} />;
 }

@@ -364,7 +364,7 @@ test.describe("panel real", () => {
     expect(submissions).toBe(1);
   });
 
-  test("el menú tiene solo Resumen, marcado como actual", async ({
+  test("el menú tiene las secciones que existen, con Resumen como actual", async ({
     page,
     signInToPanel,
   }) => {
@@ -375,8 +375,8 @@ test.describe("panel real", () => {
     const links = page
       .getByRole("navigation", { name: "Secciones", exact: true })
       .getByRole("link");
-    await expect(links).toHaveText(["Resumen"]);
-    await expect(links).toHaveAttribute("aria-current", "page");
+    await expect(links).toHaveText(["Resumen", "Textos del sitio"]);
+    await expect(links.first()).toHaveAttribute("aria-current", "page");
   });
 
   test("un staff no ve la cáscara", async ({ page, signInToPanel }) => {

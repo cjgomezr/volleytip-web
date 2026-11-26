@@ -1,4 +1,4 @@
-import type { SiteTextsView } from "../admin/site-texts";
+import type { SiteTextsLimits, SiteTextsView } from "../admin/site-texts";
 import {
   MAX_ANNOUNCEMENT_LENGTH,
   MAX_ANNOUNCEMENT_MESSAGES,
@@ -15,6 +15,14 @@ import {
 } from "./announcement-bar-editor.server";
 import { describeStat, readStoredStats } from "./site-stats-editor.server";
 
+/** Los límites que la pantalla anuncia: los mismos que usa el sitio. */
+export const SITE_TEXTS_LIMITS: SiteTextsLimits = {
+  maxMessages: MAX_ANNOUNCEMENT_MESSAGES,
+  maxMessageLength: MAX_ANNOUNCEMENT_LENGTH,
+  maxStatValueLength: MAX_STAT_VALUE_LENGTH,
+  maxStatLabelLength: MAX_STAT_LABEL_LENGTH,
+};
+
 /** Lo que muestra "Textos del sitio", leído con el cliente de la sesión. */
 export async function readSiteTextsEditor(
   client: TypedSupabaseClient,
@@ -26,11 +34,6 @@ export async function readSiteTextsEditor(
   return {
     bar: describeStoredBar(bar),
     stats: SITE_STAT_IDS.map((id) => describeStat(id, stats)),
-    limits: {
-      maxMessages: MAX_ANNOUNCEMENT_MESSAGES,
-      maxMessageLength: MAX_ANNOUNCEMENT_LENGTH,
-      maxStatValueLength: MAX_STAT_VALUE_LENGTH,
-      maxStatLabelLength: MAX_STAT_LABEL_LENGTH,
-    },
+    limits: SITE_TEXTS_LIMITS,
   };
 }
