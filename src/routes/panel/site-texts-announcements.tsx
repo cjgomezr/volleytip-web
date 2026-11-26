@@ -1,0 +1,33 @@
+import type { ReactElement } from "react";
+
+import { SiteTextsScreen } from "~/components/panel/site-texts-screen";
+import type { SiteTextsView } from "~/lib/admin/site-texts";
+import { defineAdminAction } from "~/lib/panel/admin-action.server";
+import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
+import { saveAnnouncementBar } from "~/lib/panel/announcement-bar-editor.server";
+import { readSiteTextsEditor } from "~/lib/panel/site-texts-editor.server";
+
+import type { Route } from "./+types/site-texts-announcements";
+
+export function loader({ context }: Route.LoaderArgs): Promise<SiteTextsView> {
+  return readSiteTextsEditor(context.get(panelSessionContext).client);
+}
+
+export const action = defineAdminAction({
+  name: "setting.update",
+  auditedFields: ["messages"],
+  run: async ({ request, context }: Route.ActionArgs) =>
+    saveAnnouncementBar(
+      context.get(panelSessionContext).client,
+      await request.formData(),
+    ),
+});
+
+// Solo se pinta sin JavaScript: con él, el formulario envía sin salir de
+// "Textos del sitio".
+export default function SiteTextsAnnouncements({
+  loaderData,
+  actionData,
+}: Route.ComponentProps): ReactElement {
+  return <SiteTextsScreen {...loaderData} barOutcome={actionData} />;
+}

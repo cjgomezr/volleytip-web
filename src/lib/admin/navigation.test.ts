@@ -37,21 +37,21 @@ function ids(entries: readonly { readonly id: string }[]): string[] {
 }
 
 describe("módulos del panel", () => {
-  it("la lista real solo tiene Resumen, que apunta al inicio del panel", () => {
+  it("la lista real empieza en Resumen, que apunta al inicio del panel", () => {
     const { sidebar } = navigate(ADMIN_MODULES);
 
-    expect(ids(sidebar)).toEqual(["overview"]);
+    expect(ids(sidebar)).toEqual(["overview", "site-texts"]);
     expect(sidebar[0]?.href).toBe("/admin");
     expect(navigate(ADMIN_MODULES, { language: "en" }).sidebar[0]?.href).toBe(
       "/en/admin",
     );
   });
 
-  it("Resumen va en la barra inferior", () => {
+  it("Resumen va en la barra inferior y lo demás en 'Más'", () => {
     const { bar, more } = navigate(ADMIN_MODULES);
 
     expect(ids(bar)).toEqual(["overview"]);
-    expect(more).toEqual([]);
+    expect(ids(more)).toEqual(["site-texts"]);
   });
 
   it("el menú sale de la lista y respeta el orden", () => {

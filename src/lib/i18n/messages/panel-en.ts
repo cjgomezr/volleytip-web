@@ -81,6 +81,53 @@ export const panelEn = {
   "panel.language.label": "Admin language",
   "panel.maintenance":
     "Maintenance mode is on: the public site is not available.",
+  "panel.module.siteTexts": "Site texts",
+  "panel.siteTexts.bar.title": "Announcement bar",
+  "panel.siteTexts.bar.intro":
+    "The notices at the top of the site. Phones only show the first one.",
+  "panel.siteTexts.bar.empty":
+    "There are no messages. If you save like this, the bar is not shown.",
+  "panel.siteTexts.bar.message": "Message {number}",
+  "panel.siteTexts.bar.textEs": "Spanish text",
+  "panel.siteTexts.bar.textEn": "English text",
+  "panel.siteTexts.bar.missingEnglish":
+    "No English text: /en/ will show it in Spanish.",
+  "panel.siteTexts.bar.up": "Move up",
+  "panel.siteTexts.bar.upLabel": "Move up message {number}",
+  "panel.siteTexts.bar.down": "Move down",
+  "panel.siteTexts.bar.downLabel": "Move down message {number}",
+  "panel.siteTexts.bar.remove": "Remove",
+  "panel.siteTexts.bar.removeLabel": "Remove message {number}",
+  "panel.siteTexts.bar.moved": "The message moved to position {number}.",
+  "panel.siteTexts.bar.removed": "Message {number} was removed.",
+  "panel.siteTexts.bar.add": "Add message",
+  "panel.siteTexts.bar.max": "Up to {max} messages.",
+  "panel.siteTexts.bar.save": "Save bar",
+  "panel.siteTexts.bar.tooMany":
+    "The bar takes up to {max} messages. Remove the extra ones.",
+  "panel.siteTexts.bar.malformed":
+    "The form arrived incomplete. Reload the page and try again.",
+  "panel.siteTexts.bar.invalidStored":
+    "The saved value of the bar does not have the expected shape and the site does not show it. Check the messages and save to replace it.",
+  "panel.siteTexts.bar.storedValue": "Saved value",
+  "panel.siteTexts.stats.title": "Home figures",
+  "panel.siteTexts.stats.intro":
+    "A figure with no value or label is not shown. Whatever is empty in English shows in Spanish. Up to {value} characters for the value and {label} for the label.",
+  "panel.siteTexts.stats.instagram": "Instagram",
+  "panel.siteTexts.stats.tiktok": "TikTok",
+  "panel.siteTexts.stats.views": "Views",
+  "panel.siteTexts.stats.region": "Region",
+  "panel.siteTexts.stats.valueEs": "Spanish value",
+  "panel.siteTexts.stats.valueEn": "English value",
+  "panel.siteTexts.stats.labelEs": "Spanish label",
+  "panel.siteTexts.stats.labelEn": "English label",
+  "panel.siteTexts.stats.save": "Save figures",
+  "panel.siteTexts.maxLength": "Up to {max} characters.",
+  "panel.siteTexts.error.required": "Write the Spanish text.",
+  "panel.siteTexts.error.summary": "Not saved. Check what is marked.",
+  "panel.siteTexts.saving": "Saving",
+  "panel.siteTexts.saved": "Changes saved.",
+  "panel.siteTexts.unchanged": "There was nothing to save.",
   // The modules of the sample page (/dev/panel).
   "panel.sample.messages": "Messages",
   "panel.sample.siteTexts": "Site texts",
