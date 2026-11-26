@@ -468,6 +468,22 @@ describe("textos: bitácora", () => {
     ]);
   });
 
+  it("el primer guardado de la barra queda sin un antes", async () => {
+    const api = stubSiteTextsApi();
+
+    await submitBar([ONE]);
+
+    expect(api.auditRows).toMatchObject([
+      {
+        details: {
+          key: "announcement_bar",
+          before: null,
+          after: { value: storedBar([ONE]) },
+        },
+      },
+    ]);
+  });
+
   it("deja el antes y el después de las cifras que cambiaron", async () => {
     const api = stubSiteTextsApi({ siteTexts: STORED_TEXTS });
 
