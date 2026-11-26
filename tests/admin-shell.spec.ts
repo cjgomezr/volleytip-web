@@ -375,8 +375,10 @@ test.describe("panel real", () => {
     const links = page
       .getByRole("navigation", { name: "Secciones", exact: true })
       .getByRole("link");
+    // Mensajes lleva además su número, que depende de lo que haya en la base.
     await expect(links).toHaveText([
       "Resumen",
+      /^Mensajes/,
       "Textos del sitio",
       "Ajustes",
       "Bitácora",

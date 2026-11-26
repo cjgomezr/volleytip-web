@@ -42,6 +42,10 @@ const REACT_ROUTER_CLI = path.join(
 const BUILD_TIMEOUT_MS = 120_000;
 // Separa el resultado de cualquier otra cosa que el servidor imprima.
 const RESULT_MARKER = "@@respuestas@@";
+// El proceso devuelve por la salida el cuerpo de cada página pedida. Con el
+// tope por defecto de spawnSync (1 MB) ya no caben y el proceso muere con
+// ENOBUFS.
+const SERVED_OUTPUT_MAX_BYTES = 16 * 1024 * 1024;
 const TEXT_ASSET = /\.(js|css|html|json|map|txt)$/;
 
 // Valores que solo existen en este test. Si alguno aparece en lo que se
@@ -276,6 +280,7 @@ function runBuiltServer(
       env: { ...process.env, ...SENTINEL_ENV, APP_ENV: appEnv },
       encoding: "utf8",
       timeout: BUILD_TIMEOUT_MS,
+      maxBuffer: SERVED_OUTPUT_MAX_BYTES,
     },
   );
   const [, json] = result.stdout.split(RESULT_MARKER);
@@ -827,6 +832,7 @@ function requestWhileInMaintenance(
       },
       encoding: "utf8",
       timeout: BUILD_TIMEOUT_MS,
+      maxBuffer: SERVED_OUTPUT_MAX_BYTES,
     },
   );
   const [, json] = result.stdout.split(RESULT_MARKER);

@@ -1,5 +1,11 @@
 import { vi } from "vitest";
 
+import {
+  createMessagesTable,
+  type FakeMessagesOptions,
+  type FakeMessagesTable,
+} from "./fake-messages-table";
+
 /**
  * Un Supabase de mentira para las pruebas de la sesión: sustituye `fetch` y
  * contesta lo que el servicio de Auth y la API contestarían. Ninguna petición
@@ -27,7 +33,7 @@ export const ADMIN_PROFILE: FakeProfile = {
   email: "andres@prueba.volleytip.test",
 };
 
-export interface FakeSupabaseOptions {
+export interface FakeSupabaseOptions extends FakeMessagesOptions {
   /** El perfil del usuario; `null` si no tiene ninguno. */
   readonly profile?: FakeProfile | null;
   /** Estado con que fallan todas las peticiones a Auth (servicio caído). */
@@ -61,7 +67,7 @@ export interface FakeProfileUpdate {
   readonly authorization: string | null;
 }
 
-export interface FakeSupabase {
+export interface FakeSupabase extends Pick<FakeMessagesTable, "messageWrites"> {
   /** Cada petición como `MÉTODO /ruta?búsqueda`. */
   readonly requests: string[];
   /** La cabecera `Authorization` con que se leyó el perfil. */
@@ -177,6 +183,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const auditRows: unknown[] = [];
   const verifications: unknown[] = [];
   const settingsWrites: FakeSettingWrite[] = [];
+  const messages = createMessagesTable(options);
 
   async function answerSettings(request: Request): Promise<Response> {
     if (request.method === "GET") {
@@ -232,6 +239,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
       return answerAuditInsert(request);
     }
     if (url.pathname === "/rest/v1/settings") return answerSettings(request);
+    if (url.pathname === "/rest/v1/messages") return messages.answer(request);
     return Response.json([]);
   }
 
@@ -247,6 +255,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     auditRows,
     verifications,
     settingsWrites,
+    messageWrites: messages.messageWrites,
   };
 }
 

@@ -7,8 +7,10 @@ import {
 } from "~/lib/panel/panel-middleware.server";
 import type { PanelMember } from "~/lib/panel/visitor.server";
 import { createSessionSupabaseClient } from "~/lib/supabase/session-client.server";
+import { SAMPLE_MESSAGE } from "~/testing/fake-messages-table";
 import {
   buildSessionCookie,
+  stubSupabase,
   VALID_ACCESS_TOKEN,
 } from "~/testing/fake-supabase";
 
@@ -35,11 +37,17 @@ function buildArgs(member: PanelMember): Parameters<typeof loader>[0] {
   >[0];
 }
 
+/** Responde los ajustes con esas filas y cero mensajes nuevos. */
 function stubSettings(rows: readonly unknown[]): Request[] {
   const requests: Request[] = [];
   vi.stubGlobal("fetch", (input: RequestInfo | URL, init?: RequestInit) => {
-    requests.push(new Request(input, init));
-    return Promise.resolve(Response.json(rows));
+    const request = new Request(input, init);
+    requests.push(request);
+    return Promise.resolve(
+      request.method === "HEAD"
+        ? new Response(null, { headers: { "Content-Range": "*/0" } })
+        : Response.json(rows),
+    );
   });
   return requests;
 }
@@ -57,7 +65,7 @@ describe("datos de la cáscara del panel", () => {
     await expect(loader(buildArgs(ADMIN))).resolves.toEqual({
       view: "admin",
       member: { displayName: "Andrés Gómez", role: "admin" },
-      pendingCounts: {},
+      pendingCounts: { messages: 0 },
       isMaintenanceOn: false,
     });
   });
@@ -78,17 +86,46 @@ describe("datos de la cáscara del panel", () => {
     });
   });
 
+  it("bandeja: módulo: entrega cuántos mensajes nuevos hay", async () => {
+    stubSupabase({
+      messages: [
+        SAMPLE_MESSAGE,
+        { ...SAMPLE_MESSAGE, id: "2" },
+        { ...SAMPLE_MESSAGE, id: "3", status: "answered" },
+      ],
+    });
+
+    await expect(loader(buildArgs(ADMIN))).resolves.toMatchObject({
+      pendingCounts: { messages: 2 },
+    });
+  });
+
+  it("bandeja: módulo: si el conteo falla, el panel abre sin el número y queda en el registro", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    stubSupabase({ messagesReadFailureStatus: 500 });
+
+    await expect(loader(buildArgs(ADMIN))).resolves.toMatchObject({
+      view: "admin",
+      pendingCounts: {},
+    });
+    expect(log).toHaveBeenCalled();
+    log.mockRestore();
+  });
+
   it("lee los ajustes con la sesión de la persona", async () => {
     const requests = stubSettings([]);
 
     await loader(buildArgs(ADMIN));
 
-    expect(requests.map(({ headers }) => headers.get("authorization"))).toEqual(
-      [`Bearer ${VALID_ACCESS_TOKEN}`],
+    const authorizations = requests.map(({ headers }) =>
+      headers.get("authorization"),
+    );
+    expect(authorizations).toEqual(
+      Array(2).fill(`Bearer ${VALID_ACCESS_TOKEN}`),
     );
   });
 
-  it("el staff no recibe cáscara ni consulta los ajustes", async () => {
+  it("el staff no recibe cáscara ni consulta los ajustes ni los mensajes", async () => {
     const requests = stubSettings(MAINTENANCE_ON);
 
     await expect(

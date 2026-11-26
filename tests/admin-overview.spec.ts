@@ -24,6 +24,7 @@ const LANGUAGES = [
     code: "es",
     shell: "/dev/panel",
     panel: "/admin",
+    inboxSection: "mensajes",
     greeting: "Hola, Andrés Gómez",
     messages: /Mensajes sin responder/,
     inbox: "/dev/panel/mensajes?estado=new",
@@ -36,6 +37,7 @@ const LANGUAGES = [
     code: "en",
     shell: "/en/dev/panel",
     panel: "/en/admin",
+    inboxSection: "messages",
     greeting: "Hi, Andrés Gómez",
     messages: /Unanswered messages/,
     inbox: "/en/dev/panel/messages?estado=new",
@@ -176,8 +178,11 @@ for (const language of LANGUAGES) {
         await expect(page.locator("[data-overview-value]")).toHaveCount(
           BASE_CARDS,
         );
-        // La bandeja todavía no está registrada: ninguna tarjeta enlaza.
-        await expect(page.locator("[data-overview-card] a")).toHaveCount(0);
+        // Solo la de mensajes tiene a dónde llevar.
+        await expect(page.locator("[data-overview-card] a")).toHaveAttribute(
+          "href",
+          `${language.panel}/${language.inboxSection}?estado=new`,
+        );
         await expectNoOverflowingText(page);
         await expectAccessibleWithoutOverflow(page);
       });

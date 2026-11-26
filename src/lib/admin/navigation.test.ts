@@ -42,23 +42,49 @@ describe("módulos del panel", () => {
 
     expect(ids(sidebar)).toEqual([
       "overview",
+      "messages",
       "site-texts",
       "settings",
       "audit-log",
     ]);
-    expect(sidebar[2]?.href).toBe("/admin/ajustes");
+    expect(sidebar[3]?.href).toBe("/admin/ajustes");
     expect(sidebar[0]?.href).toBe("/admin");
     expect(navigate(ADMIN_MODULES, { language: "en" }).sidebar[0]?.href).toBe(
       "/en/admin",
     );
   });
 
-  it("Resumen va en la barra inferior y lo demás en 'Más'", () => {
+  it("bandeja: módulo: Resumen y Mensajes van en la barra inferior", () => {
     const { bar, more } = navigate(ADMIN_MODULES);
 
-    expect(ids(bar)).toEqual(["overview"]);
+    expect(ids(bar)).toEqual(["overview", "messages"]);
     expect(ids(more)).toEqual(["site-texts", "settings", "audit-log"]);
   });
+
+  it.each([
+    ["es", "/admin/mensajes"],
+    ["en", "/en/admin/messages"],
+  ] as const)(
+    "bandeja: módulo: en %s, Mensajes cuenta los nuevos y sigue actual en un detalle",
+    (language, href) => {
+      const { sidebar, bar } = navigate(ADMIN_MODULES, {
+        language,
+        pathname: `${href}/0b7c1f9e`,
+        pendingCounts: { messages: 3 },
+      });
+
+      for (const list of [sidebar, bar]) {
+        expect(list).toContainEqual(
+          expect.objectContaining({
+            href,
+            labelKey: "panel.module.messages",
+            pendingCount: 3,
+            isCurrent: true,
+          }),
+        );
+      }
+    },
+  );
 
   it("el menú sale de la lista y respeta el orden", () => {
     const modules = [buildModule("c"), buildModule("a"), buildModule("b")];
