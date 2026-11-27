@@ -4,14 +4,16 @@
 // interno: si una versión nueva lo cambia, las pruebas sin conexión de
 // `tests/admin-failure.spec.ts` fallan.
 
+export interface ManifestRoute {
+  readonly parentId?: string;
+  readonly module: string;
+  /** En el build de producción va en un archivo aparte. */
+  readonly clientActionModule?: string;
+  readonly imports?: readonly string[];
+}
+
 export interface RouteManifest {
-  readonly routes: Readonly<
-    Record<
-      string,
-      | { readonly module: string; readonly imports?: readonly string[] }
-      | undefined
-    >
-  >;
+  readonly routes: Readonly<Record<string, ManifestRoute | undefined>>;
 }
 
 type LoadModule = (url: string) => Promise<unknown>;
@@ -22,8 +24,10 @@ declare global {
   }
 }
 
-const RETRY_DELAY_MS = 250;
-const MAX_ATTEMPTS = 20;
+// Mirar el manifiesto no cuesta nada: se mira seguido, para pedir el código
+// apenas llega, y durante un minuto, porque con una red lenta tarda.
+const RETRY_DELAY_MS = 100;
+const MAX_ATTEMPTS = 600;
 
 const importModule: LoadModule = (url) => import(/* @vite-ignore */ url);
 
@@ -31,6 +35,29 @@ function reportFailure(error: unknown): void {
   // No es un fallo de la persona ni de la pantalla: el envío vuelve a
   // intentar la descarga.
   console.warn("No se pudo precargar una ruta del panel", error);
+}
+
+/** Los archivos que React Router necesita para enviar a una ruta. */
+export function listRouteCode({
+  module,
+  clientActionModule,
+  imports = [],
+}: ManifestRoute): readonly string[] {
+  const action = clientActionModule === undefined ? [] : [clientActionModule];
+  return [module, ...action, ...imports];
+}
+
+// Para enviar a una ruta React Router carga también la de cada layout que la
+// envuelve, y la pantalla de origen puede no estar bajo los mismos.
+function listRouteAndLayoutsCode(
+  { routes }: RouteManifest,
+  route: ManifestRoute,
+): readonly string[] {
+  const parent =
+    route.parentId === undefined ? undefined : routes[route.parentId];
+  const above =
+    parent === undefined ? [] : listRouteAndLayoutsCode({ routes }, parent);
+  return [...new Set([...listRouteCode(route), ...above])];
 }
 
 /** Pide el código de la ruta, esperando a que React Router la conozca.
@@ -41,9 +68,10 @@ export function loadRouteCode(
 ): () => void {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const attempt = (attemptsLeft: number): void => {
-    const route = window.__reactRouterManifest?.routes[routeId];
-    if (route !== undefined) {
-      for (const url of [route.module, ...(route.imports ?? [])]) {
+    const manifest = window.__reactRouterManifest;
+    const route = manifest?.routes[routeId];
+    if (manifest !== undefined && route !== undefined) {
+      for (const url of listRouteAndLayoutsCode(manifest, route)) {
         load(url).catch(reportFailure);
       }
       return;

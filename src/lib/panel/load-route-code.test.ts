@@ -5,6 +5,7 @@ import { loadRouteCode, type RouteManifest } from "./load-route-code";
 const ROUTE_ID = "adminSiteTextsStats.es";
 const ENTRY = {
   module: "/assets/site-texts-stats.js",
+  clientActionModule: "/assets/site-texts-stats-client-action.js",
   imports: ["/assets/chunk.js"],
 };
 
@@ -22,13 +23,34 @@ afterEach(() => {
 });
 
 describe("precarga del código de una ruta del panel", () => {
-  it("pide el módulo de la ruta y lo que importa", () => {
+  it("pide el módulo de la ruta, el de su clientAction y lo que importa", () => {
     stubManifest({ [ROUTE_ID]: ENTRY });
     const load = vi.fn(() => Promise.resolve());
 
     loadRouteCode(ROUTE_ID, load);
 
-    expect(load.mock.calls).toEqual([[ENTRY.module], [ENTRY.imports[0]]]);
+    expect(load.mock.calls).toEqual([
+      [ENTRY.module],
+      [ENTRY.clientActionModule],
+      [ENTRY.imports[0]],
+    ]);
+  });
+
+  it("pide también el código de los layouts que envuelven la ruta", () => {
+    stubManifest({
+      root: { module: "/assets/root.js" },
+      layout: { module: "/assets/layout.js", parentId: "root" },
+      [ROUTE_ID]: { module: "/assets/leaf.js", parentId: "layout" },
+    });
+    const load = vi.fn(() => Promise.resolve());
+
+    loadRouteCode(ROUTE_ID, load);
+
+    expect(load.mock.calls).toEqual([
+      ["/assets/leaf.js"],
+      ["/assets/layout.js"],
+      ["/assets/root.js"],
+    ]);
   });
 
   // React Router agrega la ruta al manifiesto poco después de pintar el
@@ -43,7 +65,7 @@ describe("precarga del código de una ruta del panel", () => {
     vi.advanceTimersByTime(1000);
 
     expect(load).toHaveBeenCalledWith(ENTRY.module);
-    expect(load).toHaveBeenCalledTimes(2);
+    expect(load).toHaveBeenCalledTimes(3);
   });
 
   it("deja de buscar cuando el formulario se va de la pantalla", () => {
@@ -63,13 +85,13 @@ describe("precarga del código de una ruta del panel", () => {
     stubManifest({});
 
     loadRouteCode(ROUTE_ID, vi.fn());
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(120_000);
 
     expect(vi.getTimerCount()).toBe(0);
   });
 
   it("si la descarga falla, queda en la consola y no revienta", async () => {
-    stubManifest({ [ROUTE_ID]: { ...ENTRY, imports: [] } });
+    stubManifest({ [ROUTE_ID]: ENTRY });
     const log = vi.spyOn(console, "warn").mockImplementation(() => undefined);
 
     loadRouteCode(ROUTE_ID, () =>

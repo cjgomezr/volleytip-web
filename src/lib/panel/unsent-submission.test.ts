@@ -1,4 +1,4 @@
-import { redirect } from "react-router";
+import { redirect, UNSAFE_ErrorResponseImpl } from "react-router";
 import { describe, expect, it } from "vitest";
 
 import { PANEL_ADMIN_PAGES, PANEL_MEMBER_PAGES } from "~/lib/i18n/panel-pages";
@@ -14,6 +14,9 @@ const NETWORK_MESSAGES = [
   "Failed to fetch",
   "NetworkError when attempting to fetch resource.",
   "Load failed",
+  "Failed to fetch dynamically imported module: /assets/a.js",
+  "error loading dynamically imported module: /assets/a.js",
+  "Importing a module script failed.",
 ];
 
 describe("envío del panel que no llega", () => {
@@ -41,6 +44,32 @@ describe("envío del panel que no llega", () => {
       data: { status: "unsent" },
       init: { status: 503 },
     });
+  });
+
+  it.each([502, 503, 504])(
+    "un %i del proxy cuenta como envío que no llegó",
+    async (status) => {
+      const proxyPage = new UNSAFE_ErrorResponseImpl(
+        status,
+        "Bad Gateway",
+        "<html>Application failed to respond</html>",
+      );
+
+      await expect(
+        sendPanelForm(() => Promise.reject(proxyPage)),
+      ).resolves.toMatchObject({ data: { status: "unsent" } });
+    },
+  );
+
+  it.each([
+    ["un 503 que lanza la aplicación", 503, null],
+    ["un 403 de la guardia", 403, "Forbidden"],
+  ])("deja pasar %s", async (_case, status, body) => {
+    const answer = new UNSAFE_ErrorResponseImpl(status, "", body);
+
+    await expect(sendPanelForm(() => Promise.reject(answer))).rejects.toBe(
+      answer,
+    );
   });
 
   it("entrega tal cual la respuesta del servidor", async () => {

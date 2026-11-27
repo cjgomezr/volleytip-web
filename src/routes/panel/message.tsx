@@ -12,8 +12,6 @@ import type { Route } from "./+types/message";
 
 const NOT_FOUND_STATUS = 404;
 
-export { MessageErrorBoundary as ErrorBoundary } from "~/components/panel/messages/message-error";
-
 export async function loader({
   request,
   context,

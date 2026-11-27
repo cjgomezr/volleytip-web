@@ -10,10 +10,10 @@ import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { TextField } from "../../text-field";
 import { SaveBar } from "../editor-section";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 const ERROR_KEYS = {
   required: "panel.markets.rate.error.required",

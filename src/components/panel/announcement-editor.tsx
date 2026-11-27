@@ -12,12 +12,12 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { Button } from "../button";
 import { AnnouncementMessageFields } from "./announcement-message-fields";
 import { EditorSection, SaveBar, useFieldErrorText } from "./editor-section";
 import { useMessageRows, type MessageRows } from "./use-message-rows";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 interface AnnouncementEditorProps {
   readonly bar: SiteTextsView["bar"];

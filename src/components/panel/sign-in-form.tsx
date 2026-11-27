@@ -14,6 +14,8 @@ import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { buildSignInPathFor, RETURN_PARAM } from "~/lib/panel/return-path";
+import { useOfflineGuard } from "~/lib/panel/use-offline-guard";
+import { UnsentNotice } from "./unsent-notice";
 
 interface SignInFormProps {
   /** Lo que `issueFormProtection(ADMIN_SIGN_IN_FORM)` entregó en el `loader`. */
@@ -61,6 +63,7 @@ function UseAnotherEmail(): ReactElement {
 }
 
 function EmailForm({ protection, outcome }: SignInFormProps): ReactElement {
+  const offline = useOfflineGuard();
   const translate = useTranslate();
   const navigation = useNavigation();
   const failure = findFailureMessage(outcome);
@@ -72,7 +75,17 @@ function EmailForm({ protection, outcome }: SignInFormProps): ReactElement {
     outcome?.status === "invalid" ? outcome.fieldErrors.email : undefined;
 
   return (
-    <Form method="post" noValidate className="mt-6 flex flex-col gap-3.5">
+    <Form
+      onSubmit={offline.onSubmit}
+      method="post"
+      noValidate
+      className="mt-6 flex flex-col gap-3.5"
+    >
+      {offline.isBlocked ? (
+        <div>
+          <UnsentNotice />
+        </div>
+      ) : null}
       {failure === undefined ? null : (
         <p role="alert" className="font-semibold text-brand-red-deep">
           {translate(failure)}

@@ -1,7 +1,7 @@
 // Un envío del panel que no llegó al servidor (sin red). Corre en el
 // navegador: sin esto, React Router trataría el fallo como un error de la
 // pantalla y la reemplazaría, con lo que la persona había escrito.
-import { data } from "react-router";
+import { data, isRouteErrorResponse } from "react-router";
 
 export interface UnsentSubmission {
   readonly status: "unsent";
@@ -11,11 +11,14 @@ export interface UnsentSubmission {
 // pantalla, que sin red fallaría y la reemplazaría igual.
 const UNSENT_STATUS = 503;
 
-// Lo que dicen Chrome, Firefox y Safari cuando `fetch` no llega a nadie. Se
-// mira el mensaje además del tipo: un `TypeError` también es un fallo de
-// código.
+// Lo que dicen Chrome, Firefox y Safari cuando `fetch`, o la descarga del
+// código de una ruta, no llega a nadie. Se mira el mensaje además del tipo: un
+// `TypeError` también es un fallo de código.
 const CONNECTION_FAILURE =
-  /failed to fetch|networkerror when attempting to fetch|load failed/i;
+  /failed to fetch|networkerror when attempting to fetch|load failed|error loading dynamically imported module|importing a module script failed/i;
+
+// Con estos estados responde el proxy cuando no alcanza a la aplicación.
+const GATEWAY_STATUSES: readonly number[] = [502, 503, 504];
 
 export function isConnectionFailure(error: unknown): boolean {
   return error instanceof TypeError && CONNECTION_FAILURE.test(error.message);
@@ -24,6 +27,16 @@ export function isConnectionFailure(error: unknown): boolean {
 export type PanelSubmission<ServerResult> = Promise<
   ServerResult | ReturnType<typeof data<UnsentSubmission>>
 >;
+
+// La página de error del proxy llega como texto. Lo que lanza la aplicación
+// con esos estados no lo trae.
+function isGatewayFailure(error: unknown): boolean {
+  return (
+    isRouteErrorResponse(error) &&
+    GATEWAY_STATUSES.includes(error.status) &&
+    typeof error.data === "string"
+  );
+}
 
 /**
  * El `clientAction` de las rutas del panel: envía y, si la petición no llegó,
@@ -36,7 +49,7 @@ export async function sendPanelForm<ServerResult>(
   try {
     return await serverAction();
   } catch (error) {
-    if (!isConnectionFailure(error)) throw error;
+    if (!isConnectionFailure(error) && !isGatewayFailure(error)) throw error;
     return data<UnsentSubmission>(
       { status: "unsent" },
       { status: UNSENT_STATUS },

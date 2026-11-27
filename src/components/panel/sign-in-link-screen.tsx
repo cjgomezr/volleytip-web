@@ -6,8 +6,10 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { RETURN_PARAM } from "~/lib/panel/return-path";
+import { useOfflineGuard } from "~/lib/panel/use-offline-guard";
 
 import { SignInLayout } from "./sign-in-layout";
+import { UnsentNotice } from "./unsent-notice";
 
 /** Lo que la página necesita de un enlace. */
 export interface SignInLinkDetails {
@@ -67,6 +69,7 @@ export function SignInLinkScreen({
   ...loaded
 }: SignInLinkScreenProps): ReactElement {
   const { tokenHash, returnPath, signInPath } = outcome ?? loaded;
+  const offline = useOfflineGuard();
   const translate = useTranslate();
   const language = useLanguage();
   const navigation = useNavigation();
@@ -81,10 +84,16 @@ export function SignInLinkScreen({
       {/* La dirección del envío no lleva el token ni nada de la del correo:
           van en campos ocultos. */}
       <Form
+        onSubmit={offline.onSubmit}
         method="post"
         action={getPanelPath("adminSignInLink", language)}
         className="mt-6 flex flex-col gap-3.5"
       >
+        {offline.isBlocked ? (
+          <div>
+            <UnsentNotice />
+          </div>
+        ) : null}
         {outcome?.status === "unavailable" ? (
           <p role="alert" className="font-semibold text-brand-red-deep">
             {translate("panel.signInLink.unavailable")}

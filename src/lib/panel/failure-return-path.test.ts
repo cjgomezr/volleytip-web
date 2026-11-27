@@ -33,6 +33,16 @@ describe("a dónde vuelve la pantalla de fallo", () => {
     ).toBe("/admin/bitacora?p=2");
   });
 
+  it.each([
+    ["/admin/ajustes", "?saved=app", "/admin/ajustes"],
+    ["/admin/bitacora", "?saved=x&p=2", "/admin/bitacora?p=2"],
+  ])(
+    "desde %s%s no repite el aviso de un envío anterior",
+    (pathname, search, expected) => {
+      expect(getFailureReturnPath({ pathname, search })).toBe(expected);
+    },
+  );
+
   it("no lleva la búsqueda de un envío a otra pantalla", () => {
     expect(
       getFailureReturnPath({

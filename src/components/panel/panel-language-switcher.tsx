@@ -9,10 +9,10 @@ import {
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { TRANSITION_STYLES } from "../pressable-styles";
 import { UnsentNotice } from "./unsent-notice";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 // 44 px de alto y de ancho: la zona de toque mínima en celular.
 const BUTTON_STYLES = `inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-pill px-3 text-[14px] font-bold ${TRANSITION_STYLES}`;

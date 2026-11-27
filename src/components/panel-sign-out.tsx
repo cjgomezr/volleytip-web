@@ -4,11 +4,11 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { Button } from "./button";
 import { UnsentNotice } from "./panel/unsent-notice";
 import type { Zone } from "./pressable";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 /** El botón "Cerrar sesión". Es un envío: funciona también sin JavaScript. */
 export function PanelSignOut({

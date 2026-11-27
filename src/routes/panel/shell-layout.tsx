@@ -2,16 +2,19 @@ import type { ReactElement, ReactNode } from "react";
 import {
   isRouteErrorResponse,
   Outlet,
+  useParams,
   useRouteError,
   useRouteLoaderData,
 } from "react-router";
 
+import { MessageErrorBoundary } from "~/components/panel/messages/message-error";
 import { PanelFailure } from "~/components/panel/panel-failure";
 import { PanelShell } from "~/components/panel/panel-shell";
 import { RootError } from "~/components/root-error";
 import { ADMIN_MODULES } from "~/lib/admin/modules";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { findPanelNotFound } from "~/lib/panel/panel-not-found";
 
 import type { loader as memberLoader } from "./member-layout";
 
@@ -52,15 +55,38 @@ export default function PanelShellLayout(): ReactElement {
   );
 }
 
+const NOT_FOUND_STATUS = 404;
+
+// El 404 de un mensaje que no existe. El del panel (quien dejó de ser del
+// equipo) trae sus propios datos.
+function isMissingMessage(error: unknown): boolean {
+  return (
+    isRouteErrorResponse(error) &&
+    error.status === NOT_FOUND_STATUS &&
+    findPanelNotFound(error) === undefined
+  );
+}
+
 /**
  * Un fallo inesperado de una pantalla se pinta dentro del panel. Una
  * respuesta de ruta (el 404 del panel, la de la guardia) es una decisión de
- * la app y sale como siempre, sin la cáscara.
+ * la app y sale como siempre, sin la cáscara. Los errores de un mensaje
+ * tienen su pantalla. Hay un solo límite para todo el panel: un envío hecho
+ * con `fetcher` falla en el límite de quien lo envió, y uno propio en la ruta
+ * del mensaje atraparía también las respuestas de la guardia.
  */
 export function ErrorBoundary(): ReactNode {
   const error = useRouteError();
-  if (isRouteErrorResponse(error)) return <RootError error={error} />;
-  const failure = <PanelFailure error={error} />;
+  const isMessageRoute = useParams().messageId !== undefined;
+  const isOwnMissing = isMessageRoute && isMissingMessage(error);
+  if (isRouteErrorResponse(error) && !isOwnMissing) {
+    return <RootError error={error} />;
+  }
+  const failure = isMessageRoute ? (
+    <MessageErrorBoundary />
+  ) : (
+    <PanelFailure error={error} />
+  );
   return (
     <InPanel
       bare={

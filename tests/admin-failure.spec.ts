@@ -30,6 +30,11 @@ const LANGUAGES = [
     value: "Valor en español",
     saveBar: "Guardar barra",
     saveFigures: "Guardar cifras",
+    auditLog: "/admin/bitacora",
+    filter: "Filtrar",
+    signIn: "/admin/entrar",
+    sendLink: "Enviarme el enlace",
+    settingsLink: "Ajustes",
     saveApp: "Guardar estado de la app",
     confirm: "Sí, encender",
     otherLanguage: "English",
@@ -49,6 +54,11 @@ const LANGUAGES = [
     value: "Spanish value",
     saveBar: "Save bar",
     saveFigures: "Save figures",
+    auditLog: "/en/admin/audit-log",
+    filter: "Apply filters",
+    signIn: "/en/admin/sign-in",
+    sendLink: "Send me the link",
+    settingsLink: "Settings",
     saveApp: "Save app status",
     confirm: "Yes, turn it on",
     otherLanguage: "Español",
@@ -206,6 +216,83 @@ for (const language of LANGUAGES) {
         await expect(page.locator("[data-panel-shell]")).toBeVisible();
       });
     }
+
+    test("sin conexión, filtrar la bitácora deja los filtros puestos", async ({
+      page,
+      context,
+      signInToPanel,
+    }) => {
+      await signInToPanel({ role: "admin" });
+      await openPanel(page, language.auditLog);
+      const from = page.locator('input[type="date"]').first();
+      await from.fill("2026-11-01");
+      await context.setOffline(true);
+
+      await page.getByRole("button", { name: language.filter }).click();
+
+      await expect(page.getByRole("alert")).toContainText(language.unsent);
+      await expect(from).toHaveValue("2026-11-01");
+      await expect(page).toHaveURL(language.auditLog);
+    });
+
+    test("sin conexión, la entrada conserva el correo escrito", async ({
+      page,
+      context,
+    }) => {
+      await openPanel(page, language.signIn);
+      const email = page.locator('input[name="email"]');
+      await email.fill("persona@prueba.volleytip.test");
+      await context.setOffline(true);
+
+      await page.getByRole("button", { name: language.sendLink }).click();
+
+      await expect(page.getByRole("alert")).toContainText(language.unsent);
+      await expect(email).toHaveValue("persona@prueba.volleytip.test");
+    });
+
+    // El aviso es del envío que falló: no se queda cuando el siguiente
+    // funciona ni cuando la persona navega.
+    test("al volver la red, el siguiente envío quita el aviso", async ({
+      page,
+      context,
+      signInToPanel,
+    }) => {
+      await signInToPanel({ role: "admin" });
+      await openPanel(page, language.panel);
+      const change = page
+        .getByRole("complementary")
+        .getByRole("button", { name: language.otherLanguage });
+      await context.setOffline(true);
+      await change.click();
+      await expect(page.getByRole("alert")).toContainText(language.unsent);
+      await context.setOffline(false);
+
+      await change.click();
+
+      await expect(page).not.toHaveURL(language.panel);
+      await expect(page.getByRole("alert")).toHaveCount(0);
+    });
+
+    test("navegar quita el rechazo del último envío", async ({
+      page,
+      signInToPanel,
+    }) => {
+      await signInToPanel({ role: "admin" });
+      await openPanel(page, language.settings);
+      const field = page.locator('input[name="appStoreUrl"]');
+      const saved = await field.inputValue();
+      await field.fill("esto no es una dirección");
+      await page.getByRole("button", { name: language.saveApp }).click();
+      await expect(page.getByRole("alert")).toBeVisible();
+
+      await page
+        .getByRole("complementary")
+        .getByRole("link", { name: language.settingsLink })
+        .click();
+
+      await expect(page.getByRole("alert")).toHaveCount(0);
+      await expect(field).toHaveValue(saved);
+    });
 
     // Un cuerpo que el servidor no sabe leer hace fallar su `action`: un 500
     // de verdad, sin tocar la base.

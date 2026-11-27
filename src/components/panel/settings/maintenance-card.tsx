@@ -8,10 +8,10 @@ import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import type { PanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { UnsentNotice } from "../unsent-notice";
 import { SettingsCard } from "./settings-card";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 const DESCRIPTIONS: Record<MaintenanceSettingsState, MessageKey> = {
   on: "panel.settings.maintenance.on",

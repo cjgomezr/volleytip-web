@@ -6,10 +6,10 @@ import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { Button } from "../../button";
 import { UnsentNotice } from "../unsent-notice";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 interface StatusAction {
   readonly page: PanelPageId;

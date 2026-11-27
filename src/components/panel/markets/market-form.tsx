@@ -10,11 +10,11 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { SaveBar } from "../editor-section";
 import { MarketFields } from "./market-fields";
 import { StatePill } from "./state-pill";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 function useCountryName(code: string): string {
   const names = new Intl.DisplayNames([useLanguage()], { type: "region" });

@@ -10,11 +10,11 @@ import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { Button } from "../../button";
 import { UnsentNotice } from "../unsent-notice";
 import { StatePill } from "./state-pill";
-import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 // Lo que dice el botón y lo que oye un lector de pantalla, según lo que hará.
 const TOGGLE_KEYS = {

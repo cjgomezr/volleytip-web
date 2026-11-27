@@ -5,6 +5,8 @@ import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
+import { listRouteCode, type ManifestRoute } from "./panel/load-route-code";
+
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 // Cada corrida construye en su propia carpeta. Con una sola carpeta `build/`,
 // dos corridas a la vez (el Stop gate y un revisor, o dos workers) se borraban
@@ -134,6 +136,40 @@ describe("secretos en el cliente", () => {
     ];
 
     expect(findLeaks(leaky)).toHaveLength(1);
+  });
+});
+
+type BuiltRoute = ManifestRoute & Readonly<Record<string, unknown>>;
+
+function readBuiltRoutes(): [string, BuiltRoute][] {
+  const manifest = readClientAssets().find(({ file }) =>
+    /manifest-\w+\.js$/.test(file),
+  );
+  if (manifest === undefined) throw new Error("El build no dejó manifiesto");
+  const json = manifest.content.slice(manifest.content.indexOf("{"), -1);
+  const { routes } = JSON.parse(json) as {
+    routes: Record<string, BuiltRoute>;
+  };
+  return Object.entries(routes);
+}
+
+// El panel precarga el código de las rutas a las que envía (#143). Si el build
+// lo parte en un archivo que la precarga no pide, un envío sin red pierde lo
+// escrito, y eso no se ve con el servidor de desarrollo.
+describe("precarga de las rutas de envío del panel", () => {
+  it("pide todos los archivos que el build separa para cada una", () => {
+    const submitRoutes = readBuiltRoutes().filter(
+      ([id, route]) => id.startsWith("admin") && route.hasClientAction,
+    );
+
+    expect(submitRoutes.length).toBeGreaterThan(0);
+    for (const [id, route] of submitRoutes) {
+      const needed = Object.entries(route)
+        .filter(([key]) => key === "module" || key.endsWith("Module"))
+        .map(([, file]) => file)
+        .filter((file) => file !== undefined);
+      expect(listRouteCode(route), id).toEqual(expect.arrayContaining(needed));
+    }
   });
 });
 

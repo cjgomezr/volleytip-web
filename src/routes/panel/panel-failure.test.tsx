@@ -48,6 +48,8 @@ const SECRET = "detalle interno de la base";
 
 interface Scenario {
   readonly path: string;
+  /** El patrón de la ruta, si no es la dirección tal cual. */
+  readonly pattern?: string;
   readonly language?: Language;
   readonly method?: "GET" | "POST";
   readonly member?: PanelMember;
@@ -64,7 +66,7 @@ function fail(): never {
 function buildRoutes(scenario: Scenario): RouteObject[] {
   const page: RouteObject = {
     id: "page",
-    path: scenario.path.split("?")[0],
+    path: scenario.pattern ?? scenario.path.split("?")[0],
     loader: scenario.loader ?? (() => null),
     action: scenario.action,
     Component: () => <p>pantalla</p>,
@@ -321,6 +323,76 @@ describe("404 y guardia del panel", () => {
     expect(html).toContain("No pudimos mostrar esta página");
     expectNoPanel(html);
   });
+});
+
+describe("fallos de un mensaje", () => {
+  const message = {
+    path: "/admin/mensajes/42",
+    pattern: "/admin/mensajes/:messageId",
+  } as const;
+
+  it("un cambio que falló usa la pantalla del mensaje, dentro del panel", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({
+      ...message,
+      method: "POST",
+      action: fail,
+    });
+
+    expect(status).toBe(500);
+    expectShell(html);
+    expect(html).toContain("el mensaje no se pudo cargar");
+    expect(html).toContain('href="/admin/mensajes/42"');
+  });
+
+  it("un mensaje que no existe lo dice dentro del panel", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({
+      ...message,
+      loader: () => {
+        throw data(null, { status: 404 });
+      },
+    });
+
+    expect(status).toBe(404);
+    expectShell(html);
+    expect(html).toContain("Ese mensaje no existe");
+  });
+
+  it.each([
+    ["el 403 del origen", 403, null, "No pudimos mostrar esta página"],
+    [
+      "el 404 del panel",
+      404,
+      buildPanelNotFoundData({
+        activeLanguages: ["es", "en"],
+        messages: getMessages("es"),
+        year: 2026,
+        announcements: [],
+        languageSuggestion: null,
+      }),
+      "Balón fuera",
+    ],
+  ])(
+    "%s sale como siempre, sin la cáscara",
+    async (_case, code, body, title) => {
+      stubSupabase({});
+
+      const { status, html } = await visit({
+        ...message,
+        method: "POST",
+        action: () => {
+          throw data(body, { status: code });
+        },
+      });
+
+      expect(status).toBe(code);
+      expect(html).toContain(title);
+      expectNoPanel(html);
+    },
+  );
 });
 
 describe("quien no es del equipo", () => {

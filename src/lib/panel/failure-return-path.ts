@@ -1,3 +1,5 @@
+import { NOTICE_PARAM } from "../admin/messages";
+import { SAVED_PARAM } from "../admin/settings-view";
 import {
   getPanelPath,
   PANEL_PAGES,
@@ -20,6 +22,17 @@ const SCREEN_OF_SUBMISSION: Partial<Record<PanelPageId, PanelPageId>> = {
   adminSignOut: "adminHome",
 };
 
+// Anuncian cómo salió el envío anterior: al volver de un fallo dirían que se
+// guardó.
+const ONE_TIME_PARAMS = [SAVED_PARAM, NOTICE_PARAM];
+
+function keepScreenSearch(search: string): string {
+  const params = new URLSearchParams(search);
+  for (const name of ONE_TIME_PARAMS) params.delete(name);
+  const kept = params.toString();
+  return kept === "" ? "" : `?${kept}`;
+}
+
 /** La pantalla donde estaba la persona cuando algo falló en `pathname`. */
 export function getFailureReturnPath({
   pathname,
@@ -31,7 +44,7 @@ export function getFailureReturnPath({
   const match = findPageAtPath(pathname, PANEL_PAGES, SUPPORTED_LANGUAGES);
   const screen = match && SCREEN_OF_SUBMISSION[match.page.id as PanelPageId];
   if (match === undefined || screen === undefined) {
-    return `${pathname.replace(/\/+$/, "")}${search}`;
+    return `${pathname.replace(/\/+$/, "")}${keepScreenSearch(search)}`;
   }
   return getPanelPath(screen, match.language as Language);
 }

@@ -4,10 +4,12 @@ import { Form, Link, useLocation } from "react-router";
 import { AUDIT_PARAMS } from "~/lib/admin/audit-filters";
 import type { AuditListView } from "~/lib/admin/audit-log";
 import { useTranslate } from "~/lib/i18n/translations-context";
+import { useOfflineGuard } from "~/lib/panel/use-offline-guard";
 
 import { Button, getButtonLinkClassName } from "../button";
 import { SelectField } from "../select-field";
 import { TextField } from "../text-field";
+import { UnsentNotice } from "./unsent-notice";
 
 type AuditLogFiltersProps = Pick<
   AuditListView,
@@ -61,15 +63,22 @@ export function AuditLogFilters({
   clearHref,
   canClear,
 }: AuditLogFiltersProps): ReactElement {
+  const offline = useOfflineGuard();
   const translate = useTranslate();
   const form = useFieldsFromAddress(filters);
   return (
     <Form
+      onSubmit={offline.onSubmit}
       ref={form}
       method="get"
       aria-label={translate("panel.auditLog.filters.label")}
       className="mt-5 grid gap-4 rounded-card bg-surface-light p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-4"
     >
+      {offline.isBlocked ? (
+        <div className="col-span-full mb-4">
+          <UnsentNotice />
+        </div>
+      ) : null}
       <SelectField
         zone="light"
         label={translate("panel.auditLog.filters.person")}
