@@ -20,8 +20,6 @@ import type { Route } from "./+types/faq-edit";
 
 const NOT_FOUND_STATUS = 404;
 
-export { FaqErrorBoundary as ErrorBoundary } from "~/components/panel/faqs/faq-error";
-
 export async function loader({
   context,
   params,

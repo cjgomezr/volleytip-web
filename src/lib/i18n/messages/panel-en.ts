@@ -399,10 +399,6 @@ export const panelEn = {
     "A published question needs the question and the answer in Spanish.",
   "panel.faqs.notFound.title": "That question does not exist",
   "panel.faqs.notFound.details": "The address may be mistyped.",
-  "panel.faqs.failure.title": "It could not be completed",
-  "panel.faqs.failure.details":
-    "Something failed. Check the list before repeating the change.",
-  "panel.faqs.failure.retry": "Try again",
   "panel.sample.messages": "Messages",
   "panel.sample.siteTexts": "Site texts",
   "panel.sample.faqs": "Frequently asked questions",

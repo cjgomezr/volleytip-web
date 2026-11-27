@@ -405,6 +405,50 @@ for (const javaScriptEnabled of [true, false]) {
       ).toBeVisible();
     });
 
+    // Sin JavaScript no hay nada que conservar: el navegador pinta su propio
+    // error.
+    if (javaScriptEnabled) {
+      test("sin conexión, un botón de la lista avisa y la deja como estaba", async ({
+        page,
+        context,
+      }) => {
+        await createDraft(page, FIRST);
+        await open(page);
+        const publishFirst = page.getByRole("button", {
+          name: "Publicar la pregunta 1",
+        });
+        await context.setOffline(true);
+
+        await pressOn(publishFirst);
+
+        await expect(page.getByRole("alert")).toContainText(
+          "No se pudo enviar",
+        );
+        await expect(page).toHaveURL("/admin/preguntas");
+        await expect(publishFirst).toBeVisible();
+      });
+
+      test("sin conexión, editar una pregunta conserva lo escrito", async ({
+        page,
+        context,
+      }) => {
+        await createDraft(page, FIRST);
+        await open(page);
+        await page.getByRole("link", { name: "Editar la pregunta 1" }).click();
+        await page.waitForLoadState("networkidle");
+        const answer = page.getByLabel("Respuesta (Español)");
+        await answer.fill("Otra respuesta.");
+        await context.setOffline(true);
+
+        await pressOn(page.getByRole("button", { name: "Guardar pregunta" }));
+
+        await expect(page.getByRole("alert")).toContainText(
+          "No se pudo enviar",
+        );
+        await expect(answer).toHaveValue("Otra respuesta.");
+      });
+    }
+
     test("muestra por qué no se publica sin español", async ({ page }) => {
       await open(page, "/admin/preguntas/nueva");
       await fillLanguage(page, "English", FIRST_ENGLISH, "Only in Colombia.");

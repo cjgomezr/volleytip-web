@@ -84,6 +84,9 @@ export function FaqListScreen({
   const translate = useTranslate();
   const newPath = getPanelPath("adminFaqNew", useLanguage());
   // Uno solo para todos los botones: lo último que pasó es lo que se anuncia.
+  // `useFetcher` y no `usePanelFetcher`: los botones miran a dónde y qué se
+  // está enviando. La lista se desmonta al cambiar de dirección, así que sus
+  // respuestas no hay que vencerlas.
   const fetcher = useFetcher<FaqListOutcome | UnsentSubmission>();
   usePreloadSubmission("adminFaqMove");
   usePreloadSubmission("adminFaqPublish");

@@ -17,6 +17,9 @@ const SCREEN_OF_SUBMISSION: Partial<Record<PanelPageId, PanelPageId>> = {
   adminMarketsMarket: "adminMarkets",
   adminMarketsRate: "adminMarkets",
   adminSettingsMaintenance: "adminSettings",
+  adminFaqPublish: "adminFaqs",
+  adminFaqRetire: "adminFaqs",
+  adminFaqMove: "adminFaqs",
   // El idioma se cambia y la sesión se cierra desde cualquier pantalla.
   adminLanguage: "adminHome",
   adminSignOut: "adminHome",

@@ -397,10 +397,6 @@ export const panelEs = {
     "Una pregunta publicada necesita la pregunta y la respuesta en español.",
   "panel.faqs.notFound.title": "Esa pregunta no existe",
   "panel.faqs.notFound.details": "Puede que la dirección esté mal escrita.",
-  "panel.faqs.failure.title": "No se pudo completar",
-  "panel.faqs.failure.details":
-    "Algo falló. Revisa la lista antes de repetir el cambio.",
-  "panel.faqs.failure.retry": "Volver a intentar",
   "panel.sample.messages": "Mensajes",
   "panel.sample.siteTexts": "Textos del sitio",
   "panel.sample.faqs": "Preguntas frecuentes",

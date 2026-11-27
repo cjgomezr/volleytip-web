@@ -26,7 +26,7 @@ import { action as moveFaq } from "./faq-move";
 import { action as createFaq, loader as loadNew } from "./faq-new";
 import { action as publishFaq } from "./faq-publish";
 import { action as retireFaq } from "./faq-retire";
-import { ErrorBoundary as listBoundary, loader as loadList } from "./faqs";
+import { loader as loadList } from "./faqs";
 
 type Fields = Record<string, string>;
 
@@ -265,12 +265,6 @@ describe("preguntas: lista", () => {
     const { rows } = await list();
 
     expect(rows[0]?.languages.map(({ code }) => code)).toEqual(["es"]);
-  });
-
-  // El fallo de un botón va al límite de la ruta de la lista, no al de la
-  // ruta que lo recibió: sin él se pierde la cáscara.
-  it("tiene su límite de error dentro de la cáscara", () => {
-    expect(listBoundary).toBeTypeOf("function");
   });
 
   it("vacía: no trae filas", async () => {

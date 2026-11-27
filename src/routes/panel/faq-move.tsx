@@ -13,8 +13,6 @@ import {
 
 import type { Route } from "./+types/faq-move";
 
-export { FaqErrorBoundary as ErrorBoundary } from "~/components/panel/faqs/faq-error";
-
 export function loader(args: Route.LoaderArgs): Promise<FaqListView> {
   return loadFaqList(args);
 }

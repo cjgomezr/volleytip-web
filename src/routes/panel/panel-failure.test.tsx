@@ -395,6 +395,97 @@ describe("fallos de un mensaje", () => {
   );
 });
 
+describe("fallos de una pregunta", () => {
+  const faq = {
+    path: "/admin/preguntas/11111111-1111-4111-8111-111111111111",
+    pattern: "/admin/preguntas/:faqId",
+  } as const;
+
+  function throwMissing(): never {
+    throw data(null, { status: 404 });
+  }
+
+  it("una pregunta que no existe lo dice dentro del panel", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({ ...faq, loader: throwMissing });
+
+    expect(status).toBe(404);
+    expectShell(html);
+    expect(html).toContain("Esa pregunta no existe");
+    expect(html).toMatch(
+      /href="\/admin\/preguntas"[^>]*>Volver a las preguntas/,
+    );
+  });
+
+  // Los botones de la lista envían con `fetcher`: su fallo llega con la
+  // dirección de la lista, que no trae el id.
+  it("desde la lista, una pregunta que ya no existe también lo dice", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({
+      path: "/admin/preguntas",
+      method: "POST",
+      action: throwMissing,
+    });
+
+    expect(status).toBe(404);
+    expectShell(html);
+    expect(html).toContain("Esa pregunta no existe");
+  });
+
+  it("un cambio que falló usa la pantalla de fallo del panel", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({
+      ...faq,
+      method: "POST",
+      action: fail,
+    });
+
+    expect(status).toBe(500);
+    expectShell(html);
+    expect(html).toContain("El cambio no se pudo guardar");
+    expect(html).toMatch(
+      new RegExp(`href="${faq.path}"[^>]*>Volver a la pantalla</a>`),
+    );
+    expect(html).not.toContain(SECRET);
+  });
+
+  it.each([
+    ["el 403 del origen", 403, null, "No pudimos mostrar esta página"],
+    [
+      "el 404 del panel",
+      404,
+      buildPanelNotFoundData({
+        activeLanguages: ["es", "en"],
+        messages: getMessages("es"),
+        year: 2026,
+        announcements: [],
+        languageSuggestion: null,
+      }),
+      "Balón fuera",
+    ],
+  ])(
+    "%s sale como siempre, sin la cáscara",
+    async (_case, code, body, title) => {
+      stubSupabase({});
+
+      const { status, html } = await visit({
+        ...faq,
+        method: "POST",
+        action: () => {
+          throw data(body, { status: code });
+        },
+      });
+
+      expect(status).toBe(code);
+      expect(html).toContain(title);
+      expectNoPanel(html);
+    },
+  );
+});
+
 describe("quien no es del equipo", () => {
   it("recibe el 404 de la guardia aunque la pantalla fuera a fallar", async () => {
     stubSupabase({ profile: { ...ADMIN_PROFILE, role: "buyer" } });

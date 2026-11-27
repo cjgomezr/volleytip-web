@@ -16,6 +16,12 @@ describe("a dónde vuelve la pantalla de fallo", () => {
     ["/admin/ajustes/mantenimiento", "/admin/ajustes"],
     [`/admin/mensajes/${ID}`, `/admin/mensajes/${ID}`],
     [`/admin/bitacora/${ID}`, `/admin/bitacora/${ID}`],
+    [`/admin/preguntas/${ID}`, `/admin/preguntas/${ID}`],
+    // Los botones de la lista de preguntas envían cada uno a su dirección.
+    [`/admin/preguntas/${ID}/publicar`, "/admin/preguntas"],
+    [`/admin/preguntas/${ID}/retirar`, "/admin/preguntas"],
+    [`/admin/preguntas/${ID}/mover`, "/admin/preguntas"],
+    [`/en/admin/faqs/${ID}/move`, "/en/admin/faqs"],
     // El idioma y la salida no son pantallas: se vuelve al inicio.
     ["/admin/idioma", "/admin"],
     ["/admin/salir", "/admin"],

@@ -14,8 +14,6 @@ import {
 
 import type { Route } from "./+types/faq-new";
 
-export { FaqErrorBoundary as ErrorBoundary } from "~/components/panel/faqs/faq-error";
-
 export function loader({ context }: Route.LoaderArgs): Promise<FaqEditorView> {
   return buildFaqEditorView(context.get(panelSessionContext).client, null);
 }

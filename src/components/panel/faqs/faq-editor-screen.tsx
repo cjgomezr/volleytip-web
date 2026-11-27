@@ -45,8 +45,10 @@ export function FaqEditorScreen({
 }: FaqEditorScreenProps): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
+  // `useFetcher` y no `usePanelFetcher`: las pestañas necesitan lo enviado
+  // (`formData`). Sus respuestas no hay que vencerlas: la pantalla se
+  // desmonta al cambiar de dirección o de pregunta.
   const fetcher = useFetcher<FaqSaveOutcome | UnsentSubmission>();
-  const isSaving = fetcher.state !== "idle";
   const outcome =
     fetcher.data === undefined ? initialOutcome : withoutUnsent(fetcher.data);
   const rejected = outcome?.status === "invalid" ? outcome : undefined;
@@ -94,10 +96,10 @@ export function FaqEditorScreen({
             submitLabel={translate(
               isNew ? "panel.faqs.editor.create" : "panel.faqs.editor.save",
             )}
-            isSaving={isSaving}
+            isSaving={fetcher.state !== "idle"}
             isEdited={isEdited}
             status={outcome?.status}
-            isUnsent={!isSaving && isUnsentSubmission(fetcher.data)}
+            isUnsent={isUnsentSubmission(fetcher.data)}
             formError={formError}
           />
         </fetcher.Form>
