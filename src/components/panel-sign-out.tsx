@@ -8,7 +8,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 import { Button } from "./button";
 import { UnsentNotice } from "./panel/unsent-notice";
 import type { Zone } from "./pressable";
-import { PreloadSubmission } from "./panel/preload-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 /** El botón "Cerrar sesión". Es un envío: funciona también sin JavaScript. */
 export function PanelSignOut({
@@ -19,9 +19,9 @@ export function PanelSignOut({
   const translate = useTranslate();
   const action = getPanelPath("adminSignOut", useLanguage());
   const fetcher = usePanelFetcher();
+  usePreloadSubmission("adminSignOut");
   return (
     <fetcher.Form method="post" action={action} className="flex flex-col gap-3">
-      <PreloadSubmission action={action} />
       {fetcher.isUnsent ? <UnsentNotice zone={zone} /> : null}
       <Button
         type="submit"

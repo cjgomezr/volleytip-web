@@ -185,7 +185,7 @@ export const panelEs = {
     "Revisa la dirección o búscalo en la bandeja.",
   "panel.messages.failure.title": "Algo falló",
   "panel.messages.failure.details":
-    "No pudimos completar lo que pediste. Vuelve al mensaje para ver en qué estado quedó.",
+    "El cambio no se pudo guardar o el mensaje no se pudo cargar. Vuelve al mensaje para ver en qué estado quedó.",
   "panel.messages.failure.retry": "Volver al mensaje",
   "panel.settings.currentState": "Estado actual:",
   "panel.settings.state.on": "Encendido",

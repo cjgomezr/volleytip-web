@@ -14,7 +14,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 import { SaveBar } from "../editor-section";
 import { MarketFields } from "./market-fields";
 import { StatePill } from "./state-pill";
-import { PreloadSubmission } from "../preload-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 function useCountryName(code: string): string {
   const names = new Intl.DisplayNames([useLanguage()], { type: "region" });
@@ -37,6 +37,7 @@ export function MarketForm({
   const country = useCountryName(market.countryCode);
   const headingId = useId();
   const fetcher = usePanelFetcher<MarketOutcome>(initialOutcome);
+  usePreloadSubmission("adminMarketsMarket");
   const { outcome } = fetcher;
   const rejection = outcome?.status === "invalid" ? outcome : undefined;
   const [isEdited, setIsEdited] = useState(false);
@@ -66,7 +67,6 @@ export function MarketForm({
         onChange={() => setIsEdited(true)}
         onSubmit={() => setIsEdited(false)}
       >
-        <PreloadSubmission action={path} />
         <input type="hidden" name={MARKETS_FIELDS.id} value={market.id} />
         <MarketFields
           values={rejection?.values ?? market}

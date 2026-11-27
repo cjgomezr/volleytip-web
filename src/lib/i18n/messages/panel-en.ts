@@ -183,7 +183,7 @@ export const panelEn = {
     "Check the address or look for it in the inbox.",
   "panel.messages.failure.title": "Something went wrong",
   "panel.messages.failure.details":
-    "We could not complete your request. Go back to the message to see its status.",
+    "The change could not be saved or the message could not be loaded. Go back to the message to see its status.",
   "panel.messages.failure.retry": "Back to the message",
   "panel.settings.currentState": "Current state:",
   "panel.settings.state.on": "On",

@@ -11,7 +11,7 @@ import type { PanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { UnsentNotice } from "../unsent-notice";
 import { SettingsCard } from "./settings-card";
-import { PreloadSubmission } from "../preload-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 const DESCRIPTIONS: Record<MaintenanceSettingsState, MessageKey> = {
   on: "panel.settings.maintenance.on",
@@ -28,9 +28,9 @@ function TurnOffForm({
   readonly fetcher: PanelFetcher<unknown>;
 }): ReactElement {
   const translate = useTranslate();
+  usePreloadSubmission("adminSettingsMaintenance");
   return (
     <fetcher.Form method="post" action={action}>
-      <PreloadSubmission action={action} />
       <input type="hidden" name="enabled" value="false" />
       <Button
         type="submit"

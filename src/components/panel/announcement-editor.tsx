@@ -17,7 +17,7 @@ import { Button } from "../button";
 import { AnnouncementMessageFields } from "./announcement-message-fields";
 import { EditorSection, SaveBar, useFieldErrorText } from "./editor-section";
 import { useMessageRows, type MessageRows } from "./use-message-rows";
-import { PreloadSubmission } from "./preload-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 interface AnnouncementEditorProps {
   readonly bar: SiteTextsView["bar"];
@@ -158,6 +158,7 @@ export function AnnouncementEditor(
   const { bar, limits, initialOutcome } = props;
   const translate = useTranslate();
   const fetcher = usePanelFetcher<BarOutcome>(initialOutcome);
+  usePreloadSubmission("adminSiteTextsAnnouncements");
   const { outcome } = fetcher;
   const messages = useMessageRows(pickInitialMessages(props));
   const [sentRows, setSentRows] = useState(messages.rows);
@@ -182,7 +183,6 @@ export function AnnouncementEditor(
         noValidate
         onSubmit={() => setSentRows(messages.rows)}
       >
-        <PreloadSubmission action={action} />
         <input
           type="hidden"
           name={MESSAGE_COUNT_FIELD}

@@ -67,6 +67,18 @@ describe("bandeja: errores de un mensaje", () => {
   });
 
   it.each([
+    ["es", "El cambio no se pudo guardar"],
+    ["en", "The change could not be saved"],
+  ] as const)(
+    "dice que el cambio no se guardó (%s)",
+    async (language, text) => {
+      const html = await renderFailure(new Error("bitácora caída"), language);
+
+      expect(html).toContain(text);
+    },
+  );
+
+  it.each([
     ["es", "Algo falló", `/admin/mensajes/${ID}`],
     ["en", "Something went wrong", `/en/admin/messages/${ID}`],
   ] as const)(

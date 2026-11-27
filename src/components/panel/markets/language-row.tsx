@@ -14,7 +14,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 import { Button } from "../../button";
 import { UnsentNotice } from "../unsent-notice";
 import { StatePill } from "./state-pill";
-import { PreloadSubmission } from "../preload-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 // Lo que dice el botón y lo que oye un lector de pantalla, según lo que hará.
 const TOGGLE_KEYS = {
@@ -40,6 +40,7 @@ function LanguageToggle({
   const translate = useTranslate();
   const path = getPanelPath("adminMarketsLanguage", useLanguage());
   const fetcher = usePanelFetcher<LanguageOutcome>(initialOutcome);
+  usePreloadSubmission("adminMarketsLanguage");
   const { outcome } = fetcher;
   const isSaving = fetcher.isSending;
   const { code, name, isActive } = language;
@@ -47,7 +48,6 @@ function LanguageToggle({
   return (
     <>
       <fetcher.Form method="post" action={path}>
-        <PreloadSubmission action={path} />
         <input type="hidden" name={MARKETS_FIELDS.code} value={code} />
         <input
           type="hidden"
