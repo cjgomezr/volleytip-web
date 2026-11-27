@@ -23,15 +23,18 @@ export interface PanelFetcher<Outcome> {
 // React Router conserva `fetcher.data` mientras el formulario siga en
 // pantalla, también después de un envío que redirigió. Sin esto, un rechazo o
 // un aviso viejo seguiría ahí cuando el guardado siguiente ya funcionó. Una
-// respuesta vale solo en la dirección donde llegó.
+// respuesta vence al salir de la dirección donde llegó, y no revive al volver
+// con "atrás".
 function useAnswerOfThisLocation(answer: unknown): unknown {
   const { key } = useLocation();
-  const [received, setReceived] = useState({ answer, key });
+  const [received, setReceived] = useState({ answer, key, isExpired: false });
   if (received.answer !== answer) {
-    setReceived({ answer, key });
+    setReceived({ answer, key, isExpired: false });
     return answer;
   }
-  return received.key === key ? answer : undefined;
+  const isExpired = received.isExpired || received.key !== key;
+  if (isExpired !== received.isExpired) setReceived({ ...received, isExpired });
+  return isExpired ? undefined : answer;
 }
 
 /**

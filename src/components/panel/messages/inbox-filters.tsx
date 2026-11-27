@@ -16,8 +16,8 @@ import { useOfflineGuard } from "~/lib/panel/use-offline-guard";
 import { Button } from "../../button";
 import { SelectField } from "../../select-field";
 import { TextField } from "../../text-field";
-import { TEXT_LINK_STYLES } from "./message-styles";
 import { UnsentNotice } from "../unsent-notice";
+import { TEXT_LINK_STYLES } from "./message-styles";
 
 // Los campos no son controlados. Cuando la dirección cambia sin que la
 // persona los toque ("Quitar filtros", atrás), se ponen al día sin volver a
@@ -86,7 +86,7 @@ export function InboxFilters({
       className="mt-5 rounded-card bg-surface-light p-4 md:p-5"
     >
       {offline.isBlocked ? (
-        <div className="col-span-full mb-4">
+        <div className="mb-4">
           <UnsentNotice />
         </div>
       ) : null}

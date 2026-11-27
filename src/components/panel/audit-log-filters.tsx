@@ -75,7 +75,7 @@ export function AuditLogFilters({
       className="mt-5 grid gap-4 rounded-card bg-surface-light p-4 sm:grid-cols-2 md:p-5 xl:grid-cols-4"
     >
       {offline.isBlocked ? (
-        <div className="col-span-full mb-4">
+        <div className="col-span-full">
           <UnsentNotice />
         </div>
       ) : null}

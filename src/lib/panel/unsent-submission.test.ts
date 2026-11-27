@@ -1,7 +1,7 @@
 import { redirect, UNSAFE_ErrorResponseImpl } from "react-router";
 import { describe, expect, it } from "vitest";
 
-import { PANEL_ADMIN_PAGES, PANEL_MEMBER_PAGES } from "~/lib/i18n/panel-pages";
+import { PANEL_PAGES } from "~/lib/i18n/panel-pages";
 
 import {
   isConnectionFailure,
@@ -106,7 +106,7 @@ const ROUTE_MODULES = import.meta.glob<Record<string, unknown>>(
 
 describe("rutas del panel que reciben envíos", () => {
   it.each(
-    [...PANEL_MEMBER_PAGES, ...PANEL_ADMIN_PAGES]
+    PANEL_PAGES
       // El comodín solo responde 404.
       .filter(({ id }) => id !== "adminMissing")
       .map(({ file }) => file),

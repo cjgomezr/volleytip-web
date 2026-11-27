@@ -17,6 +17,12 @@ import {
   resolveSignedInPath,
   RETURN_PARAM,
 } from "~/lib/panel/return-path";
+import {
+  isUnsentSubmission,
+  sendPanelForm,
+  withoutUnsent,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/sign-in-link";
 
@@ -79,9 +85,24 @@ export async function action({
   throw redirect(resolveSignedInPath(details.returnPath, result.language));
 }
 
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
+
 export default function SignInLink({
   loaderData,
   actionData,
 }: Route.ComponentProps): ReactElement {
-  return <SignInLinkScreen {...loaderData} outcome={actionData} />;
+  return (
+    <SignInLinkScreen
+      {...loaderData}
+      outcome={withoutUnsent(actionData)}
+      isUnsent={isUnsentSubmission(actionData)}
+    />
+  );
 }

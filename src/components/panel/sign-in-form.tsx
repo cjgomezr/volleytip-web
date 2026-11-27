@@ -14,7 +14,7 @@ import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { buildSignInPathFor, RETURN_PARAM } from "~/lib/panel/return-path";
-import { useOfflineGuard } from "~/lib/panel/use-offline-guard";
+
 import { UnsentNotice } from "./unsent-notice";
 
 interface SignInFormProps {
@@ -22,6 +22,8 @@ interface SignInFormProps {
   readonly protection: FormProtectionFields;
   /** Lo que devolvió el `action`. */
   readonly outcome: SignInOutcome | undefined;
+  /** El envío no llegó al servidor. */
+  readonly isUnsent?: boolean;
 }
 
 const REJECTION_MESSAGES: Record<SignInRejection, MessageKey> = {
@@ -62,8 +64,11 @@ function UseAnotherEmail(): ReactElement {
   );
 }
 
-function EmailForm({ protection, outcome }: SignInFormProps): ReactElement {
-  const offline = useOfflineGuard();
+function EmailForm({
+  protection,
+  outcome,
+  isUnsent,
+}: SignInFormProps): ReactElement {
   const translate = useTranslate();
   const navigation = useNavigation();
   const failure = findFailureMessage(outcome);
@@ -75,13 +80,8 @@ function EmailForm({ protection, outcome }: SignInFormProps): ReactElement {
     outcome?.status === "invalid" ? outcome.fieldErrors.email : undefined;
 
   return (
-    <Form
-      onSubmit={offline.onSubmit}
-      method="post"
-      noValidate
-      className="mt-6 flex flex-col gap-3.5"
-    >
-      {offline.isBlocked ? (
+    <Form method="post" noValidate className="mt-6 flex flex-col gap-3.5">
+      {isUnsent ? (
         <div>
           <UnsentNotice />
         </div>

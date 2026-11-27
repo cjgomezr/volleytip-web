@@ -35,6 +35,7 @@ const LANGUAGES = [
     signIn: "/admin/entrar",
     sendLink: "Enviarme el enlace",
     settingsLink: "Ajustes",
+    auditLogLink: "Bitácora",
     saveApp: "Guardar estado de la app",
     confirm: "Sí, encender",
     otherLanguage: "English",
@@ -59,6 +60,7 @@ const LANGUAGES = [
     signIn: "/en/admin/sign-in",
     sendLink: "Send me the link",
     settingsLink: "Settings",
+    auditLogLink: "Audit log",
     saveApp: "Save app status",
     confirm: "Yes, turn it on",
     otherLanguage: "Español",
@@ -250,6 +252,43 @@ for (const language of LANGUAGES) {
       await expect(email).toHaveValue("persona@prueba.volleytip.test");
     });
 
+    // Con la red "puesta" pero sin llegar a nadie.
+    test("si el envío de la entrada se corta, conserva el correo y avisa", async ({
+      page,
+    }) => {
+      await openPanel(page, language.signIn);
+      const email = page.locator('input[name="email"]');
+      await email.fill("persona@prueba.volleytip.test");
+      await cutSubmissions(page);
+
+      await page.getByRole("button", { name: language.sendLink }).click();
+
+      const alert = page.getByRole("alert");
+      await expect(alert).toContainText(language.unsent);
+      await expect(alert).not.toContainText(language.claim);
+      await expect(email).toHaveValue("persona@prueba.volleytip.test");
+    });
+
+    test("el aviso de los filtros se quita al navegar", async ({
+      page,
+      context,
+      signInToPanel,
+    }) => {
+      await signInToPanel({ role: "admin" });
+      await openPanel(page, language.auditLog);
+      await context.setOffline(true);
+      await page.getByRole("button", { name: language.filter }).click();
+      await expect(page.getByRole("alert")).toContainText(language.unsent);
+      await context.setOffline(false);
+
+      await page
+        .getByRole("complementary")
+        .getByRole("link", { name: language.auditLogLink })
+        .click();
+
+      await expect(page.getByRole("alert")).toHaveCount(0);
+    });
+
     // El aviso es del envío que falló: no se queda cuando el siguiente
     // funciona ni cuando la persona navega.
     test("al volver la red, el siguiente envío quita el aviso", async ({
@@ -292,6 +331,10 @@ for (const language of LANGUAGES) {
 
       await expect(page.getByRole("alert")).toHaveCount(0);
       await expect(field).toHaveValue(saved);
+
+      // Tampoco revive al volver atrás.
+      await page.goBack();
+      await expect(page.getByRole("alert")).toHaveCount(0);
     });
 
     // Un cuerpo que el servidor no sabe leer hace fallar su `action`: un 500
