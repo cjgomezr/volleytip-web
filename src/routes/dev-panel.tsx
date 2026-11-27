@@ -4,6 +4,7 @@ import { data, redirect } from "react-router";
 import { AuditEntryScreen } from "~/components/panel/audit-entry-screen";
 import { AuditLogScreen } from "~/components/panel/audit-log-screen";
 import { OverviewScreen } from "~/components/panel/overview-screen";
+import { PanelFailure } from "~/components/panel/panel-failure";
 import { PanelHeading } from "~/components/panel/panel-heading";
 import { PanelMore } from "~/components/panel/panel-more";
 import { PanelShell } from "~/components/panel/panel-shell";
@@ -55,13 +56,22 @@ import type { Route } from "./+types/dev-panel";
 // `?barra=llena` la barra con sus cinco lugares y `?resumen=datos` (o
 // `vacio`, o `fallo`) el resumen en el inicio, y `?textos=datos` (o
 // `errores`, `confirmacion` o `invalido`) la pantalla de Textos del sitio, y
-// `?bitacora=datos` (o `vacio`, `rango` o `detalle`) la bitácora. En
-// producción responde 404.
+// `?bitacora=datos` (o `vacio`, `rango` o `detalle`) la bitácora.
+// `?fallo=servidor` (o `red`) pinta la pantalla de fallo. En producción
+// responde 404.
 const NOT_FOUND_STATUS = 404;
 const BAD_REQUEST = 400;
 const SEE_OTHER = 303;
 const MAINTENANCE_PARAM = "mantenimiento";
 const SAMPLE_PENDING_COUNTS = { "sample-messages": 3 } as const;
+
+// Lo que lanzaría cada fallo: la pantalla distingue el de red por el error.
+const SAMPLE_FAILURES = {
+  servidor: () => new Error("Fallo de muestra"),
+  red: () => new TypeError("Failed to fetch"),
+} as const;
+
+type SampleFailure = keyof typeof SAMPLE_FAILURES;
 
 const SAMPLE_PAGES: readonly PageDeclaration[] = [
   ...SAMPLE_MODULES.map(({ page }) => page),
@@ -80,6 +90,13 @@ interface DevPanel {
   readonly siteTexts: SampleSiteTexts | null;
   /** La bitácora de muestra, si su sección la pide. */
   readonly auditLog: SampleAuditLog | null;
+  /** El fallo de muestra que se pinta en lugar de la pantalla. */
+  readonly failure: SampleFailure | null;
+}
+
+function readSampleFailure(url: URL): SampleFailure | null {
+  const requested = url.searchParams.get("fallo");
+  return requested === "servidor" || requested === "red" ? requested : null;
 }
 
 function rejectInProduction(): void {
@@ -141,6 +158,7 @@ export function loader({ request }: Route.LoaderArgs): DevPanel {
       module?.id === "sample-audit-log"
         ? readSampleAuditLog(url, getRequestLanguage(request))
         : null,
+    failure: readSampleFailure(url),
   };
 }
 
@@ -174,8 +192,12 @@ function SampleScreen({
   overview,
   siteTexts,
   auditLog,
+  failure,
 }: DevPanel): ReactElement {
   const translate = useTranslate();
+  if (failure !== null) {
+    return <PanelFailure error={SAMPLE_FAILURES[failure]()} />;
+  }
   if (isMore) return <PanelMore />;
   if (siteTexts !== null) return <SiteTextsScreen {...siteTexts} />;
   if (auditLog?.screen === "list") return <AuditLogScreen {...auditLog.view} />;

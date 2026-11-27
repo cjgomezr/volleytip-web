@@ -17,6 +17,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { TextField } from "../text-field";
 import { EditorSection, SaveBar, useFieldErrorText } from "./editor-section";
+import { PreloadSubmission } from "./preload-submission";
 
 const STAT_INPUTS: readonly {
   readonly part: SiteStatPart;
@@ -85,6 +86,7 @@ export function StatsEditor({
   const fetcher = usePanelFetcher<StatsOutcome>(initialOutcome);
   const { outcome } = fetcher;
   const [isEdited, setIsEdited] = useState(false);
+  const action = getPanelPath("adminSiteTextsStats", language);
   const isMalformed =
     outcome?.status === "invalid" && outcome.formError === "malformed";
   const intro = translate("panel.siteTexts.stats.intro", {
@@ -99,11 +101,12 @@ export function StatsEditor({
     >
       <fetcher.Form
         method="post"
-        action={getPanelPath("adminSiteTextsStats", language)}
+        action={action}
         noValidate
         onInput={() => setIsEdited(true)}
         onSubmit={() => setIsEdited(false)}
       >
+        <PreloadSubmission action={action} />
         <div className="mt-4 flex flex-col gap-4">
           {stats.map((stat) => (
             <StatFields

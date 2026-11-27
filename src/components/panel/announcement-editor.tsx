@@ -17,6 +17,7 @@ import { Button } from "../button";
 import { AnnouncementMessageFields } from "./announcement-message-fields";
 import { EditorSection, SaveBar, useFieldErrorText } from "./editor-section";
 import { useMessageRows, type MessageRows } from "./use-message-rows";
+import { PreloadSubmission } from "./preload-submission";
 
 interface AnnouncementEditorProps {
   readonly bar: SiteTextsView["bar"];
@@ -181,6 +182,7 @@ export function AnnouncementEditor(
         noValidate
         onSubmit={() => setSentRows(messages.rows)}
       >
+        <PreloadSubmission action={action} />
         <input
           type="hidden"
           name={MESSAGE_COUNT_FIELD}

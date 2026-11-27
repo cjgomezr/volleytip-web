@@ -14,6 +14,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 import { SaveBar } from "../editor-section";
 import { MarketFields } from "./market-fields";
 import { StatePill } from "./state-pill";
+import { PreloadSubmission } from "../preload-submission";
 
 function useCountryName(code: string): string {
   const names = new Intl.DisplayNames([useLanguage()], { type: "region" });
@@ -65,6 +66,7 @@ export function MarketForm({
         onChange={() => setIsEdited(true)}
         onSubmit={() => setIsEdited(false)}
       >
+        <PreloadSubmission action={path} />
         <input type="hidden" name={MARKETS_FIELDS.id} value={market.id} />
         <MarketFields
           values={rejection?.values ?? market}

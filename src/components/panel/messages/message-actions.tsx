@@ -9,6 +9,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { Button } from "../../button";
 import { UnsentNotice } from "../unsent-notice";
+import { PreloadSubmission } from "../preload-submission";
 
 interface StatusAction {
   readonly page: PanelPageId;
@@ -44,6 +45,7 @@ function StatusButton({
   const fetcher = usePanelFetcher();
   return (
     <fetcher.Form method="post" action={path} className="flex flex-col gap-2">
+      <PreloadSubmission action={path} />
       {fetcher.isUnsent ? <UnsentNotice /> : null}
       <Button
         type="submit"

@@ -14,6 +14,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 import { Button } from "../../button";
 import { UnsentNotice } from "../unsent-notice";
 import { StatePill } from "./state-pill";
+import { PreloadSubmission } from "../preload-submission";
 
 // Lo que dice el botón y lo que oye un lector de pantalla, según lo que hará.
 const TOGGLE_KEYS = {
@@ -46,6 +47,7 @@ function LanguageToggle({
   return (
     <>
       <fetcher.Form method="post" action={path}>
+        <PreloadSubmission action={path} />
         <input type="hidden" name={MARKETS_FIELDS.code} value={code} />
         <input
           type="hidden"

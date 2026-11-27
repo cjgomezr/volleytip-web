@@ -13,6 +13,7 @@ import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { TextField } from "../../text-field";
 import { SaveBar } from "../editor-section";
+import { PreloadSubmission } from "../preload-submission";
 
 const ERROR_KEYS = {
   required: "panel.markets.rate.error.required",
@@ -64,6 +65,7 @@ export function UsdRateForm({
         onSubmit={() => setIsEdited(false)}
         className="mt-4"
       >
+        <PreloadSubmission action={path} />
         <div className="max-w-[360px]">
           <TextField
             zone="light"
