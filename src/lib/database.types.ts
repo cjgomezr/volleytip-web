@@ -529,6 +529,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      assert_faq_editor: {
+        Args: Record<PropertyKey, never>;
+        Returns: undefined;
+      };
       audit_log_actions: {
         Args: Record<PropertyKey, never>;
         Returns: string[];
@@ -549,6 +553,7 @@ export type Database = {
         };
         Returns: boolean;
       };
+      create_faq: { Args: { p_translations: Json }; Returns: Json };
       enroll_waitlist: {
         Args: {
           p_city?: string;
@@ -560,13 +565,27 @@ export type Database = {
         };
         Returns: undefined;
       };
+      faq_has_default_text: { Args: { p_faq_id: string }; Returns: boolean };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
+      lock_faq_order: { Args: Record<PropertyKey, never>; Returns: undefined };
+      move_faq: {
+        Args: { p_direction: string; p_faq_id: string };
+        Returns: Json;
+      };
       purge_expired_rate_limits: {
         Args: Record<PropertyKey, never>;
         Returns: number;
       };
       record_form_rejection: {
         Args: { p_form: string; p_reason: string };
+        Returns: undefined;
+      };
+      save_faq: {
+        Args: {
+          p_faq_id: string;
+          p_removed_locales: string[];
+          p_translations: Json;
+        };
         Returns: undefined;
       };
       save_message: {
@@ -581,6 +600,17 @@ export type Database = {
           p_reason: string;
           p_whatsapp?: string;
         };
+        Returns: undefined;
+      };
+      set_faq_status: {
+        Args: {
+          p_faq_id: string;
+          p_status: Database["public"]["Enums"]["publish_status"];
+        };
+        Returns: Database["public"]["Enums"]["publish_status"];
+      };
+      write_faq_translations: {
+        Args: { p_faq_id: string; p_translations: Json };
         Returns: undefined;
       };
     };

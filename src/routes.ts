@@ -69,6 +69,12 @@ export default [
   // base. En producción responde 404.
   route("dev/mercados", "routes/dev-markets.tsx"),
   route("en/dev/mercados", "routes/dev-markets.tsx", { id: "dev-markets-en" }),
+  // Pinta las preguntas del panel (lista y editor) en cada estado, sin sesión
+  // ni base. En producción responde 404.
+  route("dev/preguntas", "routes/dev-panel-faqs.tsx"),
+  route("en/dev/preguntas", "routes/dev-panel-faqs.tsx", {
+    id: "dev-panel-faqs-en",
+  }),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
   // Los archivos con que el celular abre `/r/` en la app. Son de recurso:

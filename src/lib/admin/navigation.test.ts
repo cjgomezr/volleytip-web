@@ -44,12 +44,14 @@ describe("módulos del panel", () => {
       "overview",
       "messages",
       "site-texts",
+      "faqs",
       "markets",
       "settings",
       "audit-log",
     ]);
-    expect(sidebar[3]?.href).toBe("/admin/mercados");
-    expect(sidebar[4]?.href).toBe("/admin/ajustes");
+    expect(sidebar[3]?.href).toBe("/admin/preguntas");
+    expect(sidebar[4]?.href).toBe("/admin/mercados");
+    expect(sidebar[5]?.href).toBe("/admin/ajustes");
     expect(sidebar[0]?.href).toBe("/admin");
     expect(navigate(ADMIN_MODULES, { language: "en" }).sidebar[0]?.href).toBe(
       "/en/admin",
@@ -62,6 +64,7 @@ describe("módulos del panel", () => {
     expect(ids(bar)).toEqual(["overview", "messages"]);
     expect(ids(more)).toEqual([
       "site-texts",
+      "faqs",
       "markets",
       "settings",
       "audit-log",
@@ -86,6 +89,29 @@ describe("módulos del panel", () => {
             href,
             labelKey: "panel.module.messages",
             pendingCount: 3,
+            isCurrent: true,
+          }),
+        );
+      }
+    },
+  );
+
+  it.each([
+    ["es", "/admin/preguntas"],
+    ["en", "/en/admin/faqs"],
+  ] as const)(
+    "preguntas: módulo: en %s sale en el menú lateral y en Más, y sigue actual en el editor",
+    (language, href) => {
+      const { sidebar, more } = navigate(ADMIN_MODULES, {
+        language,
+        pathname: `${href}/0b7c1f9e`,
+      });
+
+      for (const list of [sidebar, more]) {
+        expect(list).toContainEqual(
+          expect.objectContaining({
+            href,
+            labelKey: "panel.module.faqs",
             isCurrent: true,
           }),
         );
