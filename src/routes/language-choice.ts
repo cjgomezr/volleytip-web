@@ -1,3 +1,4 @@
+import { activeLanguagesContext } from "~/lib/active-languages.server";
 import { serverEnv } from "~/lib/env.server";
 import { isSupportedLanguage, type Language } from "~/lib/i18n/languages";
 import { serializeLanguageChoice } from "~/lib/i18n/language-choice.server";
@@ -31,10 +32,16 @@ function buildDestination(from: string, language: Language): string {
 // No pasa por `processProtectedForm`: no guarda datos de nadie ni acepta
 // texto libre. Solo un idioma de una lista cerrada y una dirección que se
 // vuelve a armar desde el mapa de páginas.
-export async function action({ request }: Route.ActionArgs): Promise<Response> {
+export async function action({
+  request,
+  context,
+}: Route.ActionArgs): Promise<Response> {
   const formData = await request.formData();
   const language = readText(formData, "language");
-  if (!isSupportedLanguage(language)) {
+  if (
+    !isSupportedLanguage(language) ||
+    !context.get(activeLanguagesContext).includes(language)
+  ) {
     return new Response(null, { status: BAD_REQUEST });
   }
   const destination = buildDestination(readText(formData, "from"), language);

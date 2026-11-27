@@ -1911,6 +1911,23 @@ const SETTINGS_VARIANTS: readonly PanelVariant[] = SETTINGS_STATES.flatMap(
     })),
 );
 
+// "Idiomas y mercados" (#128): con datos y con sus dos rechazos, en los dos
+// idiomas. La muestra no usa la base.
+const MARKETS_STATES = ["datos", "ultimo-mercado", "tasa-invalida"] as const;
+
+const MARKETS_VARIANTS: readonly PanelVariant[] = MARKETS_STATES.flatMap(
+  (state) =>
+    [
+      { suffix: "", path: "/dev/mercados" },
+      { suffix: "-en", path: "/en/dev/mercados" },
+    ].map(({ suffix, path }) => ({
+      name: `mercados-${state}${suffix}`,
+      path: `${path}?estado=${state}`,
+      role: undefined,
+      sizes: viewports,
+    })),
+);
+
 // La bandeja y el detalle de un mensaje (#125), cada estado en los dos
 // idiomas. La muestra no usa la base.
 const MESSAGES_STATES = [
@@ -1957,6 +1974,7 @@ const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SETTINGS_VARIANTS,
   ...MESSAGES_VARIANTS,
   ...AUDIT_LOG_VARIANTS,
+  ...MARKETS_VARIANTS,
   {
     name: "staff",
     path: "/admin",

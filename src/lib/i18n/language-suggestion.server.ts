@@ -1,5 +1,6 @@
 import type { LanguageSuggestionTexts } from "~/components/language-suggestion";
 
+import type { ActiveLanguages } from "./active-languages";
 import { getLanguageProposal } from "./language-choice.server";
 import { getRequestLanguage, type Language } from "./languages";
 import { getTranslate } from "./messages.server";
@@ -15,8 +16,9 @@ export interface LanguageSuggestionData {
  * recibe. */
 export async function loadLanguageSuggestion(
   request: Request,
+  activeLanguages?: ActiveLanguages,
 ): Promise<LanguageSuggestionData | null> {
-  const proposed = await getLanguageProposal(request);
+  const proposed = await getLanguageProposal(request, activeLanguages);
   if (proposed === undefined) return null;
   const translate = getTranslate(proposed);
   return {

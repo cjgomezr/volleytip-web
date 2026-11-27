@@ -105,6 +105,27 @@ export const PANEL_ADMIN_PAGES = [
     path: { es: "admin/textos/cifras", en: "admin/site-texts/figures" },
   },
   {
+    id: "adminMarkets",
+    file: "routes/panel/markets.tsx",
+    path: { es: "admin/mercados", en: "admin/markets" },
+  },
+  // Cada formulario de la pantalla envía a la suya: una ruta, una acción.
+  {
+    id: "adminMarketsLanguage",
+    file: "routes/panel/markets-language.tsx",
+    path: { es: "admin/mercados/idioma", en: "admin/markets/language" },
+  },
+  {
+    id: "adminMarketsMarket",
+    file: "routes/panel/markets-market.tsx",
+    path: { es: "admin/mercados/mercado", en: "admin/markets/market" },
+  },
+  {
+    id: "adminMarketsRate",
+    file: "routes/panel/markets-rate.tsx",
+    path: { es: "admin/mercados/tasa", en: "admin/markets/usd-rate" },
+  },
+  {
     id: "adminSettings",
     file: "routes/panel/settings.tsx",
     path: { es: "admin/ajustes", en: "admin/settings" },

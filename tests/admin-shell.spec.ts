@@ -380,6 +380,7 @@ test.describe("panel real", () => {
       "Resumen",
       /^Mensajes/,
       "Textos del sitio",
+      "Idiomas y mercados",
       "Ajustes",
       "Bitácora",
     ]);

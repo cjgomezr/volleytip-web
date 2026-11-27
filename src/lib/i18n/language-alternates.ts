@@ -1,8 +1,5 @@
-import {
-  DEFAULT_LANGUAGE,
-  SUPPORTED_LANGUAGES,
-  type Language,
-} from "./languages";
+import { ALL_LANGUAGES, type ActiveLanguages } from "./active-languages";
+import { DEFAULT_LANGUAGE, type Language } from "./languages";
 import type { PageParams } from "./page-path";
 import { getPagePath, type PageId } from "./pages";
 
@@ -29,6 +26,8 @@ interface PageAddressesInput {
   readonly language: Language;
   readonly page: PageId;
   readonly params?: PageParams;
+  /** Los idiomas que el sitio ofrece: solo esos se declaran. */
+  readonly activeLanguages?: ActiveLanguages;
 }
 
 /** Nunca llevan parámetros de búsqueda: se arman solo con la página. */
@@ -37,13 +36,14 @@ export function buildPageAddresses({
   language,
   page,
   params,
+  activeLanguages = ALL_LANGUAGES,
 }: PageAddressesInput): PageAddresses {
   const addressIn = (code: Language): string =>
     `${siteOrigin}${getPagePath(page, code, params)}`;
   return {
     canonical: addressIn(language),
     alternates: [
-      ...SUPPORTED_LANGUAGES.map(({ code }) => ({
+      ...activeLanguages.map((code) => ({
         hreflang: code,
         href: addressIn(code),
       })),

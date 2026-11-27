@@ -5,6 +5,8 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLocation,
+  useRouteError,
   useRouteLoaderData,
 } from "react-router";
 
@@ -17,7 +19,12 @@ import {
 import { ErrorInShell } from "~/components/error-in-shell";
 import { LanguageAlternates } from "~/components/language-alternates";
 import { LanguageSuggestion } from "~/components/language-suggestion";
+import { activeLanguagesContext } from "~/lib/active-languages.server";
 import { serverEnv } from "~/lib/env.server";
+import type { ActiveLanguages } from "~/lib/i18n/active-languages";
+import { ActiveLanguagesProvider } from "~/lib/i18n/active-languages-context";
+import { findInactiveLanguageNotFound } from "~/lib/i18n/inactive-language-not-found";
+import { readDocumentLanguages } from "~/lib/i18n/document-languages";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getDocumentPath } from "~/lib/i18n/document-path";
 import {
@@ -28,15 +35,15 @@ import {
   loadLanguageSuggestion,
   type LanguageSuggestionData,
 } from "~/lib/i18n/language-suggestion.server";
-import { getRequestLanguage } from "~/lib/i18n/languages";
+import { DEFAULT_LANGUAGE, getRequestLanguage } from "~/lib/i18n/languages";
 import { getSiteYear } from "~/lib/i18n/format";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { getPageAtPath } from "~/lib/i18n/pages";
 import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { enforceSiteAvailability } from "~/lib/language-middleware.server";
 import { markAsNotIndexable } from "~/lib/indexing.server";
-import { enforceMaintenanceMode } from "~/lib/maintenance-middleware.server";
 import { findMaintenanceNotice } from "~/lib/maintenance-notice";
 import { findPanelNotFound } from "~/lib/panel/panel-not-found";
 
@@ -59,32 +66,43 @@ function declareLanguageVariation(
 
 async function respondWithLanguageChoice(
   request: Request,
+  activeLanguages: ActiveLanguages,
   next: () => Promise<Response>,
 ): Promise<Response> {
   const redirect =
     redirectFromDefaultPrefix(new URL(request.url)) ??
-    (await redirectRootToChosenLanguage(request));
+    (await redirectRootToChosenLanguage(request, activeLanguages));
   if (redirect !== null) return addVaryHeaders(redirect);
   return declareLanguageVariation(request, await next());
 }
 
-// El único lugar que pone `X-Robots-Tag`. Al estar en la ruta raíz envuelve
-// las respuestas de todas las rutas: páginas, datos, rutas de recurso y
-// errores. Queda fuera lo que React Router rechaza antes de buscar una ruta
-// (un método como OPTIONS), que no es contenido que un buscador indexe.
+// El único lugar que pone `X-Robots-Tag`. Al ser el primero de la ruta raíz
+// envuelve las respuestas de todas las rutas: páginas, datos, rutas de recurso
+// y errores, también los que lanzan los middleware de abajo. Queda fuera lo que
+// React Router rechaza antes de buscar una ruta (un método como OPTIONS), que
+// no es contenido que un buscador indexe.
 const markResponseAsNotIndexable: Route.MiddlewareFunction = async (
-  { request },
+  _args,
   next,
-) => {
-  const response = await respondWithLanguageChoice(request, next);
-  return markAsNotIndexable(response, serverEnv.appEnv);
-};
+) => markAsNotIndexable((await next()) as Response, serverEnv.appEnv);
 
-// Va primero: con el modo mantenimiento encendido la petición se corta antes
-// de redirigir por idioma y antes de que corra ningún loader o action.
+const applyLanguageChoice: Route.MiddlewareFunction = (
+  { request, context },
+  next,
+) =>
+  respondWithLanguageChoice(
+    request,
+    context.get(activeLanguagesContext),
+    next as () => Promise<Response>,
+  );
+
+// El orden importa: con el modo mantenimiento encendido, o en un idioma
+// desactivado, la petición se corta antes de redirigir por idioma y antes de
+// que corra ningún loader o action.
 export const middleware: Route.MiddlewareFunction[] = [
-  enforceMaintenanceMode,
   markResponseAsNotIndexable,
+  enforceSiteAvailability,
+  applyLanguageChoice,
 ];
 
 export const links: Route.LinksFunction = () => [
@@ -97,23 +115,31 @@ export const links: Route.LinksFunction = () => [
 // idioma. Lo vigila una prueba de Playwright.
 // `siteOrigin` no es un secreto: es el dominio público, y el navegador lo
 // necesita para pintar las mismas direcciones que el servidor.
-export async function loader({ request }: Route.LoaderArgs): Promise<{
+export async function loader({ request, context }: Route.LoaderArgs): Promise<{
+  readonly activeLanguages: ActiveLanguages;
   readonly messages: Messages;
   readonly siteOrigin: string;
   readonly currentYear: number;
   readonly languageSuggestion: LanguageSuggestionData | null;
 }> {
+  const activeLanguages = context.get(activeLanguagesContext);
   return {
+    activeLanguages,
     messages: getMessages(getRequestLanguage(request)),
     siteOrigin: serverEnv.siteOrigin,
     currentYear: getSiteYear(new Date()),
-    languageSuggestion: await loadLanguageSuggestion(request),
+    languageSuggestion: await loadLanguageSuggestion(request, activeLanguages),
   };
 }
 
 export function Layout({ children }: { children: ReactNode }): ReactElement {
-  const language = useLanguage();
   const rootData = useRouteLoaderData<typeof loader>("root");
+  const error = useRouteError();
+  const { activeLanguages, language, forcedLanguage } = readDocumentLanguages({
+    pathname: useLocation().pathname,
+    error,
+    rootLanguages: rootData?.activeLanguages,
+  });
 
   return (
     <html lang={language}>
@@ -124,16 +150,21 @@ export function Layout({ children }: { children: ReactNode }): ReactElement {
         <Links />
       </head>
       <body>
-        {rootData === undefined ? (
-          children
-        ) : (
-          <TranslationsProvider
-            language={language}
-            messages={rootData.messages}
-          >
-            {children}
-          </TranslationsProvider>
-        )}
+        <ActiveLanguagesProvider
+          languages={activeLanguages}
+          forcedLanguage={forcedLanguage}
+        >
+          {rootData === undefined ? (
+            children
+          ) : (
+            <TranslationsProvider
+              language={language}
+              messages={rootData.messages}
+            >
+              {children}
+            </TranslationsProvider>
+          )}
+        </ActiveLanguagesProvider>
         <ScrollRestoration />
         <Scripts />
       </body>
@@ -181,6 +212,21 @@ export function ErrorBoundary({
             ) : null
           }
           year={panelNotFound.year}
+        />
+      </TranslationsProvider>
+    );
+  }
+  const inactiveLanguage = findInactiveLanguageNotFound(error);
+  if (inactiveLanguage !== undefined) {
+    return (
+      <TranslationsProvider
+        language={DEFAULT_LANGUAGE}
+        messages={inactiveLanguage.messages}
+      >
+        <ErrorInShell
+          error={error}
+          announcements={inactiveLanguage.announcements}
+          year={inactiveLanguage.year}
         />
       </TranslationsProvider>
     );

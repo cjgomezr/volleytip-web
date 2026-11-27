@@ -44,10 +44,12 @@ describe("módulos del panel", () => {
       "overview",
       "messages",
       "site-texts",
+      "markets",
       "settings",
       "audit-log",
     ]);
-    expect(sidebar[3]?.href).toBe("/admin/ajustes");
+    expect(sidebar[3]?.href).toBe("/admin/mercados");
+    expect(sidebar[4]?.href).toBe("/admin/ajustes");
     expect(sidebar[0]?.href).toBe("/admin");
     expect(navigate(ADMIN_MODULES, { language: "en" }).sidebar[0]?.href).toBe(
       "/en/admin",
@@ -58,7 +60,12 @@ describe("módulos del panel", () => {
     const { bar, more } = navigate(ADMIN_MODULES);
 
     expect(ids(bar)).toEqual(["overview", "messages"]);
-    expect(ids(more)).toEqual(["site-texts", "settings", "audit-log"]);
+    expect(ids(more)).toEqual([
+      "site-texts",
+      "markets",
+      "settings",
+      "audit-log",
+    ]);
   });
 
   it.each([

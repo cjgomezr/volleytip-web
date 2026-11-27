@@ -8,12 +8,16 @@ const SERVER_BOOT_TIMEOUT_MS = 120_000;
 // Escriben ajustes que cambian el sitio entero (mantenimiento): corren solas.
 const SETTINGS_WRITES = "**/admin-settings-writes.spec.ts";
 const TEXTS_WRITES = "**/admin-site-texts-writes.spec.ts";
+const MARKETS_WRITES = "**/admin-markets-writes.spec.ts";
 
 export default defineConfig({
   testDir: "./tests",
   testMatch: "**/*.spec.ts",
   projects: [
-    { name: "sitio", testIgnore: [SETTINGS_WRITES, TEXTS_WRITES] },
+    {
+      name: "sitio",
+      testIgnore: [SETTINGS_WRITES, TEXTS_WRITES, MARKETS_WRITES],
+    },
     // Depende de "sitio": empieza cuando las demás ya terminaron, así que
     // ninguna se cruza con el sitio en mantenimiento. Para correr solo estas:
     // `--project=ajustes-que-escriben --no-deps`.
@@ -29,6 +33,14 @@ export default defineConfig({
       name: "textos-que-escriben",
       testMatch: TEXTS_WRITES,
       dependencies: ["ajustes-que-escriben"],
+    },
+    // Apaga un idioma del sitio entero y cambia el mercado y la tasa: corre
+    // sola, al final. Para correr solo esta:
+    // `--project=mercados-que-escriben --no-deps`.
+    {
+      name: "mercados-que-escriben",
+      testMatch: MARKETS_WRITES,
+      dependencies: ["textos-que-escriben"],
     },
   ],
   // El de Playwright sin el nombre del proyecto: las líneas base ya

@@ -2,7 +2,7 @@ import { readSetting, type SettingDefinition } from "./settings.server";
 import type { TypedSupabaseClient } from "./supabase/typed-client";
 
 // Pesos por dólar. Sin ajuste no hay tasa: el sitio muestra solo el peso.
-const USD_REFERENCE_RATE: SettingDefinition<number | null> = {
+export const USD_REFERENCE_RATE: SettingDefinition<number | null> = {
   key: "usd_reference_rate",
   isValid: (value): value is number =>
     typeof value === "number" && Number.isFinite(value),

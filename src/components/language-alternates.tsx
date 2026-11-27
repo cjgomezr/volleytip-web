@@ -1,5 +1,6 @@
 import type { ReactElement } from "react";
 
+import { useActiveLanguages } from "~/lib/i18n/active-languages-context";
 import { buildPageAddresses } from "~/lib/i18n/language-alternates";
 import { getAddressedPage } from "~/lib/i18n/pages";
 import { useCurrentPage } from "~/lib/i18n/use-current-page";
@@ -21,12 +22,14 @@ export function LanguageAlternates({
 }: LanguageAlternatesProps): ReactElement | null {
   const language = useLanguage();
   const current = useCurrentPage();
+  const activeLanguages = useActiveLanguages();
   if (current === undefined) {
     return null;
   }
   const { canonical, alternates } = buildPageAddresses({
     siteOrigin,
     language,
+    activeLanguages,
     ...getAddressedPage(current),
   });
   return (

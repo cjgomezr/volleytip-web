@@ -1,5 +1,6 @@
 import { isRouteErrorResponse } from "react-router";
 
+import type { ActiveLanguages } from "../i18n/active-languages";
 import type { LanguageSuggestionData } from "../i18n/language-suggestion.server";
 import type { Messages } from "../i18n/translate";
 
@@ -10,6 +11,7 @@ const PANEL_NOT_FOUND = "panel-not-found";
  * la respuesta tiene que traerlos. */
 export interface PanelNotFound {
   readonly kind: typeof PANEL_NOT_FOUND;
+  readonly activeLanguages: ActiveLanguages;
   readonly messages: Messages;
   readonly year: number;
   readonly announcements: readonly string[];
