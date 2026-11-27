@@ -12,11 +12,12 @@ import {
 import { getPanelPath, type PanelPageId } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import type { UnsentSubmission } from "~/lib/panel/unsent-submission";
 
 import { Button, getButtonLinkClassName } from "../../button";
 import { FaqStatusBadge } from "./faq-status-badge";
 
-type FaqFetcher = FetcherWithComponents<FaqListOutcome>;
+type FaqFetcher = FetcherWithComponents<FaqListOutcome | UnsentSubmission>;
 
 interface FaqListItemProps {
   readonly row: FaqRowView;

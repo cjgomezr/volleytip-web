@@ -10,6 +10,11 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import {
+  isUnsentSubmission,
+  withoutUnsent,
+  type UnsentSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import { SaveBar } from "../editor-section";
 import { TEXT_LINK_STYLES } from "../messages/message-styles";
@@ -40,8 +45,10 @@ export function FaqEditorScreen({
 }: FaqEditorScreenProps): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
-  const fetcher = useFetcher<FaqSaveOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
+  const fetcher = useFetcher<FaqSaveOutcome | UnsentSubmission>();
+  const isSaving = fetcher.state !== "idle";
+  const outcome =
+    fetcher.data === undefined ? initialOutcome : withoutUnsent(fetcher.data);
   const rejected = outcome?.status === "invalid" ? outcome : undefined;
   const [isEdited, setIsEdited] = useState(false);
   const formError = useFormErrorText(rejected?.formError);
@@ -87,9 +94,10 @@ export function FaqEditorScreen({
             submitLabel={translate(
               isNew ? "panel.faqs.editor.create" : "panel.faqs.editor.save",
             )}
-            isSaving={fetcher.state !== "idle"}
+            isSaving={isSaving}
             isEdited={isEdited}
             status={outcome?.status}
+            isUnsent={!isSaving && isUnsentSubmission(fetcher.data)}
             formError={formError}
           />
         </fetcher.Form>

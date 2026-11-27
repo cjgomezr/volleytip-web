@@ -36,6 +36,9 @@ const LANGUAGES = [
     sendLink: "Enviarme el enlace",
     auditLogLink: "Bitácora",
     saveApp: "Guardar estado de la app",
+    newFaq: "/admin/preguntas/nueva",
+    faqQuestion: "Pregunta (Español)",
+    createFaq: "Crear borrador",
     confirm: "Sí, encender",
     otherLanguage: "English",
     signOut: "Cerrar sesión",
@@ -60,6 +63,9 @@ const LANGUAGES = [
     sendLink: "Send me the link",
     auditLogLink: "Audit log",
     saveApp: "Save app status",
+    newFaq: "/en/admin/faqs/new",
+    faqQuestion: "Question (Español)",
+    createFaq: "Create draft",
     confirm: "Yes, turn it on",
     otherLanguage: "Español",
     signOut: "Sign out",
@@ -221,6 +227,24 @@ for (const language of LANGUAGES) {
       await expect(page.getByRole("alert")).toContainText(language.unsent);
       await expect(field).toHaveValue("https://apps.apple.com/app/id1");
       await expect(page).toHaveURL(language.settings);
+    });
+
+    test("sin conexión, una pregunta nueva conserva lo escrito", async ({
+      page,
+      context,
+      signInToPanel,
+    }) => {
+      await signInToPanel({ role: "admin" });
+      await openPanel(page, language.newFaq);
+      const field = page.getByLabel(language.faqQuestion);
+      await field.fill("¿Hacen envíos?");
+      await context.setOffline(true);
+
+      await page.getByRole("button", { name: language.createFaq }).click();
+
+      await expect(page.getByRole("alert")).toContainText(language.unsent);
+      await expect(field).toHaveValue("¿Hacen envíos?");
+      await expect(page).toHaveURL(language.newFaq);
     });
 
     for (const [name, path, button] of [
