@@ -100,6 +100,30 @@ describeIntegration("preguntas del panel contra la base local", () => {
     return location.searchParams.get("creada") ?? "";
   }
 
+  /** Edita como lo hace la pantalla: manda lo escrito y lo que se pintó. */
+  async function edit(
+    faqId: string,
+    fields: Record<string, string>,
+    painted?: Record<string, string>,
+  ): Promise<unknown> {
+    const view = painted ?? (await readPaintedFields(faqId));
+    return modules.editRoute.action(
+      buildArgs(admin, { fields: { ...view, ...fields }, faqId }),
+    );
+  }
+
+  async function readPaintedFields(
+    faqId: string,
+  ): Promise<Record<string, string>> {
+    const view = await modules.editRoute.loader(buildArgs(admin, { faqId }));
+    return Object.fromEntries(
+      ["es", "en"].flatMap((code) => [
+        [`base:question:${code}`, view.texts[code]?.question ?? ""],
+        [`base:answer:${code}`, view.texts[code]?.answer ?? ""],
+      ]),
+    );
+  }
+
   function publish(faqId: string): Promise<unknown> {
     return modules.publishRoute.action(buildArgs(admin, { fields: {}, faqId }));
   }
@@ -208,9 +232,7 @@ describeIntegration("preguntas del panel contra la base local", () => {
     await publish(id);
     expect(await readSite("en")).toEqual(["Shipping"]);
 
-    await modules.editRoute.action(
-      buildArgs(admin, { fields: fieldsFor("Envíos"), faqId: id }),
-    );
+    await edit(id, fieldsFor("Envíos"));
 
     expect(await readSite("en")).toEqual(["Envíos"]);
   });
@@ -247,10 +269,76 @@ describeIntegration("preguntas del panel contra la base local", () => {
       p_faq_id: id,
       p_translations: [],
       p_removed_locales: ["es"],
+      p_expected: [
+        {
+          locale: "es",
+          question: `${TEST_MARK} Fija`,
+          answer: "Respuesta",
+        },
+      ],
     });
 
     expect(error?.message).toContain("faqs_published_default_text_check");
     expect(await readSite()).toEqual(["Fija"]);
+  });
+
+  it("dos editores a la vez: cada idioma conserva lo suyo", async () => {
+    const id = await create("Compartida");
+    const openedBefore = await readPaintedFields(id);
+    await edit(id, fieldsFor("Compartida", "Shared"));
+
+    await edit(id, fieldsFor("Corregida"), openedBefore);
+    await publish(id);
+
+    expect(await readSite()).toEqual(["Corregida"]);
+    expect(await readSite("en")).toEqual(["Shared"]);
+  });
+
+  it("no pisa en silencio el texto que otra persona cambió", async () => {
+    const id = await create("Original");
+    const openedBefore = await readPaintedFields(id);
+    await edit(id, fieldsFor("De la primera"));
+
+    const result = await edit(id, fieldsFor("De la segunda"), openedBefore);
+
+    expect(result).toMatchObject({ data: { formError: "stale" } });
+    expect(await readPanelOrder()).toEqual(["De la primera"]);
+  });
+
+  it("la base rechaza una escritura hecha sobre un texto viejo", async () => {
+    const id = await create("Vigente");
+
+    const { error } = await clientOf(admin).rpc("save_faq", {
+      p_faq_id: id,
+      p_translations: [{ locale: "es", question: "Otra", answer: "Otra" }],
+      p_removed_locales: [],
+      p_expected: [{ locale: "es", question: "Vieja", answer: "Vieja" }],
+    });
+
+    expect(error?.message).toContain("faqs_stale_translation_check");
+    expect(await readPanelOrder()).toEqual(["Vigente"]);
+  });
+
+  it("la bitácora de una edición guarda lo que había y lo que quedó", async () => {
+    const id = await create("Antes");
+
+    await edit(id, fieldsFor("Después"));
+
+    const [row] = await database<{ details: unknown }[]>`
+      select details from public.audit_log
+      where entity_id = ${id} and action = 'faq.update'`;
+    expect(row?.details).toEqual({
+      before: {
+        translations: {
+          es: { question: `${TEST_MARK} Antes`, answer: "Respuesta" },
+        },
+      },
+      after: {
+        translations: {
+          es: { question: `${TEST_MARK} Después`, answer: "Respuesta" },
+        },
+      },
+    });
   });
 
   it("subir y bajar intercambian y el sitio lo refleja", async () => {
@@ -306,12 +394,7 @@ describeIntegration("preguntas del panel contra la base local", () => {
   it("cada acción deja su entrada en la bitácora", async () => {
     const id = await create("Registrada");
     await create("Otra");
-    await modules.editRoute.action(
-      buildArgs(admin, {
-        fields: fieldsFor("Registrada", "Logged"),
-        faqId: id,
-      }),
-    );
+    await edit(id, fieldsFor("Registrada", "Logged"));
     await publish(id);
     await retire(id);
     await move(id, "down");
@@ -364,6 +447,7 @@ describeIntegration("preguntas del panel contra la base local", () => {
           p_faq_id: id,
           p_translations: [],
           p_removed_locales: ["es"],
+          p_expected: [],
         }),
         client.rpc("set_faq_status", {
           p_faq_id: id,

@@ -43,7 +43,7 @@ function LanguageChips({
         <li
           key={code}
           data-translated={isTranslated}
-          className={`rounded-pill border-2 px-3 py-0.5 text-[13px] font-bold text-brand-night ${isTranslated ? "border-brand-night" : "border-dashed border-ink-subtle"}`}
+          className={`rounded-pill border-2 px-3 py-1 text-[13px] font-bold text-brand-night ${isTranslated ? "border-brand-night" : "border-dashed border-ink-subtle"}`}
         >
           <span aria-hidden="true">{isTranslated ? "✓ " : "— "}</span>
           {name}
@@ -145,14 +145,13 @@ function ItemActions({
 }: Omit<FaqListItemProps, "error">): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
-  const number = position;
   const shared = { fetcher, faqId: row.id };
   const isPublished = row.status === "published";
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Link
         to={getPanelPath("adminFaq", language, { faqId: row.id })}
-        aria-label={translate("panel.faqs.editLabel", { number })}
+        aria-label={translate("panel.faqs.editLabel", { number: position })}
         className={getButtonLinkClassName("secondary", "light")}
       >
         {translate("panel.faqs.edit")}
@@ -162,7 +161,7 @@ function ItemActions({
         page="adminFaqMove"
         control="up"
         text={translate("panel.faqs.up")}
-        label={translate("panel.faqs.upLabel", { number })}
+        label={translate("panel.faqs.upLabel", { number: position })}
         isDisabled={position === 1}
       />
       <ActionButton
@@ -170,7 +169,7 @@ function ItemActions({
         page="adminFaqMove"
         control="down"
         text={translate("panel.faqs.down")}
-        label={translate("panel.faqs.downLabel", { number })}
+        label={translate("panel.faqs.downLabel", { number: position })}
         isDisabled={isLast}
       />
       <ActionButton
@@ -182,7 +181,7 @@ function ItemActions({
         )}
         label={translate(
           isPublished ? "panel.faqs.retireLabel" : "panel.faqs.publishLabel",
-          { number },
+          { number: position },
         )}
       />
     </div>

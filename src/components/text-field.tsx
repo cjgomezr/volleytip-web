@@ -1,5 +1,6 @@
 import { useId, type ReactElement } from "react";
 
+import { FieldErrorIcon } from "./field-error-icon";
 import type { PreviewState, Zone } from "./pressable";
 import { DISABLED_STYLES, TRANSITION_STYLES } from "./pressable-styles";
 
@@ -58,25 +59,6 @@ const HINT_STYLES: Record<Zone, string> = {
   dark: "text-ink-muted",
   light: "text-ink-subtle",
 };
-
-function ErrorIcon(): ReactElement {
-  return (
-    <svg
-      aria-hidden="true"
-      width="16"
-      height="16"
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      className="mt-0.5 shrink-0"
-    >
-      <circle cx="8" cy="8" r="7" />
-      <path d="M8 4.5v4M8 11.2v.3" />
-    </svg>
-  );
-}
 
 function hasText(text: string | undefined): text is string {
   return text !== undefined && text.trim() !== "";
@@ -152,7 +134,7 @@ export function TextField({
           id={errorId}
           className={`mt-2 flex items-start gap-2 text-[14px] font-semibold ${ERROR_TEXT_STYLES[zone]}`}
         >
-          <ErrorIcon />
+          <FieldErrorIcon />
           <span className="min-w-0 break-words">{error}</span>
         </p>
       )}

@@ -1,5 +1,6 @@
 import { useId, type ReactElement } from "react";
 
+import { FieldErrorIcon } from "./field-error-icon";
 import type { Zone } from "./pressable";
 import { TRANSITION_STYLES } from "./pressable-styles";
 
@@ -9,6 +10,8 @@ interface TextAreaFieldProps {
   readonly name: string;
   readonly defaultValue?: string;
   readonly placeholder?: string;
+  /** Texto de ayuda, debajo del campo. */
+  readonly hint?: string;
   /** Mensaje de error. Vacío o ausente: el campo no tiene error. */
   readonly error?: string;
   readonly isRequired?: boolean;
@@ -34,6 +37,11 @@ const ERROR_BORDER_STYLES: Record<Zone, string> = {
   light: "border-brand-red-deep focused:outline-brand-night",
 };
 
+const HINT_STYLES: Record<Zone, string> = {
+  dark: "text-ink-muted",
+  light: "text-ink-subtle",
+};
+
 const ERROR_TEXT_STYLES: Record<Zone, string> = {
   dark: "text-brand-red",
   light: "text-brand-red-deep",
@@ -46,6 +54,7 @@ export function TextAreaField({
   name,
   defaultValue,
   placeholder,
+  hint,
   error,
   isRequired = false,
   rows = DEFAULT_ROWS,
@@ -54,6 +63,11 @@ export function TextAreaField({
   const id = useId();
   const hasError = error !== undefined && error.trim() !== "";
   const errorId = hasError ? `${id}-error` : undefined;
+  const hasHint = hint !== undefined && hint.trim() !== "";
+  const hintId = hasHint ? `${id}-hint` : undefined;
+  const describedBy = [hintId, errorId].filter(
+    (describerId) => describerId !== undefined,
+  );
   const borderStyles = hasError
     ? ERROR_BORDER_STYLES[zone]
     : BORDER_STYLES[zone];
@@ -75,15 +89,26 @@ export function TextAreaField({
         placeholder={placeholder}
         required={isRequired}
         aria-invalid={hasError ? "true" : undefined}
-        aria-describedby={errorId}
+        aria-describedby={
+          describedBy.length === 0 ? undefined : describedBy.join(" ")
+        }
         className={`${AREA_STYLES} ${TRANSITION_STYLES} ${borderStyles}`}
       />
+      {hintId === undefined ? null : (
+        <p
+          id={hintId}
+          className={`mt-2 text-[13px] break-words ${HINT_STYLES[zone]}`}
+        >
+          {hint}
+        </p>
+      )}
       {errorId === undefined ? null : (
         <p
           id={errorId}
-          className={`mt-2 text-[14px] font-semibold break-words ${ERROR_TEXT_STYLES[zone]}`}
+          className={`mt-2 flex items-start gap-2 text-[14px] font-semibold ${ERROR_TEXT_STYLES[zone]}`}
         >
-          {error}
+          <FieldErrorIcon />
+          <span className="min-w-0 break-words">{error}</span>
         </p>
       )}
     </div>

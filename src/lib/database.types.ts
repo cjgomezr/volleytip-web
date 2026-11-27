@@ -566,8 +566,8 @@ export type Database = {
         Returns: undefined;
       };
       faq_has_default_text: { Args: { p_faq_id: string }; Returns: boolean };
+      faq_translations_snapshot: { Args: { p_faq_id: string }; Returns: Json };
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean };
-      lock_faq_order: { Args: Record<PropertyKey, never>; Returns: undefined };
       move_faq: {
         Args: { p_direction: string; p_faq_id: string };
         Returns: Json;
@@ -582,11 +582,12 @@ export type Database = {
       };
       save_faq: {
         Args: {
+          p_expected: Json;
           p_faq_id: string;
           p_removed_locales: string[];
           p_translations: Json;
         };
-        Returns: undefined;
+        Returns: Json;
       };
       save_message: {
         Args: {

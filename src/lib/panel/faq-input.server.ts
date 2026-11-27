@@ -1,4 +1,5 @@
 import {
+  faqBaseField,
   faqField,
   MAX_FAQ_ANSWER_LENGTH,
   MAX_FAQ_QUESTION_LENGTH,
@@ -8,7 +9,7 @@ import {
   type FaqText,
 } from "../admin/faqs";
 import { isBlankText } from "../admin/site-texts";
-import { findTextError, normalizeText } from "./editor-input.server";
+import { normalizeText } from "./editor-input.server";
 
 // La validación de lo que envía el editor de una pregunta.
 
@@ -33,11 +34,21 @@ const NORMALIZERS: Readonly<Record<FaqPart, (text: string) => string>> = {
   answer: normalizeAnswer,
 };
 
+/** Una traducción como se guardaría. Sin ella, las dos mitades vacías. */
+export function normalizeFaqText(text: FaqText | undefined): FaqText {
+  return {
+    question: NORMALIZERS.question(text?.question ?? ""),
+    answer: NORMALIZERS.answer(text?.answer ?? ""),
+  };
+}
+
 export interface FaqSubmission {
   /** Lo que llegó, tal cual, para volver a pintarlo. */
   readonly values: Readonly<Record<string, string>>;
   /** Las traducciones completas, ya limpias, por código de idioma. */
   readonly texts: Readonly<Record<string, FaqText>>;
+  /** Lo que la pantalla pintó al abrirse, limpio. Vacío al crear. */
+  readonly painted: Readonly<Record<string, FaqText>>;
   readonly fieldErrors: Readonly<Record<string, FaqFieldError>>;
   readonly formError: FaqFormError | null;
 }
@@ -48,6 +59,8 @@ interface SubmissionRules {
   readonly defaultCode: string;
   /** Una pregunta publicada no se queda sin el idioma por defecto. */
   readonly isPublished: boolean;
+  /** Al editar, el formulario trae además lo que pintó. */
+  readonly isEdit: boolean;
 }
 
 interface LanguageInput {
@@ -56,33 +69,54 @@ interface LanguageInput {
   readonly fieldErrors: readonly (readonly [string, FaqFieldError])[];
 }
 
+// Por caracteres y no por unidades de UTF-16: un emoji cuenta uno. Se mide lo
+// limpio, saltos incluidos: es lo que se guarda.
+function findFieldError(
+  text: string,
+  part: FaqPart,
+  isRequired: boolean,
+): FaqFieldError | undefined {
+  if (isRequired && text === "") return "required";
+  return [...text].length > MAX_LENGTHS[part] ? "tooLong" : undefined;
+}
+
+function readText(
+  values: Readonly<Record<string, string>>,
+  nameOf: (part: FaqPart) => string,
+): FaqText {
+  return normalizeFaqText({
+    question: values[nameOf("question")] ?? "",
+    answer: values[nameOf("answer")] ?? "",
+  });
+}
+
 function checkLanguage(
   code: string,
   values: Readonly<Record<string, string>>,
 ): LanguageInput {
-  const read = (part: FaqPart): string =>
-    NORMALIZERS[part](values[faqField(part, code)] ?? "");
-  const text = { question: read("question"), answer: read("answer") };
+  const text = readText(values, (part) => faqField(part, code));
   const hasAny = PARTS.some((part) => text[part] !== "");
   const fieldErrors = PARTS.flatMap((part) => {
-    // Una traducción lleva las dos mitades o ninguna. El largo se mide sobre
-    // lo limpio, que es lo que se guarda.
-    const error = findTextError(text[part], {
-      maxLength: MAX_LENGTHS[part],
-      isRequired: hasAny,
-    });
+    // Una traducción lleva las dos mitades o ninguna.
+    const error = findFieldError(text[part], part, hasAny);
     return error ? [[faqField(part, code), error] as const] : [];
   });
   return { code, text, fieldErrors };
 }
 
+function listFieldNames({ codes, isEdit }: SubmissionRules): string[] {
+  return codes.flatMap((code) =>
+    PARTS.flatMap((part) => [
+      faqField(part, code),
+      ...(isEdit ? [faqBaseField(part, code)] : []),
+    ]),
+  );
+}
+
 function readValues(
   formData: FormData,
-  codes: readonly string[],
+  names: readonly string[],
 ): Readonly<Record<string, string>> {
-  const names = codes.flatMap((code) =>
-    PARTS.map((part) => faqField(part, code)),
-  );
   return Object.fromEntries(
     names.flatMap((name) => {
       const value = formData.get(name);
@@ -99,9 +133,11 @@ function requireDefault(defaultCode: string): Record<string, FaqFieldError> {
 
 export function readFaqSubmission(
   formData: FormData,
-  { codes, defaultCode, isPublished }: SubmissionRules,
+  rules: SubmissionRules,
 ): FaqSubmission {
-  const values = readValues(formData, codes);
+  const { codes, defaultCode, isPublished } = rules;
+  const names = listFieldNames(rules);
+  const values = readValues(formData, names);
   const inputs = codes.map((code) => checkLanguage(code, values));
   const fieldErrors = Object.fromEntries(
     inputs.flatMap((input) => input.fieldErrors),
@@ -111,10 +147,16 @@ export function readFaqSubmission(
       .filter(({ text }) => text.question !== "" && text.answer !== "")
       .map(({ code, text }) => [code, text]),
   );
-  const submission = { values, texts, fieldErrors };
+  const painted = Object.fromEntries(
+    codes.map((code) => [
+      code,
+      readText(values, (part) => faqBaseField(part, code)),
+    ]),
+  );
+  const submission = { values, texts, painted, fieldErrors };
   // Un campo que no llega no es un campo vacío: tomarlo así borraría su
   // traducción.
-  if (Object.keys(values).length !== codes.length * PARTS.length) {
+  if (Object.keys(values).length !== names.length) {
     return { ...submission, formError: "malformed" };
   }
   if (Object.keys(fieldErrors).length > 0) {

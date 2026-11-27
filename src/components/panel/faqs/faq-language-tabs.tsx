@@ -1,6 +1,7 @@
 import { useState, type KeyboardEvent, type ReactElement } from "react";
 
 import {
+  faqBaseField,
   faqField,
   type FaqEditorView,
   type FaqLanguage,
@@ -17,7 +18,7 @@ import { TextField } from "../../text-field";
 type Rejection = Extract<FaqSaveOutcome, { status: "invalid" }>;
 
 const ANSWER_ROWS = 8;
-const TAB_STYLES = `flex min-h-11 flex-col items-center justify-center rounded-pill border-2 border-brand-night px-5 py-1.5 text-center focused:outline-brand-night ${TRANSITION_STYLES}`;
+const TAB_STYLES = `flex min-h-11 flex-col items-center justify-center rounded-pill border-2 border-brand-night px-5 py-1 text-center max-sm:w-full pressed:border-brand-indigo pressed:bg-brand-indigo pressed:text-brand-mist focused:outline-brand-night ${TRANSITION_STYLES}`;
 const SELECTED_TAB_STYLES = "bg-brand-night text-brand-mist";
 const IDLE_TAB_STYLES = "bg-transparent text-brand-night hovered:bg-line-light";
 
@@ -150,9 +151,12 @@ function LanguageFields({
   rejected,
 }: FieldsProps): ReactElement {
   const translate = useTranslate();
+  const limitText = (part: FaqPart): string =>
+    translate("panel.siteTexts.maxLength", { max: limits[part] });
   function describe(part: FaqPart): {
     name: string;
     defaultValue: string;
+    hint: string;
     error: string | undefined;
   } {
     const field = faqField(part, code);
@@ -160,18 +164,24 @@ function LanguageFields({
     return {
       name: field,
       defaultValue: rejected?.values[field] ?? texts[code]?.[part] ?? "",
+      hint: limitText(part),
       error:
         error === "tooLong"
-          ? translate("panel.siteTexts.maxLength", { max: limits[part] })
+          ? translate("panel.faqs.error.tooLong", { max: limits[part] })
           : error && translate("panel.faqs.error.required"),
     };
   }
   return (
     <div className="flex flex-col gap-4">
+      {(["question", "answer"] as const).map((part) => {
+        // Con él el servidor sabe qué idiomas cambió esta persona.
+        const name = faqBaseField(part, code);
+        const painted = rejected?.values[name] ?? texts[code]?.[part] ?? "";
+        return <input key={name} type="hidden" name={name} value={painted} />;
+      })}
       <TextField
         zone="light"
         label={translate("panel.faqs.editor.question", { language: name })}
-        hint={translate("panel.siteTexts.maxLength", { max: limits.question })}
         {...describe("question")}
       />
       <TextAreaField
@@ -180,9 +190,6 @@ function LanguageFields({
         label={translate("panel.faqs.editor.answer", { language: name })}
         {...describe("answer")}
       />
-      <p className="-mt-2 mb-0 text-[13px] text-ink-subtle">
-        {translate("panel.siteTexts.maxLength", { max: limits.answer })}
-      </p>
     </div>
   );
 }
@@ -225,7 +232,14 @@ export function FaqLanguageTabs({
               {language.name}
             </h2>
           )}
-          <LanguageFields language={language} rejected={rejected} {...fields} />
+          {/* Si lo guardado cambia, los campos vuelven a montarse con ello:
+              un campo con el texto viejo parecería editado. */}
+          <LanguageFields
+            key={JSON.stringify(fields.texts[language.code] ?? null)}
+            language={language}
+            rejected={rejected}
+            {...fields}
+          />
         </div>
       ))}
     </div>

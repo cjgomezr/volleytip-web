@@ -145,8 +145,24 @@ describe("preguntas: la pantalla del editor", () => {
     expect(fieldTag(html, "question:es")).toContain("Y también a las islas.");
     expect(fieldTag(html, "answer:en")).toContain('aria-invalid="true"');
     expect(fieldTag(html, "answer:es")).not.toContain("aria-invalid");
-    expect(html).toContain("Máximo 200 caracteres.");
+    expect(html).toContain("Te pasaste del límite de 200 caracteres.");
     expect(html).toContain("No se guardó. Revisa lo marcado.");
+  });
+
+  it("enlaza a cada respuesta su límite y su error", () => {
+    const html = render("errores");
+    const described = /aria-describedby="([^"]*)"/.exec(
+      fieldTag(html, "answer:en"),
+    )?.[1];
+
+    expect(described?.split(" ")).toHaveLength(2);
+  });
+
+  it("manda con cada campo el texto que se pintó", () => {
+    const html = render("editor");
+
+    expect(fieldTag(html, "base:question:es")).toContain('type="hidden"');
+    expect(fieldTag(html, "base:answer:en")).toContain('value=""');
   });
 
   it("no limita lo que se escribe: el servidor es quien rechaza", () => {

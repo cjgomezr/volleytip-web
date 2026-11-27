@@ -1,9 +1,8 @@
-import { isDeepStrictEqual } from "node:util";
-
 import { data, redirect, type ActionFunctionArgs } from "react-router";
 
 import {
   CREATED_PARAM,
+  type FaqFormError,
   type FaqSaveOutcome,
   type FaqText,
 } from "../admin/faqs";
@@ -14,13 +13,9 @@ import type { TypedSupabaseClient } from "../supabase/typed-client";
 import type { AdminActionOutcome } from "./admin-action.server";
 import { findBrokenRule } from "./database-rule.server";
 import { reject, type SaveOutcome } from "./editor-input.server";
+import { planFaqChange, type TranslationChange } from "./faq-changes.server";
 import { readFaqSubmission, type FaqSubmission } from "./faq-input.server";
-import {
-  isCompleteText,
-  readFaqLanguages,
-  readStoredFaq,
-  type StoredFaq,
-} from "./faqs-reader.server";
+import { readFaqLanguages, readStoredFaq } from "./faqs-reader.server";
 import { panelSessionContext } from "./panel-middleware.server";
 
 // Crear y editar una pregunta. La base escribe la pregunta y sus traducciones
@@ -28,7 +23,11 @@ import { panelSessionContext } from "./panel-middleware.server";
 
 const SEE_OTHER = 303;
 const NOT_FOUND_STATUS = 404;
-const DEFAULT_TEXT_RULE = "faqs_published_default_text_check";
+// Las reglas de `save_faq` y el error del formulario que explica cada una.
+const REJECTIONS = {
+  faqs_published_default_text_check: "publishedNeedsDefault",
+  faqs_stale_translation_check: "stale",
+} as const;
 
 type Texts = Readonly<Record<string, FaqText>>;
 
@@ -38,29 +37,23 @@ type CreateResult = AdminActionOutcome<
 >;
 type UpdateResult = SaveOutcome<FaqSaveOutcome, "translations">;
 
-interface FormRules {
-  readonly isPublished: boolean;
-}
+type FormRules = Pick<
+  Parameters<typeof readFaqSubmission>[1],
+  "isPublished" | "isEdit"
+>;
 
 async function readSubmission(
   client: TypedSupabaseClient,
   formData: FormData,
-  { isPublished }: FormRules,
-): Promise<{ submission: FaqSubmission; codes: readonly string[] }> {
+  rules: FormRules,
+): Promise<FaqSubmission> {
   const languages = await readFaqLanguages(client);
   const defaultCode = languages.find(({ isDefault }) => isDefault)?.code;
   if (defaultCode === undefined) {
     throw new Error("La tabla de idiomas no tiene un idioma por defecto.");
   }
   const codes = languages.map(({ code }) => code);
-  return {
-    submission: readFaqSubmission(formData, {
-      codes,
-      defaultCode,
-      isPublished,
-    }),
-    codes,
-  };
+  return readFaqSubmission(formData, { ...rules, codes, defaultCode });
 }
 
 function isRejected({ fieldErrors, formError }: FaqSubmission): boolean {
@@ -71,7 +64,9 @@ function rejectSubmission({
   values,
   fieldErrors,
   formError,
-}: Omit<FaqSubmission, "texts">): ReturnType<typeof reject<FaqSaveOutcome>> {
+}: Pick<FaqSubmission, "values" | "fieldErrors" | "formError">): ReturnType<
+  typeof reject<FaqSaveOutcome>
+> {
   return reject<FaqSaveOutcome>({
     status: "invalid",
     values,
@@ -114,11 +109,10 @@ export async function createFaq({
   context,
 }: ActionFunctionArgs): Promise<CreateResult> {
   const { client } = context.get(panelSessionContext);
-  const { submission } = await readSubmission(
-    client,
-    await request.formData(),
-    { isPublished: false },
-  );
+  const submission = await readSubmission(client, await request.formData(), {
+    isPublished: false,
+    isEdit: false,
+  });
   if (isRejected(submission)) return rejectSubmission(submission);
   const { data: created, error } = await client.rpc("create_faq", {
     p_translations: toRows(submission.texts),
@@ -144,49 +138,44 @@ export async function createFaq({
   };
 }
 
-interface TranslationChange {
-  readonly before: Texts;
-  readonly after: Texts;
-  readonly written: Texts;
-  readonly removed: readonly string[];
+interface SavedTranslations {
+  readonly before: Json;
+  readonly after: Json;
 }
 
-// Solo se miran los idiomas del formulario: los de un idioma desactivado se
-// quedan como están.
-function compareTexts(
-  faq: StoredFaq,
-  submitted: Texts,
-  codes: readonly string[],
-): TranslationChange {
-  const before = Object.fromEntries(
-    Object.entries(faq.texts).filter(([code]) => codes.includes(code)),
+function isSaved(value: Json): value is Json & SavedTranslations {
+  return (
+    value !== null &&
+    typeof value === "object" &&
+    !Array.isArray(value) &&
+    value.before !== undefined &&
+    value.after !== undefined
   );
-  const written = Object.fromEntries(
-    Object.entries(submitted).filter(
-      ([code, text]) => !isDeepStrictEqual(before[code], text),
-    ),
-  );
-  const removed = Object.keys(before).filter(
-    (code) => submitted[code] === undefined && isCompleteText(before[code]),
-  );
-  return { before, after: submitted, written, removed };
 }
 
 async function writeFaq(
   client: TypedSupabaseClient,
   faqId: string,
-  { written, removed }: TranslationChange,
-): Promise<"saved" | "missingDefaultText"> {
-  const { error } = await client.rpc("save_faq", {
+  { written, removed, expected }: TranslationChange,
+): Promise<SavedTranslations | (typeof REJECTIONS)[keyof typeof REJECTIONS]> {
+  const { data: saved, error } = await client.rpc("save_faq", {
     p_faq_id: faqId,
     p_translations: toRows(written),
     p_removed_locales: [...removed],
+    p_expected: toRows(expected),
   });
-  if (error === null) return "saved";
-  if (findBrokenRule(error, [DEFAULT_TEXT_RULE])) return "missingDefaultText";
-  throw new Error(`No se pudo guardar la pregunta: ${error.message}`, {
-    cause: error,
-  });
+  if (error !== null) {
+    const rules = Object.keys(REJECTIONS) as (keyof typeof REJECTIONS)[];
+    const broken = findBrokenRule(error, rules);
+    if (broken) return REJECTIONS[broken];
+  }
+  if (error !== null || !isSaved(saved)) {
+    throw new Error(
+      `No se pudo guardar la pregunta: ${error?.message ?? "la base no devolvió sus traducciones"}`,
+      { cause: error },
+    );
+  }
+  return saved;
 }
 
 /** Valida y guarda las traducciones de la pregunta de la dirección. Responde
@@ -199,29 +188,30 @@ export async function updateFaq({
   const { client } = context.get(panelSessionContext);
   const faq = await readStoredFaq(client, params.faqId ?? "");
   if (faq === null) throw data(null, { status: NOT_FOUND_STATUS });
-  const { submission, codes } = await readSubmission(
-    client,
-    await request.formData(),
-    { isPublished: faq.status === "published" },
-  );
+  const submission = await readSubmission(client, await request.formData(), {
+    isPublished: faq.status === "published",
+    isEdit: true,
+  });
   if (isRejected(submission)) return rejectSubmission(submission);
-  const change = compareTexts(faq, submission.texts, codes);
-  const hasChanges =
-    Object.keys(change.written).length > 0 || change.removed.length > 0;
-  if (!hasChanges) return { result: { status: "unchanged" }, change: null };
-  if ((await writeFaq(client, faq.id, change)) === "missingDefaultText") {
-    return rejectSubmission({
+  const rejectWith = (formError: FaqFormError): UpdateResult =>
+    rejectSubmission({
       values: submission.values,
       fieldErrors: {},
-      formError: "publishedNeedsDefault",
+      formError,
     });
-  }
+  const change = planFaqChange(faq.texts, submission);
+  if (change === "stale") return rejectWith("stale");
+  const touched = Object.keys(change.written).length + change.removed.length;
+  if (touched === 0) return { result: { status: "unchanged" }, change: null };
+  const saved = await writeFaq(client, faq.id, change);
+  if (typeof saved === "string") return rejectWith(saved);
   return {
     result: { status: "saved" },
+    // Lo que la base leyó con la fila bloqueada.
     change: {
       entityId: faq.id,
-      before: { translations: toAudited(change.before) },
-      after: { translations: toAudited(change.after) },
+      before: { translations: saved.before },
+      after: { translations: saved.after },
     },
   };
 }

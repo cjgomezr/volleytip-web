@@ -1,5 +1,6 @@
 import { isDeepStrictEqual } from "node:util";
 
+import { isUuid } from "../is-uuid";
 import {
   MARKETS_FIELDS,
   type MarketFieldErrors,
@@ -15,7 +16,6 @@ import { findBrokenRule } from "./database-rule.server";
 import { reject, type SaveOutcome } from "./editor-input.server";
 import { readPanelLanguages } from "./markets-view.server";
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LAST_ACTIVE_RULE = "markets_last_active_check";
 const ACTIVE_LOCALE_RULE = "markets_default_locale_active_check";
 
@@ -56,7 +56,7 @@ function readSubmission(formData: FormData): Submission | undefined {
   const defaultLocale = formData.get(MARKETS_FIELDS.defaultLocale);
   const isActive = readCheckbox(formData, MARKETS_FIELDS.isActive);
   const shipsPhysical = readCheckbox(formData, MARKETS_FIELDS.shipsPhysical);
-  if (typeof id !== "string" || !UUID.test(id)) return undefined;
+  if (typeof id !== "string" || !isUuid(id)) return undefined;
   if (typeof defaultLocale !== "string") return undefined;
   if (isActive === undefined || shipsPhysical === undefined) return undefined;
   const paymentMethods = formData

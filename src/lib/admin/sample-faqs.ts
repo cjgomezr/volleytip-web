@@ -1,5 +1,11 @@
 import type { Language } from "../i18n/languages";
-import type { FaqEditorView, FaqListView, FaqSaveOutcome } from "./faqs";
+import {
+  MAX_FAQ_ANSWER_LENGTH,
+  MAX_FAQ_QUESTION_LENGTH,
+  type FaqEditorView,
+  type FaqListView,
+  type FaqSaveOutcome,
+} from "./faqs";
 
 // Los datos de muestra de las preguntas del panel (/dev/preguntas), para
 // capturar cada estado en Playwright sin sesión ni base. Son fijos.
@@ -90,7 +96,10 @@ const EDITOR: FaqEditorView = {
     { code: "en", name: "English", isDefault: false, isTranslated: false },
   ],
   texts: { es: SPANISH_TEXT },
-  limits: { question: 200, answer: 2000 },
+  limits: {
+    question: MAX_FAQ_QUESTION_LENGTH,
+    answer: MAX_FAQ_ANSWER_LENGTH,
+  },
 };
 
 // Los dos idiomas con algo marcado: la pregunta en español demasiado larga y

@@ -7,9 +7,9 @@ import {
   type FaqStatus,
 } from "../admin/faqs";
 import type { Json } from "../database.types";
+import { isUuid } from "../is-uuid";
 import { findBrokenRule } from "./database-rule.server";
 import { reject, type SaveOutcome } from "./editor-input.server";
-import { isFaqId } from "./faqs-reader.server";
 import { panelSessionContext } from "./panel-middleware.server";
 
 // Los botones de la lista: publicar, retirar, subir y bajar. Cada uno es una
@@ -25,7 +25,7 @@ type MoveResult = SaveOutcome<FaqListOutcome, "position">;
 
 function readFaqId({ params }: ActionFunctionArgs): string {
   const id = params.faqId ?? "";
-  if (!isFaqId(id)) throw data(null, { status: NOT_FOUND_STATUS });
+  if (!isUuid(id)) throw data(null, { status: NOT_FOUND_STATUS });
   return id;
 }
 

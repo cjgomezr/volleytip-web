@@ -5,9 +5,19 @@ import type { FaqListOutcome } from "~/lib/admin/faqs";
 function wantedControls(
   outcome: FaqListOutcome,
 ): readonly ("up" | "down" | "status")[] {
+  if (outcome.status === "unchanged") return ["up", "down", "status"];
   if (outcome.status !== "moved") return ["status"];
   // En un extremo su botón queda deshabilitado: sirve el contrario.
   return outcome.direction === "up" ? ["up", "down"] : ["down", "up"];
+}
+
+function hasLostFocus(): boolean {
+  const focused = document.activeElement;
+  return (
+    focused === null ||
+    focused === document.body ||
+    focused.matches(":disabled")
+  );
 }
 
 /**
@@ -20,8 +30,10 @@ export function useFaqFocus(
 ): RefObject<HTMLOListElement | null> {
   const listRef = useRef<HTMLOListElement>(null);
   useEffect(() => {
-    // Un "sin cambios" de mover no dice hacia dónde iba: el foco se queda.
-    if (outcome === undefined || outcome.status === "unchanged") return;
+    if (outcome === undefined) return;
+    // Un "sin cambios" no dice qué botón fue: el foco se queda donde está,
+    // salvo que la lista nueva haya apagado ese botón.
+    if (outcome.status === "unchanged" && !hasLostFocus()) return;
     const row = `[data-faq-row="${outcome.faqId}"]`;
     for (const control of wantedControls(outcome)) {
       const button = listRef.current?.querySelector<HTMLElement>(

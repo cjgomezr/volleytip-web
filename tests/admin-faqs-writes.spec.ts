@@ -186,6 +186,28 @@ for (const javaScriptEnabled of [true, false]) {
       ]);
     });
 
+    test("un botón que falla avisa sin salirse del panel", async ({ page }) => {
+      await createDraft(page, FIRST);
+      await open(page);
+      await removeAllFaqs(readLocalSupabaseStatusOnce());
+
+      await pressOn(
+        page.getByRole("button", { name: "Publicar la pregunta 1" }),
+      );
+
+      await expect(
+        page.getByRole("heading", {
+          level: 1,
+          name: "Esa pregunta no existe",
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("main").getByRole("link", {
+          name: "Volver a las preguntas",
+        }),
+      ).toBeVisible();
+    });
+
     test("muestra por qué no se publica sin español", async ({ page }) => {
       await open(page, "/admin/preguntas/nueva");
       await fillLanguage(page, "English", FIRST_ENGLISH, "Only in Colombia.");

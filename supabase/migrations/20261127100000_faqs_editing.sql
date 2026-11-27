@@ -11,16 +11,6 @@
 drop policy faqs_delete on public.faqs;
 revoke delete on table public.faqs from authenticated;
 
--- El orden en que el sitio y el panel listan las preguntas es
--- `sort_order, created_at, id`. Quien lo cambia toma este bloqueo.
-create function public.lock_faq_order()
-returns void
-language sql
-set search_path = ''
-as $$
-  select pg_advisory_xact_lock(hashtext('public.faqs.sort_order'));
-$$;
-
 create function public.assert_faq_editor()
 returns void
 language plpgsql
@@ -51,6 +41,22 @@ as $$
   );
 $$;
 
+create function public.faq_translations_snapshot(p_faq_id uuid)
+returns jsonb
+language sql
+stable
+set search_path = ''
+as $$
+  select coalesce(
+    jsonb_object_agg(
+      locale, jsonb_build_object('question', question, 'answer', answer)
+    ),
+    '{}'::jsonb
+  )
+  from public.faq_translations
+  where faq_id = p_faq_id;
+$$;
+
 -- `p_translations`: [{"locale": "es", "question": "...", "answer": "..."}].
 create function public.write_faq_translations(
   p_faq_id uuid,
@@ -68,7 +74,9 @@ as $$
     set question = excluded.question, answer = excluded.answer;
 $$;
 
--- Nace en borrador y al final del orden.
+-- Nace en borrador y al final del orden. El orden en que el sitio y el panel
+-- listan es `sort_order, created_at, id`: quien lo cambia toma el mismo
+-- bloqueo.
 create function public.create_faq(p_translations jsonb)
 returns jsonb
 language plpgsql
@@ -79,7 +87,7 @@ declare
   new_sort_order integer;
 begin
   perform public.assert_faq_editor();
-  perform public.lock_faq_order();
+  perform pg_advisory_xact_lock(hashtext('public.faqs.sort_order'));
 
   insert into public.faqs (sort_order)
   select coalesce(max(sort_order), 0) + 1 from public.faqs
@@ -90,19 +98,24 @@ begin
 end;
 $$;
 
--- Escribe las traducciones que llegan y quita las de `p_removed_locales`. Una
--- publicada no se queda sin el idioma por defecto.
+-- Escribe las traducciones que llegan y quita las de `p_removed_locales`.
+-- `p_expected` trae, con la forma de `p_translations`, lo que había en esos
+-- idiomas cuando se decidió el cambio: si ya es otra cosa, no escribe. Una
+-- publicada no se queda sin el idioma por defecto. Devuelve las traducciones
+-- de antes y de después, leídas con la fila bloqueada.
 create function public.save_faq(
   p_faq_id uuid,
   p_translations jsonb,
-  p_removed_locales text[]
+  p_removed_locales text[],
+  p_expected jsonb
 )
-returns void
+returns jsonb
 language plpgsql
 set search_path = ''
 as $$
 declare
   current_status public.publish_status;
+  previous_translations jsonb;
 begin
   perform public.assert_faq_editor();
   -- El bloqueo de la fila pone en fila este cambio y el de estado.
@@ -112,6 +125,27 @@ begin
     raise exception 'la pregunta % no existe', p_faq_id using errcode = 'P0002';
   end if;
 
+  if exists (
+    select 1
+    from (
+      select item.locale
+      from jsonb_to_recordset(p_translations) as item (locale text)
+      union
+      select unnest(p_removed_locales)
+    ) as touched
+    left join public.faq_translations as stored
+      on stored.faq_id = p_faq_id and stored.locale = touched.locale
+    left join jsonb_to_recordset(p_expected)
+      as expected (locale text, question text, answer text)
+      on expected.locale = touched.locale
+    where stored.question is distinct from expected.question
+      or stored.answer is distinct from expected.answer
+  ) then
+    raise exception 'faqs_stale_translation_check: las traducciones cambiaron'
+      using errcode = '23514';
+  end if;
+
+  previous_translations := public.faq_translations_snapshot(p_faq_id);
   delete from public.faq_translations
   where faq_id = p_faq_id and locale = any (p_removed_locales);
   perform public.write_faq_translations(p_faq_id, p_translations);
@@ -123,6 +157,10 @@ begin
       using errcode = '23514';
   end if;
   update public.faqs set updated_at = now() where id = p_faq_id;
+  return jsonb_build_object(
+    'before', previous_translations,
+    'after', public.faq_translations_snapshot(p_faq_id)
+  );
 end;
 $$;
 
@@ -180,7 +218,7 @@ begin
     raise exception 'dirección desconocida: %', p_direction
       using errcode = '22023';
   end if;
-  perform public.lock_faq_order();
+  perform pg_advisory_xact_lock(hashtext('public.faqs.sort_order'));
 
   select array_agg(id order by sort_order, created_at, id) into ordered_ids
   from public.faqs;
@@ -216,23 +254,23 @@ end;
 $$;
 
 revoke all on function
-  public.lock_faq_order(),
   public.assert_faq_editor(),
   public.faq_has_default_text(uuid),
+  public.faq_translations_snapshot(uuid),
   public.write_faq_translations(uuid, jsonb),
   public.create_faq(jsonb),
-  public.save_faq(uuid, jsonb, text[]),
+  public.save_faq(uuid, jsonb, text[], jsonb),
   public.set_faq_status(uuid, public.publish_status),
   public.move_faq(uuid, text)
 from public, anon;
 
 grant execute on function
-  public.lock_faq_order(),
   public.assert_faq_editor(),
   public.faq_has_default_text(uuid),
+  public.faq_translations_snapshot(uuid),
   public.write_faq_translations(uuid, jsonb),
   public.create_faq(jsonb),
-  public.save_faq(uuid, jsonb, text[]),
+  public.save_faq(uuid, jsonb, text[], jsonb),
   public.set_faq_status(uuid, public.publish_status),
   public.move_faq(uuid, text)
 to authenticated, service_role;

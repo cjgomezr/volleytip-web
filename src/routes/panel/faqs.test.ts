@@ -26,7 +26,7 @@ import { action as moveFaq } from "./faq-move";
 import { action as createFaq, loader as loadNew } from "./faq-new";
 import { action as publishFaq } from "./faq-publish";
 import { action as retireFaq } from "./faq-retire";
-import { loader as loadList } from "./faqs";
+import { ErrorBoundary as listBoundary, loader as loadList } from "./faqs";
 
 type Fields = Record<string, string>;
 
@@ -54,6 +54,12 @@ const DEFAULT_TEXT_REJECTION = {
   status: 400,
   code: "23514",
   message: "faqs_published_default_text_check: falta",
+};
+
+const STALE_REJECTION = {
+  status: 400,
+  code: "23514",
+  message: "faqs_stale_translation_check: cambió",
 };
 
 const UNKNOWN_FAQ = { status: 400, code: "P0002", message: "no existe" };
@@ -104,13 +110,39 @@ function submitNew(fields: Fields): ReturnType<typeof createFaq> {
   return createFaq(buildRequestArgs("/admin/preguntas/nueva", { fields }));
 }
 
+/** Lo que el editor mandó pintado: los textos guardados cuando se abrió. */
+function paintedFields(faqId: string): Fields {
+  const stored = FAQS.find(({ id }) => id === faqId)?.faq_translations ?? [];
+  return Object.fromEntries(
+    ["es", "en"].flatMap((code) => {
+      const text = stored.find(({ locale }) => locale === code);
+      return [
+        [`base:question:${code}`, text?.question ?? ""],
+        [`base:answer:${code}`, text?.answer ?? ""],
+      ];
+    }),
+  );
+}
+
 function submitEdit(
   faqId: string,
   fields: Fields,
+  painted: Fields = paintedFields(faqId),
 ): ReturnType<typeof updateFaq> {
   return updateFaq(
-    buildRequestArgs(`/admin/preguntas/${faqId}`, { fields, faqId }),
+    buildRequestArgs(`/admin/preguntas/${faqId}`, {
+      fields: { ...painted, ...fields },
+      faqId,
+    }),
   );
+}
+
+/** Lo que `save_faq` devuelve: las traducciones antes y después. */
+function savedResult(
+  before: object,
+  after: object,
+): Readonly<Record<string, unknown>> {
+  return { save_faq: { before, after } };
 }
 
 type StatusArgs = Parameters<typeof publishFaq>[0] &
@@ -233,6 +265,12 @@ describe("preguntas: lista", () => {
     const { rows } = await list();
 
     expect(rows[0]?.languages.map(({ code }) => code)).toEqual(["es"]);
+  });
+
+  // El fallo de un botón va al límite de la ruta de la lista, no al de la
+  // ruta que lo recibió: sin él se pierde la cáscara.
+  it("tiene su límite de error dentro de la cáscara", () => {
+    expect(listBoundary).toBeTypeOf("function");
   });
 
   it("vacía: no trae filas", async () => {
@@ -411,14 +449,32 @@ describe("preguntas: crear y editar", () => {
     },
   );
 
-  it("justo en el límite se guarda, contando caracteres y saltos de una pieza", async () => {
+  it.each([
+    ["saltos de línea seguidos", `a${"\r\n".repeat(ANSWER_LIMIT)}b`],
+    ["párrafos", `${"a\n\n\n\n\n\n\n\n\n\n".repeat(900)}z`],
+  ])("los %s cuentan para el límite de la respuesta", async (_case, long) => {
     const api = stubFaqsApi({ faqs: FAQS });
+
+    const { status, body } = readResult(
+      await submitEdit(FIRST_ID, texts({ "answer:es": long })),
+    );
+
+    expect(status).toBe(400);
+    expect(body).toMatchObject({ fieldErrors: { "answer:es": "tooLong" } });
+    expect(api.rpcCalls).toEqual([]);
+  });
+
+  it("justo en el límite se guarda, contando caracteres y saltos de una pieza", async () => {
+    const api = stubFaqsApi({
+      faqs: FAQS,
+      rpcResults: savedResult({}, { es: {} }),
+    });
 
     await submitEdit(
       FIRST_ID,
       texts({
         "question:es": "🏐".repeat(QUESTION_LIMIT),
-        "answer:es": `${"a".repeat(ANSWER_LIMIT - 2)}\r\nb`,
+        "answer:es": `${"a".repeat(ANSWER_LIMIT - 3)}\r\n\r\nb`,
       }),
     );
 
@@ -426,7 +482,10 @@ describe("preguntas: crear y editar", () => {
   });
 
   it("guarda el HTML como texto y conserva los saltos de la respuesta", async () => {
-    const api = stubFaqsApi({ faqs: FAQS });
+    const api = stubFaqsApi({
+      faqs: FAQS,
+      rpcResults: savedResult({}, { es: {} }),
+    });
 
     await submitEdit(
       FIRST_ID,
@@ -448,7 +507,10 @@ describe("preguntas: crear y editar", () => {
   });
 
   it("vaciar las dos mitades quita esa traducción", async () => {
-    const api = stubFaqsApi({ faqs: FAQS });
+    const api = stubFaqsApi({
+      faqs: FAQS,
+      rpcResults: savedResult({ en: {} }, {}),
+    });
 
     const result = await submitEdit(THIRD_ID, texts());
 
@@ -457,7 +519,79 @@ describe("preguntas: crear y editar", () => {
       p_faq_id: THIRD_ID,
       p_translations: [],
       p_removed_locales: ["en"],
+      p_expected: [ENGLISH],
     });
+  });
+
+  it("vaciar una traducción que estaba a medias la quita", async () => {
+    const half = { ...ENGLISH, answer: "" };
+    const api = stubFaqsApi({
+      faqs: [
+        {
+          id: FIRST_ID,
+          status: "published",
+          faq_translations: [SPANISH, half],
+        },
+      ],
+      rpcResults: savedResult({ en: half }, {}),
+    });
+
+    await submitEdit(FIRST_ID, texts(), {
+      ...paintedFields(FIRST_ID),
+      "base:question:en": half.question,
+      "base:answer:en": "",
+    });
+
+    expect(api.rpcCalls[0]?.body).toMatchObject({
+      p_removed_locales: ["en"],
+      p_expected: [half],
+    });
+  });
+
+  // Quien abrió el editor antes de que existiera el inglés lo manda vacío.
+  it("no borra la traducción que otra persona agregó mientras tanto", async () => {
+    const api = stubFaqsApi({
+      faqs: FAQS,
+      rpcResults: savedResult({}, { es: {} }),
+    });
+
+    await submitEdit(THIRD_ID, texts({ "answer:es": "Nueva" }), {
+      ...paintedFields(FIRST_ID),
+    });
+
+    expect(api.rpcCalls[0]?.body).toEqual({
+      p_faq_id: THIRD_ID,
+      p_translations: [{ ...SPANISH, answer: "Nueva" }],
+      p_removed_locales: [],
+      p_expected: [SPANISH],
+    });
+  });
+
+  it("rechaza el cambio de un texto que otra persona ya había cambiado", async () => {
+    const api = stubFaqsApi({ faqs: FAQS });
+
+    const { status, body } = readResult(
+      await submitEdit(FIRST_ID, texts({ "answer:es": "Mía" }), {
+        ...paintedFields(FIRST_ID),
+        "base:answer:es": "La que había antes",
+      }),
+    );
+
+    expect(status).toBe(400);
+    expect(body).toMatchObject({ formError: "stale" });
+    expect(api.rpcCalls).toEqual([]);
+  });
+
+  it("explica el rechazo de la base si cambió justo antes de escribir", async () => {
+    const api = stubFaqsApi({ faqs: FAQS, rpcFailure: STALE_REJECTION });
+
+    const { status, body } = readResult(
+      await submitEdit(FIRST_ID, texts({ "answer:es": "Mía" })),
+    );
+
+    expect(status).toBe(400);
+    expect(body).toMatchObject({ formError: "stale" });
+    expect(api.auditRows).toEqual([]);
   });
 
   it("no toca las traducciones de un idioma desactivado", async () => {
@@ -467,6 +601,7 @@ describe("preguntas: crear y editar", () => {
         BOTH_LANGUAGES[0],
         { ...BOTH_LANGUAGES[1], is_active: false },
       ],
+      rpcResults: savedResult({}, { es: {} }),
     });
 
     await submitEdit(THIRD_ID, texts({ "answer:es": "Nueva" }));
@@ -475,6 +610,7 @@ describe("preguntas: crear y editar", () => {
       p_faq_id: THIRD_ID,
       p_translations: [{ ...SPANISH, answer: "Nueva" }],
       p_removed_locales: [],
+      p_expected: [SPANISH],
     });
   });
 
@@ -518,7 +654,7 @@ describe("preguntas: crear y editar", () => {
     const api = stubFaqsApi({ faqs: FAQS });
 
     const { status, body } = readResult(
-      await submitEdit(THIRD_ID, { "question:es": "Q", "answer:es": "A" }),
+      await submitEdit(THIRD_ID, { "question:es": "Q", "answer:es": "A" }, {}),
     );
 
     expect(status).toBe(400);
@@ -704,8 +840,13 @@ describe("preguntas: bitácora", () => {
     ]);
   });
 
-  it("editar registra el antes y el después", async () => {
-    const api = stubFaqsApi({ faqs: FAQS });
+  it("editar registra el antes y el después que vio la base", async () => {
+    const api = stubFaqsApi({
+      faqs: FAQS,
+      rpcResults: savedResult(STORED, {
+        es: { ...STORED.es, answer: "Nueva" },
+      }),
+    });
 
     await submitEdit(FIRST_ID, texts({ "answer:es": "Nueva" }));
 

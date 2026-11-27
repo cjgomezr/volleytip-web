@@ -380,6 +380,9 @@ export const panelEn = {
   "panel.faqs.editor.create": "Create draft",
   "panel.faqs.editor.save": "Save question",
   "panel.faqs.editor.back": "Back to questions",
+  "panel.faqs.error.stale":
+    "Someone else changed this text while you were editing it. Reload the screen to see what is saved.",
+  "panel.faqs.error.tooLong": "This is over the limit of {max} characters.",
   "panel.faqs.error.required":
     "This text is missing: a translation needs a question and an answer.",
   "panel.faqs.error.noLanguage":

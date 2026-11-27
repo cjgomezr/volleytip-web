@@ -244,7 +244,8 @@ not; the text says which.
 **Language tabs** (the FAQ editor). Pills of at least 44px with the language
 name and, below it in 12px, whether it has a translation and whether it has
 errors. Selected: `brand-night` background, `brand-mist` text. Idle: 2px
-`brand-night` border; hover `line-light`. Arrow keys, Home and End move between
+`brand-night` border; hover `line-light`; pressed `brand-indigo` with
+`brand-mist` text. On phones each tab takes the whole width. Arrow keys, Home and End move between
 tabs. Without JavaScript there are no tabs: every language is shown, one under
 the other, with its name as a heading.
 

@@ -55,7 +55,8 @@ export interface FaqEditorView {
 
 export type FaqFieldError = "required" | "tooLong";
 
-export type FaqFormError = "noLanguage" | "publishedNeedsDefault" | "malformed";
+export type FaqFormError =
+  "noLanguage" | "publishedNeedsDefault" | "stale" | "malformed";
 
 export type FaqSaveOutcome =
   | { readonly status: "saved" | "unchanged" }
@@ -101,6 +102,7 @@ export const FAQ_LIST_ERROR_KEYS: Readonly<Record<FaqListError, MessageKey>> = {
 export const FAQ_FORM_ERROR_KEYS: Readonly<Record<FaqFormError, MessageKey>> = {
   noLanguage: "panel.faqs.error.noLanguage",
   publishedNeedsDefault: "panel.faqs.error.publishedNeedsDefault",
+  stale: "panel.faqs.error.stale",
   malformed: "panel.faqs.error.malformed",
 };
 
@@ -112,6 +114,11 @@ export const DIRECTION_FIELD = "direction";
 /** El nombre de un campo en el formulario y en los errores: `answer:en`. */
 export function faqField(part: FaqPart, code: string): string {
   return `${part}:${code}`;
+}
+
+/** El campo oculto con el texto que la pantalla pintó en ese campo. */
+export function faqBaseField(part: FaqPart, code: string): string {
+  return `base:${faqField(part, code)}`;
 }
 
 export const FAQ_STATUS_LABEL_KEYS: Readonly<Record<FaqStatus, MessageKey>> = {

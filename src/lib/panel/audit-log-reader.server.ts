@@ -1,3 +1,4 @@
+import { isUuid } from "../is-uuid";
 import { describeActor, listFilterActors } from "../admin/audit-actor";
 import {
   isRangeInverted,
@@ -16,7 +17,6 @@ import type { TypedSupabaseClient } from "../supabase/typed-client";
 export const AUDIT_PAGE_SIZE = 50;
 // Colombia no cambia de hora: el desfase es fijo todo el año.
 const COLOMBIA_OFFSET = "-05:00";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LIST_COLUMNS =
   "id, action, entity, created_at, actor:profiles(full_name, email)";
 const ENTRY_COLUMNS =
@@ -149,7 +149,7 @@ export async function readAuditEntry(
   id: string,
 ): Promise<AuditEntryRecord | null> {
   // La base rechaza con un error lo que no es un uuid.
-  if (!UUID.test(id)) return null;
+  if (!isUuid(id)) return null;
   const result = await client
     .from("audit_log")
     .select(ENTRY_COLUMNS)

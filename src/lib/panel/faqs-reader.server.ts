@@ -1,3 +1,4 @@
+import { isUuid } from "../is-uuid";
 import { isBlankText } from "../admin/site-texts";
 import {
   CREATED_PARAM,
@@ -16,7 +17,6 @@ import { readPanelLanguages } from "./markets-view.server";
 
 // Las preguntas como las ve el panel: todas, con la sesión de un admin.
 
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const COLUMNS = "id, status, faq_translations(locale, question, answer)";
 
 export interface StoredFaq {
@@ -32,12 +32,6 @@ interface FaqRecord {
   readonly faq_translations: readonly (FaqText & {
     readonly locale: string;
   })[];
-}
-
-/** Dice si un texto puede ser el id de una pregunta. Con otra cosa la base
- * rechaza la consulta en vez de no encontrar nada. */
-export function isFaqId(id: string): boolean {
-  return UUID.test(id);
 }
 
 function toStoredFaq({ id, status, faq_translations }: FaqRecord): StoredFaq {
@@ -78,7 +72,7 @@ export async function readStoredFaq(
   client: TypedSupabaseClient,
   id: string,
 ): Promise<StoredFaq | null> {
-  if (!isFaqId(id)) return null;
+  if (!isUuid(id)) return null;
   const { data, error } = await client
     .from("faqs")
     .select(COLUMNS)
