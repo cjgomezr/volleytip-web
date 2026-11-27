@@ -340,6 +340,10 @@ for (const javaScriptEnabled of [true, false]) {
         );
         release();
         await refreshed;
+        // Lo guardado ya llegó a la pantalla: la base del español avanzó.
+        await expect(page.locator('[name="base:question:es"]')).toHaveValue(
+          SECOND,
+        );
 
         expect(await submitAndReadStatus(page, save)).toBe(BAD_REQUEST_STATUS);
 
