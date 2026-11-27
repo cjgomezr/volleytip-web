@@ -53,14 +53,14 @@ interface Founder {
 const FOUNDERS: readonly Founder[] = [
   {
     id: "piza",
-    photoFile: "piza.webp",
+    photoFile: "piza.jpg",
     nameKey: "about.founders.piza.name",
     positionKey: "about.founders.piza.position",
     photoAltKey: "about.founders.piza.photoAlt",
   },
   {
     id: "gomez",
-    photoFile: "gomez.webp",
+    photoFile: "gomez.jpg",
     nameKey: "about.founders.gomez.name",
     positionKey: "about.founders.gomez.position",
     photoAltKey: "about.founders.gomez.photoAlt",
