@@ -1,5 +1,4 @@
 import { useState, type ReactElement } from "react";
-import { useFetcher } from "react-router";
 
 import {
   MESSAGE_COUNT_FIELD,
@@ -12,6 +11,7 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { Button } from "../button";
 import { AnnouncementMessageFields } from "./announcement-message-fields";
@@ -156,12 +156,12 @@ export function AnnouncementEditor(
 ): ReactElement {
   const { bar, limits, initialOutcome } = props;
   const translate = useTranslate();
-  const fetcher = useFetcher<BarOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
+  const fetcher = usePanelFetcher<BarOutcome>(initialOutcome);
+  const { outcome } = fetcher;
   const messages = useMessageRows(pickInitialMessages(props));
   const [sentRows, setSentRows] = useState(messages.rows);
   const formError = useFormError(outcome, limits.maxMessages);
-  const isSaving = fetcher.state !== "idle";
+  const isSaving = fetcher.isSending;
   // Mientras envía, los errores son del intento anterior y ya no cuadran.
   const fieldErrors =
     !isSaving && outcome?.status === "invalid" ? outcome.fieldErrors : {};
@@ -199,6 +199,7 @@ export function AnnouncementEditor(
           // Cada cambio de la lista, y cada tecla, crea otra lista.
           isEdited={messages.rows !== sentRows}
           status={outcome?.status}
+          isUnsent={fetcher.isUnsent}
           formError={formError}
         />
       </fetcher.Form>

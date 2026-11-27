@@ -12,6 +12,10 @@ import {
   panelSessionContext,
 } from "~/lib/panel/panel-middleware.server";
 import { savePanelLocale } from "~/lib/panel/save-panel-locale.server";
+import {
+  sendPanelForm,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/language";
 
@@ -65,6 +69,15 @@ export const action = defineAdminAction({
   auditedFields: ["locale"],
   run: changeLanguage,
 });
+
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
 
 // Nunca se pinta: el loader y el action siempre responden antes. Hace falta
 // para que la ruta sea una página y un 404 de la guardia salga con el

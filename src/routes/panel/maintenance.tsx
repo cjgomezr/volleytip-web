@@ -19,6 +19,10 @@ import {
   readStoredSetting,
   replaceSetting,
 } from "~/lib/panel/stored-setting.server";
+import {
+  sendPanelForm,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/maintenance";
 
@@ -78,6 +82,15 @@ export const action = defineAdminAction({
   auditedFields: ["value"],
   run: changeMaintenance,
 });
+
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
 
 export default function PanelMaintenance(): ReactElement {
   return <MaintenanceConfirmation />;

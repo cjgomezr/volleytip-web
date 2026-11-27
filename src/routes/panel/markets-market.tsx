@@ -9,6 +9,11 @@ import {
 } from "~/lib/panel/market-editor.server";
 import { readMarketsView } from "~/lib/panel/markets-view.server";
 import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
+import {
+  sendPanelForm,
+  withoutUnsent,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/markets-market";
 
@@ -26,11 +31,22 @@ export const action = defineAdminAction({
     ),
 });
 
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
+
 // Solo se pinta sin JavaScript: con él, el formulario envía sin salir de
 // "Idiomas y mercados".
 export default function PanelMarketsMarket({
   loaderData,
   actionData,
 }: Route.ComponentProps): ReactElement {
-  return <MarketsScreen {...loaderData} marketOutcome={actionData} />;
+  return (
+    <MarketsScreen {...loaderData} marketOutcome={withoutUnsent(actionData)} />
+  );
 }

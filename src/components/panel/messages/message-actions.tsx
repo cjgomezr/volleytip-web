@@ -1,13 +1,14 @@
 import type { ReactElement } from "react";
-import { Form, useNavigation } from "react-router";
 
 import type { MessageStatus } from "~/lib/admin/messages";
 import { getPanelPath, type PanelPageId } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { Button } from "../../button";
+import { UnsentNotice } from "../unsent-notice";
 
 interface StatusAction {
   readonly page: PanelPageId;
@@ -40,20 +41,23 @@ function StatusButton({
 }: StatusAction & { readonly messageId: string }): ReactElement {
   const translate = useTranslate();
   const path = getPanelPath(page, useLanguage(), { messageId });
-  const isSending = useNavigation().formAction === path;
+  const fetcher = usePanelFetcher();
   return (
-    <Form method="post" action={path} className="flex flex-col">
+    <fetcher.Form method="post" action={path} className="flex flex-col gap-2">
+      {fetcher.isUnsent ? <UnsentNotice /> : null}
       <Button
         type="submit"
         variant="secondary"
         zone="light"
         submittingLabel={
-          isSending ? translate("panel.messages.action.saving") : undefined
+          fetcher.isSending
+            ? translate("panel.messages.action.saving")
+            : undefined
         }
       >
         {translate(labelKey)}
       </Button>
-    </Form>
+    </fetcher.Form>
   );
 }
 

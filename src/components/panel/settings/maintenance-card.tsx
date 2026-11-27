@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link } from "react-router";
 
 import { Button, getButtonLinkClassName } from "~/components/button";
 import type { MaintenanceSettingsState } from "~/lib/admin/settings-view";
@@ -7,7 +7,9 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import type { PanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
+import { UnsentNotice } from "../unsent-notice";
 import { SettingsCard } from "./settings-card";
 
 const DESCRIPTIONS: Record<MaintenanceSettingsState, MessageKey> = {
@@ -17,23 +19,28 @@ const DESCRIPTIONS: Record<MaintenanceSettingsState, MessageKey> = {
 };
 
 /** Apagar no pide confirmación: es un envío directo. */
-function TurnOffForm({ action }: { readonly action: string }): ReactElement {
+function TurnOffForm({
+  action,
+  fetcher,
+}: {
+  readonly action: string;
+  readonly fetcher: PanelFetcher<unknown>;
+}): ReactElement {
   const translate = useTranslate();
-  const isSending = useNavigation().formAction === action;
   return (
-    <Form method="post" action={action}>
+    <fetcher.Form method="post" action={action}>
       <input type="hidden" name="enabled" value="false" />
       <Button
         type="submit"
         variant="secondary"
         zone="light"
         submittingLabel={
-          isSending ? translate("panel.settings.saving") : undefined
+          fetcher.isSending ? translate("panel.settings.saving") : undefined
         }
       >
         {translate("panel.settings.maintenance.turnOff")}
       </Button>
-    </Form>
+    </fetcher.Form>
   );
 }
 
@@ -41,8 +48,11 @@ function TurnOffForm({ action }: { readonly action: string }): ReactElement {
  * confirmación; con un valor inválido se ofrecen las dos salidas. */
 export function MaintenanceCard({
   state,
+  turnOff,
 }: {
   readonly state: MaintenanceSettingsState;
+  /** El envío que apaga el modo. */
+  readonly turnOff: PanelFetcher<unknown>;
 }): ReactElement {
   const translate = useTranslate();
   const path = getPanelPath("adminSettingsMaintenance", useLanguage());
@@ -63,8 +73,15 @@ export function MaintenanceCard({
             {translate("panel.settings.maintenance.turnOn")}
           </Link>
         )}
-        {state === "off" ? null : <TurnOffForm action={path} />}
+        {state === "off" ? null : (
+          <TurnOffForm action={path} fetcher={turnOff} />
+        )}
       </div>
+      {turnOff.isUnsent ? (
+        <div className="mt-3">
+          <UnsentNotice />
+        </div>
+      ) : null}
     </SettingsCard>
   );
 }

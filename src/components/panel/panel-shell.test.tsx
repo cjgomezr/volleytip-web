@@ -7,7 +7,7 @@ import { SAMPLE_MODULES } from "~/lib/admin/sample-modules";
 import type { Language } from "~/lib/i18n/languages";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
-import PanelMemberLayout from "~/routes/panel/member-layout";
+import PanelShellLayout from "~/routes/panel/shell-layout";
 
 import { PanelMore } from "./panel-more";
 import { PanelShell, type PanelShellProps } from "./panel-shell";
@@ -290,20 +290,29 @@ describe("datos de la ruta en la cáscara", () => {
     } as const;
     const Stub = createRoutesStub([
       {
-        path: "*",
-        Component: () => (
-          <TranslationsProvider language="es" messages={getMessages("es")}>
-            <PanelMemberLayout
-              {...({ loaderData } as unknown as Parameters<
-                typeof PanelMemberLayout
-              >[0])}
-            />
-          </TranslationsProvider>
-        ),
+        id: "routes/panel/member-layout",
+        path: "/",
+        children: [
+          {
+            path: "*",
+            Component: () => (
+              <TranslationsProvider language="es" messages={getMessages("es")}>
+                <PanelShellLayout />
+              </TranslationsProvider>
+            ),
+          },
+        ],
       },
     ]);
 
-    const html = renderToStaticMarkup(<Stub initialEntries={["/admin"]} />);
+    const html = renderToStaticMarkup(
+      <Stub
+        initialEntries={["/admin"]}
+        hydrationData={{
+          loaderData: { "routes/panel/member-layout": loaderData },
+        }}
+      />,
+    );
 
     expect(html).toContain('data-panel-region="maintenance"');
     expect(html).toContain("Ana");

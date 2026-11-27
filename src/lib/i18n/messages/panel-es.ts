@@ -1,5 +1,13 @@
 // Textos del panel de administración y de su entrada.
 export const panelEs = {
+  "panel.failure.title": "Algo falló",
+  "panel.failure.details":
+    "El cambio no se pudo guardar o la pantalla no se pudo cargar. El fallo quedó registrado. Vuelve a la pantalla y revisa cómo quedó.",
+  "panel.failure.offlineTitle": "No hay conexión",
+  "panel.failure.offlineDetails":
+    "El cambio no se pudo guardar o la pantalla no se pudo cargar. Revisa tu conexión y vuelve a la pantalla.",
+  "panel.failure.back": "Volver a la pantalla",
+  "panel.unsent": "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.",
   "panel.eyebrow": "Panel de VolleyTip",
   "panel.overview.greeting": "Hola, {name}",
   "panel.overview.card.newMessages": "Mensajes sin responder",

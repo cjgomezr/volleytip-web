@@ -1,11 +1,12 @@
 import type { ReactElement } from "react";
-import { Form, useNavigation } from "react-router";
 
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { Button } from "./button";
+import { UnsentNotice } from "./panel/unsent-notice";
 import type { Zone } from "./pressable";
 
 /** El botón "Cerrar sesión". Es un envío: funciona también sin JavaScript. */
@@ -16,19 +17,20 @@ export function PanelSignOut({
 }): ReactElement {
   const translate = useTranslate();
   const action = getPanelPath("adminSignOut", useLanguage());
-  const isSigningOut = useNavigation().formAction === action;
+  const fetcher = usePanelFetcher();
   return (
-    <Form method="post" action={action} className="flex flex-col">
+    <fetcher.Form method="post" action={action} className="flex flex-col gap-3">
+      {fetcher.isUnsent ? <UnsentNotice zone={zone} /> : null}
       <Button
         type="submit"
         variant="secondary"
         zone={zone}
         submittingLabel={
-          isSigningOut ? translate("panel.signOut.submitting") : undefined
+          fetcher.isSending ? translate("panel.signOut.submitting") : undefined
         }
       >
         {translate("panel.signOut")}
       </Button>
-    </Form>
+    </fetcher.Form>
   );
 }

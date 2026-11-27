@@ -1,5 +1,4 @@
 import { useState, type ReactElement } from "react";
-import { useFetcher } from "react-router";
 
 import {
   SITE_STAT_NAME_KEYS,
@@ -14,6 +13,7 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { TextField } from "../text-field";
 import { EditorSection, SaveBar, useFieldErrorText } from "./editor-section";
@@ -82,8 +82,8 @@ export function StatsEditor({
 }): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
-  const fetcher = useFetcher<StatsOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
+  const fetcher = usePanelFetcher<StatsOutcome>(initialOutcome);
+  const { outcome } = fetcher;
   const [isEdited, setIsEdited] = useState(false);
   const isMalformed =
     outcome?.status === "invalid" && outcome.formError === "malformed";
@@ -116,9 +116,10 @@ export function StatsEditor({
         </div>
         <SaveBar
           submitLabel={translate("panel.siteTexts.stats.save")}
-          isSaving={fetcher.state !== "idle"}
+          isSaving={fetcher.isSending}
           isEdited={isEdited}
           status={outcome?.status}
+          isUnsent={fetcher.isUnsent}
           formError={
             isMalformed
               ? translate("panel.siteTexts.error.malformed")

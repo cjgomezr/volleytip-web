@@ -1,5 +1,13 @@
 // Textos del panel de administración y de su entrada.
 export const panelEn = {
+  "panel.failure.title": "Something went wrong",
+  "panel.failure.details":
+    "The change could not be saved or the screen could not be loaded. The failure has been logged. Go back to the screen and check how it was left.",
+  "panel.failure.offlineTitle": "No connection",
+  "panel.failure.offlineDetails":
+    "The change could not be saved or the screen could not be loaded. Check your connection and go back to the screen.",
+  "panel.failure.back": "Back to the screen",
+  "panel.unsent": "It could not be sent. Check your connection and try again.",
   "panel.eyebrow": "VolleyTip admin",
   "panel.overview.greeting": "Hi, {name}",
   "panel.overview.card.newMessages": "Unanswered messages",
