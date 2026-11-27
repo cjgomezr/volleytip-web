@@ -1863,6 +1863,9 @@ interface PanelVariant {
   readonly path: string;
   readonly role: "admin" | "staff" | undefined;
   readonly sizes: readonly (typeof viewports)[number][];
+  /** Lo que solo aparece cuando la página ya respondió a JavaScript: sin
+   * esperarlo, la captura sale a veces antes y a veces después. */
+  readonly readySelector?: string;
 }
 
 // La entrada y la página de su enlace (#120), cada estado en los dos idiomas.
@@ -1969,12 +1972,34 @@ const AUDIT_LOG_VARIANTS: readonly PanelVariant[] = [
   })),
 );
 
+// Las preguntas frecuentes del panel (#127): la lista en sus tres estados,
+// vacía, y el editor sin y con errores, en los dos idiomas. La muestra no usa
+// la base.
+const PANEL_FAQ_STATES = ["lista", "vacia", "editor", "errores"] as const;
+
+const PANEL_FAQ_VARIANTS: readonly PanelVariant[] = PANEL_FAQ_STATES.flatMap(
+  (state) =>
+    [
+      { suffix: "", path: "/dev/preguntas" },
+      { suffix: "-en", path: "/en/dev/preguntas" },
+    ].map(({ suffix, path }) => ({
+      name: `preguntas-${state}${suffix}`,
+      path: `${path}?estado=${state}`,
+      role: undefined,
+      sizes: viewports,
+      // Las pestañas del editor.
+      readySelector:
+        state === "editor" || state === "errores" ? '[role="tab"]' : undefined,
+    })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SIGN_IN_VARIANTS,
   ...SETTINGS_VARIANTS,
   ...MESSAGES_VARIANTS,
   ...AUDIT_LOG_VARIANTS,
   ...MARKETS_VARIANTS,
+  ...PANEL_FAQ_VARIANTS,
   {
     name: "staff",
     path: "/admin",
@@ -2001,6 +2026,9 @@ for (const variant of PANEL_VARIANTS) {
           await signInToPanel({ role: variant.role, fullName: "Andrés Gómez" });
         }
         await page.goto(`${APP_URL}${variant.path}`);
+        if (variant.readySelector !== undefined) {
+          await page.locator(variant.readySelector).first().waitFor();
+        }
         await page.evaluate(async () => {
           await document.fonts.ready;
         });

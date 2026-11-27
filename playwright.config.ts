@@ -9,6 +9,7 @@ const SERVER_BOOT_TIMEOUT_MS = 120_000;
 const SETTINGS_WRITES = "**/admin-settings-writes.spec.ts";
 const TEXTS_WRITES = "**/admin-site-texts-writes.spec.ts";
 const MARKETS_WRITES = "**/admin-markets-writes.spec.ts";
+const FAQS_WRITES = "**/admin-faqs-writes.spec.ts";
 
 export default defineConfig({
   testDir: "./tests",
@@ -16,7 +17,7 @@ export default defineConfig({
   projects: [
     {
       name: "sitio",
-      testIgnore: [SETTINGS_WRITES, TEXTS_WRITES, MARKETS_WRITES],
+      testIgnore: [SETTINGS_WRITES, TEXTS_WRITES, MARKETS_WRITES, FAQS_WRITES],
     },
     // Depende de "sitio": empieza cuando las demás ya terminaron, así que
     // ninguna se cruza con el sitio en mantenimiento. Para correr solo estas:
@@ -41,6 +42,14 @@ export default defineConfig({
       name: "mercados-que-escriben",
       testMatch: MARKETS_WRITES,
       dependencies: ["textos-que-escriben"],
+    },
+    // Publica preguntas en la página que las demás esperan vacía: corre sola,
+    // al final. Una detrás de otra, porque comparten la tabla. Para correr solo
+    // esta: `--project=preguntas-que-escriben --no-deps`.
+    {
+      name: "preguntas-que-escriben",
+      testMatch: FAQS_WRITES,
+      dependencies: ["mercados-que-escriben"],
     },
   ],
   // El de Playwright sin el nombre del proyecto: las líneas base ya

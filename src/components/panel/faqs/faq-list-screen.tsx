@@ -110,7 +110,7 @@ export function FaqListScreen({
             row={row}
             position={index + 1}
             isLast={index === rows.length - 1}
-            Form={fetcher.Form}
+            fetcher={fetcher}
             error={
               outcome?.status === "invalid" && outcome.faqId === row.id
                 ? outcome.error

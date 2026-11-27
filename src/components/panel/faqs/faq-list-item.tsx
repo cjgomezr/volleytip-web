@@ -16,15 +16,15 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import { Button, getButtonLinkClassName } from "../../button";
 import { FaqStatusBadge } from "./faq-status-badge";
 
-type FaqForm = FetcherWithComponents<FaqListOutcome>["Form"];
+type FaqFetcher = FetcherWithComponents<FaqListOutcome>;
 
 interface FaqListItemProps {
   readonly row: FaqRowView;
   /** Su lugar en el sitio, desde 1. */
   readonly position: number;
   readonly isLast: boolean;
-  /** El formulario del envío que comparte la lista. */
-  readonly Form: FaqForm;
+  /** El envío que comparten los botones de la lista. */
+  readonly fetcher: FaqFetcher;
   readonly error?: FaqListError;
 }
 
@@ -80,7 +80,7 @@ function useSiteWarnings({ status, languages }: FaqRowView): string[] {
 }
 
 interface ActionButtonProps {
-  readonly Form: FaqForm;
+  readonly fetcher: FaqFetcher;
   readonly page: PanelPageId;
   readonly faqId: string;
   /** Con él se busca a quién darle el foco después del envío. */
@@ -91,7 +91,7 @@ interface ActionButtonProps {
 }
 
 function ActionButton({
-  Form,
+  fetcher,
   page,
   faqId,
   control,
@@ -99,12 +99,24 @@ function ActionButton({
   label,
   isDisabled = false,
 }: ActionButtonProps): ReactElement {
-  const language = useLanguage();
+  const translate = useTranslate();
+  const action = getPanelPath(page, useLanguage(), { faqId });
+  const isBusy = fetcher.state !== "idle";
+  const isSending =
+    isBusy &&
+    fetcher.formAction === action &&
+    (control === "status" ||
+      fetcher.formData?.get(DIRECTION_FIELD) === control);
   return (
-    <Form
+    <fetcher.Form
       method="post"
-      action={getPanelPath(page, language, { faqId })}
+      action={action}
       data-faq-action={control}
+      // Un envío nuevo cancelaría el que está en curso, que podría no llegar a
+      // guardarse.
+      onSubmit={(event) => {
+        if (isBusy) event.preventDefault();
+      }}
     >
       {control === "status" ? null : (
         <input type="hidden" name={DIRECTION_FIELD} value={control} />
@@ -115,10 +127,13 @@ function ActionButton({
         zone="light"
         aria-label={label}
         isDisabled={isDisabled}
+        submittingLabel={
+          isSending ? translate("panel.siteTexts.saving") : undefined
+        }
       >
         {text}
       </Button>
-    </Form>
+    </fetcher.Form>
   );
 }
 
@@ -126,12 +141,12 @@ function ItemActions({
   row,
   position,
   isLast,
-  Form,
+  fetcher,
 }: Omit<FaqListItemProps, "error">): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
   const number = position;
-  const shared = { Form, faqId: row.id };
+  const shared = { fetcher, faqId: row.id };
   const isPublished = row.status === "published";
   return (
     <div className="flex flex-wrap items-center gap-2">
