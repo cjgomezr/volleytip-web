@@ -29,6 +29,8 @@ describe("contacto: enlace con motivo", () => {
   });
 
   it("devuelve undefined cuando Contacto no está en el mapa de páginas", () => {
-    expect(getContactHref([HOME], "es", CONTACT_REASON_BRANDS)).toBeUndefined();
+    expect(
+      getContactHref([HOME], "es", CONTACT_REASON_BRANDS),
+    ).toBeUndefined();
   });
 });

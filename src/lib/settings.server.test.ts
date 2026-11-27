@@ -162,10 +162,7 @@ describeIntegration("lector de ajustes", () => {
 });
 
 describe("lector de ajustes: varias claves", () => {
-  function clientReturning(rows: unknown): {
-    client: TypedSupabaseClient;
-    inCalls: unknown[][];
-  } {
+  function clientReturning(rows: unknown): { client: TypedSupabaseClient; inCalls: unknown[][] } {
     const inCalls: unknown[][] = [];
     const query = {
       select: () => query,
@@ -174,10 +171,7 @@ describe("lector de ajustes: varias claves", () => {
         return Promise.resolve({ data: rows, error: null });
       },
     };
-    return {
-      client: { from: () => query } as unknown as TypedSupabaseClient,
-      inCalls,
-    };
+    return { client: { from: () => query } as unknown as TypedSupabaseClient, inCalls };
   }
   const isText = (value: unknown): value is string => typeof value === "string";
 

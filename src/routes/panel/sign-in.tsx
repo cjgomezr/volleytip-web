@@ -16,13 +16,13 @@ import { getRequestLanguage } from "~/lib/i18n/languages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
 import { RETURN_PARAM, resolveReturnPath } from "~/lib/panel/return-path";
-import { identifyVisitor } from "~/lib/panel/visitor.server";
 import {
   isUnsentSubmission,
   sendPanelForm,
   withoutUnsent,
   type PanelSubmission,
 } from "~/lib/panel/unsent-submission";
+import { identifyVisitor } from "~/lib/panel/visitor.server";
 
 import type { Route } from "./+types/sign-in";
 

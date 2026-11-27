@@ -34,7 +34,6 @@ const LANGUAGES = [
     filter: "Filtrar",
     signIn: "/admin/entrar",
     sendLink: "Enviarme el enlace",
-    settingsLink: "Ajustes",
     auditLogLink: "Bitácora",
     saveApp: "Guardar estado de la app",
     confirm: "Sí, encender",
@@ -59,7 +58,6 @@ const LANGUAGES = [
     filter: "Apply filters",
     signIn: "/en/admin/sign-in",
     sendLink: "Send me the link",
-    settingsLink: "Settings",
     auditLogLink: "Audit log",
     saveApp: "Save app status",
     confirm: "Yes, turn it on",
@@ -109,6 +107,34 @@ async function cutSubmissions(page: Page): Promise<void> {
 async function openPanel(page: Page, path: string): Promise<void> {
   await page.goto(path);
   await page.waitForLoadState("networkidle");
+}
+
+/** Navega sin recargar, como un enlace que agrega una entrada al historial.
+ * Usa el router que React Router deja en `window`. */
+async function pushSameScreen(page: Page, path: string): Promise<void> {
+  await page.evaluate(async (to) => {
+    const { __reactRouterDataRouter: router } = window as unknown as {
+      __reactRouterDataRouter: { navigate(to: string): Promise<void> };
+    };
+    await router.navigate(to);
+  }, path);
+  await expect(page).toHaveURL(path);
+}
+
+/** Espera a que React Router termine de navegar a la búsqueda `search`. */
+async function waitForRouter(page: Page, search: string): Promise<void> {
+  await page.waitForFunction((expected) => {
+    const { __reactRouterDataRouter: router } = window as unknown as {
+      __reactRouterDataRouter: {
+        state: {
+          location: { search: string };
+          navigation: { state: string };
+        };
+      };
+    };
+    const { location, navigation } = router.state;
+    return location.search === expected && navigation.state === "idle";
+  }, search);
 }
 
 for (const language of LANGUAGES) {
@@ -312,7 +338,7 @@ for (const language of LANGUAGES) {
       await expect(page.getByRole("alert")).toHaveCount(0);
     });
 
-    test("navegar quita el rechazo del último envío", async ({
+    test("navegar quita el rechazo del último envío, también al volver atrás", async ({
       page,
       signInToPanel,
     }) => {
@@ -324,16 +350,21 @@ for (const language of LANGUAGES) {
       await page.getByRole("button", { name: language.saveApp }).click();
       await expect(page.getByRole("alert")).toBeVisible();
 
-      await page
-        .getByRole("complementary")
-        .getByRole("link", { name: language.settingsLink })
-        .click();
+      // Una entrada nueva del historial en la misma pantalla. Un enlace a la
+      // dirección actual la reemplazaría y "atrás" no tendría a dónde volver.
+      await pushSameScreen(page, `${language.settings}?otra=1`);
 
       await expect(page.getByRole("alert")).toHaveCount(0);
       await expect(field).toHaveValue(saved);
 
-      // Tampoco revive al volver atrás.
       await page.goBack();
+
+      // La dirección cambia antes de que la pantalla se vuelva a pintar.
+      await waitForRouter(page, "");
+      await expect(page).toHaveURL(language.settings);
+      await expect(
+        page.getByRole("button", { name: language.saveApp }),
+      ).toBeVisible();
       await expect(page.getByRole("alert")).toHaveCount(0);
     });
 
