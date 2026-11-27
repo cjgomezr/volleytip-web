@@ -89,7 +89,8 @@ export async function readFaqs(
     .select("id, faq_translations(locale, question, answer)")
     .eq("status", "published")
     .order("sort_order", { ascending: true })
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .order("id", { ascending: true });
 
   if (error !== null) {
     throw new Error(

@@ -329,6 +329,72 @@ export const panelEn = {
   "panel.siteTexts.saved": "Changes saved.",
   "panel.siteTexts.unchanged": "There was nothing to save.",
   // The modules of the sample page (/dev/panel).
+  "panel.module.faqs": "FAQs",
+  "panel.faqs.new": "New question",
+  "panel.faqs.empty":
+    "There are no questions yet. The site shows an empty page.",
+  "panel.faqs.createFirst": "Create the first question",
+  "panel.faqs.intro":
+    "The site follows this order and only shows published questions.",
+  "panel.faqs.untitled": "Question without text",
+  "panel.faqs.status.draft": "Draft",
+  "panel.faqs.status.published": "Published",
+  "panel.faqs.status.retired": "Retired",
+  "panel.faqs.languages": "Languages",
+  "panel.faqs.translated": "translated",
+  "panel.faqs.notTranslated": "not translated",
+  "panel.faqs.missingTranslation":
+    "Missing {language}: /{code}/ will show it in {fallback}.",
+  "panel.faqs.missingDefault":
+    "Missing {language}: it is not shown on the site.",
+  "panel.faqs.edit": "Edit",
+  "panel.faqs.editLabel": "Edit question {number}",
+  "panel.faqs.up": "Move up",
+  "panel.faqs.upLabel": "Move up question {number}",
+  "panel.faqs.down": "Move down",
+  "panel.faqs.downLabel": "Move down question {number}",
+  "panel.faqs.publish": "Publish",
+  "panel.faqs.publishLabel": "Publish question {number}",
+  "panel.faqs.retire": "Retire",
+  "panel.faqs.retireLabel": "Retire question {number}",
+  "panel.faqs.notice.created": "Question created as a draft.",
+  "panel.faqs.notice.published": "Question published.",
+  "panel.faqs.notice.retired": "Question retired.",
+  "panel.faqs.notice.moved": "The question is now in position {number}.",
+  "panel.faqs.notice.unchanged":
+    "Nothing changed: the question was already like that.",
+  "panel.faqs.error.missingDefaultText":
+    "Not published: write the question and the answer in Spanish.",
+  "panel.faqs.error.malformed":
+    "The form arrived incomplete. Reload the screen and try again.",
+  "panel.faqs.editor.newTitle": "New question",
+  "panel.faqs.editor.editTitle": "Edit question",
+  "panel.faqs.editor.newIntro":
+    "It starts as a draft at the end of the list. Publish it from the list.",
+  "panel.faqs.editor.editIntro":
+    "Plain text. In a language without a translation, the site shows Spanish.",
+  "panel.faqs.editor.tabs": "Languages",
+  "panel.faqs.editor.question": "Question ({language})",
+  "panel.faqs.editor.answer": "Answer ({language})",
+  "panel.faqs.editor.hasErrors": "has errors",
+  "panel.faqs.editor.create": "Create draft",
+  "panel.faqs.editor.save": "Save question",
+  "panel.faqs.editor.back": "Back to questions",
+  "panel.faqs.error.stale":
+    "Someone else changed this text while you were editing it. Copy what you wrote and open the question again to see what is saved.",
+  "panel.faqs.error.tooLong": "This is over the limit of {max} characters.",
+  "panel.faqs.error.required":
+    "This text is missing: a translation needs a question and an answer.",
+  "panel.faqs.error.noLanguage":
+    "Write the question and the answer in at least one language.",
+  "panel.faqs.error.publishedNeedsDefault":
+    "A published question needs the question and the answer in Spanish.",
+  "panel.faqs.notFound.title": "That question does not exist",
+  "panel.faqs.notFound.details": "The address may be mistyped.",
+  "panel.faqs.failure.title": "It could not be completed",
+  "panel.faqs.failure.details":
+    "Something failed. Check the list before repeating the change.",
+  "panel.faqs.failure.retry": "Try again",
   "panel.sample.messages": "Messages",
   "panel.sample.siteTexts": "Site texts",
   "panel.sample.faqs": "Frequently asked questions",

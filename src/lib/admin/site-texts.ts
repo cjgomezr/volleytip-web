@@ -73,6 +73,17 @@ export function isBlankText(text: string): boolean {
   return INVISIBLE_ONLY.test(text);
 }
 
+/**
+ * Un texto de una línea como se guarda. Un salto de línea u otro carácter de
+ * control no se ve en el sitio, y el nulo ni siquiera cabe en la base. Lo
+ * demás, HTML incluido, queda tal cual. Los de formato solo se quitan si no
+ * hay nada más: unen emojis.
+ */
+export function normalizeText(text: string): string {
+  const cleaned = text.replace(/\p{Cc}+/gu, " ").trim();
+  return isBlankText(cleaned) ? "" : cleaned;
+}
+
 /** El campo de un mensaje de la barra en los errores de un envío. */
 export function messageField(position: number, language: Language): string {
   return `${position}.${language}`;

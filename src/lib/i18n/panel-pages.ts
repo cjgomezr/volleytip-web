@@ -105,6 +105,43 @@ export const PANEL_ADMIN_PAGES = [
     path: { es: "admin/textos/cifras", en: "admin/site-texts/figures" },
   },
   {
+    id: "adminFaqs",
+    file: "routes/panel/faqs.tsx",
+    path: { es: "admin/preguntas", en: "admin/faqs" },
+  },
+  {
+    id: "adminFaqNew",
+    file: "routes/panel/faq-new.tsx",
+    path: { es: "admin/preguntas/nueva", en: "admin/faqs/new" },
+  },
+  {
+    id: "adminFaq",
+    file: "routes/panel/faq-edit.tsx",
+    path: { es: "admin/preguntas/:faqId", en: "admin/faqs/:faqId" },
+  },
+  // Cada botón de la lista envía a la suya: una ruta, una acción.
+  {
+    id: "adminFaqPublish",
+    file: "routes/panel/faq-publish.tsx",
+    path: {
+      es: "admin/preguntas/:faqId/publicar",
+      en: "admin/faqs/:faqId/publish",
+    },
+  },
+  {
+    id: "adminFaqRetire",
+    file: "routes/panel/faq-retire.tsx",
+    path: {
+      es: "admin/preguntas/:faqId/retirar",
+      en: "admin/faqs/:faqId/retire",
+    },
+  },
+  {
+    id: "adminFaqMove",
+    file: "routes/panel/faq-move.tsx",
+    path: { es: "admin/preguntas/:faqId/mover", en: "admin/faqs/:faqId/move" },
+  },
+  {
     id: "adminMarkets",
     file: "routes/panel/markets.tsx",
     path: { es: "admin/mercados", en: "admin/markets" },

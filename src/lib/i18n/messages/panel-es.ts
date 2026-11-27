@@ -329,6 +329,70 @@ export const panelEs = {
   "panel.siteTexts.saved": "Cambios guardados.",
   "panel.siteTexts.unchanged": "No había cambios que guardar.",
   // Los módulos de la página de muestra (/dev/panel).
+  "panel.module.faqs": "Preguntas frecuentes",
+  "panel.faqs.new": "Nueva pregunta",
+  "panel.faqs.empty":
+    "Todavía no hay preguntas. El sitio muestra la página vacía.",
+  "panel.faqs.createFirst": "Crear la primera pregunta",
+  "panel.faqs.intro":
+    "Salen en el sitio en este orden. Solo se ven las publicadas.",
+  "panel.faqs.untitled": "Pregunta sin texto",
+  "panel.faqs.status.draft": "Borrador",
+  "panel.faqs.status.published": "Publicada",
+  "panel.faqs.status.retired": "Retirada",
+  "panel.faqs.languages": "Idiomas",
+  "panel.faqs.translated": "con traducción",
+  "panel.faqs.notTranslated": "sin traducción",
+  "panel.faqs.missingTranslation":
+    "Falta {language}: en /{code}/ saldrá en {fallback}.",
+  "panel.faqs.missingDefault": "Falta {language}: no sale en el sitio.",
+  "panel.faqs.edit": "Editar",
+  "panel.faqs.editLabel": "Editar la pregunta {number}",
+  "panel.faqs.up": "Subir",
+  "panel.faqs.upLabel": "Subir la pregunta {number}",
+  "panel.faqs.down": "Bajar",
+  "panel.faqs.downLabel": "Bajar la pregunta {number}",
+  "panel.faqs.publish": "Publicar",
+  "panel.faqs.publishLabel": "Publicar la pregunta {number}",
+  "panel.faqs.retire": "Retirar",
+  "panel.faqs.retireLabel": "Retirar la pregunta {number}",
+  "panel.faqs.notice.created": "Pregunta creada como borrador.",
+  "panel.faqs.notice.published": "Pregunta publicada.",
+  "panel.faqs.notice.retired": "Pregunta retirada.",
+  "panel.faqs.notice.moved": "La pregunta quedó en la posición {number}.",
+  "panel.faqs.notice.unchanged": "No hubo cambios: la pregunta ya estaba así.",
+  "panel.faqs.error.missingDefaultText":
+    "No se publicó: escribe la pregunta y la respuesta en español.",
+  "panel.faqs.error.malformed":
+    "El envío llegó incompleto. Recarga la pantalla e inténtalo de nuevo.",
+  "panel.faqs.editor.newTitle": "Nueva pregunta",
+  "panel.faqs.editor.editTitle": "Editar pregunta",
+  "panel.faqs.editor.newIntro":
+    "Nace como borrador, al final de la lista. La publicas desde la lista.",
+  "panel.faqs.editor.editIntro":
+    "Texto plano. En un idioma sin traducción, el sitio muestra el español.",
+  "panel.faqs.editor.tabs": "Idiomas",
+  "panel.faqs.editor.question": "Pregunta ({language})",
+  "panel.faqs.editor.answer": "Respuesta ({language})",
+  "panel.faqs.editor.hasErrors": "con errores",
+  "panel.faqs.editor.create": "Crear borrador",
+  "panel.faqs.editor.save": "Guardar pregunta",
+  "panel.faqs.editor.back": "Volver a las preguntas",
+  "panel.faqs.error.stale":
+    "Otra persona cambió este texto mientras lo editabas. Copia lo que escribiste y vuelve a abrir la pregunta para ver lo guardado.",
+  "panel.faqs.error.tooLong": "Te pasaste del límite de {max} caracteres.",
+  "panel.faqs.error.required":
+    "Falta este texto: una traducción lleva pregunta y respuesta.",
+  "panel.faqs.error.noLanguage":
+    "Escribe la pregunta y la respuesta en al menos un idioma.",
+  "panel.faqs.error.publishedNeedsDefault":
+    "Una pregunta publicada necesita la pregunta y la respuesta en español.",
+  "panel.faqs.notFound.title": "Esa pregunta no existe",
+  "panel.faqs.notFound.details": "Puede que la dirección esté mal escrita.",
+  "panel.faqs.failure.title": "No se pudo completar",
+  "panel.faqs.failure.details":
+    "Algo falló. Revisa la lista antes de repetir el cambio.",
+  "panel.faqs.failure.retry": "Volver a intentar",
   "panel.sample.messages": "Mensajes",
   "panel.sample.siteTexts": "Textos del sitio",
   "panel.sample.faqs": "Preguntas frecuentes",

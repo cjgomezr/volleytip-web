@@ -3,6 +3,7 @@ import { isDeepStrictEqual } from "node:util";
 import {
   MESSAGE_COUNT_FIELD,
   messageField,
+  normalizeText,
   type BarOutcome,
   type FieldErrors,
   type LocalizedDraft,
@@ -22,7 +23,6 @@ import {
   buildDraft,
   findTextError,
   LANGUAGES,
-  normalizeText,
   reject,
   type SaveOutcome,
 } from "./editor-input.server";

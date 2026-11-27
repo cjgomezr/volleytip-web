@@ -229,6 +229,26 @@ the state. The detail has two columns from 1024px (2:1): the message and its
 data, then reply and status. "Reply by email" is the primary button; WhatsApp and
 the status changes are secondary.
 
+**Admin FAQs** (ticket #127; `src/components/panel/faqs/`; sample at
+`/dev/preguntas`). Content up to 900px. "New question" is the only primary
+button of the list; the empty list offers "Create the first question" instead.
+Each question is a white card with its position (Anton), its status badge, the
+question, one chip per active language, a warning when a published question is
+missing a translation, and its secondary buttons (edit, move up, move down,
+publish or retire), which wrap on narrow screens. There is no delete button.
+Status badge: `brand-mist` draft, `brand-lime` published, `brand-night` with
+`brand-mist` text retired, always naming the state. Language chip: pill with a
+2px border, solid `brand-night` when translated and dashed `ink-subtle` when
+not; the text says which.
+
+**Language tabs** (the FAQ editor). Pills of at least 44px with the language
+name and, below it in 12px, whether it has a translation and whether it has
+errors. Selected: `brand-night` background, `brand-mist` text. Idle: 2px
+`brand-night` border; hover `line-light`; pressed `brand-indigo` with
+`brand-mist` text. On phones each tab takes the whole width. Arrow keys, Home and End move between
+tabs. Without JavaScript there are no tabs: every language is shown, one under
+the other, with its name as a heading.
+
 ## Mandatory component states
 
 Every interactive component ships with ALL of: default, hover, focus-visible

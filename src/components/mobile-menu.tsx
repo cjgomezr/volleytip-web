@@ -3,7 +3,6 @@ import {
   type KeyboardEvent,
   useRef,
   useState,
-  useSyncExternalStore,
   type ReactElement,
 } from "react";
 import { Link, useLocation } from "react-router";
@@ -15,6 +14,7 @@ import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { getMenuEntries } from "~/lib/site-menu";
 import { SOCIAL_NETWORKS } from "~/lib/social-links";
+import { useIsHydrated } from "~/lib/use-is-hydrated";
 
 import { LanguageSwitcher } from "./language-switcher";
 import { TRANSITION_STYLES } from "./pressable-styles";
@@ -29,19 +29,6 @@ const ROUND_BUTTON_STYLES = `inline-flex size-11 shrink-0 items-center justify-c
 const ENTRY_STYLES = `flex min-h-12 items-center font-display text-[30px] leading-none uppercase no-underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
 const CURRENT_ENTRY_STYLES = "text-brand-lime";
 const SOCIAL_LINK_STYLES = `inline-flex size-11 items-center justify-center rounded-pill text-brand-mist no-underline hovered:text-brand-lime ${TRANSITION_STYLES}`;
-
-function subscribeToNothing(): () => void {
-  return () => undefined;
-}
-
-/** Falso en el servidor y en el primer pintado; verdadero cuando ya hay JavaScript. */
-function useIsHydrated(): boolean {
-  return useSyncExternalStore(
-    subscribeToNothing,
-    () => true,
-    () => false,
-  );
-}
 
 const FOCUSABLE_SELECTOR = "a[href], button:not([disabled])";
 

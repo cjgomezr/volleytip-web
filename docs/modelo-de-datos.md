@@ -333,7 +333,7 @@ Los códigos de 6 dígitos y los enlaces de un solo uso los maneja Supabase Auth
 `id`, `kind` (`app`, `camp_notify`), `email` (en minúsculas y sin espacios), `locale`, `country_code`, `city`, `privacy_version` (la versión de la política que aceptó la persona), `notified_at`, `created_at`. Clave única (`kind`, `email`) (FR-035, FR-082). Se inscribe con la función `enroll_waitlist`, que no falla ni cambia nada si el correo ya estaba.
 
 ### `faqs` y `faq_translations`
-`faqs`: `id`, `sort_order`, `status` (`publish_status`). `faq_translations`: `question`, `answer`. Página de preguntas frecuentes editable desde el admin (FR-137).
+`faqs`: `id`, `sort_order`, `status` (`publish_status`). `faq_translations`: `question`, `answer`. Página de preguntas frecuentes editable desde el admin (FR-137). El sitio y el panel las ordenan por `sort_order`, `created_at` e `id`. El panel escribe con las funciones `create_faq`, `save_faq`, `set_faq_status` y `move_faq`, que solo corren para un admin. Ellas impiden publicar sin el idioma por defecto (no es una restricción de la tabla; el sitio omite una pregunta sin español). Una sesión no puede borrar preguntas: se retiran.
 
 ### `email_log`
 `id`, `template`, `to_email`, `locale`, `related_entity`, `related_id`, `status` (`email_status`), `provider_id`, `attempts`, `last_error`, `sent_at` (FR-069).

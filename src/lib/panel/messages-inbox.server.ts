@@ -1,3 +1,4 @@
+import { isUuid } from "../is-uuid";
 import type { InboxQuery } from "../admin/messages";
 import type { Database } from "../database.types";
 import type { TypedSupabaseClient } from "../supabase/typed-client";
@@ -13,7 +14,6 @@ type MessageRow = Database["public"]["Tables"]["messages"]["Row"];
 const LIST_COLUMNS = "id, name, email, reason, status, created_at, body";
 const DETAIL_COLUMNS =
   "id, reason, name, email, whatsapp, country_code, body, payload, locale, privacy_version, status, answered_at, created_at, answerer:profiles(full_name, email)";
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export type InboxRow = Pick<
   MessageRow,
@@ -54,7 +54,7 @@ export interface InboxPage {
 /** Dice si un texto puede ser el id de un mensaje. Con otra cosa la base
  * rechaza la consulta en vez de no encontrar nada. */
 export function isMessageId(id: string): boolean {
-  return UUID.test(id);
+  return isUuid(id);
 }
 
 // Lo buscado es texto: `%`, `_` y `\` no son comodines. PostgREST convierte
