@@ -143,6 +143,7 @@ function TabList({
 type FieldsProps = Pick<FaqEditorView, "texts" | "limits"> & {
   readonly language: FaqLanguage;
   readonly rejected: Rejection | undefined;
+  readonly submitted: FormData | undefined;
 };
 
 function LanguageFields({
@@ -150,9 +151,21 @@ function LanguageFields({
   texts,
   limits,
   rejected,
+  submitted,
 }: FieldsProps): ReactElement {
   const translate = useTranslate();
-  const fieldsRef = useSyncedFields(code, texts[code]);
+  // Un envío rechazado sin JavaScript vuelve con la base que traía.
+  const readInitialBase = (part: FaqPart): string =>
+    rejected?.values[faqBaseField(part, code)] ?? texts[code]?.[part] ?? "";
+  const { containerRef, base } = useSyncedFields({
+    code,
+    stored: texts[code],
+    initialBase: {
+      question: readInitialBase("question"),
+      answer: readInitialBase("answer"),
+    },
+    submitted,
+  });
   const limitText = (part: FaqPart): string =>
     translate("panel.siteTexts.maxLength", { max: limits[part] });
   function describe(part: FaqPart): {
@@ -174,13 +187,16 @@ function LanguageFields({
     };
   }
   return (
-    <div ref={fieldsRef} className="flex flex-col gap-4">
-      {(["question", "answer"] as const).map((part) => {
-        // Con él el servidor sabe qué idiomas cambió esta persona.
-        const name = faqBaseField(part, code);
-        const painted = rejected?.values[name] ?? texts[code]?.[part] ?? "";
-        return <input key={name} type="hidden" name={name} value={painted} />;
-      })}
+    <div ref={containerRef} className="flex flex-col gap-4">
+      {(["question", "answer"] as const).map((part) => (
+        // Con él el servidor sabe qué texto vio esta persona en el campo.
+        <input
+          key={part}
+          type="hidden"
+          name={faqBaseField(part, code)}
+          value={base[part]}
+        />
+      ))}
       <TextField
         zone="light"
         label={translate("panel.faqs.editor.question", { language: name })}
@@ -207,6 +223,8 @@ export function FaqLanguageTabs({
   ...fields
 }: Pick<FaqEditorView, "languages" | "texts" | "limits"> & {
   readonly rejected: Rejection | undefined;
+  /** El envío en curso, si hay uno. */
+  readonly submitted: FormData | undefined;
 }): ReactElement {
   const isHydrated = useIsHydrated();
   const [selected, setSelected] = useSelectedTab(languages, rejected);

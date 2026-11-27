@@ -1,5 +1,6 @@
 import type { Database } from "../database.types";
 import type { MessageKey } from "../i18n/translate";
+import { isBlankText, normalizeText } from "./site-texts";
 
 // Lo que comparten el servidor y las pantallas de "Preguntas frecuentes"
 // (FR-065, FR-137).
@@ -16,6 +17,35 @@ export interface FaqText {
 }
 
 export type FaqPart = keyof FaqText;
+
+// La respuesta es de varias líneas: el sitio respeta sus saltos. El navegador
+// los manda como CRLF; los demás caracteres de control no se ven.
+function normalizeAnswer(text: string): string {
+  const cleaned = text
+    .replace(/\r\n?/g, "\n")
+    .replace(/[^\P{Cc}\n\t]+/gu, " ")
+    .trim();
+  return isBlankText(cleaned) ? "" : cleaned;
+}
+
+const NORMALIZERS: Readonly<Record<FaqPart, (text: string) => string>> = {
+  question: normalizeText,
+  answer: normalizeAnswer,
+};
+
+/** Media traducción como se guardaría. El servidor y el editor usan la misma
+ * regla: así entienden igual qué es no haberla tocado. */
+export function normalizeFaqPart(part: FaqPart, text: string): string {
+  return NORMALIZERS[part](text);
+}
+
+/** Una traducción como se guardaría. Sin ella, las dos mitades vacías. */
+export function normalizeFaqText(text: FaqText | undefined): FaqText {
+  return {
+    question: normalizeFaqPart("question", text?.question ?? ""),
+    answer: normalizeFaqPart("answer", text?.answer ?? ""),
+  };
+}
 
 /** Un idioma activo y si la pregunta tiene su traducción completa. */
 export interface FaqLanguage {

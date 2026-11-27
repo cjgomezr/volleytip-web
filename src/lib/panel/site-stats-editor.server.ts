@@ -1,4 +1,5 @@
 import {
+  normalizeText,
   statField,
   type FieldErrors,
   type LocalizedDraft,
@@ -19,7 +20,6 @@ import {
   buildDraft,
   findTextError,
   LANGUAGES,
-  normalizeText,
   reject,
   type SaveOutcome,
 } from "./editor-input.server";

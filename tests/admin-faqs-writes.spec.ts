@@ -7,7 +7,7 @@
  * cuando las otras ya terminaron. Para correr solo estas:
  * `npx playwright test --project=preguntas-que-escriben --no-deps`.
  */
-import type { Locator, Page } from "@playwright/test";
+import type { BrowserContext, Locator, Page } from "@playwright/test";
 
 import { putFaqFirst, removeAllFaqs } from "./support/faq-rows";
 import { readLocalSupabaseStatusOnce } from "./support/local-supabase-status-once";
@@ -17,6 +17,8 @@ const FIRST = "¿Hacen envíos fuera de Colombia?";
 const SECOND = "¿Cómo me inscribo a un camp?";
 const FIRST_ENGLISH = "Do you ship outside Colombia?";
 const HTML_ANSWER = "<b>Solo</b> dentro de Colombia.";
+const OTHER_ANSWER = "Only in Colombia.";
+const STALE_NOTICE = "Otra persona cambió este texto mientras lo editabas.";
 const BAD_REQUEST_STATUS = 400;
 
 test.beforeEach(async () => {
@@ -97,6 +99,33 @@ for (const javaScriptEnabled of [true, false]) {
         page.getByRole("button", { name: `Retirar la pregunta ${position}` }),
       ).toBeVisible();
       await expect(page.getByText("Pregunta publicada.")).toBeVisible();
+    }
+
+    /** Otra persona, en otra pestaña, guarda el inglés de la pregunta. */
+    async function saveEnglishElsewhere(
+      context: BrowserContext,
+      url: string,
+    ): Promise<void> {
+      const other = await context.newPage();
+      await other.goto(url);
+      await other.waitForLoadState("networkidle");
+      await fillLanguage(other, "English", FIRST_ENGLISH, OTHER_ANSWER);
+      await pressOn(other.getByRole("button", { name: "Guardar pregunta" }));
+      await expect(other.getByText("Cambios guardados.")).toBeVisible();
+      await other.close();
+    }
+
+    /** Lo que quedó en la base: lo lee una pestaña recién abierta. */
+    async function expectStoredEnglish(
+      context: BrowserContext,
+      url: string,
+    ): Promise<void> {
+      const fresh = await context.newPage();
+      await fresh.goto(url);
+      await expect(fresh.getByLabel("Pregunta (English)")).toHaveValue(
+        FIRST_ENGLISH,
+      );
+      await fresh.close();
     }
 
     test.beforeEach(async ({ signInToPanel }) => {
@@ -280,30 +309,97 @@ for (const javaScriptEnabled of [true, false]) {
         ).toBeFocused();
       });
 
-      test("un botón que falla avisa sin salirse del panel", async ({
+      test("no pisa lo que otra persona guardó mientras se escribía durante un envío", async ({
         page,
+        context,
       }) => {
         await createDraft(page, FIRST);
         await open(page);
-        await removeAllFaqs(readLocalSupabaseStatusOnce());
-
-        await pressOn(
-          page.getByRole("button", { name: "Publicar la pregunta 1" }),
+        await page.getByRole("link", { name: "Editar la pregunta 1" }).click();
+        // La dirección cambia cuando el editor ya llegó.
+        await expect(
+          page.getByRole("heading", { level: 1, name: "Editar pregunta" }),
+        ).toBeVisible();
+        await page.waitForLoadState("networkidle");
+        await saveEnglishElsewhere(context, page.url());
+        let release = (): void => {};
+        const held = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        await page.route("**/admin/preguntas/*", async (route) => {
+          if (route.request().method() === "POST") await held;
+          await route.continue();
+        });
+        const save = page.getByRole("button", { name: "Guardar pregunta" });
+        await fillLanguage(page, "Español", SECOND, "Nueva respuesta.");
+        await page.getByLabel("Pregunta (Español)").press("Enter");
+        // Mientras se envía, escribe en el idioma que la otra persona cambió.
+        await fillLanguage(page, "English", "Mine", "Mine.");
+        const refreshed = page.waitForResponse(
+          (response) => response.request().method() === "GET",
         );
+        release();
+        await refreshed;
 
-        await expect(
-          page.getByRole("heading", {
-            level: 1,
-            name: "Esa pregunta no existe",
-          }),
-        ).toBeVisible();
-        await expect(
-          page.getByRole("main").getByRole("link", {
-            name: "Volver a las preguntas",
-          }),
-        ).toBeVisible();
+        expect(await submitAndReadStatus(page, save)).toBe(BAD_REQUEST_STATUS);
+
+        await expect(page.getByRole("alert")).toContainText(STALE_NOTICE);
+        await expectStoredEnglish(context, page.url());
+      });
+
+      test("un texto que el servidor limpió no cuenta como escrito encima de lo ajeno", async ({
+        page,
+        context,
+      }) => {
+        await createDraft(page, FIRST);
+        await open(page);
+        await page.getByRole("link", { name: "Editar la pregunta 1" }).click();
+        await page.waitForLoadState("networkidle");
+        const save = page.getByRole("button", { name: "Guardar pregunta" });
+        const saved = page.getByText("Cambios guardados.");
+        // El servidor guarda el tabulador como un espacio; el campo lo conserva.
+        await fillLanguage(page, "English", "Do you\tship?", OTHER_ANSWER);
+        await pressOn(save);
+        await expect(saved).toBeVisible();
+        await saveEnglishElsewhere(context, page.url());
+
+        await fillLanguage(page, "Español", SECOND, "Nueva respuesta.");
+        await pressOn(save);
+        await expect(page.getByLabel("Pregunta (English)")).toHaveValue(
+          FIRST_ENGLISH,
+        );
+        await fillLanguage(page, "Español", FIRST, "Otra respuesta.");
+        await pressOn(save);
+        await expect(page.getByLabel("Respuesta (Español)")).toHaveValue(
+          "Otra respuesta.",
+        );
+        await expect(saved).toBeVisible();
+
+        await expectStoredEnglish(context, page.url());
       });
     }
+
+    test("un botón que falla avisa sin salirse del panel", async ({ page }) => {
+      await createDraft(page, FIRST);
+      await open(page);
+      await removeAllFaqs(readLocalSupabaseStatusOnce());
+
+      await pressOn(
+        page.getByRole("button", { name: "Publicar la pregunta 1" }),
+      );
+
+      await expect(
+        page.getByRole("heading", {
+          level: 1,
+          name: "Esa pregunta no existe",
+        }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("main").getByRole("link", {
+          name: "Volver a las preguntas",
+        }),
+      ).toBeVisible();
+    });
 
     test("muestra por qué no se publica sin español", async ({ page }) => {
       await open(page, "/admin/preguntas/nueva");

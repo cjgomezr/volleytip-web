@@ -1,7 +1,7 @@
 import { isDeepStrictEqual } from "node:util";
 
-import type { FaqText } from "../admin/faqs";
-import { normalizeFaqText, type FaqSubmission } from "./faq-input.server";
+import { normalizeFaqText, type FaqText } from "../admin/faqs";
+import type { FaqSubmission } from "./faq-input.server";
 
 type Texts = Readonly<Record<string, FaqText>>;
 

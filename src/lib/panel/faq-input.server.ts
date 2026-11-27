@@ -3,13 +3,12 @@ import {
   faqField,
   MAX_FAQ_ANSWER_LENGTH,
   MAX_FAQ_QUESTION_LENGTH,
+  normalizeFaqText,
   type FaqFieldError,
   type FaqFormError,
   type FaqPart,
   type FaqText,
 } from "../admin/faqs";
-import { isBlankText } from "../admin/site-texts";
-import { normalizeText } from "./editor-input.server";
 
 // La validación de lo que envía el editor de una pregunta.
 
@@ -18,29 +17,6 @@ const MAX_LENGTHS: Readonly<Record<FaqPart, number>> = {
   answer: MAX_FAQ_ANSWER_LENGTH,
 };
 const PARTS = ["question", "answer"] as const;
-
-// La respuesta es de varias líneas: el sitio respeta sus saltos. El navegador
-// los manda como CRLF; los demás caracteres de control no se ven.
-function normalizeAnswer(text: string): string {
-  const cleaned = text
-    .replace(/\r\n?/g, "\n")
-    .replace(/[^\P{Cc}\n\t]+/gu, " ")
-    .trim();
-  return isBlankText(cleaned) ? "" : cleaned;
-}
-
-const NORMALIZERS: Readonly<Record<FaqPart, (text: string) => string>> = {
-  question: normalizeText,
-  answer: normalizeAnswer,
-};
-
-/** Una traducción como se guardaría. Sin ella, las dos mitades vacías. */
-export function normalizeFaqText(text: FaqText | undefined): FaqText {
-  return {
-    question: NORMALIZERS.question(text?.question ?? ""),
-    answer: NORMALIZERS.answer(text?.answer ?? ""),
-  };
-}
 
 export interface FaqSubmission {
   /** Lo que llegó, tal cual, para volver a pintarlo. */

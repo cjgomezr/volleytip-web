@@ -78,7 +78,11 @@ export function FaqEditorScreen({
           onInput={() => setIsEdited(true)}
           onSubmit={() => setIsEdited(false)}
         >
-          <FaqLanguageTabs {...view} rejected={rejected} />
+          <FaqLanguageTabs
+            {...view}
+            rejected={rejected}
+            submitted={fetcher.formData}
+          />
           <SaveBar
             submitLabel={translate(
               isNew ? "panel.faqs.editor.create" : "panel.faqs.editor.save",
