@@ -379,7 +379,7 @@ export const panelEs = {
   "panel.faqs.editor.save": "Guardar pregunta",
   "panel.faqs.editor.back": "Volver a las preguntas",
   "panel.faqs.error.stale":
-    "Otra persona cambió este texto mientras lo editabas. Recarga la pantalla para ver lo guardado.",
+    "Otra persona cambió este texto mientras lo editabas. Copia lo que escribiste y vuelve a abrir la pregunta para ver lo guardado.",
   "panel.faqs.error.tooLong": "Te pasaste del límite de {max} caracteres.",
   "panel.faqs.error.required":
     "Falta este texto: una traducción lleva pregunta y respuesta.",

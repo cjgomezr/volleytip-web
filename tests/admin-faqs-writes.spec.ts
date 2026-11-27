@@ -9,7 +9,7 @@
  */
 import type { Locator, Page } from "@playwright/test";
 
-import { removeAllFaqs } from "./support/faq-rows";
+import { putFaqFirst, removeAllFaqs } from "./support/faq-rows";
 import { readLocalSupabaseStatusOnce } from "./support/local-supabase-status-once";
 import { expect, test } from "./support/panel-session";
 
@@ -186,27 +186,124 @@ for (const javaScriptEnabled of [true, false]) {
       ]);
     });
 
-    test("un botón que falla avisa sin salirse del panel", async ({ page }) => {
-      await createDraft(page, FIRST);
-      await open(page);
-      await removeAllFaqs(readLocalSupabaseStatusOnce());
+    if (javaScriptEnabled) {
+      test("guardar con Enter no mueve el foco ni borra lo que se sigue escribiendo", async ({
+        page,
+      }) => {
+        await createDraft(page, FIRST);
+        await open(page);
+        await page.getByRole("link", { name: "Editar la pregunta 1" }).click();
+        await page.waitForLoadState("networkidle");
+        const question = page.getByLabel("Pregunta (Español)");
+        const saved = page.getByText("Cambios guardados.");
+        let release = (): void => {};
+        const held = new Promise<void>((resolve) => {
+          release = resolve;
+        });
+        await page.route("**/admin/preguntas/*", async (route) => {
+          if (route.request().method() === "POST") await held;
+          await route.continue();
+        });
+        await question.fill(SECOND);
 
-      await pressOn(
-        page.getByRole("button", { name: "Publicar la pregunta 1" }),
-      );
+        await question.press("Enter");
+        // Mientras se envía, la persona sigue en otro campo.
+        const answer = page.getByLabel("Respuesta (Español)");
+        await answer.fill("Escrito durante el envío.");
+        await question.focus();
+        const refreshed = page.waitForResponse(
+          (response) => response.request().method() === "GET",
+        );
+        release();
+        await refreshed;
 
-      await expect(
-        page.getByRole("heading", {
-          level: 1,
-          name: "Esa pregunta no existe",
-        }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("main").getByRole("link", {
-          name: "Volver a las preguntas",
-        }),
-      ).toBeVisible();
-    });
+        await expect(question).toBeFocused();
+        await expect(question).toHaveValue(SECOND);
+        await expect(answer).toHaveValue("Escrito durante el envío.");
+
+        await question.press("Enter");
+
+        await expect(saved).toBeVisible();
+        await expect(page.getByRole("alert")).toHaveCount(0);
+      });
+
+      test("trae el texto que otra persona guardó sin tomarlo como propio", async ({
+        page,
+        context,
+      }) => {
+        await createDraft(page, FIRST);
+        await open(page);
+        await page.getByRole("link", { name: "Editar la pregunta 1" }).click();
+        await page.waitForLoadState("networkidle");
+        await fillLanguage(page, "English", "Draft", "Draft");
+        await page.getByLabel("Pregunta (English)").fill("");
+        await page.getByLabel("Respuesta (English)").fill("");
+        const other = await context.newPage();
+        await other.goto(page.url());
+        await other.waitForLoadState("networkidle");
+        await fillLanguage(
+          other,
+          "English",
+          FIRST_ENGLISH,
+          "Only in Colombia.",
+        );
+        await pressOn(other.getByRole("button", { name: "Guardar pregunta" }));
+        await expect(other.getByText("Cambios guardados.")).toBeVisible();
+        await other.close();
+
+        await fillLanguage(page, "Español", SECOND, "Nueva respuesta.");
+        await pressOn(page.getByRole("button", { name: "Guardar pregunta" }));
+        await expect(page.getByText("Cambios guardados.")).toBeVisible();
+
+        await expect(page.getByLabel("Pregunta (English)")).toHaveValue(
+          FIRST_ENGLISH,
+        );
+      });
+
+      test("si otra persona ya la subió, el foco queda en un botón que sirve", async ({
+        page,
+      }) => {
+        await createDraft(page, FIRST);
+        await createDraft(page, SECOND);
+        await open(page);
+        await putFaqFirst(readLocalSupabaseStatusOnce(), SECOND);
+
+        await pressOn(
+          page.getByRole("button", { name: "Subir la pregunta 2" }),
+        );
+
+        await expect(
+          page.getByText("No hubo cambios: la pregunta ya estaba así."),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("button", { name: "Bajar la pregunta 1" }),
+        ).toBeFocused();
+      });
+
+      test("un botón que falla avisa sin salirse del panel", async ({
+        page,
+      }) => {
+        await createDraft(page, FIRST);
+        await open(page);
+        await removeAllFaqs(readLocalSupabaseStatusOnce());
+
+        await pressOn(
+          page.getByRole("button", { name: "Publicar la pregunta 1" }),
+        );
+
+        await expect(
+          page.getByRole("heading", {
+            level: 1,
+            name: "Esa pregunta no existe",
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole("main").getByRole("link", {
+            name: "Volver a las preguntas",
+          }),
+        ).toBeVisible();
+      });
+    }
 
     test("muestra por qué no se publica sin español", async ({ page }) => {
       await open(page, "/admin/preguntas/nueva");

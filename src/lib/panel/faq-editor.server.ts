@@ -15,7 +15,11 @@ import { findBrokenRule } from "./database-rule.server";
 import { reject, type SaveOutcome } from "./editor-input.server";
 import { planFaqChange, type TranslationChange } from "./faq-changes.server";
 import { readFaqSubmission, type FaqSubmission } from "./faq-input.server";
-import { readFaqLanguages, readStoredFaq } from "./faqs-reader.server";
+import {
+  readFaqLanguages,
+  readStoredFaq,
+  type StoredFaq,
+} from "./faqs-reader.server";
 import { panelSessionContext } from "./panel-middleware.server";
 
 // Crear y editar una pregunta. La base escribe la pregunta y sus traducciones
@@ -178,21 +182,11 @@ async function writeFaq(
   return saved;
 }
 
-/** Valida y guarda las traducciones de la pregunta de la dirección. Responde
- * 404 si no existe. */
-export async function updateFaq({
-  request,
-  context,
-  params,
-}: ActionFunctionArgs): Promise<UpdateResult> {
-  const { client } = context.get(panelSessionContext);
-  const faq = await readStoredFaq(client, params.faqId ?? "");
-  if (faq === null) throw data(null, { status: NOT_FOUND_STATUS });
-  const submission = await readSubmission(client, await request.formData(), {
-    isPublished: faq.status === "published",
-    isEdit: true,
-  });
-  if (isRejected(submission)) return rejectSubmission(submission);
+async function saveChange(
+  client: TypedSupabaseClient,
+  faq: StoredFaq,
+  submission: FaqSubmission,
+): Promise<UpdateResult> {
   const rejectWith = (formError: FaqFormError): UpdateResult =>
     rejectSubmission({
       values: submission.values,
@@ -214,4 +208,22 @@ export async function updateFaq({
       after: { translations: saved.after },
     },
   };
+}
+
+/** Valida y guarda las traducciones de la pregunta de la dirección. Responde
+ * 404 si no existe. */
+export async function updateFaq({
+  request,
+  context,
+  params,
+}: ActionFunctionArgs): Promise<UpdateResult> {
+  const { client } = context.get(panelSessionContext);
+  const faq = await readStoredFaq(client, params.faqId ?? "");
+  if (faq === null) throw data(null, { status: NOT_FOUND_STATUS });
+  const submission = await readSubmission(client, await request.formData(), {
+    isPublished: faq.status === "published",
+    isEdit: true,
+  });
+  if (isRejected(submission)) return rejectSubmission(submission);
+  return saveChange(client, faq, submission);
 }

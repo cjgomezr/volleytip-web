@@ -131,44 +131,58 @@ function requireDefault(defaultCode: string): Record<string, FaqFieldError> {
   );
 }
 
+function readTranslations(
+  codes: readonly string[],
+  values: Readonly<Record<string, string>>,
+): Pick<FaqSubmission, "texts" | "painted" | "fieldErrors"> {
+  const inputs = codes.map((code) => checkLanguage(code, values));
+  return {
+    texts: Object.fromEntries(
+      inputs
+        .filter(({ text }) => text.question !== "" && text.answer !== "")
+        .map(({ code, text }) => [code, text]),
+    ),
+    painted: Object.fromEntries(
+      codes.map((code) => [
+        code,
+        readText(values, (part) => faqBaseField(part, code)),
+      ]),
+    ),
+    fieldErrors: Object.fromEntries(
+      inputs.flatMap((input) => input.fieldErrors),
+    ),
+  };
+}
+
+// Lo que está mal en el envío como un todo, cuando ningún campo lo está solo.
+function findFormError(
+  { texts }: Pick<FaqSubmission, "texts">,
+  { defaultCode, isPublished }: SubmissionRules,
+): "publishedNeedsDefault" | "noLanguage" | null {
+  if (isPublished && texts[defaultCode] === undefined) {
+    return "publishedNeedsDefault";
+  }
+  return Object.keys(texts).length === 0 ? "noLanguage" : null;
+}
+
 export function readFaqSubmission(
   formData: FormData,
   rules: SubmissionRules,
 ): FaqSubmission {
-  const { codes, defaultCode, isPublished } = rules;
   const names = listFieldNames(rules);
   const values = readValues(formData, names);
-  const inputs = codes.map((code) => checkLanguage(code, values));
-  const fieldErrors = Object.fromEntries(
-    inputs.flatMap((input) => input.fieldErrors),
-  );
-  const texts = Object.fromEntries(
-    inputs
-      .filter(({ text }) => text.question !== "" && text.answer !== "")
-      .map(({ code, text }) => [code, text]),
-  );
-  const painted = Object.fromEntries(
-    codes.map((code) => [
-      code,
-      readText(values, (part) => faqBaseField(part, code)),
-    ]),
-  );
-  const submission = { values, texts, painted, fieldErrors };
+  const translations = readTranslations(rules.codes, values);
+  const submission = { values, ...translations };
   // Un campo que no llega no es un campo vacío: tomarlo así borraría su
   // traducción.
   if (Object.keys(values).length !== names.length) {
     return { ...submission, formError: "malformed" };
   }
-  if (Object.keys(fieldErrors).length > 0) {
+  if (Object.keys(submission.fieldErrors).length > 0) {
     return { ...submission, formError: null };
   }
-  const missing = isPublished && texts[defaultCode] === undefined;
-  if (missing || Object.keys(texts).length === 0) {
-    return {
-      ...submission,
-      fieldErrors: requireDefault(defaultCode),
-      formError: missing ? "publishedNeedsDefault" : "noLanguage",
-    };
-  }
-  return { ...submission, formError: null };
+  const formError = findFormError(submission, rules);
+  if (formError === null) return { ...submission, formError };
+  const fieldErrors = requireDefault(rules.defaultCode);
+  return { ...submission, fieldErrors, formError };
 }

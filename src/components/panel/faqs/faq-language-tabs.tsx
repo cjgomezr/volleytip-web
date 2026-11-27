@@ -14,6 +14,7 @@ import { useIsHydrated } from "~/lib/use-is-hydrated";
 import { TRANSITION_STYLES } from "../../pressable-styles";
 import { TextAreaField } from "../../text-area-field";
 import { TextField } from "../../text-field";
+import { useSyncedFields } from "./use-synced-fields";
 
 type Rejection = Extract<FaqSaveOutcome, { status: "invalid" }>;
 
@@ -151,6 +152,7 @@ function LanguageFields({
   rejected,
 }: FieldsProps): ReactElement {
   const translate = useTranslate();
+  const fieldsRef = useSyncedFields(code, texts[code]);
   const limitText = (part: FaqPart): string =>
     translate("panel.siteTexts.maxLength", { max: limits[part] });
   function describe(part: FaqPart): {
@@ -172,7 +174,7 @@ function LanguageFields({
     };
   }
   return (
-    <div className="flex flex-col gap-4">
+    <div ref={fieldsRef} className="flex flex-col gap-4">
       {(["question", "answer"] as const).map((part) => {
         // Con él el servidor sabe qué idiomas cambió esta persona.
         const name = faqBaseField(part, code);
@@ -232,14 +234,7 @@ export function FaqLanguageTabs({
               {language.name}
             </h2>
           )}
-          {/* Si lo guardado cambia, los campos vuelven a montarse con ello:
-              un campo con el texto viejo parecería editado. */}
-          <LanguageFields
-            key={JSON.stringify(fields.texts[language.code] ?? null)}
-            language={language}
-            rejected={rejected}
-            {...fields}
-          />
+          <LanguageFields language={language} rejected={rejected} {...fields} />
         </div>
       ))}
     </div>
