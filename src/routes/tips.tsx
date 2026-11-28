@@ -30,11 +30,13 @@ function toFirstPage(url: URL, language: Language): Response {
   return redirect(`${getPagePath("tips", language)}${search}`);
 }
 
+// `url` y no `request.url`: al navegar sin recargar, la petición lleva los
+// parámetros de React Router, que la redirección dejaría a la vista.
 export async function loader({
   request,
+  url,
 }: Route.LoaderArgs): Promise<TipsData | Response> {
   const language = getRequestLanguage(request);
-  const url = new URL(request.url);
   const query = parseTipsQuery(url.searchParams, language);
   const isLoadingMore = isLoadMoreRequest(request);
   const listing = await loadTipsListing(language, query, {
@@ -61,8 +63,8 @@ export function clientLoader({
   return readReportingFailure<TipsData>(request, () => serverLoader());
 }
 
-// El fallo solo le llega a quien pide más tips, nunca a la página: ni `meta`
-// ni el componente lo reciben al navegar.
+// El resultado de un fallo es para quien pide más tips. A la página solo le
+// llega si alguien escribe la marca en la dirección, y ahí va la de error.
 export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
   if (!("listing" in loaderData)) return [];
   return [
@@ -73,8 +75,10 @@ export function meta({ loaderData }: Route.MetaArgs): Route.MetaDescriptors {
 
 export default function Tips({
   loaderData,
-}: Route.ComponentProps): ReactElement | null {
-  if (!("listing" in loaderData)) return null;
+}: Route.ComponentProps): ReactElement {
+  if (!("listing" in loaderData)) {
+    throw new Error("No se pudo cargar el listado de tips.");
+  }
   return (
     <TipsPage listing={loaderData.listing} language={loaderData.language} />
   );

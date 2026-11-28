@@ -122,6 +122,12 @@ describe("listado de tips: el cambio de idioma conserva los filtros", () => {
     ).toBe("?utm_source=ig");
   });
 
+  it("no arrastra la marca de 'Cargar más' escrita en la dirección", () => {
+    expect(translateTipsSearch("?cargar-mas=1&nivel=basico", "es", "en")).toBe(
+      "?level=basic",
+    );
+  });
+
   it("hacia el mismo idioma no cambia nada", () => {
     expect(translateTipsSearch("?nivel=basico", "es", "es")).toBe(
       "?nivel=basico",

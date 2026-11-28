@@ -72,6 +72,25 @@ async function seedTips(): Promise<void> {
   }
 }
 
+interface Failure {
+  readonly what: string;
+  readonly start: (page: Page) => Promise<unknown>;
+  readonly stop: (page: Page) => Promise<unknown>;
+}
+
+function isTipsData(url: URL): boolean {
+  return url.pathname.endsWith("/tips.data");
+}
+
+async function setSearchPermission(change: "grant" | "revoke"): Promise<void> {
+  const target = change === "grant" ? "to" : "from";
+  await database.unsafe(
+    `${change} execute on function public.search_public_tips(
+      text, text, public.tip_fundamental, public.tip_level
+    ) ${target} anon`,
+  );
+}
+
 function gridCards(page: Page): ReturnType<Page["locator"]> {
   return page.locator('main ul > li > a[href*="/tips/"]');
 }
@@ -315,29 +334,62 @@ test.describe("con tips publicados", () => {
       await expect(gridCards(page)).toHaveCount(SERVE_COUNT);
     });
 
-    for (const failure of ["la red", "el servidor"] as const) {
-      test(`si falla ${failure} al cargar más, los tips siguen y se puede reintentar`, async ({
+    test("lo cargado en un idioma no pasa al otro", async ({ page }) => {
+      await openTips(page, "/tips");
+      await page.getByRole("link", { name: "Cargar más tips" }).click();
+      await expect(gridCards(page)).toHaveCount(TOTAL);
+
+      await page
+        .getByRole("banner")
+        .getByRole("link", { name: "English" })
+        .click();
+
+      await expect(page).toHaveURL(/\/en\/tips$/);
+      await expect(gridCards(page)).toHaveCount(PAGE_SIZE);
+      await expect(
+        page.getByRole("link", { name: "Load more tips" }),
+      ).toHaveAttribute("href", "/en/tips?page=2");
+    });
+
+    const failures: readonly Failure[] = [
+      {
+        what: "la red",
+        start: (page) =>
+          page.route(isTipsData, (route) =>
+            route.abort("internetdisconnected"),
+          ),
+        stop: (page) => page.unroute(isTipsData),
+      },
+      // Falla de verdad en el servidor: sin permiso sobre la búsqueda, la
+      // lectura de los tips lanza.
+      {
+        what: "el servidor",
+        start: () => setSearchPermission("revoke"),
+        stop: () => setSearchPermission("grant"),
+      },
+    ];
+
+    for (const { what, start, stop } of failures) {
+      test(`si falla ${what} al cargar más, los tips siguen y se puede reintentar`, async ({
         page,
       }) => {
         await openTips(page, "/tips");
-        const dataRequests = (url: URL): boolean =>
-          url.pathname.endsWith("/tips.data");
-        await page.route(dataRequests, (route) =>
-          failure === "la red"
-            ? route.abort("internetdisconnected")
-            : route.fulfill({ status: 502, body: "sin servidor" }),
-        );
         const loadMore = page.getByRole("link", { name: "Cargar más tips" });
+        try {
+          await start(page);
 
-        await loadMore.click();
+          await loadMore.click();
 
-        await expect(
-          page.getByText("No pudimos cargar más tips. Intenta de nuevo."),
-        ).toBeVisible();
-        await expect(gridCards(page)).toHaveCount(PAGE_SIZE);
-        await expectAccessibleWithoutOverflow(page);
+          await expect(
+            page.getByText("No pudimos cargar más tips. Intenta de nuevo."),
+          ).toBeVisible();
+          await expect(page).toHaveURL(/\/tips$/);
+          await expect(gridCards(page)).toHaveCount(PAGE_SIZE);
+          await expectAccessibleWithoutOverflow(page);
+        } finally {
+          await stop(page);
+        }
 
-        await page.unroute(dataRequests);
         await loadMore.click();
 
         await expect(gridCards(page)).toHaveCount(TOTAL);
@@ -376,6 +428,24 @@ test.describe("con tips publicados", () => {
     });
   });
 
+  test.describe("en tableta", () => {
+    test.use({ viewport: VIEWPORTS[2] });
+
+    test("la píldora de nivel abraza sus opciones", async ({ page }) => {
+      await openTips(page, "/tips");
+      const level = page.getByRole("navigation", { name: "Nivel" });
+
+      const pill = await level.getByRole("list").boundingBox();
+      const last = await level
+        .getByRole("link", { name: "Avanzado" })
+        .boundingBox();
+
+      const pillEnd = (pill?.x ?? 0) + (pill?.width ?? 0);
+      const lastEnd = (last?.x ?? 0) + (last?.width ?? 0);
+      expect(pillEnd - lastEnd).toBeLessThanOrEqual(8);
+    });
+  });
+
   test.describe("en celular", () => {
     test.use({ viewport: VIEWPORTS[0] });
 
@@ -387,6 +457,33 @@ test.describe("con tips publicados", () => {
       await expect(page.getByRole("link", { name: "Defensa" })).toBeInViewport({
         ratio: 1,
       });
+    });
+
+    test("el filtro enfocado con el teclado se ve entero", async ({ page }) => {
+      await openTips(page, "/tips");
+      const skill = page.getByRole("navigation", { name: "Fundamento" });
+      await skill.getByRole("link", { name: "Todos los fundamentos" }).focus();
+
+      for (const name of ["Saque", "Recepción", "Colocación"]) {
+        await page.keyboard.press("Tab");
+        const option = skill.getByRole("link", { name, exact: true });
+        await expect(option).toBeFocused();
+        await expect(option).toBeInViewport({ ratio: 1 });
+      }
+    });
+
+    test("una miniatura que no carga deja solo el recuadro", async ({
+      page,
+    }) => {
+      await page.route("https://miniaturas.prueba.volleytip.test/**", (route) =>
+        route.fulfill({ status: 404 }),
+      );
+      await openTips(page, "/tips");
+
+      await expect(gridCards(page).first().locator("img")).toHaveCSS(
+        "opacity",
+        "0",
+      );
     });
 
     test("las opciones de filtro miden 44 px o más y las tarjetas van en dos columnas", async ({

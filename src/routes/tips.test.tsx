@@ -34,9 +34,12 @@ function stubListing(overrides: Partial<TipsListing> = {}): void {
 }
 
 function loadTips(path: string): ReturnType<typeof loader> {
-  return loader({
-    request: new Request(`http://localhost${path}`),
-  } as Parameters<typeof loader>[0]);
+  const request = new Request(`http://localhost${path}`);
+  // Como React Router: la petición llega cruda y `url`, sin lo suyo.
+  const url = new URL(request.url);
+  url.pathname = url.pathname.replace(/\.data$/, "");
+  url.searchParams.delete("_routes");
+  return loader({ request, url } as Parameters<typeof loader>[0]);
 }
 
 async function readData(path: string): Promise<{
@@ -109,6 +112,14 @@ describe("listado de tips: loader", () => {
     expect((result as Response).headers.get("Location")).toBe(
       "/tips?utm_source=ig",
     );
+  });
+
+  it("al navegar sin recargar no deja en la dirección lo de React Router", async () => {
+    stubListing({ tips: [], total: 45, hasNextPage: false });
+
+    const result = await loadTips("/tips.data?pagina=9&_routes=tips.es");
+
+    expect((result as Response).headers.get("Location")).toBe("/tips");
   });
 
   it("'Cargar más' de una página que quedó vacía no redirige ni lee el último video", async () => {

@@ -97,6 +97,17 @@ describe("sendFailedNavigationToDocument", () => {
     expect(response.headers.get("Location")).toBe("/otro-sitio.example");
   });
 
+  it("no recarga cuando falla 'Cargar más' tips: se perdería lo que ya se ve", () => {
+    silenceLog();
+    const request = new Request(
+      "http://localhost/tips.data?pagina=2&cargar-mas=1&_routes=tips.es",
+    );
+    reportServerError(new Error("falló la base"), request);
+    const original = dataResponse();
+
+    expect(sendFailedNavigationToDocument(original, request)).toBe(original);
+  });
+
   it("deja igual la respuesta de una petición de datos que no falló", () => {
     const request = new Request("http://localhost/en/tips.data");
     const original = dataResponse();

@@ -4,7 +4,6 @@ import type { TipCardData, TipsListing } from "./tips-listing.server";
 import {
   appendTipsPage,
   isLoadMoreRequest,
-  joinTips,
   readReportingFailure,
   toLoadMoreHref,
   type AppendedTips,
@@ -94,17 +93,6 @@ describe("listado de tips: paginación al cargar más", () => {
       expect(appendTipsPage(shown, [], buildListing(page, [9]))).toBe(shown);
     },
   );
-});
-
-describe("listado de tips: paginación sin repetidos", () => {
-  it("si la primera página cambia, no repite uno que ya se había cargado", () => {
-    const joined = joinTips(
-      [buildCard(1), buildCard(2)],
-      [buildCard(2), buildCard(3)],
-    );
-
-    expect(joined.map(({ id }) => id)).toEqual(["id-1", "id-2", "id-3"]);
-  });
 });
 
 const PAGE_URL = "http://localhost/tips?pagina=2";

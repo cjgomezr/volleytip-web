@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useState, type ReactElement } from "react";
 import { useNavigation } from "react-router";
 
 import { LatestTip } from "~/components/tips/latest-tip";
@@ -10,7 +10,6 @@ import type { Language } from "~/lib/i18n/languages";
 import { getPagePath } from "~/lib/i18n/pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import type { TipsListing } from "~/lib/tips-listing.server";
-import { buildTipsSearch } from "~/lib/tips-query";
 
 const CONTENT_STYLES = "mx-auto max-w-[1280px] px-4 md:px-6";
 
@@ -43,9 +42,21 @@ function TipsHeader({ listing, language }: TipsPageProps): ReactElement {
   );
 }
 
+// Un número que cambia cada vez que llega otro listado: otros filtros, otro
+// idioma o la misma dirección leída de nuevo. Un salto dentro de la página no
+// trae otro, así que ahí lo cargado se conserva.
+function useListingVersion(listing: TipsListing): number {
+  const [seen, setSeen] = useState({ listing, version: 0 });
+  if (seen.listing !== listing) {
+    setSeen({ listing, version: seen.version + 1 });
+  }
+  return seen.version;
+}
+
 function TipsContent({ listing, language }: TipsPageProps): ReactElement {
   const translate = useTranslate();
   const { location: destination } = useNavigation();
+  const listingVersion = useListingVersion(listing);
   // Mientras llega otra búsqueda del listado, lo que se ve queda atenuado.
   const isSearching = destination?.pathname === getPagePath("tips", language);
 
@@ -62,10 +73,8 @@ function TipsContent({ listing, language }: TipsPageProps): ReactElement {
       {listing.total === 0 ? (
         <NoMatchingTips />
       ) : (
-        // Otros filtros u otra página son otra lista: lo cargado antes no se
-        // arrastra. Un salto dentro de la página la conserva.
         <TipResults
-          key={buildTipsSearch(listing.query, language)}
+          key={listingVersion}
           listing={listing}
           language={language}
         />

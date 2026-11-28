@@ -1,10 +1,8 @@
 import type { TipCardData, TipsListing } from "./tips-listing.server";
+import { LOAD_MORE_PARAMETER } from "./tips-query";
 
 // Lo que "Cargar más tips" va juntando en el navegador, y cómo se distingue su
 // pedido del de una navegación.
-
-// Solo lo lleva el pedido del navegador, nunca el enlace.
-const LOAD_MORE_PARAMETER = "cargar-mas";
 
 export interface LoadMoreFailure {
   readonly hasFailed: true;
@@ -38,16 +36,6 @@ export async function readReportingFailure<Data>(
     console.error("No se pudieron cargar más tips.", error);
     return { hasFailed: true };
   }
-}
-
-/** Los de la página que llegó con la dirección y los cargados después. Si la
- * primera se volvió a leer y cambió, ninguno sale dos veces. */
-export function joinTips(
-  first: readonly TipCardData[],
-  extra: readonly TipCardData[],
-): readonly TipCardData[] {
-  const known = new Set(first.map(({ id }) => id));
-  return [...first, ...extra.filter(({ id }) => !known.has(id))];
 }
 
 export interface AppendedTips {

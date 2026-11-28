@@ -29,7 +29,7 @@ interface FilterStyles {
 // En celular los fundamentos van en una fila que se desliza hasta el borde de
 // la pantalla. El relleno deja sitio al anillo de foco, que la fila recortaría.
 const FUNDAMENTAL_STYLES: FilterStyles = {
-  list: "relative -mx-4 flex gap-2 overflow-x-auto px-4 py-1.5 md:m-0 md:flex-wrap md:overflow-visible md:p-0",
+  list: "relative -mx-4 flex scroll-px-4 gap-2 overflow-x-auto px-4 py-1.5 md:m-0 md:flex-wrap md:overflow-visible md:p-0",
   item: "shrink-0",
   link: "px-[18px] text-[15px]",
   current: "bg-brand-lime font-bold text-brand-night",
@@ -37,7 +37,7 @@ const FUNDAMENTAL_STYLES: FilterStyles = {
 };
 
 const LEVEL_STYLES: FilterStyles = {
-  list: "flex rounded-pill bg-brand-indigo p-1",
+  list: "flex rounded-pill bg-brand-indigo p-1 md:w-fit",
   item: "flex flex-1 md:flex-none",
   link: "w-full px-2 text-[14px] md:px-4",
   current: "bg-brand-mist font-bold text-brand-night",
@@ -95,6 +95,14 @@ function FilterGroup({
             <Link
               to={option.href}
               preventScrollReset
+              // El navegador no desliza la fila por una opción que ya asoma:
+              // con el teclado quedaría cortada.
+              onFocus={(event) =>
+                event.currentTarget.scrollIntoView({
+                  block: "nearest",
+                  inline: "nearest",
+                })
+              }
               aria-current={option.isCurrent ? "true" : undefined}
               aria-label={option.accessibleName}
               className={`${OPTION_STYLES} ${styles.link} ${option.isCurrent ? styles.current : styles.idle}`}

@@ -39,6 +39,10 @@ export const TIPS_PARAMETERS: Readonly<Record<Language, ParameterNames>> = {
   en: { fundamental: "skill", level: "level", query: "search", page: "page" },
 };
 
+/** Marca el pedido con que el navegador trae más tips. No va en ningún
+ * enlace. */
+export const LOAD_MORE_PARAMETER = "cargar-mas";
+
 export const TIP_FUNDAMENTAL_VALUES: Readonly<
   Record<Language, Readonly<Record<TipFundamental, string>>>
 > = {
@@ -156,9 +160,12 @@ export function translateTipsSearch(
   if (from === to) return search;
   const params = new URLSearchParams(search);
   const translated = toEntries(parseTipsQuery(params, from), to);
-  const ownNames = new Set(
-    [from, to].flatMap((language) => Object.values(TIPS_PARAMETERS[language])),
-  );
+  const ownNames = new Set([
+    LOAD_MORE_PARAMETER,
+    ...[from, to].flatMap((language) =>
+      Object.values(TIPS_PARAMETERS[language]),
+    ),
+  ]);
   const others = [...params].filter(([name]) => !ownNames.has(name));
   return toSearch(new URLSearchParams([...translated, ...others]));
 }

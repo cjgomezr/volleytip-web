@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { redirectDocument } from "react-router";
 
 import { getDocumentPath } from "./i18n/document-path";
+import { isLoadMoreRequest } from "./tips-load-more";
 
 const REFERENCE_CODE_BYTES = 4;
 
@@ -70,13 +71,14 @@ function getDocumentLocation(request: Request): string {
  * la pinta el servidor, con su código.
  *
  * Solo las lecturas. Recargar tras un envío fallido perdería lo enviado y
- * podría mostrar la página como si nada hubiera pasado.
+ * podría mostrar la página como si nada hubiera pasado. Y "Cargar más" tips
+ * tampoco: se perdería lo que ya se ve, y la lista avisa del fallo.
  */
 export function sendFailedNavigationToDocument(
   response: Response,
   request: Request,
 ): Response {
-  if (request.method !== "GET") return response;
+  if (request.method !== "GET" || isLoadMoreRequest(request)) return response;
   if (findRequestReferenceCode(request) === undefined) return response;
   return redirectDocument(getDocumentLocation(request));
 }

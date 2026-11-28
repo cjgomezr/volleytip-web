@@ -5,7 +5,6 @@ import type { Language } from "./i18n/languages";
 import type { TipCardData, TipsListing } from "./tips-listing.server";
 import {
   appendTipsPage,
-  joinTips,
   toLoadMoreHref,
   type AppendedTips,
   type LoadMoreFailure,
@@ -27,8 +26,8 @@ export interface LoadMoreTips {
 
 /**
  * Pide las páginas siguientes del listado y las junta con la que llegó con la
- * dirección. Quien lo usa se monta de nuevo en cada navegación: lo cargado
- * vale solo para esa dirección.
+ * dirección. Quien lo usa se monta de nuevo con cada listado que llega: lo
+ * cargado vale solo para el listado con que empezó.
  */
 export function useLoadMoreTips(
   listing: TipsListing,
@@ -63,7 +62,7 @@ export function useLoadMoreTips(
   }
 
   return {
-    tips: joinTips(listing.tips, next.extra),
+    tips: [...listing.tips, ...next.extra],
     added: next.added,
     hasNextPage: next.hasNextPage,
     nextHref,
