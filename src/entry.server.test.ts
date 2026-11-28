@@ -41,6 +41,39 @@ describe("log de acceso", () => {
   });
 });
 
+// El código con el que se vuelve de Google abre una sesión (#132).
+describe("log de acceso: la vuelta de Google", () => {
+  function logUrl(url: string): string | null | undefined {
+    const format = morgan.compile(":url");
+    const tokens = morgan as unknown as Parameters<typeof format>[0];
+    return format(tokens, { url } as IncomingMessage, {} as ServerResponse);
+  }
+
+  it.each([
+    [
+      "/admin/entrar/google/vuelta?code=abc123",
+      "/admin/entrar/google/vuelta?code=[oculto]",
+    ],
+    [
+      "/en/admin/sign-in/google/return?next=x&code=abc123&a=b",
+      "/en/admin/sign-in/google/return?next=x&code=[oculto]&a=b",
+    ],
+    [
+      "/admin/entrar?next=%2Fadmin%3Fcode%3Dabc123%26a%3Db",
+      "/admin/entrar?next=%2Fadmin%3Fcode%3D[oculto]%26a%3Db",
+    ],
+  ])("%s se registra sin el código", (url, line) => {
+    expect(logUrl(url)).toBe(line);
+  });
+
+  it.each([
+    "/admin/entrar/google/vuelta?error_code=signup_disabled",
+    "/contacto?postcode=110111",
+  ])("deja intacto %s", (url) => {
+    expect(logUrl(url)).toBe(url);
+  });
+});
+
 describe("handleDataRequest", () => {
   it("manda al documento la petición de datos de una navegación que falló", async () => {
     vi.spyOn(console, "error").mockImplementation(() => {});

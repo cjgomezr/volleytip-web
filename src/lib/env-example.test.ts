@@ -3,7 +3,10 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
-import { SERVER_ENV_VARIABLES } from "./env.server";
+import {
+  OPTIONAL_SERVER_ENV_VARIABLES,
+  SERVER_ENV_VARIABLES,
+} from "./env.server";
 
 const REPO_ROOT = fileURLToPath(new URL("../../", import.meta.url));
 const ENV_EXAMPLE = ".env.example";
@@ -35,7 +38,10 @@ describe(".env.example", () => {
   it("lista exactamente las variables que valida el módulo de entorno", () => {
     const names = readAssignments().map(({ name }) => name);
 
-    expect(names).toEqual([...SERVER_ENV_VARIABLES]);
+    expect(names).toEqual([
+      ...SERVER_ENV_VARIABLES,
+      ...OPTIONAL_SERVER_ENV_VARIABLES,
+    ]);
   });
 
   it("no trae ningún valor", () => {

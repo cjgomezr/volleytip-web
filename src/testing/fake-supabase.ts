@@ -23,6 +23,8 @@ export const FAKE_USER_ID = "7c9e6679-7425-40de-944b-e07fc1f90ae7";
 export const VALID_ACCESS_TOKEN = "acceso-vigente";
 export const RENEWED_ACCESS_TOKEN = "acceso-renovado";
 export const VALID_REFRESH_TOKEN = "refresco-vigente";
+/** El código con el que Auth vuelve de Google. Sirve una sola vez. */
+export const VALID_AUTH_CODE = "0b6f5a3e-2f4d-4c1a-9a6e-1d2c3b4a5f60";
 
 const ONE_HOUR_IN_SECONDS = 3600;
 
@@ -50,6 +52,8 @@ export interface FakeSupabaseOptions extends FakeMessagesOptions {
   readonly isProfileUpdateIgnored?: boolean;
   /** Estado con que falla el canje de un enlace. */
   readonly verifyFailureStatus?: number;
+  /** Estado con que falla el canje de un código de Google. */
+  readonly exchangeFailureStatus?: number;
   /** Estado con que falla la escritura en la bitácora. */
   readonly auditFailureStatus?: number;
   /** Las filas de `settings`: clave y valor guardado. */
@@ -78,6 +82,8 @@ export interface FakeSupabase extends Pick<FakeMessagesTable, "messageWrites"> {
   readonly auditRows: unknown[];
   /** El cuerpo de cada canje de enlace pedido, aceptado o no. */
   readonly verifications: unknown[];
+  /** El cuerpo de cada canje de un código pedido, aceptado o no. */
+  readonly codeExchanges: unknown[];
   /** Cada ajuste que se mandó a guardar, aceptado o no. */
   readonly settingsWrites: FakeSettingWrite[];
 }
@@ -162,6 +168,26 @@ function answerVerify(options: FakeSupabaseOptions): Response {
     : Response.json(buildSession(VALID_ACCESS_TOKEN, ONE_HOUR_IN_SECONDS));
 }
 
+// Como Auth: un código desconocido o ya canjeado no encuentra su flujo.
+function createCodeExchange(
+  { exchangeFailureStatus }: FakeSupabaseOptions,
+  exchanges: unknown[],
+): (request: Request) => Promise<Response> {
+  let isSpent = false;
+  return async (request) => {
+    const body = (await request.json()) as { auth_code?: string };
+    exchanges.push(body);
+    if (exchangeFailureStatus) {
+      return authError(exchangeFailureStatus, "unexpected_failure");
+    }
+    if (isSpent || body.auth_code !== VALID_AUTH_CODE) {
+      return authError(404, "flow_state_not_found");
+    }
+    isSpent = true;
+    return Response.json(buildSession(VALID_ACCESS_TOKEN, ONE_HOUR_IN_SECONDS));
+  };
+}
+
 function answerSettingsRead(
   url: URL,
   { settings = {}, settingsReadFailureStatus }: FakeSupabaseOptions,
@@ -183,7 +209,9 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
   const auditRows: unknown[] = [];
   const verifications: unknown[] = [];
   const settingsWrites: FakeSettingWrite[] = [];
+  const codeExchanges: unknown[] = [];
   const messages = createMessagesTable(options);
+  const answerCodeExchange = createCodeExchange(options, codeExchanges);
 
   async function answerSettings(request: Request): Promise<Response> {
     if (request.method === "GET") {
@@ -212,7 +240,11 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     if (url.pathname.startsWith("/auth/") && options.authFailureStatus) {
       return authError(options.authFailureStatus, "unexpected_failure");
     }
-    if (url.pathname === "/auth/v1/token") return answerRefresh(request);
+    if (url.pathname === "/auth/v1/token") {
+      return url.searchParams.get("grant_type") === "pkce"
+        ? answerCodeExchange(request)
+        : answerRefresh(request);
+    }
     if (url.pathname === "/auth/v1/user") return answerUser(request);
     if (url.pathname === "/auth/v1/verify") {
       verifications.push(await request.json());
@@ -258,6 +290,7 @@ export function stubSupabase(options: FakeSupabaseOptions = {}): FakeSupabase {
     profileUpdates,
     auditRows,
     verifications,
+    codeExchanges,
     settingsWrites,
     messageWrites: messages.messageWrites,
   };

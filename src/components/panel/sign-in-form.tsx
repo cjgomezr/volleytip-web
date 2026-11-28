@@ -13,23 +13,34 @@ import type { FormProtectionFields } from "~/lib/forms/protected-form.server";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import type { GoogleNotice } from "~/lib/panel/google-notice";
 import { buildSignInPathFor, RETURN_PARAM } from "~/lib/panel/return-path";
 
+import { GoogleSignIn } from "./google-sign-in";
 import { UnsentNotice } from "./unsent-notice";
 
-interface SignInFormProps {
+export interface SignInFormProps {
   /** Lo que `issueFormProtection(ADMIN_SIGN_IN_FORM)` entregó en el `loader`. */
   readonly protection: FormProtectionFields;
   /** Lo que devolvió el `action`. */
   readonly outcome: SignInOutcome | undefined;
   /** El envío no llegó al servidor. */
   readonly isUnsent?: boolean;
+  /** El entorno tiene Google configurado. */
+  readonly isGoogleEnabled?: boolean;
+  /** Por qué Google no dejó entrar, si se viene de intentarlo. */
+  readonly googleNotice?: GoogleNotice | null;
 }
 
 const REJECTION_MESSAGES: Record<SignInRejection, MessageKey> = {
   too_fast: "panel.signIn.rejected.tooFast",
   verification_failed: "panel.signIn.rejected.verification",
   rate_limited: "panel.signIn.rejected.rateLimited",
+};
+
+const GOOGLE_NOTICE_MESSAGES: Record<GoogleNotice, MessageKey> = {
+  denied: "panel.signIn.google.denied",
+  failed: "panel.signIn.google.failed",
 };
 
 // El servidor devuelve claves de traducción como mensajes de error.
@@ -123,10 +134,28 @@ function EmailForm({
           {translate("panel.signIn.submit")}
         </Button>
       </div>
-      <p className="text-[13px] text-ink-subtle">
+    </Form>
+  );
+}
+
+// Las dos formas de entrar y a quién le sirven.
+function EntryOptions(props: SignInFormProps): ReactElement {
+  const translate = useTranslate();
+  // Tras intentar con el correo, el aviso de Google ya no viene al caso.
+  const notice = props.outcome === undefined ? props.googleNotice : null;
+  return (
+    <>
+      {notice ? (
+        <p role="alert" className="mt-4 font-semibold text-brand-red-deep">
+          {translate(GOOGLE_NOTICE_MESSAGES[notice])}
+        </p>
+      ) : null}
+      <EmailForm {...props} />
+      {props.isGoogleEnabled ? <GoogleSignIn /> : null}
+      <p className="mt-3.5 text-[13px] text-ink-subtle">
         {translate("panel.signIn.teamOnly")}
       </p>
-    </Form>
+    </>
   );
 }
 
@@ -154,7 +183,7 @@ export function SignInForm(props: SignInFormProps): ReactElement {
           </p>
         ) : null}
       </div>
-      {isSent ? <UseAnotherEmail /> : <EmailForm {...props} />}
+      {isSent ? <UseAnotherEmail /> : <EntryOptions {...props} />}
     </>
   );
 }

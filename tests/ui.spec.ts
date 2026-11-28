@@ -1889,6 +1889,10 @@ const SIGN_IN_STATES = [
   "enviado",
   "enlace",
   "vencido",
+  // Con Google configurado (#132): el botón y sus dos avisos.
+  "google",
+  "sin-acceso",
+  "google-fallo",
 ] as const;
 
 const SIGN_IN_VARIANTS: readonly PanelVariant[] = SIGN_IN_STATES.flatMap(

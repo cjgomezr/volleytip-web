@@ -65,6 +65,13 @@ export const panelEs = {
     "Demasiados intentos. Espera 10 minutos y prueba de nuevo.",
   "panel.signIn.unavailable":
     "No se pudo enviar el enlace. Inténtalo de nuevo más tarde.",
+  "panel.signIn.google.separator": "o",
+  "panel.signIn.google.button": "Continuar con Google",
+  "panel.signIn.google.submitting": "Abriendo Google",
+  "panel.signIn.google.denied":
+    "Ese correo no tiene acceso al panel. Entra con un correo del equipo.",
+  "panel.signIn.google.failed":
+    "No pudimos entrar con Google. Inténtalo de nuevo o pide el enlace a tu correo.",
   "panel.signInLink.intro": "Pulsa el botón para entrar al panel.",
   "panel.signInLink.submit": "Entrar",
   "panel.signInLink.submitting": "Entrando",

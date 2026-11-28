@@ -63,6 +63,13 @@ export const panelEn = {
     "Too many attempts. Wait 10 minutes and try again.",
   "panel.signIn.unavailable":
     "The link could not be sent. Please try again later.",
+  "panel.signIn.google.separator": "or",
+  "panel.signIn.google.button": "Continue with Google",
+  "panel.signIn.google.submitting": "Opening Google",
+  "panel.signIn.google.denied":
+    "That email address does not have access to the admin. Use a team address.",
+  "panel.signIn.google.failed":
+    "We could not sign you in with Google. Try again or ask for the email link.",
   "panel.signInLink.intro": "Press the button to sign in to the admin.",
   "panel.signInLink.submit": "Sign in",
   "panel.signInLink.submitting": "Signing in",

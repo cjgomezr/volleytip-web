@@ -35,7 +35,14 @@ export const SERVER_ENV_VARIABLES = [
   "SITE_ORIGIN",
 ] as const;
 
-type ServerEnvVariable = (typeof SERVER_ENV_VARIABLES)[number];
+/** Sin ellas el servidor arranca igual: lo que encienden queda apagado. */
+export const OPTIONAL_SERVER_ENV_VARIABLES = [
+  "GOOGLE_SIGN_IN_ENABLED",
+] as const;
+
+type RequiredServerEnvVariable = (typeof SERVER_ENV_VARIABLES)[number];
+type ServerEnvVariable =
+  RequiredServerEnvVariable | (typeof OPTIONAL_SERVER_ENV_VARIABLES)[number];
 
 export interface ServerEnv {
   readonly appEnv: AppEnvironment;
@@ -55,6 +62,9 @@ export interface ServerEnv {
   /** Dirección pública del sitio en este entorno: protocolo y dominio, sin
    * barra final. Con ella se arman las direcciones absolutas. */
   readonly siteOrigin: string;
+  /** Pinta "Continuar con Google" en la entrada del panel. Las credenciales
+   * de Google viven en Supabase, no aquí. */
+  readonly googleSignInEnabled: boolean;
 }
 
 export type EnvSource = Readonly<Record<string, string | undefined>>;
@@ -66,6 +76,8 @@ export type ServerEnvResult =
 const LINE_BREAK = "\n";
 const HTTP_PROTOCOLS: readonly string[] = ["http:", "https:"];
 const MIN_FORM_PROTECTION_SECRET_LENGTH = 32;
+const FLAG_VALUES: readonly string[] = ["true", "false"];
+const FLAG_ON = "true";
 // Los caracteres que admite el nombre de una cabecera HTTP.
 const HEADER_NAME = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/;
 // Hasta tres cifras: sobra para una cadena de proxies.
@@ -90,7 +102,10 @@ type PresentValues = Partial<Record<ServerEnvVariable, string>>;
 
 function readPresentValues(source: EnvSource): PresentValues {
   const present: PresentValues = {};
-  for (const name of SERVER_ENV_VARIABLES) {
+  for (const name of [
+    ...SERVER_ENV_VARIABLES,
+    ...OPTIONAL_SERVER_ENV_VARIABLES,
+  ]) {
     const value = source[name]?.trim();
     if (value !== undefined && value !== "") {
       present[name] = value;
@@ -190,6 +205,16 @@ function findInvalidSiteOrigin(values: PresentValues): string[] {
   return [];
 }
 
+function findInvalidFlags(values: PresentValues): string[] {
+  const { GOOGLE_SIGN_IN_ENABLED: flag } = values;
+  if (flag === undefined || FLAG_VALUES.includes(flag)) {
+    return [];
+  }
+  return [
+    `GOOGLE_SIGN_IN_ENABLED no es válido. Valores válidos: ${FLAG_VALUES.join(", ")}.`,
+  ];
+}
+
 function findInvalidValues(values: PresentValues): string[] {
   return [
     ...findInvalidSupabaseValues(values),
@@ -197,6 +222,7 @@ function findInvalidValues(values: PresentValues): string[] {
     ...findInvalidFormProtectionValues(values),
     ...findInvalidImageValues(values),
     ...findInvalidSiteOrigin(values),
+    ...findInvalidFlags(values),
   ];
 }
 
@@ -212,16 +238,14 @@ function describeProblems(
   ].join(LINE_BREAK);
 }
 
-function hasEveryValue(
-  values: PresentValues,
-): values is Record<ServerEnvVariable, string> {
+type CompleteValues = PresentValues & Record<RequiredServerEnvVariable, string>;
+
+function hasEveryValue(values: PresentValues): values is CompleteValues {
   return SERVER_ENV_VARIABLES.every((name) => values[name] !== undefined);
 }
 
 /** Arma el entorno tipado. Solo se llama con valores presentes y válidos. */
-function buildServerEnv(
-  values: Record<ServerEnvVariable, string>,
-): ServerEnv | undefined {
+function buildServerEnv(values: CompleteValues): ServerEnv | undefined {
   if (!isAppEnvironment(values.APP_ENV)) {
     return undefined;
   }
@@ -237,6 +261,7 @@ function buildServerEnv(
     clientIpTrustedHops: Number(values.CLIENT_IP_TRUSTED_HOPS),
     imageCdnHost: values.IMAGE_CDN_HOST,
     siteOrigin: values.SITE_ORIGIN,
+    googleSignInEnabled: values.GOOGLE_SIGN_IN_ENABLED === FLAG_ON,
   };
 }
 

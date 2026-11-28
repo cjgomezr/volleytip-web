@@ -5,7 +5,12 @@ import {
   SUPPORTED_LANGUAGES,
   type Language,
 } from "../i18n/languages";
-import { getPanelPath, isPanelPath } from "../i18n/panel-pages";
+import {
+  getPanelPath,
+  isPanelPath,
+  PANEL_ENTRY_PAGES,
+  type PanelPageId,
+} from "../i18n/panel-pages";
 
 /** El parámetro de la pantalla de entrada con la dirección a la que volver. */
 export const RETURN_PARAM = "next";
@@ -17,15 +22,17 @@ const PARSING_ORIGIN = "http://internal.invalid";
 const ROUTER_PARAM = "_routes";
 const TRAILING_SLASHES = /\/+$/;
 
+const ENTRY_AND_EXIT_PAGES: readonly PanelPageId[] = [
+  ...PANEL_ENTRY_PAGES.map(({ id }) => id),
+  "adminSignOut",
+];
+
 // Volver a la entrada o a la salida no lleva a ninguna parte.
 function isEntryOrExit(pathname: string): boolean {
   // `/admin/Entrar` no es una sección: caería en el comodín del panel.
   const path = pathname.replace(TRAILING_SLASHES, "").toLowerCase();
-  return SUPPORTED_LANGUAGES.some(
-    ({ code }) =>
-      path === getPanelPath("adminSignIn", code) ||
-      path === getPanelPath("adminSignInLink", code) ||
-      path === getPanelPath("adminSignOut", code),
+  return SUPPORTED_LANGUAGES.some(({ code }) =>
+    ENTRY_AND_EXIT_PAGES.some((page) => path === getPanelPath(page, code)),
   );
 }
 

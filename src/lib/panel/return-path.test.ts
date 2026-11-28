@@ -79,3 +79,14 @@ describe("regreso: la página del enlace", () => {
     },
   );
 });
+
+describe("regreso: las direcciones de Google", () => {
+  it.each([
+    "/admin/entrar/google",
+    "/admin/entrar/google/vuelta",
+    "/en/admin/sign-in/google",
+    "/en/admin/sign-in/google/return",
+  ])("no vuelve a %s", (path) => {
+    expect(resolveReturnPath(path, "es")).toBe("/admin");
+  });
+});
