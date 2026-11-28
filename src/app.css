@@ -30,6 +30,7 @@
   /* Solo para el botón de Google. */
   --font-google: "Google Sans", var(--font-sans);
 
+  --radius-tag: 6px;
   --radius-control: 12px;
   --radius-card: 16px;
   --radius-panel: 24px;
@@ -69,6 +70,15 @@ body {
   [data-preview="focus"] {
     outline: 3px solid var(--color-brand-lime);
     outline-offset: 3px;
+  }
+}
+
+/* Los filtros de los tips quedan pegados arriba en pantallas anchas: al
+   enfocar con el teclado, la página se desplaza lo suficiente para que no
+   tapen el control (WCAG 2.2, foco no oculto). */
+@media (width >= 80rem) {
+  html:has([data-tips-filters]) {
+    scroll-padding-top: 6rem;
   }
 }
 

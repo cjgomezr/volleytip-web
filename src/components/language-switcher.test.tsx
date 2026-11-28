@@ -89,6 +89,17 @@ describe("selector de idioma", () => {
     expect(linkOf(html, "es")).toContain('href="/?talla=m&amp;color=rojo"');
   });
 
+  it("en el listado de tips conserva los filtros con los nombres de cada idioma", () => {
+    const html = renderAt("/tips?fundamento=recepcion&nivel=basico", "es");
+
+    expect(linkOf(html, "en")).toContain(
+      'href="/en/tips?skill=reception&amp;level=basic"',
+    );
+    expect(linkOf(html, "es")).toContain(
+      'href="/tips?fundamento=recepcion&amp;nivel=basico"',
+    );
+  });
+
   it("el nombre de cada idioma está en ese idioma, también en una página en inglés", () => {
     for (const path of ["/", "/en/"]) {
       const html = renderAt(path, path === "/" ? "es" : "en");

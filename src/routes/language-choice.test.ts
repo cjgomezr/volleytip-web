@@ -37,6 +37,17 @@ describe("aviso de idioma: acciones", () => {
     expect(response.headers.get("Location")).toBe("/en/?a=1&b=2");
   });
 
+  it("desde el listado de tips filtrado lleva al otro con los mismos filtros", async () => {
+    const response = await submit({
+      language: "en",
+      from: "/tips?fundamento=recepcion&nivel=basico",
+    });
+
+    expect(response.headers.get("Location")).toBe(
+      "/en/tips?skill=reception&level=basic",
+    );
+  });
+
   it("quedarse guarda el idioma de la página y vuelve a ella sin cambiar de página", async () => {
     const response = await submit({ language: "es", from: "/?a=1" });
 

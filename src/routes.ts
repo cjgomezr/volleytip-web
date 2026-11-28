@@ -24,6 +24,10 @@ export default [
     // En producción responde 404.
     route("dev/faq", "routes/dev-faq.tsx"),
     route("en/dev/faq", "routes/dev-faq.tsx", { id: "dev-faq-en" }),
+    // Pinta el listado de tips en cada estado, con tips de muestra y sin la
+    // base. En producción responde 404.
+    route("dev/tips", "routes/dev-tips.tsx"),
+    route("en/dev/tips", "routes/dev-tips.tsx", { id: "dev-tips-en" }),
     // Pinta Contacto en cada uno de sus estados, sin la base. En producción
     // responde 404.
     route("dev/contact", "routes/dev-contact.tsx"),

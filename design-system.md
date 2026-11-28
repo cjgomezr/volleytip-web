@@ -111,6 +111,7 @@ Radius depends on the kind of element, and each kind has exactly one:
 | Element                                 | Token            | Radius |
 | --------------------------------------- | ---------------- | ------ |
 | Buttons, chips, badges, language switch | `radius-pill`    | 999px  |
+| Tags over or next to a video thumbnail  | `radius-tag`     | 6px    |
 | Inputs, selects, small tiles            | `radius-control` | 12px   |
 | Cards, keypad keys                      | `radius-card`    | 16px   |
 | Large panels, modals, bottom sheets     | `radius-panel`   | 24px   |
@@ -263,6 +264,22 @@ errors. Selected: `brand-night` background, `brand-mist` text. Idle: 2px
 `brand-mist` text. On phones each tab takes the whole width. Arrow keys, Home and End move between
 tabs. Without JavaScript there are no tabs: every language is shown, one under
 the other, with its name as a heading.
+
+**Tips listing** (ticket #158; `src/components/tips/`; sample at `/dev/tips`).
+Drawn in `Tips.png`; dark zone. The page title is Anton 80px, 144px from 1024px,
+with the count under it (18px, 20px from 768px, `ink-muted`). Search: an eyebrow
+label over a 52px `brand-indigo` pill with a 44px submit button holding the
+magnifier; hover is an inner 2px `brand-lime` ring and the focus ring goes around
+the pill. Fundamental filters: 44px pills, `brand-indigo`, the current one
+`brand-lime` with `brand-night` text; under 768px one row that scrolls sideways.
+Level filter: one `brand-indigo` pill holding four options, the current one
+`brand-mist`. Both filters stick to the top from 1280px. Latest video: a
+`brand-indigo` panel with a 220px 9:16 thumbnail, a `brand-red` tag and the title
+in Anton 36px, 56px from 768px; stacked under 768px. Cards: 9:16 thumbnail with
+the fundamental top left and the duration bottom right as `brand-night` tags,
+title 700 16px and level 14px `ink-muted`; 2 columns, 4 from 768px, 6 from
+1024px. Hover turns the title `brand-lime`. "Load more tips" is a secondary
+button.
 
 ## Mandatory component states
 

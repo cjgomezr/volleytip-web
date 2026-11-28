@@ -11,6 +11,8 @@ import {
 // dirección de cada enlace. Una página que no esté aquí no se puede enlazar.
 export const PAGES = [
   { id: "home", file: "routes/home.tsx", path: "" },
+  // `/tips` en los dos idiomas.
+  { id: "tips", file: "routes/tips.tsx", path: "tips" },
   // Decisión 9 del PRD de W3: `/app` en los dos idiomas.
   { id: "app", file: "routes/app.tsx", path: "app" },
   // Enlace compartido de una rutina. Sin la app, es una página "Próximamente"

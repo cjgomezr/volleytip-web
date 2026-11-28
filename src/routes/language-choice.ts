@@ -1,7 +1,12 @@
 import { activeLanguagesContext } from "~/lib/active-languages.server";
 import { serverEnv } from "~/lib/env.server";
-import { isSupportedLanguage, type Language } from "~/lib/i18n/languages";
+import {
+  getLanguageFromPath,
+  isSupportedLanguage,
+  type Language,
+} from "~/lib/i18n/languages";
 import { serializeLanguageChoice } from "~/lib/i18n/language-choice.server";
+import { translatePageSearch } from "~/lib/i18n/page-search";
 import { getPageAtPath, getPagePath } from "~/lib/i18n/pages";
 
 import type { Route } from "./+types/language-choice";
@@ -26,7 +31,13 @@ function buildDestination(from: string, language: Language): string {
   if (url.origin !== PARSING_ORIGIN) return homePath;
   const current = getPageAtPath(url.pathname);
   if (current === undefined) return homePath;
-  return `${getPagePath(current.page, language, current.params)}${url.search}`;
+  const search = translatePageSearch({
+    page: current.page,
+    search: url.search,
+    from: getLanguageFromPath(url.pathname),
+    to: language,
+  });
+  return `${getPagePath(current.page, language, current.params)}${search}`;
 }
 
 // No pasa por `processProtectedForm`: no guarda datos de nadie ni acepta

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router";
 
 import { useActiveLanguages } from "~/lib/i18n/active-languages-context";
 import { LANGUAGE_NAMES, type Language } from "~/lib/i18n/languages";
+import { translatePageSearch } from "~/lib/i18n/page-search";
 import { getPagePath, type CurrentPage } from "~/lib/i18n/pages";
 import {
   isPlainLeftClick,
@@ -64,7 +65,7 @@ const OTHER_STYLES: Record<Zone, string> = {
 
 /**
  * Un enlace por idioma activo hacia la misma página en ese idioma, con los
- * parámetros de búsqueda de la actual (FR-004). Son enlaces de verdad:
+ * parámetros de búsqueda de la actual, escritos en ese idioma (FR-004). Son enlaces de verdad:
  * funciona sin JavaScript. En una dirección que no es una página del sitio
  * lleva a la home de cada idioma.
  */
@@ -117,7 +118,13 @@ export function LanguageSwitcher({
   function renderLanguage(language: Language): ReactElement {
     const isCurrent = language === selectedLanguage;
     const stateStyles = isCurrent ? CURRENT_STYLES[zone] : OTHER_STYLES[zone];
-    const href = `${getPagePath(page, language, params)}${search}`;
+    const translatedSearch = translatePageSearch({
+      page,
+      search,
+      from: currentLanguage,
+      to: language,
+    });
+    const href = `${getPagePath(page, language, params)}${translatedSearch}`;
     return (
       <li key={language} className="flex">
         <Link

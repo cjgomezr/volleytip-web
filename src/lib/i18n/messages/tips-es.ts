@@ -1,5 +1,5 @@
-// Nombres de las listas fijas de los tips. Los textos de cada tip viven en la
-// base.
+// Los textos del listado de tips y los nombres de sus listas fijas. Los de
+// cada tip viven en la base.
 export const tipsEs = {
   "tips.fundamental.serve": "Saque",
   "tips.fundamental.reception": "Recepción",
@@ -10,4 +10,40 @@ export const tipsEs = {
   "tips.level.basic": "Básico",
   "tips.level.intermediate": "Intermedio",
   "tips.level.advanced": "Avanzado",
+  "tips.title": "Tips de voleibol · VolleyTip",
+  "tips.description":
+    "Videos cortos de voleibol por fundamento y nivel: saque, recepción, colocación, ataque, bloqueo y defensa.",
+  "tips.heading": "Tips",
+  "tips.intro": {
+    one: "{count} video corto para mejorar tu juego. Un concepto por video.",
+    other:
+      "{count} videos cortos para mejorar tu juego. Un concepto por video.",
+  },
+  "tips.search.label": "Buscar",
+  "tips.search.placeholder": "Ej: cómo recibir un saque flotado",
+  "tips.search.submit": "Buscar tips",
+  "tips.filters.label": "Filtros",
+  "tips.filters.fundamental": "Fundamento",
+  "tips.filters.level": "Nivel",
+  "tips.filters.all": "Todos",
+  "tips.filters.allFundamentals": "Todos los fundamentos",
+  "tips.filters.allLevels": "Todos los niveles",
+  "tips.latest.badge": "Último video",
+  "tips.list.heading": "Todos los tips",
+  "tips.list.order": "Más recientes primero",
+  "tips.list.results": {
+    one: "{count} resultado",
+    other: "{count} resultados",
+  },
+  "tips.card.duration": "Duración {duration}",
+  "tips.loadMore": "Cargar más tips",
+  "tips.loadMore.loading": "Cargando tips",
+  "tips.loadMore.loaded": {
+    one: "Se agregó {count} tip.",
+    other: "Se agregaron {count} tips.",
+  },
+  "tips.noResults.text": "No encontramos tips con esa búsqueda o esos filtros.",
+  "tips.noResults.clear": "Quitar filtros",
+  "tips.empty.text": "Todavía no hay tips publicados.",
+  "tips.empty.follow": "Síguenos en las redes para ver los videos nuevos.",
 } as const;
