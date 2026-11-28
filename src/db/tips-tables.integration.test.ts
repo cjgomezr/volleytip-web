@@ -18,6 +18,8 @@ import { createTipRows, type TipRows } from "~/testing/tip-rows";
 
 // El destacado es uno en toda la base: solo este archivo marca tips.
 const PREFIX = "prueba-tips-tablas";
+// El tope de `tips_slug_check`: el mismo que usa la lectura por dirección.
+const MAX_SLUG_LENGTH = 500;
 const MAX_LOCK_CHECKS = 200;
 const LOCK_CHECK_INTERVAL_IN_MS = 10;
 
@@ -137,6 +139,24 @@ describeIntegration("tips: tablas", () => {
       ).rejects.toThrow(/tips_slug_check/);
     },
   );
+
+  it("acepta un slug del largo máximo", async () => {
+    const slug = `${PREFIX}-`.padEnd(MAX_SLUG_LENGTH, "a");
+
+    const rows = await database<{ slug: string }[]>`
+      insert into public.tips (slug) values (${slug}) returning slug
+    `;
+
+    expect(takeOnlyRow(rows, "tips").slug).toHaveLength(MAX_SLUG_LENGTH);
+  });
+
+  it("rechaza un slug un carácter más largo que el máximo", async () => {
+    const slug = `${PREFIX}-`.padEnd(MAX_SLUG_LENGTH + 1, "a");
+
+    await expect(
+      database`insert into public.tips (slug) values (${slug})`,
+    ).rejects.toThrow(/tips_slug_check/);
+  });
 
   it("rechaza un segundo destacado", async () => {
     await tips.insert({ isFeatured: true });

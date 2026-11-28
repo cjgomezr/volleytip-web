@@ -29,10 +29,10 @@ const MAX_OFFSET = 1_000_000;
 // En caracteres (PRD de W4, sección 6). Una búsqueda sin recortar no cabe en la
 // dirección con que se cuenta y la lectura fallaría.
 const MAX_QUERY_LENGTH = 100;
-// La base no limita el largo de un slug. Uno mayor que esto no es de ningún tip
-// y tampoco cabe en una consulta.
+// El mismo tope y la misma forma que exige la base (`tips_slug_check`): un
+// slug que no los cumple no es de ningún tip, y uno enorme no cabe en una
+// consulta.
 const MAX_SLUG_LENGTH = 500;
-// La misma forma que exige la base (`tips_slug_check`).
 const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 // Código con que la API rechaza un rango que empieza después de la última fila.

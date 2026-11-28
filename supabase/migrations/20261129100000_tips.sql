@@ -39,7 +39,9 @@ create table public.tips (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint tips_slug_key unique (slug),
-  constraint tips_slug_check check (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
+  constraint tips_slug_check check (
+    slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and length(slug) <= 500
+  ),
   constraint tips_bunny_video_id_key unique (bunny_video_id),
   constraint tips_bunny_video_id_check check (bunny_video_id ~ '\S'),
   constraint tips_duration_seconds_check check (duration_seconds > 0),
