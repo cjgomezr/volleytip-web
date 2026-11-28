@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@fontsource/anton/400.css";
 @import "@fontsource-variable/archivo/wght.css";
+@import "@fontsource/google-sans/latin-500.css";
 
 /* Tokens de marca. La fuente de verdad es design-system.md: un valor nuevo se
    agrega allí primero y después aquí. Los valores salen de los mockups de
@@ -17,9 +18,17 @@
   --color-surface-light: #ffffff;
   --color-line-light: #eef4f5;
   --color-brand-red-deep: #b0002a;
+  /* El botón de Google: los colores los fija su pauta de marca. */
+  --color-google-surface: #ffffff;
+  --color-google-stroke: #747775;
+  --color-google-ink: #1f1f1f;
+  --color-google-hover: #ededed;
+  --color-google-pressed: #e3e3e3;
 
   --font-display: "Anton", Impact, sans-serif;
   --font-sans: "Archivo Variable", system-ui, sans-serif;
+  /* Solo para el botón de Google. */
+  --font-google: "Google Sans", var(--font-sans);
 
   --radius-control: 12px;
   --radius-card: 16px;

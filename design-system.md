@@ -54,6 +54,21 @@ Rules:
   24px or more).
 - A new color is not invented in a ticket: it is added to this table first.
 
+#### Google sign-in button
+
+The only element that does not use brand colors: Google's branding guidelines
+fix them. White pill, 1px inside stroke, full-color "G" at 20px
+(`public/brand/google-g.svg`), 10px between logo and text, text in Google Sans
+Medium 14/20 (`font-google`, self-hosted, used nowhere else).
+
+| Token            | Value     | Use                |
+| ---------------- | --------- | ------------------ |
+| `google-surface` | `#FFFFFF` | Button fill        |
+| `google-stroke`  | `#747775` | Button border      |
+| `google-ink`     | `#1F1F1F` | Button text        |
+| `google-hover`   | `#EDEDED` | Fill on hover      |
+| `google-pressed` | `#E3E3E3` | Fill while pressed |
+
 ### Spacing
 
 Scale read from the mockups: **4 / 8 / 10 / 12 / 14 / 16 / 20 / 24 / 28 / 32 /

@@ -262,7 +262,7 @@ En local no hay proxy delante, así que la cabecera de IP no llega y la IP del v
 
 ## Acceso al panel
 
-El panel (`/admin` y `/en/admin`) usa una sesión de Supabase Auth guardada en cookies `HttpOnly`, `SameSite=Lax` y `Secure` fuera de `local` y `test`. No necesita variables nuevas.
+El panel (`/admin` y `/en/admin`) usa una sesión de Supabase Auth guardada en cookies `HttpOnly`, `SameSite=Lax` y `Secure` fuera de `local` y `test`. La única variable propia es opcional: `GOOGLE_SIGN_IN_ENABLED` (ver "Entrar con Google").
 
 - **El registro público va apagado en cada proyecto.** En local lo hace `enable_signup = false` en `supabase/config.toml`. En los proyectos alojados ese archivo no se aplica solo: se apaga a mano en el panel de Supabase, en Authentication → Sign In / Providers → "Allow new users to sign up".
 - **Las cuentas las crea el servidor** con la llave de servicio, nunca el navegador.
@@ -330,6 +330,78 @@ unset SUPABASE_SERVICE_ROLE_KEY
 - El `unset` final no es opcional: mientras la llave siga en la terminal, cualquier otro comando de esa sesión la ve.
 
 El correo se escribe solo en la terminal. Ningún correo del equipo va al repo.
+
+### Entrar con Google
+
+Además del enlace al correo, la entrada puede ofrecer "Continuar con Google" (#132). Google solo comprueba que la persona es dueña de un correo que ya fue invitado. Siguen mandando dos candados: el registro público apagado en Supabase y la comprobación del perfil después de entrar. Ninguno se cambia para que Google funcione.
+
+| Variable                 | Qué es                                                                             | Dónde se pone                                            |
+| ------------------------ | ---------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `GOOGLE_SIGN_IN_ENABLED` | `true` pinta el botón. Vacía, ausente o `false`, no. Otro valor impide el arranque | `.env.local` en local; variables del servicio en Railway |
+
+Las credenciales de Google (identificador y secreto del cliente) viven en Supabase. El servidor del sitio no las conoce y ninguna va al repositorio.
+
+#### 1. Crear el cliente OAuth (una sola vez)
+
+Lo hace Camilo en [Google Cloud](https://console.cloud.google.com/). Los nombres de los menús pueden cambiar un poco.
+
+1. Elegir o crear un proyecto, por ejemplo `volleytip`.
+2. Abrir **Google Auth Platform** → **Branding** (antes "Pantalla de consentimiento de OAuth"): nombre `VolleyTip`, correo de asistencia y correo de contacto.
+3. **Audience**: tipo "External". Publicar la aplicación ("Publish app"). Mientras esté en "Testing" solo entran los correos agregados como usuarios de prueba. Los permisos que se piden son los básicos (correo y perfil), que no necesitan revisión de Google.
+4. **Clients** → "Create client" → tipo "Web application", nombre `VolleyTip panel`.
+5. En **Authorized redirect URIs** agregar las dos direcciones de retorno, la de pruebas y la de producción. El identificador es el Project ID de cada proyecto de Supabase:
+   - `https://<identificador-de-volleytip-dev>.supabase.co/auth/v1/callback`
+   - `https://<identificador-de-volleytip-prod>.supabase.co/auth/v1/callback`
+   - Solo si se va a probar contra la base local: `http://127.0.0.1:54321/auth/v1/callback`
+
+   La dirección exacta de cada proyecto la muestra Supabase en la pantalla del paso 2, campo "Callback URL (for OAuth)". "Authorized JavaScript origins" se deja vacío: el navegador nunca habla con Google desde el código del sitio.
+
+6. Guardar el **Client ID** y el **Client secret** en el gestor de contraseñas.
+
+#### 2. Pegarlo en cada proyecto de Supabase
+
+Se repite en `volleytip-dev` y en `volleytip-prod`, con el mismo cliente:
+
+1. Authentication → Sign In / Providers → Google → "Enable Sign in with Google".
+2. Pegar el Client ID en "Client IDs" y el secreto en "Client Secret (for OAuth)". "Skip nonce checks" queda apagado. Guardar.
+3. Authentication → URL Configuration: comprobar que "Redirect URLs" tiene el origen del entorno seguido de `/**` (paso 2 de "El correo para entrar"). Sin eso, la vuelta de Google cae en la Site URL y no se entra.
+4. Authentication → Sign In / Providers → "Allow new users to sign up": sigue **desactivado**. Si una cuenta invitada no logra entrar con Google, no se arregla encendiéndolo: se reporta.
+
+Supabase une la identidad de Google a la cuenta que ya existe con el mismo correo, si ese correo está confirmado (el comando del primer admin lo deja así). No crea una segunda cuenta.
+
+#### 3. Encender el botón en cada entorno
+
+| Entorno    | Cómo                                                                                           |
+| ---------- | ---------------------------------------------------------------------------------------------- |
+| Staging    | En Railway, servicio `staging`, pestaña Variables: `GOOGLE_SIGN_IN_ENABLED` = `true`           |
+| Producción | Lo mismo en el servicio `production`                                                           |
+| Local      | Los dos pasos de abajo                                                                         |
+| Pruebas    | No se enciende. Las pruebas usan un Supabase simulado y la muestra `/dev/entrar?estado=google` |
+
+El botón se enciende **después** de configurar el proveedor de ese entorno. Para apagarlo se quita la variable. Eso esconde el botón; para cerrar del todo la entrada con Google se desactiva además el proveedor en Supabase.
+
+**En local** (opcional):
+
+1. La base local lee tres variables de la terminal desde la que se levanta. `supabase/config.toml` deja Google apagado si no están. En Git Bash, una línea a la vez:
+
+   ```
+   read -rp "Client ID: " SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID && export SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+   read -rsp "Client secret: " SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET && export SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET
+   export SUPABASE_AUTH_EXTERNAL_GOOGLE_ENABLED=true
+   npm run db:stop && npm run db:start
+   ```
+
+2. En `.env.local`: `GOOGLE_SIGN_IN_ENABLED=true` y `SITE_ORIGIN=http://localhost:3740`. El sitio se abre en esa misma dirección, no en `127.0.0.1`.
+
+#### 4. Comprobar (en pruebas, con credenciales reales)
+
+1. Crear o invitar un admin con un correo de Google que **nunca** haya entrado con Google (ver "El primer admin de cada entorno").
+2. En Supabase, Authentication → Users: anotar cuántos usuarios hay.
+3. En `https://staging.volleytip.com/admin/entrar`, "Continuar con Google" con ese correo. Debe llegar al panel. En Users sigue el mismo número de usuarios, y la cuenta muestra los proveedores Email y Google.
+4. Cerrar sesión y repetir con una cuenta de Google que no esté invitada. La pantalla dice que ese correo no tiene acceso y en Users no aparece ningún usuario nuevo.
+5. Pulsar "Continuar con Google" y cancelar en la pantalla de Google: se vuelve a la entrada con un mensaje y sin sesión.
+
+**Si algo falla**, el registro del servidor dice "Supabase Auth no canjeó la vuelta de Google" o "La entrada con Google volvió con error", con el código. En Supabase está en Logs → Auth.
 
 ## Imágenes
 

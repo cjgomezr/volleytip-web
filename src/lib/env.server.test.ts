@@ -59,6 +59,7 @@ describe("env del servidor", () => {
         clientIpTrustedHops: 1,
         imageCdnHost: "imagenes-de-prueba.b-cdn.net",
         siteOrigin: "https://staging.volleytip.test",
+        googleSignInEnabled: false,
       },
     });
   });
@@ -354,5 +355,34 @@ describe("env: SITE_ORIGIN", () => {
       ok: true,
       env: { siteOrigin: "http://localhost:3740" },
     });
+  });
+});
+
+describe("google: configuración", () => {
+  function readFlag(value: string | undefined): boolean {
+    const result = parseServerEnv(
+      withOverrides({ GOOGLE_SIGN_IN_ENABLED: value }),
+    );
+    if (!result.ok) throw new Error(result.message);
+    return result.env.googleSignInEnabled;
+  }
+
+  it.each([undefined, "", "   ", "false"])(
+    "con GOOGLE_SIGN_IN_ENABLED=%j queda apagado y el servidor arranca",
+    (value) => {
+      expect(readFlag(value)).toBe(false);
+    },
+  );
+
+  it.each(["true", " true "])("con %j queda encendido", (value) => {
+    expect(readFlag(value)).toBe(true);
+  });
+
+  it.each(["1", "si", "TRUE"])("con %j nombra la variable y falla", (value) => {
+    const message = expectFailure(
+      withOverrides({ GOOGLE_SIGN_IN_ENABLED: value }),
+    );
+
+    expect(message).toContain("GOOGLE_SIGN_IN_ENABLED");
   });
 });

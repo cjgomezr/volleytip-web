@@ -13,6 +13,9 @@ describe("muestra de la entrada al panel", () => {
     ["?estado=error", { screen: "form", outcome: { status: "invalid" } }],
     ["?estado=enlace", { screen: "link", status: undefined }],
     ["?estado=vencido", { screen: "link", status: "invalid_link" }],
+    ["?estado=google", { screen: "form", isGoogleEnabled: true }],
+    ["?estado=sin-acceso", { screen: "form", googleNotice: "denied" }],
+    ["?estado=google-fallo", { screen: "form", googleNotice: "failed" }],
   ])("pinta el estado %j", async (query, expected) => {
     const { loader } = await import("./dev-sign-in");
 
