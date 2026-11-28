@@ -29,6 +29,9 @@ const SCREENS = [
       enviado: "Revisa tu correo",
       enlace: "Entrar",
       vencido: "Este enlace ya no sirve",
+      google: "Entrar",
+      "sin-acceso": "Entrar",
+      "google-fallo": "Entrar",
     },
   },
   {
@@ -39,6 +42,9 @@ const SCREENS = [
       enviado: "Check your email",
       enlace: "Sign in",
       vencido: "This link no longer works",
+      google: "Sign in",
+      "sin-acceso": "Sign in",
+      "google-fallo": "Sign in",
     },
   },
 ] as const;
@@ -205,4 +211,102 @@ test.describe("entrada al panel con el correo", () => {
       page.getByRole("heading", { level: 1, name: "Entrar" }),
     ).toBeVisible();
   });
+});
+
+// El flujo real contra Google no se puede probar aquí: la muestra pinta el
+// botón, y la vuelta con error no necesita a Google.
+test.describe("entrada al panel con Google", () => {
+  for (const [path, name, action] of [
+    ["/dev/entrar", "Continuar con Google", "/admin/entrar/google"],
+    ["/en/dev/entrar", "Continue with Google", "/en/admin/sign-in/google"],
+  ] as const) {
+    test(`${path}: el botón se alcanza y se activa con el teclado`, async ({
+      page,
+    }) => {
+      // El envío se detiene en el navegador: solo importa a dónde iba.
+      const sent: string[] = [];
+      await page.route(`**${action}*`, async (route) => {
+        const request = route.request();
+        if (request.method() === "POST") {
+          sent.push(new URL(request.url()).pathname);
+        }
+        await route.abort();
+      });
+      await page.goto(`${path}?estado=google`);
+      await waitForHydration(page);
+      const button = page.getByRole("button", { name, exact: true });
+
+      await page.getByRole("button", { name: /enlace|link/ }).focus();
+      await page.keyboard.press("Tab");
+      await expect(button).toBeFocused();
+      await page.keyboard.press("Enter");
+
+      await expect.poll(() => sent.length).toBe(1);
+      expect(sent[0]).toContain(action);
+    });
+  }
+
+  // Volver atrás desde Google puede devolver la página tal como quedó, con el
+  // envío en curso: sin recargarla, el botón no respondería más.
+  test("restaurada a medio enviar, la página se recarga y el botón revive", async ({
+    page,
+  }) => {
+    // El envío se queda sin respuesta, como mientras carga Google.
+    await page.route("**/admin/entrar/google*", async (route) => {
+      if (route.request().method() !== "POST") await route.continue();
+    });
+    await page.goto("/dev/entrar?estado=google");
+    await waitForHydration(page);
+    const button = page.getByRole("button", { name: "Continuar con Google" });
+    await button.click();
+    await expect(button).toHaveAttribute("aria-busy", "true");
+
+    const reload = page.waitForEvent("load");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new PageTransitionEvent("pageshow", { persisted: true }),
+      );
+    });
+    await reload;
+
+    await expect(button).not.toHaveAttribute("aria-busy", "true");
+  });
+
+  test("sin Google configurado no hay botón y queda el correo", async ({
+    page,
+  }) => {
+    await page.goto("/admin/entrar");
+
+    await expect(
+      page.getByRole("button", { name: "Enviarme el enlace" }),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: /Google/ })).toHaveCount(0);
+  });
+
+  for (const [query, message] of [
+    [
+      "error=access_denied&error_code=signup_disabled",
+      "Ese correo no tiene acceso al panel.",
+    ],
+    ["error=access_denied", "No pudimos entrar con Google."],
+    ["code=codigo-inventado", "No pudimos entrar con Google."],
+  ] as const) {
+    test(`volver de Google con ${query} no deja sesión`, async ({
+      page,
+      context,
+    }) => {
+      await page.goto(`/admin/entrar/google/vuelta?${query}`);
+
+      await expect(page).toHaveURL(/\/admin\/entrar\?google=(denied|failed)$/);
+      await expect(
+        page.getByRole("alert").filter({ hasText: message }),
+      ).toBeVisible();
+      expect(
+        (await context.cookies()).filter(({ name }) =>
+          /-auth-token(\.\d+)?$/.test(name),
+        ),
+      ).toEqual([]);
+      await expectAccessibleWithoutOverflow(page);
+    });
+  }
 });

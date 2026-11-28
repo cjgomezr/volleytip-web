@@ -1,8 +1,12 @@
 import type { ReactElement } from "react";
 import { redirect, type ShouldRevalidateFunctionArgs } from "react-router";
 
-import { SignInForm } from "~/components/panel/sign-in-form";
+import {
+  SignInForm,
+  type SignInFormProps,
+} from "~/components/panel/sign-in-form";
 import { SignInLayout } from "~/components/panel/sign-in-layout";
+import { serverEnv } from "~/lib/env.server";
 import {
   ADMIN_SIGN_IN_FORM,
   handleSignInRequest,
@@ -14,6 +18,11 @@ import {
 } from "~/lib/forms/protected-form.server";
 import { getRequestLanguage } from "~/lib/i18n/languages";
 import { useTranslate } from "~/lib/i18n/translations-context";
+import {
+  GOOGLE_NOTICE_PARAM,
+  readGoogleNotice,
+  type GoogleNotice,
+} from "~/lib/panel/google-notice";
 import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
 import { RETURN_PARAM, resolveReturnPath } from "~/lib/panel/return-path";
 import {
@@ -29,14 +38,21 @@ import type { Route } from "./+types/sign-in";
 // Quien ya está adentro no vuelve a entrar: va a donde iba.
 export async function loader({ request, context }: Route.LoaderArgs): Promise<{
   readonly protection: FormProtectionFields;
+  readonly isGoogleEnabled: boolean;
+  readonly googleNotice: GoogleNotice | null;
 }> {
   const visitor = await identifyVisitor(
     context.get(panelSessionContext).client,
   );
+  const params = new URL(request.url).searchParams;
   if (visitor.kind !== "member") {
-    return { protection: issueFormProtection(ADMIN_SIGN_IN_FORM) };
+    return {
+      protection: issueFormProtection(ADMIN_SIGN_IN_FORM),
+      isGoogleEnabled: serverEnv.googleSignInEnabled,
+      googleNotice: readGoogleNotice(params.get(GOOGLE_NOTICE_PARAM)),
+    };
   }
-  const requested = new URL(request.url).searchParams.get(RETURN_PARAM);
+  const requested = params.get(RETURN_PARAM);
   throw redirect(resolveReturnPath(requested, getRequestLanguage(request)));
 }
 
@@ -60,15 +76,9 @@ export function shouldRevalidate({
 }
 
 export function SignInScreen({
-  protection,
   outcome,
-  isUnsent,
-}: {
-  readonly protection: FormProtectionFields;
-  readonly outcome: SignInOutcome | undefined;
-  /** El envío no llegó al servidor. */
-  readonly isUnsent?: boolean;
-}): ReactElement {
+  ...form
+}: SignInFormProps): ReactElement {
   const translate = useTranslate();
   const heading =
     outcome?.status === "sent"
@@ -76,11 +86,7 @@ export function SignInScreen({
       : "panel.signIn.heading";
   return (
     <SignInLayout heading={translate(heading)}>
-      <SignInForm
-        protection={protection}
-        outcome={outcome}
-        isUnsent={isUnsent}
-      />
+      <SignInForm outcome={outcome} {...form} />
     </SignInLayout>
   );
 }

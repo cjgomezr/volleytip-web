@@ -17,6 +17,8 @@ const ACTIONS_WITHOUT_AUDIT: Readonly<Record<string, string>> = {
     "Pedir el enlace no cambia datos del sitio, y quien lo pide todavía no es admin.",
   "routes/panel/sign-in-link.tsx":
     "Canjear el enlace abre la sesión y no cambia datos del sitio; antes de canjear no hay actor.",
+  "routes/panel/sign-in-google.tsx":
+    "Ir a Google no cambia datos del sitio, y quien lo pide todavía no tiene sesión.",
   "routes/panel/missing.tsx":
     "El comodín del panel no escribe nada: su action solo responde 404.",
 };

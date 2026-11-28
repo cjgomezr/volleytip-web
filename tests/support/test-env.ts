@@ -30,4 +30,7 @@ export const TEST_ENV = {
   // A propósito distinto de la dirección donde corren las pruebas: las
   // direcciones absolutas tienen que salir de aquí y no de la petición.
   SITE_ORIGIN: "https://sitio-de-prueba.volleytip.test",
+  // Es opcional, pero se fija para que el `.env.local` de nadie la encienda.
+  // El botón se prueba en la muestra `/dev/entrar?estado=google`.
+  GOOGLE_SIGN_IN_ENABLED: "false",
 } as const;

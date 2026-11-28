@@ -16,6 +16,7 @@ const TEST_SERVER_ENV: ServerEnv = {
   clientIpTrustedHops: 1,
   imageCdnHost: "imagenes-de-prueba.b-cdn.net",
   siteOrigin: "https://sitio-de-prueba.volleytip.test",
+  googleSignInEnabled: false,
 };
 
 /**

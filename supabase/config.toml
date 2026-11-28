@@ -354,6 +354,20 @@ skip_nonce_check = false
 # If enabled, it will allow the user to successfully authenticate when the provider does not return an email address.
 email_optional = false
 
+# Entrar al panel con Google (#132). Apagado salvo que el entorno de quien
+# levanta la base ponga SUPABASE_AUTH_EXTERNAL_GOOGLE_ENABLED=true, que el CLI
+# antepone a `enabled`, junto a las dos credenciales (docs/entornos.md). En los
+# proyectos alojados se configura en el panel de Supabase.
+[auth.external.google]
+enabled = false
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+# El secreto nunca se escribe aquí.
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+redirect_uri = ""
+url = ""
+skip_nonce_check = false
+email_optional = false
+
 # Allow Solana wallet holders to sign in to your project via the Sign in with Solana (SIWS) standard.
 # You can configure "web3" rate limit in the [auth.rate_limit] section and set up [auth.captcha] if self-hosting.
 [auth.web3.solana]

@@ -25,6 +25,21 @@ export const PANEL_ENTRY_PAGES = [
     file: "routes/panel/sign-in-link.tsx",
     path: { es: "admin/entrar/enlace", en: "admin/sign-in/link" },
   },
+  // Entrar con Google (#132): a donde envía el botón y a donde vuelve la
+  // persona desde Google.
+  {
+    id: "adminSignInGoogle",
+    file: "routes/panel/sign-in-google.tsx",
+    path: { es: "admin/entrar/google", en: "admin/sign-in/google" },
+  },
+  {
+    id: "adminSignInGoogleReturn",
+    file: "routes/panel/sign-in-google-return.ts",
+    path: {
+      es: "admin/entrar/google/vuelta",
+      en: "admin/sign-in/google/return",
+    },
+  },
 ] as const satisfies readonly PageDeclaration[];
 
 /** Para todo el equipo: admin y staff. */

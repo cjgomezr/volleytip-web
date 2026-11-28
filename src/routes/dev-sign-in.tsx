@@ -17,20 +17,28 @@ import {
 } from "~/lib/forms/protected-form.server";
 import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
+import type { GoogleNotice } from "~/lib/panel/google-notice";
 
 import type { Route } from "./+types/dev-sign-in";
 import { SignInScreen } from "./panel/sign-in";
 
 // Pinta la entrada del panel y la página de su enlace en cada estado, sin la
 // base ni correos, para capturarlas en Playwright:
-// `?estado=vacio|error|enviado|enlace|vencido`. Solo pinta: no recibe envíos.
+// `?estado=vacio|error|enviado|enlace|vencido|google|sin-acceso|google-fallo`.
+// Los tres últimos pintan la entrada con Google configurado. Solo pinta: no
+// recibe envíos.
 // En producción responde 404.
 const NOT_FOUND_STATUS = 404;
 const STATE_PARAM = "estado";
 const SAMPLE_TOKEN = "token-de-muestra-que-no-abre-nada";
 
 type Sample =
-  | { readonly screen: "form"; readonly outcome: SignInOutcome | undefined }
+  | {
+      readonly screen: "form";
+      readonly outcome: SignInOutcome | undefined;
+      readonly isGoogleEnabled?: boolean;
+      readonly googleNotice?: GoogleNotice;
+    }
   | {
       readonly screen: "link";
       readonly status: SignInLinkOutcome["status"] | undefined;
@@ -49,6 +57,19 @@ const SAMPLES: Readonly<Record<string, Sample>> = {
   enviado: { screen: "form", outcome: { status: "sent" } },
   enlace: { screen: "link", status: undefined },
   vencido: { screen: "link", status: "invalid_link" },
+  google: { screen: "form", outcome: undefined, isGoogleEnabled: true },
+  "sin-acceso": {
+    screen: "form",
+    outcome: undefined,
+    isGoogleEnabled: true,
+    googleNotice: "denied",
+  },
+  "google-fallo": {
+    screen: "form",
+    outcome: undefined,
+    isGoogleEnabled: true,
+    googleNotice: "failed",
+  },
 };
 
 export function loader({ request }: Route.LoaderArgs): Sample & {
@@ -76,6 +97,8 @@ export default function DevSignIn({
       <SignInScreen
         protection={loaderData.protection}
         outcome={loaderData.outcome}
+        isGoogleEnabled={loaderData.isGoogleEnabled}
+        googleNotice={loaderData.googleNotice}
       />
     );
   }
