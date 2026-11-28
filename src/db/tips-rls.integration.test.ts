@@ -244,6 +244,19 @@ describeIntegration("tips: RLS", () => {
     },
   );
 
+  it.each(["public.tips", "public.tip_translations"])(
+    "sin sesión no hay permiso de escribir en %s",
+    async (table) => {
+      const rows = await database<{ can_write: boolean }[]>`
+        select has_table_privilege(
+          'anon', ${table}, 'insert, update, delete, truncate'
+        ) as can_write
+      `;
+
+      expect(takeOnlyRow(rows, "privilegios").can_write).toBe(false);
+    },
+  );
+
   it("ninguna función de public borra tips", async () => {
     const rows = await database<{ name: string }[]>`
       select proname::text as name from pg_proc

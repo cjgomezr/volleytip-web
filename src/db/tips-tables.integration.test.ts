@@ -4,8 +4,13 @@ import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
 import { TIP_FUNDAMENTALS, TIP_LEVELS, TIP_ORIENTATIONS } from "~/lib/tips";
 import {
   connectToLocalDatabase,
+  createTestUser,
+  deleteTestUsers,
+  runAs,
   takeOnlyRow,
   type Database,
+  type Session,
+  type UserRole,
 } from "~/testing/database";
 import { describeIntegration } from "~/testing/describe-integration";
 import { createTipRows, type TipRows } from "~/testing/tip-rows";
@@ -270,6 +275,45 @@ describeIntegration("tips: tablas", () => {
     ).rejects.toThrow(/tip_translations_keys_check/);
   });
 
+  it("rechaza una clave en blanco en un arreglo que no empieza en uno", async () => {
+    const { id } = await tips.insert();
+
+    await expect(
+      database`
+        update public.tip_translations set keys = '[5:5]={" "}'::text[]
+        where tip_id = ${id}
+      `,
+    ).rejects.toThrow(/tip_translations_keys_check/);
+  });
+
+  it.each(["achievement", "common_error", "practice"])(
+    "rechaza %s en blanco",
+    async (column) => {
+      const { id } = await tips.insert();
+
+      await expect(
+        database`
+          update public.tip_translations set ${database(column)} = '  '
+          where tip_id = ${id}
+        `,
+      ).rejects.toThrow(new RegExp(`tip_translations_${column}_check`));
+    },
+  );
+
+  it.each(["thumbnail_url", "tiktok_url"])(
+    "rechaza en %s una dirección que no es https",
+    async (column) => {
+      const { id } = await tips.insert();
+
+      await expect(
+        database`
+          update public.tips set ${database(column)} = 'javascript:alert(1)'
+          where id = ${id}
+        `,
+      ).rejects.toThrow(new RegExp(`tips_${column}_check`));
+    },
+  );
+
   it("actualiza updated_at al editar un tip", async () => {
     const { id } = await tips.insert();
 
@@ -295,5 +339,100 @@ describeIntegration("tips: tablas", () => {
       expect(row.has_rls).toBe(true);
       expect(row.comment).toMatch(/^scope: shared\./);
     }
+  });
+});
+
+async function readFeaturedSlugs(): Promise<string[]> {
+  const rows = await database<{ slug: string }[]>`
+    select slug from public.tips where is_featured
+  `;
+  return rows.map(({ slug }) => slug);
+}
+
+describeIntegration("tips: destacado", () => {
+  afterAll(() => deleteTestUsers(database));
+
+  async function feature(session: Session, tipId: string): Promise<void> {
+    await runAs(
+      database,
+      session,
+      (transaction) => transaction`select public.set_featured_tip(${tipId})`,
+    );
+  }
+
+  async function signIn(role: UserRole): Promise<Session> {
+    const user = await createTestUser(database, { role });
+    return { kind: "signedIn", userId: user.id };
+  }
+
+  it("un admin destaca un tip y el que lo era deja de serlo", async () => {
+    await tips.insert({ isFeatured: true });
+    const next = await tips.insert();
+
+    await feature(await signIn("admin"), next.id);
+
+    expect(await readFeaturedSlugs()).toEqual([next.slug]);
+  });
+
+  it("destacar el que ya lo era lo deja igual", async () => {
+    const current = await tips.insert({ isFeatured: true });
+
+    await feature(await signIn("admin"), current.id);
+
+    expect(await readFeaturedSlugs()).toEqual([current.slug]);
+  });
+
+  it("con un id que no existe falla y conserva el destacado", async () => {
+    const current = await tips.insert({ isFeatured: true });
+
+    await expect(feature(await signIn("admin"), randomUUID())).rejects.toThrow(
+      /no existe/,
+    );
+    expect(await readFeaturedSlugs()).toEqual([current.slug]);
+  });
+
+  it("dos a la vez dejan uno solo", async () => {
+    const first = await tips.insert();
+    const second = await tips.insert();
+    const admin = await signIn("admin");
+    // La conexión de las pruebas es una sola: la simultaneidad pide dos.
+    const other = connectToLocalDatabase();
+
+    try {
+      await Promise.all([
+        feature(admin, first.id),
+        runAs(
+          other,
+          admin,
+          (transaction) =>
+            transaction`select public.set_featured_tip(${second.id})`,
+        ),
+      ]);
+    } finally {
+      await other.end();
+    }
+
+    expect(await readFeaturedSlugs()).toHaveLength(1);
+  });
+
+  it.each(["buyer", "staff"] as const)(
+    "un %s no cambia el destacado",
+    async (role) => {
+      const current = await tips.insert({ isFeatured: true });
+      const next = await tips.insert();
+
+      await expect(feature(await signIn(role), next.id)).rejects.toThrow(
+        /no existe/,
+      );
+      expect(await readFeaturedSlugs()).toEqual([current.slug]);
+    },
+  );
+
+  it("sin sesión la función no se puede ejecutar", async () => {
+    const { id } = await tips.insert();
+
+    await expect(feature({ kind: "anonymous" }, id)).rejects.toThrow(
+      /permission denied/,
+    );
   });
 });

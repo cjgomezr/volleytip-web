@@ -99,13 +99,17 @@ describeIntegration("tips: public_tips", () => {
     expect(Object.keys(row ?? {}).sort()).toEqual(VIEW_COLUMNS);
   });
 
-  it("trae un objeto vacío de traducciones en un tip sin textos", async () => {
-    await tips.insert({ translations: {} });
+  it.each([
+    ["sin textos", {}],
+    ["solo con inglés", { en: { title: "Serve" } }],
+  ])(
+    "no muestra un publicado %s: el español es obligatorio",
+    async (_what, translations) => {
+      await tips.insert({ translations });
 
-    const [row] = await readPublicView();
-
-    expect(row?.translations).toEqual({});
-  });
+      expect(await readPublicView()).toEqual([]);
+    },
+  );
 
   it("a un admin tampoco le muestra lo que no está publicado", async () => {
     await tips.insert({ status: "draft", publishedAt: null });

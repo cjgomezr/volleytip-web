@@ -801,6 +801,7 @@ export type Database = {
         };
         Returns: Database["public"]["Enums"]["publish_status"];
       };
+      set_featured_tip: { Args: { p_tip_id: string }; Returns: undefined };
       write_faq_translations: {
         Args: { p_faq_id: string; p_translations: Json };
         Returns: undefined;

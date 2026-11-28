@@ -21,6 +21,12 @@ import {
 
 export const TIPS_PAGE_SIZE = 20;
 
+// El tope de filas que la API devuelve en una consulta.
+const MAX_PAGE_SIZE = 1000;
+// Mucho más allá de cualquier catálogo. Un comienzo mayor se recorta aquí
+// porque la base rechaza los números que no le caben.
+const MAX_OFFSET = 1_000_000;
+
 // Código con que la API rechaza un rango que empieza después de la última fila.
 const RANGE_NOT_SATISFIABLE = "PGRST103";
 
@@ -150,13 +156,31 @@ function toTip(row: TipRow, language: Language): Tip | null {
   };
 }
 
+interface WholeNumberRange {
+  readonly min: number;
+  readonly max: number;
+  readonly fallback: number;
+}
+
+/** Lleva a un entero válido un número que puede venir de la dirección. */
+function toWholeNumber(
+  value: number,
+  { min, max, fallback }: WholeNumberRange,
+): number {
+  if (Number.isNaN(value) || value < min) {
+    return fallback;
+  }
+  return Math.min(Math.floor(value), max);
+}
+
 function searchArguments(
   language: Language,
   { query, fundamental, level }: TipFilters,
 ): SearchArguments {
   return {
     p_locale: language,
-    p_query: query,
+    // La base rechaza el carácter nulo, que puede llegar en la dirección.
+    p_query: query?.replaceAll("\u0000", "").trim(),
     p_fundamental: fundamental,
     p_level: level,
   };
@@ -197,13 +221,23 @@ export async function listPublishedTips(
     ...filters
   }: ListPublishedTipsOptions = {},
 ): Promise<TipPage> {
+  const first = toWholeNumber(offset, {
+    min: 0,
+    max: MAX_OFFSET,
+    fallback: 0,
+  });
+  const size = toWholeNumber(limit, {
+    min: 1,
+    max: MAX_PAGE_SIZE,
+    fallback: TIPS_PAGE_SIZE,
+  });
   const { data, count, error } = await client
     .rpc("search_public_tips", searchArguments(language, filters), {
       count: "exact",
     })
     .order("published_at", { ascending: false })
     .order("id", { ascending: true })
-    .range(offset, offset + limit - 1);
+    .range(first, first + size - 1);
 
   if (error?.code === RANGE_NOT_SATISFIABLE) {
     return { tips: [], total: await countTips(client, language, filters) };

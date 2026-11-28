@@ -43,8 +43,9 @@ create table public.tips (
   constraint tips_bunny_video_id_key unique (bunny_video_id),
   constraint tips_bunny_video_id_check check (bunny_video_id ~ '\S'),
   constraint tips_duration_seconds_check check (duration_seconds > 0),
-  constraint tips_thumbnail_url_check check (thumbnail_url ~ '\S'),
-  constraint tips_tiktok_url_check check (tiktok_url ~ '\S'),
+  -- Se pintan como direcciones de imagen y de enlace: nunca otro esquema.
+  constraint tips_thumbnail_url_check check (thumbnail_url ~ '^https://\S+$'),
+  constraint tips_tiktok_url_check check (tiktok_url ~ '^https://\S+$'),
   -- `coalesce`: sin la llave `type`, la comparación daría nulo y pasaría.
   constraint tips_promo_check check (
     promo is null or coalesce(promo ->> 'type' in ('app', 'social'), false)
@@ -94,9 +95,17 @@ create table public.tip_translations (
   updated_at timestamptz not null default now(),
   constraint tip_translations_pkey primary key (tip_id, locale),
   constraint tip_translations_title_check check (title ~ '\S'),
+  -- Un texto que no se escribió es nulo, nunca blanco.
+  constraint tip_translations_achievement_check check (achievement ~ '\S'),
+  constraint tip_translations_common_error_check check (common_error ~ '\S'),
+  constraint tip_translations_practice_check check (practice ~ '\S'),
   -- Hasta tres claves, ninguna nula ni en blanco.
   constraint tip_translations_keys_check check (
     cardinality(keys) <= 3
+    -- Una sola dimensión que empieza en uno: así los índices de abajo las
+    -- alcanzan todas. Un arreglo vacío no tiene dimensiones.
+    and coalesce(array_ndims(keys), 1) = 1
+    and coalesce(array_lower(keys, 1), 1) = 1
     and array_position(keys, null) is null
     and (cardinality(keys) < 1 or keys[1] ~ '\S')
     and (cardinality(keys) < 2 or keys[2] ~ '\S')
@@ -111,6 +120,40 @@ create trigger tip_translations_set_updated_at
   before update on public.tip_translations
   for each row
   execute function public.set_updated_at();
+
+-- ---------------------------------------------------------------------------
+-- set_featured_tip: cambiar el destacado en una sola operación
+-- ---------------------------------------------------------------------------
+
+-- Quita el destacado al que lo tenga y se lo pone al tip pedido. `security
+-- invoker`: las políticas de RLS mandan, así que a quien no puede escribir no
+-- se le actualiza ninguna fila y recibe el mismo rechazo que un id que no
+-- existe. El rechazo revierte lo que ya se hubiera quitado. El candado pone en
+-- fila dos cambios simultáneos.
+create function public.set_featured_tip(p_tip_id uuid)
+returns void
+language plpgsql
+set search_path = ''
+as $$
+begin
+  perform pg_catalog.pg_advisory_xact_lock(
+    pg_catalog.hashtext('public.tips.featured')
+  );
+  update public.tips set is_featured = false
+  where is_featured and id <> p_tip_id;
+  update public.tips set is_featured = true where id = p_tip_id;
+  if not found then
+    raise exception 'el tip % no existe', p_tip_id using errcode = 'P0002';
+  end if;
+end;
+$$;
+
+comment on function public.set_featured_tip(uuid) is
+  'Destaca un tip y deja de destacar al anterior. Solo lo logra quien puede editar tips.';
+
+revoke all on function public.set_featured_tip(uuid) from public, anon;
+grant execute on function public.set_featured_tip(uuid)
+  to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- Permisos y RLS
@@ -216,28 +259,31 @@ select
   tip.promo,
   tip.is_featured,
   tip.published_at,
-  coalesce(
-    (
-      select jsonb_object_agg(
-        translation.locale,
-        jsonb_build_object(
-          'title', translation.title,
-          'achievement', translation.achievement,
-          'keys', to_jsonb(translation.keys),
-          'common_error', translation.common_error,
-          'practice', translation.practice
-        )
+  (
+    select jsonb_object_agg(
+      translation.locale,
+      jsonb_build_object(
+        'title', translation.title,
+        'achievement', translation.achievement,
+        'keys', to_jsonb(translation.keys),
+        'common_error', translation.common_error,
+        'practice', translation.practice
       )
-      from public.tip_translations as translation
-      where translation.tip_id = tip.id
-    ),
-    '{}'::jsonb
+    )
+    from public.tip_translations as translation
+    where translation.tip_id = tip.id
   ) as translations
 from public.tips as tip
-where tip.status = 'published' and tip.published_at <= now();
+where tip.status = 'published'
+  and tip.published_at <= now()
+  -- El español es obligatorio: sin él no hay título ni respaldo que mostrar.
+  and exists (
+    select 1 from public.tip_translations as spanish
+    where spanish.tip_id = tip.id and spanish.locale = 'es'
+  );
 
 comment on view public.public_tips is
-  'scope: shared. Los tips publicados con fecha pasada, con el id del video de Bunny y sus textos por idioma en `translations` (FR-078, AC-034). La lee la app: cambiar sus columnas la puede romper.';
+  'scope: shared. Los tips publicados con fecha pasada y con textos en español, con el id del video de Bunny y sus textos por idioma en `translations` (FR-078, AC-034). La lee la app: cambiar sus columnas la puede romper.';
 
 revoke all on table public.public_tips
   from public, anon, authenticated, service_role;
@@ -250,9 +296,8 @@ grant select on table public.public_tips
 
 -- Busca en el título, la frase de logro y las claves que muestra la página de
 -- ese idioma: campo por campo, y en español lo que falte (FR-007). No
--- distingue mayúsculas ni tildes, y lo escrito es texto: no hay comodines. Un
--- tip sin español no se puede mostrar y no sale. El orden y la página los pide
--- quien llama.
+-- distingue mayúsculas ni tildes, y lo escrito es texto: no hay comodines. El
+-- orden y la página los pide quien llama.
 create function public.search_public_tips(
   p_locale text,
   p_query text default null,
@@ -295,15 +340,14 @@ as $$
       )
     ) as content
   ) as shown
-  where source.spanish is not null
-    and (p_fundamental is null or tip.fundamental = p_fundamental)
+  where (p_fundamental is null or tip.fundamental = p_fundamental)
     and (p_level is null or tip.level = p_level)
     and (
-      coalesce(btrim(p_query), '') = ''
+      coalesce(p_query, '') !~ '\S'
       or position(
         lower(extensions.unaccent(
           'extensions.unaccent'::regdictionary,
-          normalize(btrim(p_query), nfc)
+          normalize(btrim(p_query, E' \t\r\n'), nfc)
         ))
         in lower(extensions.unaccent(
           'extensions.unaccent'::regdictionary,

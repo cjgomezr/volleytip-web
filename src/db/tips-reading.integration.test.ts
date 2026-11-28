@@ -118,6 +118,18 @@ describeIntegration("tips: búsqueda", () => {
     expect((await search(`${mark}alto`)).total).toBe(0);
   });
 
+  it("ignora tabuladores, saltos de línea y el carácter nulo", async () => {
+    newMark();
+    await seedMarked("Uno");
+
+    expect(
+      (
+        await search(`	${mark}\u0000
+`)
+      ).total,
+    ).toBe(1);
+  });
+
   it("trata los comodines como texto", async () => {
     newMark();
     await seedMarked(`${mark} cien`);
@@ -206,6 +218,39 @@ describeIntegration("tips: listar y leer", () => {
       const page = await search(mark, "es", { offset });
 
       expect(page).toMatchObject({ tips: [], total: 1 });
+    },
+  );
+
+  it.each([-5, Number.NaN, 0.5])(
+    "un comienzo de %s se lee como la primera página",
+    async (offset) => {
+      newMark();
+      await seedMarked("Único");
+
+      expect((await search(mark, "es", { offset })).titles).toEqual(["Único"]);
+    },
+  );
+
+  it.each([1e20, Number.POSITIVE_INFINITY])(
+    "un comienzo de %s llega vacío con el total",
+    async (offset) => {
+      newMark();
+      await seedMarked("Único");
+
+      expect(await search(mark, "es", { offset })).toMatchObject({
+        tips: [],
+        total: 1,
+      });
+    },
+  );
+
+  it.each([0, -1, Number.NaN, 1e20])(
+    "un tamaño de página de %s no rompe la lectura",
+    async (limit) => {
+      newMark();
+      await seedMarked("Único");
+
+      expect((await search(mark, "es", { limit })).titles).toEqual(["Único"]);
     },
   );
 
