@@ -49,19 +49,28 @@ const TURNSTILE_STAND_IN = `
 `;
 
 const TURNSTILE_REQUESTS = "https://challenges.cloudflare.com/**";
+// El dominio de las miniaturas de los tips que siembran las pruebas
+// (`src/testing/tip-rows.ts`).
+const THUMBNAIL_REQUESTS = "https://miniaturas.prueba.volleytip.test/**";
 
 /**
  * Responde desde aquí lo que un contexto pide fuera del sitio: las imágenes
- * del CDN y el script de Turnstile. El `test` de abajo lo hace solo con el
+ * del CDN, las miniaturas de los tips y el script de Turnstile. El `test` de
+ * abajo lo hace solo con el
  * contexto de cada prueba; una prueba que abre el suyo con
  * `browser.newContext()` tiene que llamarlo.
  */
 export async function routeExternalRequests(
   context: BrowserContext,
 ): Promise<void> {
-  await context.route(`https://${TEST_ENV.IMAGE_CDN_HOST}/**`, (route) =>
-    route.fulfill({ path: STAND_IN_IMAGE, contentType: "image/jpeg" }),
-  );
+  for (const images of [
+    `https://${TEST_ENV.IMAGE_CDN_HOST}/**`,
+    THUMBNAIL_REQUESTS,
+  ]) {
+    await context.route(images, (route) =>
+      route.fulfill({ path: STAND_IN_IMAGE, contentType: "image/jpeg" }),
+    );
+  }
   await context.route(TURNSTILE_REQUESTS, (route) =>
     route.fulfill({
       contentType: "text/javascript",

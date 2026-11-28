@@ -62,8 +62,14 @@ function useShowCurrentOption(
     const list = listRef.current;
     const current = list?.querySelector<HTMLElement>('[aria-current="true"]');
     if (!list || !current) return;
-    const margin = (list.clientWidth - current.offsetWidth) / 2;
-    list.scrollTo({ left: current.offsetLeft - margin });
+    // Se repite cuando la opción cambia de ancho: al llegar la fuente, todas
+    // las de la fila se mueven.
+    const observer = new ResizeObserver(() => {
+      const margin = (list.clientWidth - current.offsetWidth) / 2;
+      list.scrollTo({ left: current.offsetLeft - margin });
+    });
+    observer.observe(current);
+    return () => observer.disconnect();
   }, [currentId]);
   return listRef;
 }

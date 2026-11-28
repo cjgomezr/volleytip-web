@@ -2107,3 +2107,43 @@ for (const variant of PANEL_VARIANTS) {
     });
   }
 }
+
+// ---------------------------------------------------------------------------
+// Listado de tips (#158). Los estados se ven en /dev/tips, que no toca la
+// base; axe, el desborde y el comportamiento, con tips sembrados, los cubre
+// tests/tips-page.spec.ts.
+// ---------------------------------------------------------------------------
+
+const TIPS_PAGE_VARIANTS = [
+  { name: "datos", query: "" },
+  { name: "filtrado", query: "?estado=filtrado" },
+  { name: "sin-resultados", query: "?estado=sin-resultados" },
+  { name: "vacio", query: "?estado=vacio" },
+] as const;
+
+for (const language of CONTACT_PAGE_LANGUAGES) {
+  for (const variant of TIPS_PAGE_VARIANTS) {
+    for (const vp of viewports) {
+      test.describe(`tips ${language.name} ${variant.name} @ ${vp.name}`, () => {
+        test.use({ viewport: { width: vp.width, height: vp.height } });
+
+        test("coincide con la línea base aprobada", async ({ page }) => {
+          await page.goto(
+            `${APP_URL}${language.prefix}/dev/tips${variant.query}`,
+          );
+          await waitForSettledPage(page);
+          await waitForImages(page);
+          const name = `tips-${language.name}-${variant.name}-${vp.name}.png`;
+          await createMissingLocalBaseline(name, () =>
+            page.screenshot({ ...SCREENSHOT_OPTIONS, fullPage: true }),
+          );
+          await expect(page).toHaveScreenshot(name, {
+            ...SCREENSHOT_OPTIONS,
+            fullPage: true,
+            maxDiffPixels: PAGE_MAX_DIFF_PIXELS,
+          });
+        });
+      });
+    }
+  }
+}
