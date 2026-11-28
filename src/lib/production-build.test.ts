@@ -36,6 +36,9 @@ const SERVER_ENV_NAMES = Object.keys({
   CLIENT_IP_TRUSTED_HOPS: true,
   IMAGE_CDN_HOST: true,
   SITE_ORIGIN: true,
+  BUNNY_STREAM_LIBRARY_ID: true,
+  BUNNY_STREAM_API_KEY: true,
+  BUNNY_STREAM_CDN_HOST: true,
 });
 const REACT_ROUTER_CLI = path.join(
   REPO_ROOT,
@@ -66,6 +69,9 @@ const SENTINEL_ENV = {
   IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
   // Distinto de la dirección con la que se pide en estas pruebas.
   SITE_ORIGIN: "https://sitio-construido.volleytip.test",
+  BUNNY_STREAM_LIBRARY_ID: "133742",
+  BUNNY_STREAM_API_KEY: "centinela-llave-de-bunny-stream-6c0a95",
+  BUNNY_STREAM_CDN_HOST: "videos-de-prueba.b-cdn.net",
 } as const;
 const SECRET_SENTINELS = [
   SENTINEL_ENV.SUPABASE_URL,
@@ -73,6 +79,7 @@ const SECRET_SENTINELS = [
   SENTINEL_ENV.SUPABASE_SERVICE_ROLE_KEY,
   SENTINEL_ENV.TURNSTILE_SECRET_KEY,
   SENTINEL_ENV.FORM_PROTECTION_SECRET,
+  SENTINEL_ENV.BUNNY_STREAM_API_KEY,
 ];
 
 interface ClientAsset {

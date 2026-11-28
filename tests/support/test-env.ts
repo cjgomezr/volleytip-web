@@ -33,4 +33,9 @@ export const TEST_ENV = {
   // Es opcional, pero se fija para que el `.env.local` de nadie la encienda.
   // El botón se prueba en la muestra `/dev/entrar?estado=google`.
   GOOGLE_SIGN_IN_ENABLED: "false",
+  // Con APP_ENV=test el servidor usa el Bunny Stream simulado
+  // (`openBunnyStream`), así que ninguno de los tres sale a la red.
+  BUNNY_STREAM_LIBRARY_ID: "100000",
+  BUNNY_STREAM_API_KEY: "llave-de-bunny-stream-de-prueba",
+  BUNNY_STREAM_CDN_HOST: "videos-de-prueba.b-cdn.net",
 } as const;

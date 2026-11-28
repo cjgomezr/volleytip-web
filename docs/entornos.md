@@ -2,7 +2,7 @@
 
 Qué entornos tiene volleytip.com, qué variables necesita cada uno, dónde se obtiene cada valor y dónde se pone. Este documento solo lleva **nombres**. Ningún valor real (llaves, contraseñas, URLs de proyecto) se escribe aquí ni en ningún otro archivo del repo.
 
-Lo abrió el ticket #23. Lo completan #29 (secretos del workflow de migraciones), #31 (Railway), #34 (Turnstile y protección de formularios) y #36 (imágenes).
+Lo abrió el ticket #23. Lo completan #29 (secretos del workflow de migraciones), #31 (Railway), #34 (Turnstile y protección de formularios), #36 (imágenes) y #152 (Bunny Stream).
 
 ## Entornos
 
@@ -124,7 +124,7 @@ Para saber a qué entorno apunta un servicio, se abre su dirección con `/health
 
 ### Variables de cada servicio
 
-Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación y las cinco de la protección de formularios. Ninguna llave ni secreto se repite entre los dos.
+Se ponen en la pestaña Variables del servicio. Ninguna llave ni secreto se repite entre los dos.
 
 | Variable                    | Servicio `staging`              | Servicio `production`                         |
 | --------------------------- | ------------------------------- | --------------------------------------------- |
@@ -139,11 +139,14 @@ Se ponen en la pestaña Variables del servicio. Son las cuatro de la aplicación
 | `CLIENT_IP_TRUSTED_HOPS`    | `1`                             | El mismo que staging                          |
 | `IMAGE_CDN_HOST`            | Dominio de la zona de Bunny     | El mismo que staging                          |
 | `SITE_ORIGIN`               | `https://staging.volleytip.com` | `https://production-volleytip.up.railway.app` |
+| `BUNNY_STREAM_LIBRARY_ID`   | De la librería de pruebas       | De la librería real                           |
+| `BUNNY_STREAM_API_KEY`      | De la librería de pruebas       | De la librería real                           |
+| `BUNNY_STREAM_CDN_HOST`     | De la librería de pruebas       | De la librería real                           |
 
-De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios", "Imágenes" y "Dirección pública del sitio".
+De dónde sale cada valor está arriba, en "Variables de la aplicación", y abajo, en "Protección de formularios", "Imágenes", "Videos (Bunny Stream)" y "Dirección pública del sitio".
 
 - **`SUPABASE_SERVICE_ROLE_KEY` va sellada** (menú de la variable, Seal). Sellada no se puede leer desde el panel ni desde la API de Railway; el servidor la recibe igual. No se puede quitar el sello: para cambiarla se reemplaza el valor. El original sigue en el gestor de contraseñas.
-- **`TURNSTILE_SECRET_KEY` y `FORM_PROTECTION_SECRET` también van selladas.**
+- **`TURNSTILE_SECRET_KEY`, `FORM_PROTECTION_SECRET` y `BUNNY_STREAM_API_KEY` también van selladas.**
 - **`PORT` no se pone.** Railway la define sola y `npm run start` la lee.
 - **Si falta una variable, el servidor no arranca.** El despliegue falla y el registro nombra la variable, sin imprimir ningún valor.
 
@@ -430,6 +433,45 @@ Optimizer cuesta US$9,50 al mes por zona, más el tráfico. Fuente, consultada e
 - El componente pide dos anchos, el normal y el doble para pantallas de alta densidad, y siempre lleva `width` y `height` para que la página no salte al cargar.
 - **Los logos no pasan por aquí.** Viven en `public/brand/` y se pintan con `<img>`. El constructor rechaza una ruta que empiece por `brand/`.
 - **El formato no va en la dirección.** Lo negocia Bunny con el navegador. La documentación de Bunny solo describe esa negociación automática para WebP, no para AVIF.
+
+## Videos (Bunny Stream)
+
+Los videos de los tips viven en Bunny Stream. El servidor lista, lee y crea videos con la API y firma las subidas que hará el navegador (#152). El código está en `src/lib/bunny/`.
+
+| Variable                  | Qué es                                                        | Dónde se obtiene                                                     |
+| ------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `BUNNY_STREAM_LIBRARY_ID` | Número de la librería de videos                               | Panel de Bunny, Stream, la librería, sección API: "Video Library ID" |
+| `BUNNY_STREAM_API_KEY`    | Llave de API de **esa librería**, no la de la cuenta. Secreta | La misma sección: "API Key"                                          |
+| `BUNNY_STREAM_CDN_HOST`   | Dominio de la zona de la librería, sin `https://` ni ruta     | La misma sección: "CDN Hostname"                                     |
+
+Los nombres de los menús pueden cambiar un poco entre versiones del panel.
+
+- **La llave de API es secreta.** Solo la lee el servidor. El navegador recibe una firma que sirve para subir un video y vence en una hora.
+- **El dominio no es un secreto.** Llega al navegador en la dirección de cada miniatura. No es el de `IMAGE_CDN_HOST`: cada librería de Stream tiene su propia zona.
+- **Se validan al arrancar.** El id tiene que ser un número, la llave no lleva espacios ni tildes y el dominio va sin protocolo ni ruta. Si algo falla, el servidor no arranca y dice cuál.
+- **Antes de desplegar**, las tres tienen que estar en los dos servicios de Railway. Sin ellas el servidor no arranca.
+
+### Dos librerías
+
+Las dos viven en la misma cuenta de Bunny. El código no las distingue: cada entorno recibe las tres variables de la suya.
+
+| Entorno    | Librería                          | Dónde se ponen                                 |
+| ---------- | --------------------------------- | ---------------------------------------------- |
+| Local      | La de pruebas                     | `.env.local`                                   |
+| Staging    | La de pruebas                     | Variables del servicio `staging` en Railway    |
+| Producción | La real, con los videos del sitio | Variables del servicio `production` en Railway |
+| Pruebas    | Ninguna: usan un Bunny simulado   | Las pone la corrida                            |
+
+La librería de pruebas existe para que probar la subida no ensucie la real. Local y staging la comparten, que es la excepción a "ninguna llave se repite". Producción nunca la usa.
+
+En cada librería, en su sección de seguridad, "Allowed domains" lleva:
+
+- **La de pruebas:** `staging.volleytip.com` y `localhost`.
+- **La real:** `volleytip.com` y la dirección de Railway de producción.
+
+En las dos, el acceso directo a archivos queda sin bloquear, porque las miniaturas se pintan con `<img>`.
+
+Con `APP_ENV=test` el servidor usa el simulado (`src/testing/fake-bunny-stream.server.ts`) y ninguna petición sale hacia Bunny.
 
 ## Dirección pública del sitio
 

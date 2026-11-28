@@ -27,6 +27,9 @@ const VALID_SOURCE: EnvSource = {
   CLIENT_IP_TRUSTED_HOPS: "1",
   IMAGE_CDN_HOST: "imagenes-de-prueba.b-cdn.net",
   SITE_ORIGIN: "https://staging.volleytip.test",
+  BUNNY_STREAM_LIBRARY_ID: "133742",
+  BUNNY_STREAM_API_KEY: "llave-de-la-libreria-de-bunny",
+  BUNNY_STREAM_CDN_HOST: "videos-de-prueba.b-cdn.net",
 };
 
 function withOverrides(overrides: EnvSource): EnvSource {
@@ -60,6 +63,9 @@ describe("env del servidor", () => {
         imageCdnHost: "imagenes-de-prueba.b-cdn.net",
         siteOrigin: "https://staging.volleytip.test",
         googleSignInEnabled: false,
+        bunnyStreamLibraryId: "133742",
+        bunnyStreamApiKey: "llave-de-la-libreria-de-bunny",
+        bunnyStreamCdnHost: "videos-de-prueba.b-cdn.net",
       },
     });
   });
@@ -384,5 +390,77 @@ describe("google: configuración", () => {
     );
 
     expect(message).toContain("GOOGLE_SIGN_IN_ENABLED");
+  });
+});
+
+describe("bunny stream: entorno", () => {
+  const BUNNY_VARIABLES = [
+    "BUNNY_STREAM_LIBRARY_ID",
+    "BUNNY_STREAM_API_KEY",
+    "BUNNY_STREAM_CDN_HOST",
+  ] as const;
+
+  it("arranca con las tres variables, sin los espacios de los lados", () => {
+    const result = parseServerEnv(
+      withOverrides({
+        BUNNY_STREAM_LIBRARY_ID: " 98765 ",
+        BUNNY_STREAM_API_KEY: " 0f1e2d3c-4b5a-6978-8899aabbccdd-1122-3344 ",
+        BUNNY_STREAM_CDN_HOST: " vz-1a2b3c4d-5e6.b-cdn.net ",
+      }),
+    );
+
+    expect(result).toMatchObject({
+      ok: true,
+      env: {
+        bunnyStreamLibraryId: "98765",
+        bunnyStreamApiKey: "0f1e2d3c-4b5a-6978-8899aabbccdd-1122-3344",
+        bunnyStreamCdnHost: "vz-1a2b3c4d-5e6.b-cdn.net",
+      },
+    });
+  });
+
+  it.each(BUNNY_VARIABLES)("falla nombrando %s cuando falta", (name) => {
+    const message = expectFailure(withOverrides({ [name]: undefined }));
+
+    expect(message).toContain(`Falta ${name}`);
+  });
+
+  it.each(["0", "-1", "12.5", "012", "mi-libreria", "133742/videos"])(
+    "rechaza BUNNY_STREAM_LIBRARY_ID=%j, que no es un número de librería",
+    (libraryId) => {
+      const message = expectFailure(
+        withOverrides({ BUNNY_STREAM_LIBRARY_ID: libraryId }),
+      );
+
+      expect(message).toContain("BUNNY_STREAM_LIBRARY_ID");
+    },
+  );
+
+  // Con espacios, saltos o tildes no cabe en un encabezado HTTP.
+  it.each(["dos palabras", "con\nsalto", "llave-con-tílde"])(
+    "rechaza una BUNNY_STREAM_API_KEY con otra forma (%j) sin imprimirla",
+    (apiKey) => {
+      const message = expectFailure(
+        withOverrides({ BUNNY_STREAM_API_KEY: apiKey }),
+      );
+
+      expect(message).toContain("BUNNY_STREAM_API_KEY");
+      expect(message).not.toContain(apiKey);
+    },
+  );
+
+  it.each([
+    "https://videos.b-cdn.net",
+    "videos.b-cdn.net/",
+    "videos.b-cdn.net/abc",
+    "videos.b-cdn.net:443",
+    "sin-punto",
+  ])("rechaza un dominio con protocolo o con ruta (%j)", (host) => {
+    const message = expectFailure(
+      withOverrides({ BUNNY_STREAM_CDN_HOST: host }),
+    );
+
+    expect(message).toContain("BUNNY_STREAM_CDN_HOST");
+    expect(message).not.toContain(host);
   });
 });
