@@ -36,6 +36,7 @@
 import { existsSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { waitForSettledPage } from "./support/page-ready";
 import { test } from "./support/panel-session";
 import {
   expect,
@@ -234,9 +235,7 @@ async function readTurnstileCalls(page: Page): Promise<TurnstileCall[]> {
 
 async function openComponentsPage(page: Page): Promise<void> {
   await page.goto(COMPONENTS_URL);
-  await page.evaluate(async () => {
-    await document.fonts.ready;
-  });
+  await waitForSettledPage(page);
 }
 
 interface FocusRing {

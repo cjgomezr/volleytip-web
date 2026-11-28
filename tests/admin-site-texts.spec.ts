@@ -7,6 +7,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Locator, Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const MIN_TOUCH_TARGET = 44;
@@ -66,10 +67,10 @@ async function showWholePage(page: Page): Promise<void> {
   // Al crecer la ventana el puntero queda sobre otra cosa: sin transiciones,
   // axe no mide un color a medio cambiar.
   await page.emulateMedia({ reducedMotion: "reduce" });
-  const height = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return document.documentElement.scrollHeight;
-  });
+  await waitForSettledPage(page);
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
   await page.setViewportSize({
     width: size.width,
     height: height + SPARE_HEIGHT,

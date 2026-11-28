@@ -8,6 +8,7 @@ import { randomUUID } from "node:crypto";
 import AxeBuilder from "@axe-core/playwright";
 import type { Locator, Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { readLocalSupabaseStatusOnce } from "./support/local-supabase-status-once";
 import { insertMessages, removeMessages } from "./support/message-rows";
 import { expect, test as panelTest } from "./support/panel-session";
@@ -211,6 +212,7 @@ test.describe("bandeja en computador", () => {
     page,
   }) => {
     await page.goto("/dev/mensajes");
+    await waitForSettledPage(page);
 
     await page
       .locator("[data-message-row] time")
@@ -224,6 +226,7 @@ test.describe("bandeja en computador", () => {
     page,
   }) => {
     await page.goto("/dev/mensajes");
+    await waitForSettledPage(page);
 
     expect(await readRowTargets(page)).toEqual(["1", "2", "3", "4"]);
     await page.getByLabel("Buscar por nombre o correo").click();
@@ -276,6 +279,7 @@ test.describe("bandeja en celular", () => {
     page,
   }) => {
     await page.goto("/dev/mensajes");
+    await waitForSettledPage(page);
 
     await page
       .locator("[data-message-row] time")
@@ -514,6 +518,7 @@ test.describe("bandeja real", () => {
   }) => {
     await signInToPanel({ role: "admin" });
     await page.goto("/admin");
+    await waitForSettledPage(page);
 
     await page
       .getByRole("main")

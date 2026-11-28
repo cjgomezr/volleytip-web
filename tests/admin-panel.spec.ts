@@ -6,6 +6,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const NOT_FOUND_STATUS = 404;
@@ -201,6 +202,7 @@ for (const javaScriptEnabled of [true, false]) {
     }) => {
       const { cookies } = await signInToPanel({ role: "admin" });
       await page.goto("/admin");
+      if (javaScriptEnabled) await waitForSettledPage(page);
 
       await page
         .getByRole("complementary")

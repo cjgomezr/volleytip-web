@@ -3,6 +3,7 @@
  * acepta o se rechaza, y la elección se recuerda. Las capturas del
  * aviso viven en `ui.spec.ts`, junto a las demás.
  */
+import { waitForSettledPage } from "./support/page-ready";
 import { test, expect, routeExternalRequests, type Page } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -56,6 +57,7 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     page,
   }) => {
     await page.goto(`${APP_URL}/?a=1`);
+    await waitForSettledPage(page);
     await page.getByRole("button", { name: "View in English" }).click();
 
     await expect(page).toHaveURL(`${APP_URL}/en/?a=1`);
@@ -67,6 +69,7 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     page,
   }) => {
     await page.goto(APP_URL);
+    await waitForSettledPage(page);
     await page.getByRole("button", { name: "Stay on this page" }).click();
 
     await expect(page).toHaveURL(`${APP_URL}/`);
@@ -81,6 +84,7 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     page,
   }) => {
     await page.goto(APP_URL);
+    await waitForSettledPage(page);
     await page.getByRole("button", { name: "Stay on this page" }).click();
     // Espera a que termine el envío antes de volver a navegar.
     await expect(languageNotice(page)).toHaveCount(0);
@@ -94,6 +98,7 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
     page,
   }) => {
     await page.goto(APP_URL);
+    await waitForSettledPage(page);
     await page.getByRole("button", { name: "View in English" }).click();
     await expect(page).toHaveURL(ENGLISH_HOME_URL);
 
@@ -186,7 +191,6 @@ test.describe("aviso de idioma con el navegador en inglés", () => {
 // El selector vive por ahora solo en la página de muestra (W3 lo pone en el
 // header). Ahí se comprueba de punta a punta que cambiar de idioma guarda la
 // elección.
-const SWITCHER_LINK = '[data-zone="dark"] nav a[lang]';
 
 function switcherLink(
   page: Page,
@@ -236,13 +240,7 @@ test.describe("selector de idioma: guarda la elección", () => {
   // un clic no guarda nada. Estas pruebas hablan del selector ya activo.
   async function openComponentsPage(page: Page): Promise<void> {
     await page.goto(COMPONENTS_URL);
-    await page.waitForFunction((selector) => {
-      const link = document.querySelector(selector);
-      return (
-        link !== null &&
-        Object.keys(link).some((key) => key.startsWith("__reactProps"))
-      );
-    }, SWITCHER_LINK);
+    await waitForSettledPage(page);
   }
 
   test("al elegir inglés, la elección guardada pasa a ser inglés", async ({

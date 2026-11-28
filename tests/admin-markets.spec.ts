@@ -7,6 +7,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const MIN_TOUCH_TARGET = 44;
@@ -30,13 +31,13 @@ async function expectAccessibleWithoutOverflow(page: Page): Promise<void> {
   expect(overflows).toBe(false);
   // Con la ventana tan alta como la página, la barra inferior fija no tapa a
   // medias ningún control: axe lo contaría como una zona de toque pequeña.
-  // Se mide con las fuentes ya cargadas y se deja holgura: si la página crece
+  // Se mide la página ya acomodada y se deja holgura: si la página crece
   // después de medirla, el último botón vuelve a quedar a medias bajo la barra.
   const width = page.viewportSize()?.width ?? 0;
-  const height = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return document.documentElement.scrollHeight;
-  });
+  await waitForSettledPage(page);
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
   await page.setViewportSize({ width, height: height + SPARE_HEIGHT });
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
@@ -88,6 +89,7 @@ for (const viewport of VIEWPORTS) {
       await signInToPanel({ role: "admin" });
       const hasSidebar = viewport.width >= SIDEBAR_FROM_WIDTH;
       await page.goto(hasSidebar ? "/admin" : "/admin/mas");
+      await waitForSettledPage(page);
 
       await page
         .getByRole(hasSidebar ? "complementary" : "main")
@@ -98,9 +100,6 @@ for (const viewport of VIEWPORTS) {
       await expect(
         page.getByRole("heading", { level: 1, name: "Idiomas y mercados" }),
       ).toBeVisible();
-      // Axe mira la página cargada de nuevo: recién navegada en el servidor de
-      // desarrollo puede estar todavía sin estilos (#144).
-      await page.reload({ waitUntil: "networkidle" });
       await expectAccessibleWithoutOverflow(page);
     });
   });

@@ -7,6 +7,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const MIN_TOUCH_TARGET = 44;
@@ -133,6 +134,7 @@ for (const language of LANGUAGES) {
         page,
       }) => {
         await page.goto(`${language.shell}?resumen=fallo`);
+        await waitForSettledPage(page);
 
         await expect(page.getByText(language.failed)).toBeVisible();
         await expect(page.locator("[data-overview-value]")).toHaveCount(

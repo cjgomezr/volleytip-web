@@ -7,10 +7,13 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const MIN_TOUCH_TARGET = 44;
 const SIDEBAR_FROM_WIDTH = 768;
+/** Holgura para lo que todavía crezca después de medir la página. */
+const SPARE_HEIGHT = 200;
 const VIEWPORTS = [
   { width: 360, height: 800 },
   { width: 390, height: 844 },
@@ -34,12 +37,14 @@ async function expectAccessibleWithoutOverflow(page: Page): Promise<void> {
   expect(overflows).toBe(false);
   // Con la ventana tan alta como la página, la barra inferior fija no tapa a
   // medias ningún control: axe lo contaría como una zona de toque pequeña,
-  // aunque baste con desplazar la página.
+  // aunque baste con desplazar la página. Se mide la página ya acomodada y se
+  // deja holgura por si todavía crece.
+  await waitForSettledPage(page);
   const width = page.viewportSize()?.width ?? 0;
   const height = await page.evaluate(
     () => document.documentElement.scrollHeight,
   );
-  await page.setViewportSize({ width, height });
+  await page.setViewportSize({ width, height: height + SPARE_HEIGHT });
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
     .analyze();
@@ -88,6 +93,7 @@ for (const viewport of VIEWPORTS) {
       await signInToPanel({ role: "admin" });
       const hasSidebar = viewport.width >= SIDEBAR_FROM_WIDTH;
       await page.goto(hasSidebar ? "/admin" : "/admin/mas");
+      await waitForSettledPage(page);
 
       await page
         .getByRole(hasSidebar ? "complementary" : "main")
