@@ -2014,10 +2014,12 @@ const TEAM_STATES = [
   "lista",
   "invitada",
   "rechazo",
+  "cambiada",
   "invitar",
   "errores",
   "ya-esta",
   "confirmar",
+  "sin-nombre",
   "ultimo-admin",
 ] as const;
 

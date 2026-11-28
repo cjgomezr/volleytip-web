@@ -1,7 +1,9 @@
 import type { LoaderFunctionArgs } from "react-router";
 
 import type { TeamListView } from "../admin/team";
+import { serverEnv } from "../env.server";
 import { getRequestLanguage } from "../i18n/languages";
+import { getPanelPath } from "../i18n/panel-pages";
 import {
   panelSessionContext,
   verifyAdminMember,
@@ -17,8 +19,11 @@ export async function loadTeamList({
 }: LoaderFunctionArgs): Promise<TeamListView> {
   const { client } = context.get(panelSessionContext);
   const viewer = await verifyAdminMember(request, client);
+  const language = getRequestLanguage(request);
+  const signInPath = getPanelPath("adminSignIn", language);
   return readTeamList(client, {
-    language: getRequestLanguage(request),
+    language,
+    signInUrl: new URL(signInPath, serverEnv.siteOrigin).href,
     url: new URL(request.url),
     viewerId: viewer.id,
   });

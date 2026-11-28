@@ -55,8 +55,12 @@ export async function createConfirmedAccount(
  * Deja en una cuenta que ya existía un acceso que nadie más tiene: el correo
  * confirmado, sin el que no se puede pedir el enlace, y una contraseña al
  * azar. Con el registro abierto un tercero pudo crear la cuenta con ese
- * correo, y su contraseña le abriría el panel. No cierra las sesiones que la
- * cuenta ya tenga abiertas.
+ * correo, y su contraseña le abriría el panel.
+ *
+ * Cambiar la contraseña cierra además las sesiones de la cuenta: ninguna se
+ * puede renovar, aunque un token de acceso ya emitido vale hasta que vence.
+ * Es la única forma de revocarlas por id: `auth.admin.signOut` pide el token
+ * de la persona.
  */
 export async function secureAccount(
   client: TypedSupabaseClient,

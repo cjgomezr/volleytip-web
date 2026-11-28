@@ -16,7 +16,7 @@ import { SampleTeamScreen } from "./sample-team-screen";
 function render(state: SampleTeamState, language: Language = "es"): string {
   const screen: ReactElement = (
     <TranslationsProvider language={language} messages={getMessages(language)}>
-      <SampleTeamScreen {...buildSampleTeam(state)} />
+      <SampleTeamScreen {...buildSampleTeam(state, language)} />
     </TranslationsProvider>
   );
   const Stub = createRoutesStub([{ path: "*", Component: () => screen }]);
@@ -86,8 +86,19 @@ describe("equipo: la pantalla de la lista", () => {
 
   it("tras invitar dice que no se envió correo y dónde pide el enlace", () => {
     expect(render("invitada")).toContain(
-      "No se envió ningún correo: avísale que entre en /admin/entrar y pida su enlace.",
+      "No se envió ningún correo: avísale que entre en https://volleytip.com/admin/entrar y pida su enlace.",
     );
+  });
+
+  it("el aviso de un botón sale en la tarjeta que lo envió, con el nombre", () => {
+    const rows = readRows(render("cambiada"));
+
+    expect(rows[2]).toContain("Sara Ruiz ahora es Staff.");
+    expect(rows.filter((row) => row.includes("ahora es"))).toHaveLength(1);
+  });
+
+  it("en inglés las fechas de la muestra van en inglés", () => {
+    expect(render("lista", "en")).toContain("11/27/26");
   });
 });
 
@@ -116,6 +127,13 @@ describe("equipo: la confirmación de desactivar", () => {
     expect(html).toContain('name="confirm" value="yes"');
     expect(html).toContain('href="/admin/equipo"');
     expect(html).not.toContain('role="alert"');
+  });
+
+  it("a quien no tiene nombre lo nombra por su correo", () => {
+    const html = render("sin-nombre");
+
+    expect(html).toContain("¿Desactivar a sara@example.com?");
+    expect(html).not.toContain("Sin nombre");
   });
 
   it("explica por qué la base no dejó desactivar al último admin", () => {

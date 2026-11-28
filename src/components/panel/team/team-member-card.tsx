@@ -2,11 +2,9 @@ import type { ReactElement } from "react";
 import { Link, type FetcherWithComponents } from "react-router";
 
 import {
-  MEMBER_REJECTION_KEYS,
   ROLE_FIELD,
   ROLE_LABEL_KEYS,
   type MemberOutcome,
-  type MemberRejection,
   type TeamMemberView,
 } from "~/lib/admin/team";
 import { getPanelPath, type PanelPageId } from "~/lib/i18n/panel-pages";
@@ -15,7 +13,7 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import type { UnsentSubmission } from "~/lib/panel/unsent-submission";
 
 import { Button, getButtonLinkClassName } from "../../button";
-import { RejectionAlert } from "./rejection-alert";
+import { MemberFeedback } from "./member-feedback";
 
 type TeamFetcher = FetcherWithComponents<MemberOutcome | UnsentSubmission>;
 
@@ -23,7 +21,11 @@ interface TeamMemberCardProps {
   readonly member: TeamMemberView;
   /** El envío que comparten los botones de la lista. */
   readonly fetcher: TeamFetcher;
-  readonly error?: MemberRejection;
+  /** Avisa que esta tarjeta es la que envía. */
+  readonly onSend: () => void;
+  /** En qué quedó el último envío, si fue de este miembro. */
+  readonly outcome?: MemberOutcome;
+  readonly isUnsent: boolean;
 }
 
 const BADGE_STYLES =
@@ -73,6 +75,7 @@ function LastSignIn({
 
 interface MemberButtonProps {
   readonly fetcher: TeamFetcher;
+  readonly onSend: () => void;
   readonly page: PanelPageId;
   readonly memberId: string;
   /** Lo que el botón manda además de la dirección. */
@@ -83,6 +86,7 @@ interface MemberButtonProps {
 
 function MemberButton({
   fetcher,
+  onSend,
   page,
   memberId,
   role,
@@ -100,6 +104,7 @@ function MemberButton({
       // guardarse.
       onSubmit={(event) => {
         if (isBusy) event.preventDefault();
+        else onSend();
       }}
     >
       {role === undefined ? null : (
@@ -126,14 +131,16 @@ function MemberActions({
   member,
   name,
   fetcher,
+  onSend,
 }: {
   readonly member: TeamMemberView;
   readonly name: string;
   readonly fetcher: TeamFetcher;
+  readonly onSend: () => void;
 }): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
-  const shared = { fetcher, memberId: member.id };
+  const shared = { fetcher, onSend, memberId: member.id };
   const isAdmin = member.role === "admin";
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -176,10 +183,14 @@ function MemberActions({
 export function TeamMemberCard({
   member,
   fetcher,
-  error,
+  onSend,
+  outcome,
+  isUnsent,
 }: TeamMemberCardProps): ReactElement {
   const translate = useTranslate();
   const name = member.name ?? translate("panel.team.unnamed");
+  // Sin nombre, el correo distingue a quién cambia cada botón y cada aviso.
+  const distinctName = member.name ?? member.email;
   return (
     <li
       data-member-row={member.id}
@@ -202,13 +213,17 @@ export function TeamMemberCard({
       ) : (
         <MemberActions
           member={member}
-          // Sin nombre, el correo distingue a quién cambia cada botón.
-          name={member.name ?? member.email}
+          name={distinctName}
           fetcher={fetcher}
+          onSend={onSend}
         />
       )}
-      {error === undefined ? null : (
-        <RejectionAlert text={translate(MEMBER_REJECTION_KEYS[error])} />
+      {member.isSelf && outcome === undefined ? null : (
+        <MemberFeedback
+          outcome={outcome}
+          isUnsent={isUnsent}
+          name={distinctName}
+        />
       )}
     </li>
   );

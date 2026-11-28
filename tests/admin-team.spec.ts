@@ -26,10 +26,12 @@ const STATES = [
   "lista",
   "invitada",
   "rechazo",
+  "cambiada",
   "invitar",
   "errores",
   "ya-esta",
   "confirmar",
+  "sin-nombre",
   "ultimo-admin",
 ] as const;
 
@@ -115,6 +117,8 @@ for (const viewport of VIEWPORTS) {
 }
 
 test.describe("equipo sin conexión", () => {
+  test.use({ viewport: { width: 360, height: 640 } });
+
   test("invitar conserva lo escrito y avisa", async ({
     page,
     context,
@@ -147,10 +151,12 @@ test.describe("equipo sin conexión", () => {
 
     await page
       .getByRole("button", { name: "Pasar a staff a Otra Admin" })
-      .first()
+      .last()
       .click();
 
+    // El aviso sale junto al botón, a la vista aunque la lista sea larga.
     await expect(page.getByRole("alert")).toContainText("No se pudo enviar");
+    await expect(page.getByRole("alert")).toBeInViewport({ ratio: 1 });
     await expect(page).toHaveURL("/admin/equipo");
   });
 });

@@ -10,6 +10,7 @@ import {
   type SampleTeam,
 } from "~/lib/admin/sample-team";
 import { serverEnv } from "~/lib/env.server";
+import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useLanguage } from "~/lib/i18n/use-language";
 
@@ -17,7 +18,7 @@ import type { Route } from "./+types/dev-team";
 
 // Pinta la lista del equipo, la invitación y la confirmación en cada estado,
 // sin sesión ni base, para capturarlos en Playwright:
-// `?estado=lista|invitada|rechazo|invitar|errores|ya-esta|confirmar|ultimo-admin`.
+// `?estado=` con uno de `SAMPLE_TEAM_STATES`.
 // Solo pinta: sus formularios apuntan al panel de verdad. En producción
 // responde 404.
 const NOT_FOUND_STATUS = 404;
@@ -30,7 +31,7 @@ export function loader({ request }: Route.LoaderArgs): SampleTeam {
   const asked = new URL(request.url).searchParams.get(STATE_PARAM) ?? "lista";
   const state = SAMPLE_TEAM_STATES.find((candidate) => candidate === asked);
   if (state === undefined) throw data(null, { status: NOT_FOUND_STATUS });
-  return buildSampleTeam(state);
+  return buildSampleTeam(state, getRequestLanguage(request));
 }
 
 // El menú real, con "Equipo" apuntando aquí para que salga marcado.

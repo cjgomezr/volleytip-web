@@ -100,16 +100,28 @@ async function findProfile(
   return data;
 }
 
-/** El id de una cuenta lista para entrar: la crea o asegura la que había. */
-async function prepareAccount(
+type Account =
+  | { readonly createdId: string }
+  /** El correo ya tenía un perfil. */
+  | { readonly profile: Profile };
+
+/** Busca el perfil del correo y, si no hay, crea la cuenta. */
+async function findOrCreateAccount(
+  client: TypedSupabaseClient,
   email: string,
-  profile: Profile | null,
-): Promise<string> {
+): Promise<Account> {
+  const found = await findProfile(client, email);
+  if (found !== null) return { profile: found };
   // El registro público está apagado: solo la llave de servicio crea cuentas.
   const service = createServiceSupabaseClient();
-  if (profile === null) return createConfirmedAccount(service, email);
-  await secureAccount(service, profile.id);
-  return profile.id;
+  try {
+    return { createdId: await createConfirmedAccount(service, email) };
+  } catch (error) {
+    // Otra invitación pudo crearla entre la búsqueda y este paso.
+    const profile = await findProfile(client, email);
+    if (profile === null) throw error;
+    return { profile };
+  }
 }
 
 /** Sube un comprador al equipo. `false` si ya no era comprador. */
@@ -169,11 +181,16 @@ async function grantAccess(
 ): Promise<InviteResult> {
   const { client } = context.get(panelSessionContext);
   const { email } = invitation;
-  const profile = await findProfile(client, email);
+  const account = await findOrCreateAccount(client, email);
+  const profile = "profile" in account ? account.profile : null;
   if (profile !== null && profile.role !== "buyer") {
     return rejectExistingMember({ ...profile, email }, values);
   }
-  const profileId = await prepareAccount(email, profile);
+  if (profile !== null) {
+    await secureAccount(createServiceSupabaseClient(), profile.id);
+  }
+  const profileId =
+    "createdId" in account ? account.createdId : account.profile.id;
   if (!(await promoteBuyer(client, profileId, invitation))) {
     // Otro admin invitó el mismo correo mientras tanto.
     const current = await findProfile(client, email);

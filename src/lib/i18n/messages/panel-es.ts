@@ -419,11 +419,11 @@ export const panelEs = {
   "panel.team.activateLabel": "Activar a {name}",
   "panel.team.saving": "Guardando",
   "panel.team.notice.invited":
-    "Invitación lista. No se envió ningún correo: avísale que entre en {path} y pida su enlace.",
+    "Invitación lista. No se envió ningún correo: avísale que entre en {url} y pida su enlace.",
   "panel.team.notice.deactivated": "Acceso desactivado.",
-  "panel.team.notice.activated": "Acceso activado.",
-  "panel.team.notice.roleChanged": "Rol cambiado a {role}.",
-  "panel.team.notice.unchanged": "No hubo cambios: ya estaba así.",
+  "panel.team.notice.activated": "{name} vuelve a tener acceso.",
+  "panel.team.notice.roleChanged": "{name} ahora es {role}.",
+  "panel.team.notice.unchanged": "No hubo cambios para {name}: ya estaba así.",
   "panel.team.error.self":
     "No puedes desactivarte ni bajarte el rol. Pídeselo a otro admin.",
   "panel.team.error.lastAdmin":
@@ -451,6 +451,7 @@ export const panelEs = {
     "{email} ya es del equipo y está desactivado. No se cambió nada: actívalo desde la lista.",
   "panel.team.confirm.title": "Desactivar acceso",
   "panel.team.confirm.warning": "¿Desactivar a {name} ({email})?",
+  "panel.team.confirm.warningUnnamed": "¿Desactivar a {email}?",
   "panel.team.confirm.details":
     "Pierde el acceso al panel en su siguiente petición. Su cuenta y su historial se conservan, y puedes volver a activarla.",
   "panel.team.confirm.submit": "Sí, desactivar",

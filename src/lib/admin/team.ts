@@ -47,6 +47,9 @@ export interface TeamListView {
   /** Los activos primero, por nombre. */
   readonly members: readonly TeamMemberView[];
   readonly notice: TeamNotice | null;
+  /** La dirección completa donde se pide el enlace, para pasársela a quien se
+   * invitó. */
+  readonly signInUrl: string;
 }
 
 export interface DeactivationView {

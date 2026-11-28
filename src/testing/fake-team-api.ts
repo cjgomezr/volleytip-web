@@ -14,15 +14,27 @@ export interface FakeTeamRow {
   full_name: string | null;
 }
 
+export interface FakeAccountFailure {
+  readonly status: number;
+  readonly code: string;
+}
+
 export interface FakeTeamOptions extends FakeSupabaseOptions {
   /** Los perfiles que existen. */
   readonly team?: readonly FakeTeamRow[];
   /** El último ingreso de cada cuenta, por id. Sin él, nunca ha entrado. */
   readonly lastSignIns?: Readonly<Record<string, string>>;
   /** Estado y código con que Auth falla al leer una cuenta, por id. */
-  readonly accountFailures?: Readonly<
-    Record<string, { readonly status: number; readonly code: string }>
-  >;
+  readonly accountFailures?: Readonly<Record<string, FakeAccountFailure>>;
+  /** Estado y código con que Auth falla al cambiar cualquier cuenta. */
+  readonly accountUpdateFailure?: FakeAccountFailure;
+  /** Otra persona crea esa cuenta justo antes: Auth rechaza la nueva y su
+   * perfil ya está. */
+  readonly concurrentAccount?: FakeTeamRow;
+  /** Auth falla al crear una cuenta. */
+  readonly createFailure?: boolean;
+  /** Lo que otra persona cambia entre la lectura y la escritura. */
+  readonly beforeUpdate?: (rows: FakeTeamRow[]) => void;
   /** El mensaje con que la base rechaza todo cambio de un perfil. */
   readonly updateRejection?: string;
 }
@@ -58,6 +70,13 @@ function matches(row: FakeTeamRow, search: URLSearchParams): boolean {
   });
 }
 
+function failAuth({ status, code }: FakeAccountFailure): Response {
+  return Response.json(
+    { code: status, error_code: code, msg: code },
+    { status },
+  );
+}
+
 /** `profiles` y las cuentas de Auth, de mentira, encima de `stubSupabase`.
  * Lo que la base hace de verdad se prueba en
  * `src/db/team.integration.test.ts`. */
@@ -65,6 +84,10 @@ export function stubTeamApi({
   team = [],
   lastSignIns = {},
   accountFailures = {},
+  accountUpdateFailure,
+  concurrentAccount,
+  beforeUpdate,
+  createFailure = false,
   updateRejection,
   ...options
 }: FakeTeamOptions = {}): FakeTeamApi {
@@ -76,6 +99,7 @@ export function stubTeamApi({
   const accountUpdates: FakeTeamApi["accountUpdates"] = [];
 
   async function answerProfiles(request: Request, url: URL): Promise<Response> {
+    if (request.method !== "GET") beforeUpdate?.(rows);
     const found = rows.filter((row) => matches(row, url.searchParams));
     if (request.method === "GET") return Response.json(found);
     teamUpdates.push({
@@ -99,6 +123,13 @@ export function stubTeamApi({
     if (request.method === "POST") {
       const body = (await request.json()) as { email: string };
       createdAccounts.push({ body, authorization });
+      if (createFailure) {
+        return failAuth({ status: 500, code: "unexpected_failure" });
+      }
+      if (concurrentAccount !== undefined) {
+        rows.push({ ...concurrentAccount });
+        return failAuth({ status: 422, code: "email_exists" });
+      }
       // Como el disparador de la base: toda cuenta nace como comprador.
       rows.push({
         id: NEW_ACCOUNT_ID,
@@ -111,16 +142,12 @@ export function stubTeamApi({
     }
     if (request.method === "PUT") {
       accountUpdates.push({ id, body: await request.json(), authorization });
-      return Response.json({ id });
+      return accountUpdateFailure === undefined
+        ? Response.json({ id })
+        : failAuth(accountUpdateFailure);
     }
     const failure = accountFailures[id];
-    if (failure !== undefined) {
-      const { status, code } = failure;
-      return Response.json(
-        { code: status, error_code: code, msg: code },
-        { status },
-      );
-    }
+    if (failure !== undefined) return failAuth(failure);
     return Response.json({ id, last_sign_in_at: lastSignIns[id] ?? null });
   }
 

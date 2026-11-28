@@ -11,7 +11,9 @@ import {
 } from "../admin/team";
 import { getRequestLanguage } from "../i18n/languages";
 import { getPanelPath } from "../i18n/panel-pages";
+import { createServiceSupabaseClient } from "../supabase/service-client.server";
 import type { TypedSupabaseClient } from "../supabase/typed-client";
+import { secureAccount } from "../team-account.server";
 import { findBrokenRule } from "./database-rule.server";
 import type { AdminActionOutcome } from "./admin-action.server";
 import {
@@ -135,6 +137,25 @@ function activationChange(
   };
 }
 
+/** Revoca las sesiones de una cuenta. Pide la llave de servicio. */
+async function closeAccountSessions(memberId: string): Promise<void> {
+  await secureAccount(createServiceSupabaseClient(), memberId);
+}
+
+// El perfil ya quedó desactivado y la guardia le niega el acceso: un fallo
+// aquí no puede dejar ese cambio sin su entrada en la bitácora. Activar vuelve
+// a cerrar las sesiones, así que una vieja no revive.
+async function closeSessionsAfterDeactivation(memberId: string): Promise<void> {
+  try {
+    await closeAccountSessions(memberId);
+  } catch (error) {
+    console.error(
+      `El perfil ${memberId} quedó desactivado, pero no se cerraron sus sesiones`,
+      error,
+    );
+  }
+}
+
 /** Desactiva a un miembro, ya confirmado. Pierde el acceso en su siguiente
  * petición: la guardia lee `is_active` cada vez. */
 export async function deactivateMember(
@@ -162,6 +183,7 @@ export async function deactivateMember(
   if (written === "unchanged") {
     return { result: redirect(listPath, SEE_OTHER), change: null };
   }
+  await closeSessionsAfterDeactivation(memberId);
   return {
     result: redirect(`${listPath}?${NOTICE_PARAM}=deactivated`, SEE_OTHER),
     change: activationChange(memberId, false),
@@ -176,6 +198,8 @@ export async function activateMember(
   const { client } = args.context.get(panelSessionContext);
   const member = await findMember(client, memberId);
   if (member.isActive) return unchanged(memberId);
+  // Antes de devolverle el acceso: si no se pueden cerrar, no se activa.
+  await closeAccountSessions(memberId);
   const written = await writeProfile(client, member, { is_active: true });
   // Activar nunca quita un admin.
   if (written !== "written") return unchanged(memberId);

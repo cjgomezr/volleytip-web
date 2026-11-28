@@ -1,12 +1,7 @@
-import type { ReactElement } from "react";
-import { Link, useFetcher } from "react-router";
+import { useState, type ReactElement } from "react";
+import { Link, useFetcher, type FetcherWithComponents } from "react-router";
 
-import {
-  ROLE_LABEL_KEYS,
-  type MemberOutcome,
-  type TeamListView,
-  type TeamNotice,
-} from "~/lib/admin/team";
+import type { MemberOutcome, TeamListView, TeamNotice } from "~/lib/admin/team";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
@@ -15,55 +10,66 @@ import {
   withoutUnsent,
   type UnsentSubmission,
 } from "~/lib/panel/unsent-submission";
+import { useAnswerOfThisLocation } from "~/lib/panel/use-panel-fetcher";
 import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { getButtonLinkClassName } from "../../button";
 import { PanelHeading } from "../panel-heading";
-import { UnsentNotice } from "../unsent-notice";
+import { SuccessNotice } from "./success-notice";
 import { TeamMemberCard } from "./team-member-card";
 import { useTeamFocus } from "./use-team-focus";
 
-function useNoticeText(
-  outcome: MemberOutcome | undefined,
+// Lo que se avisa al volver de otra pantalla. Lo que pasa con un botón de la
+// lista se avisa en su tarjeta.
+function useReturnNoticeText(
   notice: TeamNotice | null,
+  signInUrl: string,
 ): string | undefined {
   const translate = useTranslate();
-  const signInPath = getPanelPath("adminSignIn", useLanguage());
-  if (outcome === undefined) {
-    if (notice === "invited") {
-      return translate("panel.team.notice.invited", { path: signInPath });
-    }
-    return notice === null
-      ? undefined
-      : translate("panel.team.notice.deactivated");
-  }
-  switch (outcome.status) {
-    case "roleChanged":
-      return translate("panel.team.notice.roleChanged", {
-        role: translate(ROLE_LABEL_KEYS[outcome.role]),
-      });
-    case "activated":
-      return translate("panel.team.notice.activated");
-    case "unchanged":
-      return translate("panel.team.notice.unchanged");
-    case "rejected":
-      return undefined;
-  }
+  if (notice === null) return undefined;
+  return notice === "invited"
+    ? translate("panel.team.notice.invited", { url: signInUrl })
+    : translate("panel.team.notice.deactivated");
 }
 
-// La región existe siempre: un lector de pantalla solo anuncia lo que cambia
-// dentro de una región que ya estaba en la página.
-function Notice({ text }: { readonly text?: string }): ReactElement {
-  return (
-    <div role="status">
-      {text === undefined ? null : (
-        <p className="mt-4 mb-0 flex w-fit max-w-full items-start gap-2 rounded-card bg-brand-lime px-4 py-2 text-[15px] leading-[1.5] font-bold text-brand-night [overflow-wrap:anywhere]">
-          <span aria-hidden="true">✓</span>
-          {text}
-        </p>
-      )}
-    </div>
-  );
+interface ListSubmission {
+  readonly fetcher: FetcherWithComponents<MemberOutcome | UnsentSubmission>;
+  /** La respuesta del último envío, ya terminado. */
+  readonly answer: MemberOutcome | UnsentSubmission | undefined;
+  readonly outcome: MemberOutcome | undefined;
+  readonly sentMemberId: string | undefined;
+  readonly setSentMemberId: (memberId: string) => void;
+  /** La fila donde se avisa que el envío no llegó. */
+  readonly unsentMemberId: string | undefined;
+}
+
+/** El envío que comparten los botones de la lista, y en qué quedó el último. */
+function useListSubmission(
+  initialOutcome: MemberOutcome | undefined,
+): ListSubmission {
+  // `useFetcher` y no `usePanelFetcher`: los botones miran a dónde se está
+  // enviando.
+  const fetcher = useFetcher<MemberOutcome | UnsentSubmission>();
+  usePreloadSubmission("adminTeamRole");
+  usePreloadSubmission("adminTeamActivate");
+  // Pulsar "Equipo" en el menú no desmonta la lista: la respuesta vence ahí.
+  const current = useAnswerOfThisLocation(fetcher.data) as
+    MemberOutcome | UnsentSubmission | undefined;
+  const [sentMemberId, setSentMemberId] = useState<string>();
+  const isIdle = fetcher.state === "idle";
+  const answer = isIdle ? current : undefined;
+  const isUnsent = isUnsentSubmission(answer);
+  // Tras un envío que no llegó, lo anterior ya no es lo último que pasó.
+  const outcome =
+    isIdle && !isUnsent ? (withoutUnsent(answer) ?? initialOutcome) : undefined;
+  return {
+    fetcher,
+    answer,
+    outcome,
+    sentMemberId,
+    setSentMemberId,
+    unsentMemberId: isUnsent ? sentMemberId : undefined,
+  };
 }
 
 export interface TeamListScreenProps extends TeamListView {
@@ -76,26 +82,16 @@ export interface TeamListScreenProps extends TeamListView {
 export function TeamListScreen({
   members,
   notice,
+  signInUrl,
   initialOutcome,
 }: TeamListScreenProps): ReactElement {
   const translate = useTranslate();
   const invitePath = getPanelPath("adminTeamInvite", useLanguage());
-  // Uno solo para todos los botones: lo último que pasó es lo que se anuncia.
-  // `useFetcher` y no `usePanelFetcher`: los botones miran a dónde se está
-  // enviando. La lista se desmonta al cambiar de dirección, así que sus
-  // respuestas no hay que vencerlas.
-  const fetcher = useFetcher<MemberOutcome | UnsentSubmission>();
-  usePreloadSubmission("adminTeamRole");
-  usePreloadSubmission("adminTeamActivate");
-  const isIdle = fetcher.state === "idle";
-  const answer = isIdle ? fetcher.data : undefined;
-  const isUnsent = isUnsentSubmission(answer);
-  const answered = withoutUnsent(answer);
-  // Tras un envío que no llegó, lo anterior ya no es lo último que pasó.
-  const isSettled = isIdle && !isUnsent;
-  const outcome = isSettled ? (answered ?? initialOutcome) : undefined;
-  const listRef = useTeamFocus(answered);
-  const noticeText = useNoticeText(outcome, isSettled ? notice : null);
+  const submission = useListSubmission(initialOutcome);
+  const { fetcher, outcome, unsentMemberId } = submission;
+  const listRef = useTeamFocus(submission.answer, submission.sentMemberId);
+  const noticeText = useReturnNoticeText(notice, signInUrl);
+  const hasSubmitted = submission.sentMemberId !== undefined;
   return (
     <div className="max-w-[900px]">
       <PanelHeading title={translate("panel.module.team")} />
@@ -108,23 +104,18 @@ export function TeamListScreen({
       >
         {translate("panel.team.invite")}
       </Link>
-      <Notice text={noticeText} />
-      {isUnsent ? (
-        <div className="mt-4">
-          <UnsentNotice />
-        </div>
-      ) : null}
+      <div className="mt-4 empty:mt-0">
+        <SuccessNotice text={hasSubmitted ? undefined : noticeText} />
+      </div>
       <ul ref={listRef} className="mt-4 mb-0 flex list-none flex-col gap-3 p-0">
         {members.map((member) => (
           <TeamMemberCard
             key={member.id}
             member={member}
             fetcher={fetcher}
-            error={
-              outcome?.status === "rejected" && outcome.memberId === member.id
-                ? outcome.error
-                : undefined
-            }
+            onSend={() => submission.setSentMemberId(member.id)}
+            outcome={outcome?.memberId === member.id ? outcome : undefined}
+            isUnsent={unsentMemberId === member.id}
           />
         ))}
       </ul>

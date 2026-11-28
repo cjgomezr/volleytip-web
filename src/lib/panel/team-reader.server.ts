@@ -101,12 +101,13 @@ interface ListOptions {
   readonly url: URL;
   /** Quien mira. */
   readonly viewerId: string;
+  readonly signInUrl: string;
 }
 
 /** Lo que pinta la lista: los admins y el staff, nunca los compradores. */
 export async function readTeamList(
   client: TypedSupabaseClient,
-  { language, url, viewerId }: ListOptions,
+  { language, url, viewerId, signInUrl }: ListOptions,
 ): Promise<TeamListView> {
   const { data, error } = await client
     .from("profiles")
@@ -127,6 +128,7 @@ export async function readTeamList(
   const asked = url.searchParams.get(NOTICE_PARAM);
   return {
     members,
+    signInUrl,
     notice: TEAM_NOTICES.find((notice) => notice === asked) ?? null,
   };
 }

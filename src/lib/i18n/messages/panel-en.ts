@@ -421,11 +421,12 @@ export const panelEn = {
   "panel.team.activateLabel": "Activate {name}",
   "panel.team.saving": "Saving",
   "panel.team.notice.invited":
-    "Invitation ready. No email was sent: tell them to go to {path} and request their link.",
+    "Invitation ready. No email was sent: tell them to go to {url} and request their link.",
   "panel.team.notice.deactivated": "Access deactivated.",
-  "panel.team.notice.activated": "Access activated.",
-  "panel.team.notice.roleChanged": "Role changed to {role}.",
-  "panel.team.notice.unchanged": "Nothing changed: it was already like that.",
+  "panel.team.notice.activated": "{name} has access again.",
+  "panel.team.notice.roleChanged": "{name} is now {role}.",
+  "panel.team.notice.unchanged":
+    "Nothing changed for {name}: it was already like that.",
   "panel.team.error.self":
     "You cannot deactivate yourself or lower your own role. Ask another admin.",
   "panel.team.error.lastAdmin":
@@ -454,6 +455,7 @@ export const panelEn = {
     "{email} is already on the team and deactivated. Nothing changed: activate them from the list.",
   "panel.team.confirm.title": "Deactivate access",
   "panel.team.confirm.warning": "Deactivate {name} ({email})?",
+  "panel.team.confirm.warningUnnamed": "Deactivate {email}?",
   "panel.team.confirm.details":
     "They lose access to the panel on their next request. Their account and history are kept, and you can activate them again.",
   "panel.team.confirm.submit": "Yes, deactivate",

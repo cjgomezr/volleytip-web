@@ -44,10 +44,14 @@ export function DeactivateConfirmation({
       <PanelHeading title={translate("panel.team.confirm.title")} />
       <div className="mt-5 rounded-card bg-surface-light p-5 md:p-6">
         <p className="m-0 text-[18px] leading-[1.4] font-bold [overflow-wrap:anywhere]">
-          {translate("panel.team.confirm.warning", {
-            name: member.name ?? translate("panel.team.unnamed"),
-            email: member.email,
-          })}
+          {member.name === null
+            ? translate("panel.team.confirm.warningUnnamed", {
+                email: member.email,
+              })
+            : translate("panel.team.confirm.warning", {
+                name: member.name,
+                email: member.email,
+              })}
         </p>
         <p className="mt-3 mb-0 text-[15px] leading-[1.5] text-ink-subtle">
           {translate("panel.team.confirm.details")}

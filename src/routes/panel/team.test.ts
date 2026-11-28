@@ -213,6 +213,18 @@ describe("equipo: lista", () => {
     await expect(load()).rejects.toThrow(/No se pudo leer el equipo/);
   });
 
+  it.each([
+    ["/admin/equipo", "https://sitio-de-prueba.volleytip.test/admin/entrar"],
+    [
+      "/en/admin/team",
+      "https://sitio-de-prueba.volleytip.test/en/admin/sign-in",
+    ],
+  ])("en %s da la dirección completa de la entrada", async (path, url) => {
+    stubTeamApi({ team: [SELF] });
+
+    await expect(load(path)).resolves.toMatchObject({ signInUrl: url });
+  });
+
   it("marca la fila de quien mira", async () => {
     stubTeamApi({ team: [SELF, STAFF] });
 
@@ -453,6 +465,13 @@ describe("equipo: rol y estado", () => {
     expect(api.teamUpdates.map(({ body }) => body)).toEqual([
       { is_active: false },
     ]);
+    // Cambiar la contraseña por id cierra las sesiones de esa cuenta.
+    expect(api.accountUpdates).toEqual([
+      expect.objectContaining({
+        id: STAFF.id,
+        body: { email_confirm: true, password: expect.any(String) },
+      }),
+    ]);
     expect(api.auditRows).toEqual([
       auditRow("profile.deactivate", STAFF.id, {
         before: { is_active: true },
@@ -476,6 +495,45 @@ describe("equipo: rol y estado", () => {
         after: { is_active: true },
       }),
     ]);
+  });
+
+  it("si no se pueden cerrar las sesiones, igual desactiva y registra", async () => {
+    const log = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const api = stubTeamApi({
+      team: TEAM,
+      accountUpdateFailure: { status: 500, code: "unexpected_failure" },
+    });
+
+    const result = await deactivate(STAFF.id);
+
+    expect(readResult(result).status).toBe(303);
+    expect(api.auditRows).toHaveLength(1);
+    expect(log).toHaveBeenCalledWith(
+      expect.stringContaining(STAFF.id),
+      expect.anything(),
+    );
+    log.mockRestore();
+  });
+
+  it("al activar cierra primero las sesiones viejas", async () => {
+    const api = stubTeamApi({ team: TEAM });
+
+    await activate(INACTIVE.id);
+
+    expect(api.accountUpdates.map(({ id }) => id)).toEqual([INACTIVE.id]);
+  });
+
+  it("si no puede cerrarlas, no activa", async () => {
+    const api = stubTeamApi({
+      team: TEAM,
+      accountUpdateFailure: { status: 500, code: "unexpected_failure" },
+    });
+
+    await expect(activate(INACTIVE.id)).rejects.toThrow(
+      /cambiar el acceso de la cuenta/,
+    );
+    expect(api.teamUpdates).toEqual([]);
+    expect(api.auditRows).toEqual([]);
   });
 
   it("activar a quien ya está activo no escribe nada", async () => {
@@ -532,6 +590,114 @@ describe("equipo: rol y estado", () => {
       await expect(submit()).rejects.toMatchObject({ init: { status: 404 } });
     }
     expectNothingWritten(api);
+  });
+});
+
+describe("equipo: cambios a la vez", () => {
+  /** Lo que otra persona hace justo antes de que llegue la escritura. */
+  function changeRow(
+    id: string,
+    changes: Partial<FakeTeamRow>,
+  ): (rows: FakeTeamRow[]) => void {
+    return (rows) => {
+      const row = rows.find((candidate) => candidate.id === id);
+      if (row !== undefined) Object.assign(row, changes);
+    };
+  }
+
+  it("invitar a un comprador que otro acaba de subir no le pisa el rol", async () => {
+    const api = stubTeamApi({
+      team: [SELF, BUYER],
+      beforeUpdate: changeRow(BUYER.id, { role: "staff" }),
+    });
+
+    const result = await invite({
+      name: "Pablo",
+      email: BUYER.email,
+      role: "admin",
+    });
+
+    expect(readResult(result).body).toMatchObject({ status: "alreadyMember" });
+    expect(api.rows[1]).toMatchObject({ role: "staff", full_name: null });
+    expect(api.auditRows).toEqual([]);
+  });
+
+  it.each([
+    ["creó y subió", "staff", "alreadyMember"],
+    ["solo creó", "buyer", undefined],
+  ] as const)(
+    "si otra invitación %s la cuenta nueva, no falla",
+    async (_name, role, status) => {
+      const concurrentAccount = { ...BUYER, role };
+      const api = stubTeamApi({ team: [SELF], concurrentAccount });
+
+      const result = await invite({
+        name: "Pablo",
+        email: BUYER.email,
+        role: "admin",
+      });
+
+      if (status === undefined) {
+        expect(readResult(result).status).toBe(303);
+        expect(api.rows[1]).toMatchObject({ role: "admin" });
+        expect(api.auditRows).toHaveLength(1);
+      } else {
+        expect(readResult(result).body).toMatchObject({ status });
+        expect(api.auditRows).toEqual([]);
+      }
+    },
+  );
+
+  it("un fallo al crear la cuenta que no es por repetida se lanza", async () => {
+    stubTeamApi({ team: [SELF], createFailure: true });
+
+    await expect(
+      invite({ name: "N", email: "n@example.com", role: "staff" }),
+    ).rejects.toThrow(/crear la cuenta/);
+  });
+
+  it.each<[string, FakeTeamRow, Partial<FakeTeamRow>, () => Promise<unknown>]>([
+    [
+      "cambiar el rol",
+      STAFF,
+      { role: "admin" },
+      () => changeRole(STAFF.id, "admin"),
+    ],
+    ["desactivar", STAFF, { is_active: false }, () => deactivate(STAFF.id)],
+    ["activar", INACTIVE, { is_active: true }, () => activate(INACTIVE.id)],
+  ])(
+    "%s sobre una fila que ya cambió no registra nada",
+    async (_name, member, changes, submit) => {
+      const api = stubTeamApi({
+        team: TEAM,
+        beforeUpdate: changeRow(member.id, changes),
+      });
+
+      await submit();
+
+      expect(api.teamUpdates).toHaveLength(1);
+      expect(api.auditRows).toEqual([]);
+    },
+  );
+});
+
+describe("equipo: bitácora", () => {
+  it.each<[string, () => Promise<unknown>]>([
+    [
+      "profile.invite",
+      () => invite({ name: "N", email: "n@example.com", role: "staff" }),
+    ],
+    ["profile.change_role", () => changeRole(STAFF.id, "admin")],
+    ["profile.deactivate", () => deactivate(STAFF.id)],
+    ["profile.activate", () => activate(INACTIVE.id)],
+  ])("%s deja una sola entrada con quién la hizo", async (action, submit) => {
+    const api = stubTeamApi({ team: TEAM });
+
+    await submit();
+
+    expect(api.auditRows).toEqual([
+      expect.objectContaining({ actor_id: FAKE_USER_ID, action }),
+    ]);
   });
 });
 

@@ -308,7 +308,7 @@ npm run admin:create -- <correo>
 
 Si el correo no tiene cuenta, la crea con el correo confirmado y la deja como `admin` activo. Si ya tiene una (comprador, staff o admin desactivado), la sube a `admin` activo sin crear otra. Si ya es admin activo, lo dice y no cambia nada. Cada cambio deja una entrada `profile.grant_admin` en `audit_log`, sin actor.
 
-- **Una cuenta que ya existía** recibe, al subir a admin, una contraseña al azar que nadie conoce. Si alguien más la había creado con ese correo, no puede entrar con su contraseña. Al panel se entra con el enlace o con Google. El comando no cierra las sesiones que esa cuenta ya tuviera abiertas: si la cuenta no la creaste tú, bórrala primero en el panel de Supabase (Authentication, Users) y deja que el comando la cree de nuevo.
+- **Una cuenta que ya existía** recibe, al subir a admin, una contraseña al azar que nadie conoce. Si alguien más la había creado con ese correo, no puede entrar con su contraseña. Al panel se entra con el enlace o con Google. El cambio de contraseña impide renovar las sesiones que esa cuenta tuviera abiertas, pero un token de acceso ya emitido vale hasta que vence (una hora): si la cuenta no la creaste tú, bórrala primero en el panel de Supabase (Authentication, Users) y deja que el comando la cree de nuevo.
 - **Una cuenta que nunca confirmó su correo** queda además confirmada, aunque ya fuera admin activo: sin confirmar no podría pedir el enlace. Es el único caso en que el comando cambia algo de un admin activo.
 - **Si el comando falla**, dice en qué quedó todo y se repite. La entrada de la bitácora se escribe antes del cambio, así que un fallo a la mitad puede dejar una entrada de más, nunca un admin sin registro.
 

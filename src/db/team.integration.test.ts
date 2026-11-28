@@ -27,8 +27,8 @@ import {
 const LAST_ADMIN = /profiles_last_admin_check/;
 const SITE_ORIGIN = "http://localhost:3740";
 const HUMAN_DELAY_MS = 4000;
-// Lo que se espera para que la segunda escritura llegue a quedar en espera.
-const BLOCKING_MARGIN_MS = 500;
+const POLL_INTERVAL_MS = 20;
+const BLOCKING_TIMEOUT_MS = 5000;
 
 interface Modules {
   readonly list: typeof import("~/routes/panel/team");
@@ -166,6 +166,25 @@ async function parkOtherAdmins(keep: string[]): Promise<void> {
     returning id
   `;
   parkedAdmins = rows.map(({ id }) => id);
+}
+
+/** Espera a ver la segunda escritura detenida en el candado. */
+async function waitForBlockedWriter(): Promise<void> {
+  const observer = connectToLocalDatabase();
+  try {
+    const deadline = Date.now() + BLOCKING_TIMEOUT_MS;
+    while (Date.now() < deadline) {
+      const waiting = await observer`
+        select 1 from pg_catalog.pg_locks
+        where locktype = 'advisory' and not granted
+      `;
+      if (waiting.length > 0) return;
+      await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+    }
+    throw new Error("La segunda escritura nunca llegó a esperar el candado");
+  } finally {
+    await observer.end();
+  }
 }
 
 async function requestLink(email: string): Promise<void> {
@@ -328,7 +347,7 @@ describeIntegration("equipo: la base protege al último admin", () => {
         (transaction) => write(transaction, first.id),
       );
       const rejection = expect(loser).rejects.toThrow(LAST_ADMIN);
-      await new Promise((resolve) => setTimeout(resolve, BLOCKING_MARGIN_MS));
+      await waitForBlockedWriter();
       commit.fire();
 
       await winner;
@@ -450,6 +469,22 @@ describeIntegration("equipo: invitar y administrar", () => {
     await deactivate(admin, staff.userId);
 
     await expect(guard()).rejects.toMatchObject({ status: 302 });
+  });
+
+  it("desactivar cierra sus sesiones: reactivado, la vieja no se renueva", async () => {
+    const admin = await signInAs("admin");
+    const staff = await signInAs("staff");
+    const browser = buildArgs<{ context: RouterContextProvider }>(staff);
+    const { client } = browser.context.get(modules.panel.panelSessionContext);
+    await client.auth.getSession();
+
+    await deactivate(admin, staff.userId);
+    await modules.activate.action(
+      buildArgs(admin, { fields: {}, memberId: staff.userId }),
+    );
+
+    const refreshed = await client.auth.refreshSession();
+    expect(refreshed.error?.code).toBe("refresh_token_not_found");
   });
 
   it.each(["staff", "buyer"] as const)(

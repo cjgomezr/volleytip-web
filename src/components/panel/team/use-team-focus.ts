@@ -1,7 +1,5 @@
 import { useEffect, useRef, type RefObject } from "react";
 
-import type { MemberOutcome } from "~/lib/admin/team";
-
 function hasLostFocus(): boolean {
   const focused = document.activeElement;
   return (
@@ -12,24 +10,30 @@ function hasLostFocus(): boolean {
 }
 
 /**
- * Después de un envío, el botón que tenía el foco se deshabilitó, cambió por
- * otro o su fila se movió: quien usa el teclado quedaría sin saber dónde está.
- * Lo deja en el primer control de esa fila. Devuelve el ref de la lista donde
- * se busca.
+ * Después de un envío deja a la vista lo que se avisa en la fila. Y si el
+ * botón que tenía el foco se deshabilitó o cambió por otro, lo pone en el
+ * primer control de la fila: quien usa el teclado quedaría sin saber dónde
+ * está. Devuelve el ref de la lista donde se busca.
  */
 export function useTeamFocus(
-  outcome: MemberOutcome | undefined,
+  /** La respuesta del último envío, ya terminado. */
+  answer: object | undefined,
+  memberId: string | undefined,
 ): RefObject<HTMLUListElement | null> {
   const listRef = useRef<HTMLUListElement>(null);
   useEffect(() => {
-    if (outcome === undefined || !hasLostFocus()) return;
-    const control = listRef.current?.querySelector<HTMLElement>(
-      `[data-member-row="${outcome.memberId}"] :is(button:not(:disabled), a[href])`,
+    if (answer === undefined || memberId === undefined) return;
+    const row = listRef.current?.querySelector(
+      `[data-member-row="${memberId}"]`,
     );
-    control?.focus();
-    // Al mover el nodo el navegador no siempre lo sigue, y en celular queda
-    // fuera de la pantalla o bajo la barra inferior.
-    control?.scrollIntoView({ block: "nearest" });
-  }, [outcome]);
+    if (hasLostFocus()) {
+      row
+        ?.querySelector<HTMLElement>("button:not(:disabled), a[href]")
+        ?.focus();
+    }
+    row
+      ?.querySelector("[data-member-feedback]")
+      ?.scrollIntoView({ block: "nearest" });
+  }, [answer, memberId]);
   return listRef;
 }
