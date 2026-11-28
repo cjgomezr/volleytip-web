@@ -42,6 +42,8 @@ test.beforeAll(() => {
 });
 
 test.afterAll(async () => {
+  // Por si una corrida cortada dejó la base sin el permiso que una prueba quita.
+  await setSearchPermission("grant");
   await tips.removeAll();
   await database.end();
 });
@@ -470,6 +472,23 @@ test.describe("con tips publicados", () => {
         await expect(option).toBeFocused();
         await expect(option).toBeInViewport({ ratio: 1 });
       }
+    });
+
+    // Con `mouse` y no con `locator.click()`, que desliza la opción antes de
+    // pulsarla.
+    test("pulsar el borde de un filtro cortado lo elige", async ({ page }) => {
+      await openTips(page, "/tips");
+      const option = page
+        .getByRole("navigation", { name: "Fundamento" })
+        .getByRole("link", { name: "Colocación", exact: true });
+      const box = await option.boundingBox();
+      if (box === null) throw new Error("No se ve el filtro Colocación.");
+      const visible = VIEWPORTS[0].width - box.x;
+      expect(visible, "el filtro no está cortado").toBeLessThan(box.width);
+
+      await page.mouse.click(box.x + visible * 0.85, box.y + box.height / 2);
+
+      await expect(page).toHaveURL(/fundamento=colocacion$/);
     });
 
     test("una miniatura que no carga deja solo el recuadro", async ({

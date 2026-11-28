@@ -1,4 +1,10 @@
-import { useEffect, useRef, type ReactElement, type RefObject } from "react";
+import {
+  useEffect,
+  useRef,
+  type FocusEvent,
+  type ReactElement,
+  type RefObject,
+} from "react";
 import { Link } from "react-router";
 
 import type { Language } from "~/lib/i18n/languages";
@@ -29,7 +35,7 @@ interface FilterStyles {
 // En celular los fundamentos van en una fila que se desliza hasta el borde de
 // la pantalla. El relleno deja sitio al anillo de foco, que la fila recortaría.
 const FUNDAMENTAL_STYLES: FilterStyles = {
-  list: "relative -mx-4 flex scroll-px-4 gap-2 overflow-x-auto px-4 py-1.5 md:m-0 md:flex-wrap md:overflow-visible md:p-0",
+  list: "relative -mx-4 flex gap-2 overflow-x-auto px-4 py-1.5 md:m-0 md:flex-wrap md:overflow-visible md:p-0",
   item: "shrink-0",
   link: "px-[18px] text-[15px]",
   current: "bg-brand-lime font-bold text-brand-night",
@@ -74,6 +80,24 @@ function useShowCurrentOption(
   return listRef;
 }
 
+// El sitio que necesita el anillo de foco a cada lado de una opción.
+const FOCUS_ROOM_PX = 16;
+
+// El navegador no desliza la fila por una opción que ya asoma: con el teclado
+// quedaría cortada. Solo con el teclado, porque moverla al pulsarla la saca de
+// debajo del dedo y el clic se pierde. Y solo la fila: la página no se mueve.
+function showWholeOption(event: FocusEvent<HTMLAnchorElement>): void {
+  const option = event.currentTarget;
+  const list = option.closest("ul");
+  if (list === null || !option.matches(":focus-visible")) return;
+  const row = list.getBoundingClientRect();
+  const box = option.getBoundingClientRect();
+  const hiddenAfter = box.right + FOCUS_ROOM_PX - row.right;
+  const hiddenBefore = box.left - FOCUS_ROOM_PX - row.left;
+  if (hiddenAfter > 0) list.scrollBy({ left: hiddenAfter });
+  else if (hiddenBefore < 0) list.scrollBy({ left: hiddenBefore });
+}
+
 // Cada opción es un enlace: funciona sin JavaScript y con teclado.
 function FilterGroup({
   label,
@@ -95,14 +119,7 @@ function FilterGroup({
             <Link
               to={option.href}
               preventScrollReset
-              // El navegador no desliza la fila por una opción que ya asoma:
-              // con el teclado quedaría cortada.
-              onFocus={(event) =>
-                event.currentTarget.scrollIntoView({
-                  block: "nearest",
-                  inline: "nearest",
-                })
-              }
+              onFocus={showWholeOption}
               aria-current={option.isCurrent ? "true" : undefined}
               aria-label={option.accessibleName}
               className={`${OPTION_STYLES} ${styles.link} ${option.isCurrent ? styles.current : styles.idle}`}
