@@ -400,6 +400,7 @@ El botón se enciende **después** de configurar el proveedor de ese entorno. Pa
 3. En `https://staging.volleytip.com/admin/entrar`, "Continuar con Google" con ese correo. Debe llegar al panel. En Users sigue el mismo número de usuarios, y la cuenta muestra los proveedores Email y Google.
 4. Cerrar sesión y repetir con una cuenta de Google que no esté invitada. La pantalla dice que ese correo no tiene acceso y en Users no aparece ningún usuario nuevo.
 5. Pulsar "Continuar con Google" y cancelar en la pantalla de Google: se vuelve a la entrada con un mensaje y sin sesión.
+6. Pulsarlo de nuevo y, en la pantalla de Google, usar el botón "atrás" del navegador (mejor en el celular): la entrada reaparece y el botón vuelve a responder.
 
 **Si algo falla**, el registro del servidor dice "Supabase Auth no canjeó la vuelta de Google" o "La entrada con Google volvió con error", con el código. En Supabase está en Logs → Auth.
 
