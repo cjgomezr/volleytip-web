@@ -7,6 +7,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const VIEWPORTS = [
@@ -86,10 +87,10 @@ async function expectAccessibleWithoutOverflow(page: Page): Promise<void> {
   // Con la ventana tan alta como la página, la barra inferior no tapa nada
   // que axe tenga que medir.
   await page.emulateMedia({ reducedMotion: "reduce" });
-  const height = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return document.documentElement.scrollHeight;
-  });
+  await waitForSettledPage(page);
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
   const width = page.viewportSize()?.width ?? 0;
   await page.setViewportSize({ width, height: height + SPARE_HEIGHT });
   const results = await new AxeBuilder({ page })

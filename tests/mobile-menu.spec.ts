@@ -34,6 +34,7 @@ test.use({
 test.describe("menú de celular a 360 px", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto(APP_URL);
+    await waitForSettledPage(page);
   });
 
   test("el botón tiene nombre y aria-expanded", async ({ page }) => {

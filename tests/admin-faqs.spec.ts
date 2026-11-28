@@ -35,10 +35,10 @@ async function expectAccessibleWithoutOverflow(page: Page): Promise<void> {
   // medias ningún control: axe lo contaría como una zona de toque pequeña.
   const width = page.viewportSize()?.width ?? 0;
   await page.emulateMedia({ reducedMotion: "reduce" });
-  const height = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return document.documentElement.scrollHeight;
-  });
+  await waitForSettledPage(page);
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
   await page.setViewportSize({ width, height: height + SPARE_HEIGHT });
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag22aa"])

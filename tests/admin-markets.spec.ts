@@ -31,13 +31,13 @@ async function expectAccessibleWithoutOverflow(page: Page): Promise<void> {
   expect(overflows).toBe(false);
   // Con la ventana tan alta como la página, la barra inferior fija no tapa a
   // medias ningún control: axe lo contaría como una zona de toque pequeña.
-  // Se mide con las fuentes ya cargadas y se deja holgura: si la página crece
+  // Se mide la página ya acomodada y se deja holgura: si la página crece
   // después de medirla, el último botón vuelve a quedar a medias bajo la barra.
   const width = page.viewportSize()?.width ?? 0;
-  const height = await page.evaluate(async () => {
-    await document.fonts.ready;
-    return document.documentElement.scrollHeight;
-  });
+  await waitForSettledPage(page);
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
   await page.setViewportSize({ width, height: height + SPARE_HEIGHT });
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag22aa"])
