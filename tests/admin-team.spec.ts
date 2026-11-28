@@ -163,7 +163,8 @@ test.describe("equipo sin conexión", () => {
 
 for (const javaScriptEnabled of [true, false]) {
   test.describe(`equipo ${javaScriptEnabled ? "con" : "sin"} JavaScript`, () => {
-    test.use({ javaScriptEnabled });
+    // La pantalla más baja: ahí un aviso mal puesto queda fuera.
+    test.use({ javaScriptEnabled, viewport: { width: 360, height: 640 } });
     let email: string;
 
     test.beforeEach(() => {
@@ -206,6 +207,10 @@ for (const javaScriptEnabled of [true, false]) {
         .getByRole("button", { name: "Hacer admin a Persona Invitada" })
         .click();
       await expect(row.locator("[data-member-role]")).toHaveText("Admin");
+      // El aviso queda a la vista, también cuando la página se vuelve a cargar.
+      await expect(
+        row.getByText("Persona Invitada ahora es Admin."),
+      ).toBeInViewport({ ratio: 1 });
 
       await waitForPage(page);
       await row
@@ -228,9 +233,15 @@ for (const javaScriptEnabled of [true, false]) {
       await activate.press("Enter");
 
       await expect(row.locator("[data-member-active]")).toHaveText("Activo");
+      await expect(
+        row.getByText("Persona Invitada vuelve a tener acceso."),
+      ).toBeInViewport({ ratio: 1 });
       if (javaScriptEnabled) {
-        // El botón desapareció: el foco se queda en su fila.
-        await expect(row.locator(":focus")).toHaveCount(1);
+        // El foco pasa al control que ocupó su lugar, que pide confirmación:
+        // otro Enter no cambia nada sin preguntar.
+        await expect(
+          row.getByRole("link", { name: "Desactivar a Persona Invitada" }),
+        ).toBeFocused();
       }
     });
 

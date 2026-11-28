@@ -515,7 +515,7 @@ describe("equipo: rol y estado", () => {
     log.mockRestore();
   });
 
-  it("al activar cierra primero las sesiones viejas", async () => {
+  it("al activar cierra las sesiones viejas", async () => {
     const api = stubTeamApi({ team: TEAM });
 
     await activate(INACTIVE.id);

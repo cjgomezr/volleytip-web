@@ -37,19 +37,26 @@ export function MemberFeedback({
   outcome,
   isUnsent,
   name,
+  isFromPageLoad,
 }: {
   readonly outcome?: MemberOutcome;
   readonly isUnsent: boolean;
   readonly name: string;
+  /** La respuesta llegó con la página, como pasa sin JavaScript. */
+  readonly isFromPageLoad: boolean;
 }): ReactElement {
   const translate = useTranslate();
   const successText = useSuccessText(outcome, name);
   return (
     // El margen de desplazamiento deja el aviso por encima de la barra
-    // inferior del celular. Vacío, no ocupa espacio.
+    // inferior del celular. Sin mensaje, no suma espacio a la tarjeta. La
+    // región de estado queda siempre montada. Si la página se acaba de cargar
+    // con la respuesta, el navegador baja solo hasta aquí.
     <div
       data-member-feedback
-      className="scroll-mb-28 empty:-mt-3 md:scroll-mb-4"
+      tabIndex={-1}
+      autoFocus={isFromPageLoad}
+      className="scroll-mb-28 not-has-[p]:-mt-3 focus:outline-brand-night md:scroll-mb-4"
     >
       <SuccessNotice text={successText} />
       {outcome?.status === "rejected" ? (

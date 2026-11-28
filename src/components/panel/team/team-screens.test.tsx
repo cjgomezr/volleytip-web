@@ -97,6 +97,16 @@ describe("equipo: la pantalla de la lista", () => {
     expect(rows.filter((row) => row.includes("ahora es"))).toHaveLength(1);
   });
 
+  it("sin JavaScript lleva a quien envió hasta lo que pasó", () => {
+    const rows = readRows(render("cambiada"));
+
+    expect(rows.filter((row) => /autofocus/i.test(row))).toHaveLength(1);
+    expect(rows[2]).toMatch(
+      /tabindex="-1"[^>]*autofocus|autofocus[^>]*tabindex="-1"/i,
+    );
+    expect(render("lista")).not.toMatch(/autofocus/i);
+  });
+
   it("en inglés las fechas de la muestra van en inglés", () => {
     expect(render("lista", "en")).toContain("11/27/26");
   });

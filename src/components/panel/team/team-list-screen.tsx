@@ -17,6 +17,7 @@ import { getButtonLinkClassName } from "../../button";
 import { PanelHeading } from "../panel-heading";
 import { SuccessNotice } from "./success-notice";
 import { TeamMemberCard } from "./team-member-card";
+import type { SentControl } from "./use-team-focus";
 import { useTeamFocus } from "./use-team-focus";
 
 // Lo que se avisa al volver de otra pantalla. Lo que pasa con un botón de la
@@ -37,8 +38,9 @@ interface ListSubmission {
   /** La respuesta del último envío, ya terminado. */
   readonly answer: MemberOutcome | UnsentSubmission | undefined;
   readonly outcome: MemberOutcome | undefined;
-  readonly sentMemberId: string | undefined;
-  readonly setSentMemberId: (memberId: string) => void;
+  /** El botón que hizo el último envío. */
+  readonly sent: SentControl | undefined;
+  readonly setSent: (sent: SentControl) => void;
   /** La fila donde se avisa que el envío no llegó. */
   readonly unsentMemberId: string | undefined;
 }
@@ -55,7 +57,7 @@ function useListSubmission(
   // Pulsar "Equipo" en el menú no desmonta la lista: la respuesta vence ahí.
   const current = useAnswerOfThisLocation(fetcher.data) as
     MemberOutcome | UnsentSubmission | undefined;
-  const [sentMemberId, setSentMemberId] = useState<string>();
+  const [sent, setSent] = useState<SentControl>();
   const isIdle = fetcher.state === "idle";
   const answer = isIdle ? current : undefined;
   const isUnsent = isUnsentSubmission(answer);
@@ -66,9 +68,9 @@ function useListSubmission(
     fetcher,
     answer,
     outcome,
-    sentMemberId,
-    setSentMemberId,
-    unsentMemberId: isUnsent ? sentMemberId : undefined,
+    sent,
+    setSent,
+    unsentMemberId: isUnsent ? sent?.memberId : undefined,
   };
 }
 
@@ -89,9 +91,9 @@ export function TeamListScreen({
   const invitePath = getPanelPath("adminTeamInvite", useLanguage());
   const submission = useListSubmission(initialOutcome);
   const { fetcher, outcome, unsentMemberId } = submission;
-  const listRef = useTeamFocus(submission.answer, submission.sentMemberId);
+  const listRef = useTeamFocus(submission.answer, submission.sent);
   const noticeText = useReturnNoticeText(notice, signInUrl);
-  const hasSubmitted = submission.sentMemberId !== undefined;
+  const hasSubmitted = submission.sent !== undefined;
   return (
     <div className="max-w-[900px]">
       <PanelHeading title={translate("panel.module.team")} />
@@ -104,7 +106,7 @@ export function TeamListScreen({
       >
         {translate("panel.team.invite")}
       </Link>
-      <div className="mt-4 empty:mt-0">
+      <div className="mt-4 not-has-[p]:mt-0">
         <SuccessNotice text={hasSubmitted ? undefined : noticeText} />
       </div>
       <ul ref={listRef} className="mt-4 mb-0 flex list-none flex-col gap-3 p-0">
@@ -113,7 +115,10 @@ export function TeamListScreen({
             key={member.id}
             member={member}
             fetcher={fetcher}
-            onSend={() => submission.setSentMemberId(member.id)}
+            onSend={(control) =>
+              submission.setSent({ memberId: member.id, control })
+            }
+            isFromPageLoad={!hasSubmitted}
             outcome={outcome?.memberId === member.id ? outcome : undefined}
             isUnsent={unsentMemberId === member.id}
           />

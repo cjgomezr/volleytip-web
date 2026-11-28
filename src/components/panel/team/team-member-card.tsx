@@ -14,6 +14,7 @@ import type { UnsentSubmission } from "~/lib/panel/unsent-submission";
 
 import { Button, getButtonLinkClassName } from "../../button";
 import { MemberFeedback } from "./member-feedback";
+import type { TeamControl } from "./use-team-focus";
 
 type TeamFetcher = FetcherWithComponents<MemberOutcome | UnsentSubmission>;
 
@@ -21,8 +22,10 @@ interface TeamMemberCardProps {
   readonly member: TeamMemberView;
   /** El envío que comparten los botones de la lista. */
   readonly fetcher: TeamFetcher;
-  /** Avisa que esta tarjeta es la que envía. */
-  readonly onSend: () => void;
+  /** Avisa que esta tarjeta es la que envía, y con cuál botón. */
+  readonly onSend: (control: TeamControl) => void;
+  /** El resultado llegó con la página y no de un envío de esta pantalla. */
+  readonly isFromPageLoad: boolean;
   /** En qué quedó el último envío, si fue de este miembro. */
   readonly outcome?: MemberOutcome;
   readonly isUnsent: boolean;
@@ -75,7 +78,8 @@ function LastSignIn({
 
 interface MemberButtonProps {
   readonly fetcher: TeamFetcher;
-  readonly onSend: () => void;
+  readonly onSend: (control: TeamControl) => void;
+  readonly control: TeamControl;
   readonly page: PanelPageId;
   readonly memberId: string;
   /** Lo que el botón manda además de la dirección. */
@@ -87,6 +91,7 @@ interface MemberButtonProps {
 function MemberButton({
   fetcher,
   onSend,
+  control,
   page,
   memberId,
   role,
@@ -100,11 +105,12 @@ function MemberButton({
     <fetcher.Form
       method="post"
       action={action}
+      data-team-control={control}
       // Un envío nuevo cancelaría el que está en curso, que podría no llegar a
       // guardarse.
       onSubmit={(event) => {
         if (isBusy) event.preventDefault();
-        else onSend();
+        else onSend(control);
       }}
     >
       {role === undefined ? null : (
@@ -136,7 +142,7 @@ function MemberActions({
   readonly member: TeamMemberView;
   readonly name: string;
   readonly fetcher: TeamFetcher;
-  readonly onSend: () => void;
+  readonly onSend: (control: TeamControl) => void;
 }): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
@@ -146,6 +152,7 @@ function MemberActions({
     <div className="flex flex-wrap items-center gap-2">
       <MemberButton
         {...shared}
+        control="role"
         page="adminTeamRole"
         role={isAdmin ? "staff" : "admin"}
         text={translate(
@@ -162,6 +169,7 @@ function MemberActions({
             memberId: member.id,
           })}
           aria-label={translate("panel.team.deactivateLabel", { name })}
+          data-team-control="access"
           className={getButtonLinkClassName("secondary", "light")}
         >
           {translate("panel.team.deactivate")}
@@ -169,6 +177,7 @@ function MemberActions({
       ) : (
         <MemberButton
           {...shared}
+          control="access"
           page="adminTeamActivate"
           text={translate("panel.team.activate")}
           label={translate("panel.team.activateLabel", { name })}
@@ -186,6 +195,7 @@ export function TeamMemberCard({
   onSend,
   outcome,
   isUnsent,
+  isFromPageLoad,
 }: TeamMemberCardProps): ReactElement {
   const translate = useTranslate();
   const name = member.name ?? translate("panel.team.unnamed");
@@ -223,6 +233,7 @@ export function TeamMemberCard({
           outcome={outcome}
           isUnsent={isUnsent}
           name={distinctName}
+          isFromPageLoad={isFromPageLoad && outcome !== undefined}
         />
       )}
     </li>
