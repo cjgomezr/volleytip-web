@@ -15,11 +15,8 @@ import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../src/lib/database.types.ts";
 import { SERVER_CLIENT_OPTIONS } from "../src/lib/supabase/server-client-options.server.ts";
 import type { TypedSupabaseClient } from "../src/lib/supabase/typed-client.ts";
-import {
-  ensureFirstAdmin,
-  parseAdminEmail,
-  type FirstAdminOutcome,
-} from "./first-admin.ts";
+import { parseTeamEmail } from "../src/lib/team-account.server.ts";
+import { ensureFirstAdmin, type FirstAdminOutcome } from "./first-admin.ts";
 
 export interface ServiceConfig {
   readonly supabaseUrl: string;
@@ -63,7 +60,7 @@ function createServiceClient({
 
 function readEmail(args: readonly string[]): string {
   const [raw = "", ...extra] = args;
-  const email = extra.length === 0 ? parseAdminEmail(raw) : null;
+  const email = extra.length === 0 ? parseTeamEmail(raw) : null;
   if (email === null) {
     throw new Error(`Falta un correo válido.\n${USAGE}`);
   }

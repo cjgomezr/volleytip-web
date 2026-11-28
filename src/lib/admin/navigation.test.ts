@@ -47,6 +47,7 @@ describe("módulos del panel", () => {
       "faqs",
       "markets",
       "settings",
+      "team",
       "audit-log",
     ]);
     expect(sidebar[3]?.href).toBe("/admin/preguntas");
@@ -67,6 +68,7 @@ describe("módulos del panel", () => {
       "faqs",
       "markets",
       "settings",
+      "team",
       "audit-log",
     ]);
   });

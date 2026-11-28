@@ -92,6 +92,17 @@ export function assertAdminMember(member: PanelMember, request: Request): void {
   }
 }
 
+/** Las dos comprobaciones juntas, para el loader o el action que no puede
+ * depender de bajo qué layout quedó declarada su ruta. */
+export async function verifyAdminMember(
+  request: Request,
+  client: TypedSupabaseClient,
+): Promise<PanelMember> {
+  const member = await verifyPanelMember(request, client);
+  assertAdminMember(member, request);
+  return member;
+}
+
 /** La guardia del panel, para páginas y envíos por igual. Corre antes que
  * cualquier loader o action y deja el perfil de la persona en el contexto. */
 export const requirePanelMember: MiddlewareFunction<Response> = async ({
