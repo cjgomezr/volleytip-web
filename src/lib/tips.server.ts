@@ -14,6 +14,7 @@ import {
   type TipOrientation,
   type TipPromo,
 } from "./tips";
+import { MAX_TIP_QUERY_LENGTH } from "./tips-query";
 import {
   resolveTranslatedFields,
   type ResolvedFields,
@@ -26,9 +27,6 @@ const MAX_PAGE_SIZE = 1000;
 // Mucho más allá de cualquier catálogo. Un comienzo mayor se recorta aquí
 // porque la base rechaza los números que no le caben.
 const MAX_OFFSET = 1_000_000;
-// En caracteres (PRD de W4, sección 6). Una búsqueda sin recortar no cabe en la
-// dirección con que se cuenta y la lectura fallaría.
-const MAX_QUERY_LENGTH = 100;
 // El mismo tope y la misma forma que exige la base (`tips_slug_check`): un
 // slug que no los cumple no es de ningún tip, y uno enorme no cabe en una
 // consulta.
@@ -184,10 +182,11 @@ function toWholeNumber(
 
 /** Deja como texto buscable lo que puede venir de la dirección. La base
  * rechaza el carácter nulo, y el recorte es por caracteres enteros para no
- * partir un emoji. */
+ * partir un emoji. Una búsqueda sin recortar no cabe en la dirección con que se
+ * cuenta y la lectura fallaría. */
 function cleanQuery(query: string): string {
   const text = query.replaceAll("\u0000", "").trim();
-  return Array.from(text).slice(0, MAX_QUERY_LENGTH).join("");
+  return Array.from(text).slice(0, MAX_TIP_QUERY_LENGTH).join("");
 }
 
 function searchArguments(
@@ -265,6 +264,39 @@ export async function listPublishedTips(
     .map((row) => toTip(parseTipRow(row), language))
     .filter((tip) => tip !== null);
   return { tips, total: count };
+}
+
+/** Cuántos tips publicados hay. Si la base falla, lanza. */
+export async function countPublishedTips(
+  language: Language,
+  { client = createAnonSupabaseClient() }: TipReadingOptions = {},
+): Promise<number> {
+  return countTips(client, language, {});
+}
+
+/**
+ * El tip destacado o, si no hay uno público, el más reciente. Nulo si no hay
+ * ninguno publicado. Si la base falla, lanza.
+ */
+export async function readLatestTip(
+  language: Language,
+  { client = createAnonSupabaseClient() }: TipReadingOptions = {},
+): Promise<Tip | null> {
+  const { data, error } = await client
+    .from("public_tips")
+    .select("*")
+    .order("is_featured", { ascending: false })
+    .order("published_at", { ascending: false })
+    .order("id", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+
+  if (error !== null) {
+    throw new Error(`No se pudo leer el último tip: ${error.message}`, {
+      cause: error,
+    });
+  }
+  return data === null ? null : toTip(parseTipRow(data), language);
 }
 
 /**

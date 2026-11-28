@@ -3,7 +3,12 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { Database } from "./database.types";
 import type { TypedSupabaseClient } from "./supabase/typed-client";
-import { listPublishedTips, readTipBySlug } from "./tips.server";
+import {
+  countPublishedTips,
+  listPublishedTips,
+  readLatestTip,
+  readTipBySlug,
+} from "./tips.server";
 
 const SPANISH = {
   title: "Saque flotado",
@@ -163,6 +168,47 @@ describe("tips: lectura por idioma", () => {
       readTipBySlug("es", "saque-flotado", { client }),
     ).rejects.toThrow(/No se pudo leer el tip/);
     await expect(listPublishedTips("es", { client })).rejects.toThrow(
+      /No se pudieron leer los tips/,
+    );
+  });
+});
+
+describe("listado de tips: lectura del último video", () => {
+  it("pide primero el destacado y después el más reciente", async () => {
+    const requested: URL[] = [];
+    const client = createClient<Database>(
+      "http://supabase.prueba",
+      "llave-publica",
+      {
+        global: {
+          fetch: async (input) => {
+            requested.push(new URL(String(input)));
+            return Response.json([buildRow({ es: SPANISH })]);
+          },
+        },
+      },
+    );
+
+    const tip = await readLatestTip("es", { client });
+
+    expect(tip?.slug).toBe("saque-flotado");
+    expect(requested[0]?.searchParams.get("order")).toBe(
+      "is_featured.desc,published_at.desc,id.asc",
+    );
+    expect(requested[0]?.searchParams.get("limit")).toBe("1");
+  });
+
+  it("sin tips publicados devuelve nulo", async () => {
+    const client = fakeClient([]);
+
+    await expect(readLatestTip("es", { client })).resolves.toBeNull();
+  });
+
+  it("si la base falla, lanza", async () => {
+    const client = fakeClient([], 500);
+
+    await expect(readLatestTip("es", { client })).rejects.toThrow(/último tip/);
+    await expect(countPublishedTips("es", { client })).rejects.toThrow(
       /No se pudieron leer los tips/,
     );
   });
