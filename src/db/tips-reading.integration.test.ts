@@ -122,12 +122,9 @@ describeIntegration("tips: búsqueda", () => {
     newMark();
     await seedMarked("Uno");
 
-    expect(
-      (
-        await search(`	${mark}\u0000
-`)
-      ).total,
-    ).toBe(1);
+    const { total } = await search(`\t${mark}\u0000\n`);
+
+    expect(total).toBe(1);
   });
 
   it("trata los comodines como texto", async () => {
@@ -161,7 +158,7 @@ describeIntegration("tips: búsqueda", () => {
           achievement: `${mark} logro`,
           keys: [`${mark} clave`],
         },
-        en: { title: "Serve", achievement: "  " },
+        en: { title: "Serve" },
       },
     });
 
