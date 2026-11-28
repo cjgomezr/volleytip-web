@@ -3,6 +3,7 @@ import type { Messages } from "../translate";
 import { aboutEn } from "./about-en";
 import { contactEn } from "./contact-en";
 import { faqEn } from "./faq-en";
+import { tipsEn } from "./tips-en";
 import { appEn } from "./app-en";
 import { panelEn } from "./panel-en";
 import { errorsEn } from "./errors";
@@ -96,6 +97,7 @@ export const en = {
   ...aboutEn,
   ...contactEn,
   ...faqEn,
+  ...tipsEn,
   ...appEn,
   ...panelEn,
   ...errorsEn,

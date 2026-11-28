@@ -4,6 +4,7 @@
 import { aboutEs } from "./about-es";
 import { contactEs } from "./contact-es";
 import { faqEs } from "./faq-es";
+import { tipsEs } from "./tips-es";
 import { appEs } from "./app-es";
 import { panelEs } from "./panel-es";
 import { errorsEs } from "./errors";
@@ -98,6 +99,7 @@ export const es = {
   ...aboutEs,
   ...contactEs,
   ...faqEs,
+  ...tipsEs,
   ...appEs,
   ...panelEs,
   ...errorsEs,

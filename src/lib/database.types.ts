@@ -479,6 +479,120 @@ export type Database = {
           },
         ];
       };
+      tip_translations: {
+        Row: {
+          achievement: string | null;
+          common_error: string | null;
+          created_at: string;
+          keys: string[];
+          locale: string;
+          practice: string | null;
+          tip_id: string;
+          title: string;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          achievement?: string | null;
+          common_error?: string | null;
+          created_at?: string;
+          keys?: string[];
+          locale: string;
+          practice?: string | null;
+          tip_id: string;
+          title: string;
+          updated_at?: string;
+        };
+        Update: {
+          achievement?: string | null;
+          common_error?: string | null;
+          created_at?: string;
+          keys?: string[];
+          locale?: string;
+          practice?: string | null;
+          tip_id?: string;
+          title?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "tip_translations_locale_fkey";
+            columns: ["locale"];
+            isOneToOne: false;
+            referencedRelation: "languages";
+            referencedColumns: ["code"];
+          },
+          {
+            foreignKeyName: "tip_translations_tip_id_fkey";
+            columns: ["tip_id"];
+            isOneToOne: false;
+            referencedRelation: "public_tips";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "tip_translations_tip_id_fkey";
+            columns: ["tip_id"];
+            isOneToOne: false;
+            referencedRelation: "tips";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      tips: {
+        Row: {
+          bunny_video_id: string | null;
+          created_at: string;
+          duration_seconds: number | null;
+          fundamental: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id: string;
+          is_featured: boolean;
+          level: Database["public"]["Enums"]["tip_level"] | null;
+          orientation: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo: Json | null;
+          published_at: string | null;
+          slug: string;
+          status: Database["public"]["Enums"]["publish_status"];
+          thumbnail_url: string | null;
+          tiktok_url: string | null;
+          updated_at: string;
+        };
+        ComputedFields: never;
+        Insert: {
+          bunny_video_id?: string | null;
+          created_at?: string;
+          duration_seconds?: number | null;
+          fundamental?: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id?: string;
+          is_featured?: boolean;
+          level?: Database["public"]["Enums"]["tip_level"] | null;
+          orientation?: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo?: Json | null;
+          published_at?: string | null;
+          slug: string;
+          status?: Database["public"]["Enums"]["publish_status"];
+          thumbnail_url?: string | null;
+          tiktok_url?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          bunny_video_id?: string | null;
+          created_at?: string;
+          duration_seconds?: number | null;
+          fundamental?: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id?: string;
+          is_featured?: boolean;
+          level?: Database["public"]["Enums"]["tip_level"] | null;
+          orientation?: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo?: Json | null;
+          published_at?: string | null;
+          slug?: string;
+          status?: Database["public"]["Enums"]["publish_status"];
+          thumbnail_url?: string | null;
+          tiktok_url?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       waitlists: {
         Row: {
           city: string | null;
@@ -526,7 +640,55 @@ export type Database = {
       };
     };
     Views: {
-      [_ in never]: never;
+      public_tips: {
+        Row: {
+          bunny_video_id: string | null;
+          duration_seconds: number | null;
+          fundamental: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id: string;
+          is_featured: boolean;
+          level: Database["public"]["Enums"]["tip_level"] | null;
+          orientation: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo: Json | null;
+          published_at: string | null;
+          slug: string;
+          thumbnail_url: string | null;
+          tiktok_url: string | null;
+          translations: Json | null;
+        };
+        ComputedFields: never;
+        Insert: {
+          bunny_video_id?: string | null;
+          duration_seconds?: number | null;
+          fundamental?: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id?: string | null;
+          is_featured?: boolean | null;
+          level?: Database["public"]["Enums"]["tip_level"] | null;
+          orientation?: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo?: Json | null;
+          published_at?: string | null;
+          slug?: string | null;
+          thumbnail_url?: string | null;
+          tiktok_url?: string | null;
+          translations?: never;
+        };
+        Update: {
+          bunny_video_id?: string | null;
+          duration_seconds?: number | null;
+          fundamental?: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id?: string | null;
+          is_featured?: boolean | null;
+          level?: Database["public"]["Enums"]["tip_level"] | null;
+          orientation?: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo?: Json | null;
+          published_at?: string | null;
+          slug?: string | null;
+          thumbnail_url?: string | null;
+          tiktok_url?: string | null;
+          translations?: never;
+        };
+        Relationships: [];
+      };
     };
     Functions: {
       assert_faq_editor: {
@@ -603,6 +765,35 @@ export type Database = {
         };
         Returns: undefined;
       };
+      search_public_tips: {
+        Args: {
+          p_fundamental?: Database["public"]["Enums"]["tip_fundamental"];
+          p_level?: Database["public"]["Enums"]["tip_level"];
+          p_locale: string;
+          p_query?: string;
+        };
+        Returns: {
+          bunny_video_id: string | null;
+          duration_seconds: number | null;
+          fundamental: Database["public"]["Enums"]["tip_fundamental"] | null;
+          id: string;
+          is_featured: boolean;
+          level: Database["public"]["Enums"]["tip_level"] | null;
+          orientation: Database["public"]["Enums"]["tip_orientation"] | null;
+          promo: Json | null;
+          published_at: string | null;
+          slug: string;
+          thumbnail_url: string | null;
+          tiktok_url: string | null;
+          translations: Json | null;
+        }[];
+        SetofOptions: {
+          from: "*";
+          to: "public_tips";
+          isOneToOne: false;
+          isSetofReturn: true;
+        };
+      };
       set_faq_status: {
         Args: {
           p_faq_id: string;
@@ -620,6 +811,10 @@ export type Database = {
       message_status: "new" | "answered" | "archived";
       price_mode: "manual";
       publish_status: "draft" | "published" | "retired";
+      tip_fundamental:
+        "serve" | "reception" | "setting" | "attack" | "block" | "defense";
+      tip_level: "basic" | "intermediate" | "advanced";
+      tip_orientation: "vertical" | "horizontal";
       user_role: "admin" | "staff" | "buyer";
     };
     CompositeTypes: {
@@ -752,6 +947,16 @@ export const Constants = {
       message_status: ["new", "answered", "archived"],
       price_mode: ["manual"],
       publish_status: ["draft", "published", "retired"],
+      tip_fundamental: [
+        "serve",
+        "reception",
+        "setting",
+        "attack",
+        "block",
+        "defense",
+      ],
+      tip_level: ["basic", "intermediate", "advanced"],
+      tip_orientation: ["vertical", "horizontal"],
       user_role: ["admin", "staff", "buyer"],
     },
   },

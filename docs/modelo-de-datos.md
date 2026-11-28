@@ -61,6 +61,9 @@ erDiagram
 | `item_kind` | `physical`, `digital`, `event_plan`, `bundle` |
 | `publish_status` | `draft`, `published`, `retired` |
 | `price_mode` | `manual` (la fase 3 agrega `auto`, FR-010) |
+| `tip_fundamental` | `serve`, `reception`, `setting`, `attack`, `block`, `defense` (saque, recepción, colocación, ataque, bloqueo, defensa) |
+| `tip_level` | `basic`, `intermediate`, `advanced` (básico, intermedio, avanzado) |
+| `tip_orientation` | `vertical`, `horizontal` |
 | `payment_status` | `pending`, `paid`, `failed`, `expired`, `cancelled`, `partially_refunded`, `refunded` |
 | `fulfillment_status` | `to_ship`, `shipped` (la fase 2 agrega `preparing` y `delivered`) |
 | `payment_method` | `card`, `pse`, `nequi`, `bancolombia_button`, `club_code`, `none` |
@@ -118,10 +121,15 @@ La IP nunca se guarda en claro: se guarda un hash con sal que rota cada día.
 ## 5. Contenido (W4)
 
 ### `tips` y `tip_translations`
-`tips`: `id`, `slug`, `bunny_video_id`, `orientation` (`vertical`, `horizontal`), `duration_seconds`, `thumbnail_url`, `fundamental` (lista fija: saque, recepción, colocación, ataque, bloqueo, defensa), `level` (lista fija: básico, intermedio, avanzado), `tiktok_url`, `promo` (jsonb: tipo y referencia del bloque de promoción, FR-014), `is_featured` (uno solo a la vez), `status` (`publish_status`), `published_at` (una fecha futura lo deja programado). `related_catalog_item_id`, para sugerir un paquete digital (FR-106), la agrega W14. Un video de Bunny pertenece como máximo a un tip.
-`tip_translations`: `title`, `achievement`, `keys` (text[] de 3), `common_error`, `practice`.
+`tips`: `id`, `slug` (único; minúsculas, números y guiones), `bunny_video_id` (único: un video de Bunny pertenece como máximo a un tip), `orientation` (`tip_orientation`), `duration_seconds` (mayor que cero), `thumbnail_url`, `fundamental` (`tip_fundamental`), `level` (`tip_level`), `tiktok_url`, `promo` (jsonb, `{"type":"app"}` o `{"type":"social"}`; nulo muestra las redes, FR-014), `is_featured` (uno solo a la vez), `status` (`publish_status`), `published_at` (una fecha futura lo deja programado).
 
-Vista `public_tips`: solo publicados cuya fecha ya pasó, con traducciones y el id del video. Es lo que leerá la app (FR-078, AC-034).
+Fundamento y nivel son listas fijas de la base: agregar un valor pide una migración. Sus nombres visibles salen de los archivos de traducción. Un borrador puede no tener video, datos del video, fundamento ni nivel. La base no deja publicar sin `bunny_video_id`, `orientation`, `duration_seconds`, `thumbnail_url`, `fundamental`, `level` y `published_at`. Un tip no se borra: ningún rol de la API tiene ese permiso. El paquete digital relacionado (FR-106) lo agrega W14.
+
+`tip_translations`: `tip_id`, `locale`, `title` (obligatorio), `achievement`, `keys` (text[] de hasta 3, sin claves en blanco), `common_error`, `practice`. Clave única (`tip_id`, `locale`). Un admin puede quitar la traducción de un idioma.
+
+Vista `public_tips`: solo publicados cuya fecha ya pasó. Columnas: `id`, `slug`, `bunny_video_id`, `orientation`, `duration_seconds`, `thumbnail_url`, `fundamental`, `level`, `tiktok_url`, `promo`, `is_featured`, `published_at` y `translations` (objeto por idioma con `title`, `achievement`, `keys`, `common_error`, `practice`). Consulta con los permisos de quien la lee (`security_invoker`). Es lo que leerá la app (FR-078, AC-034): cambiar sus columnas la puede romper.
+
+La función `search_public_tips(p_locale, p_query, p_fundamental, p_level)` devuelve filas de esa vista para el listado (FR-013). Busca en el título, la frase de logro y las claves del idioma pedido, con español en los campos que falten, sin distinguir mayúsculas ni tildes (extensión `unaccent`). Omite los tips sin español.
 
 Las vistas se cuentan por tip y por día en una tabla propia, con una función atómica que suma una; reemplaza a la columna `views_week` que este documento traía. No guarda IP ni identificadores. La define el PRD de W4 (`docs/prd/w4-tips.md`, RF-6).
 
