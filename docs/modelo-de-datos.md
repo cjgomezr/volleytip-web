@@ -118,10 +118,12 @@ La IP nunca se guarda en claro: se guarda un hash con sal que rota cada día.
 ## 5. Contenido (W4)
 
 ### `tips` y `tip_translations`
-`tips`: `id`, `slug`, `bunny_video_id`, `orientation` (`vertical`, `horizontal`), `duration_seconds`, `thumbnail_url`, `fundamental` (text: recepción, saque…), `level`, `tiktok_url`, `promo` (jsonb: tipo y referencia del bloque de promoción, FR-014), `related_catalog_item_id` (para sugerir un paquete digital, FR-106), `is_featured`, `status` (`publish_status`), `published_at`, `views_week`.
+`tips`: `id`, `slug`, `bunny_video_id`, `orientation` (`vertical`, `horizontal`), `duration_seconds`, `thumbnail_url`, `fundamental` (lista fija: saque, recepción, colocación, ataque, bloqueo, defensa), `level` (lista fija: básico, intermedio, avanzado), `tiktok_url`, `promo` (jsonb: tipo y referencia del bloque de promoción, FR-014), `is_featured` (uno solo a la vez), `status` (`publish_status`), `published_at` (una fecha futura lo deja programado). `related_catalog_item_id`, para sugerir un paquete digital (FR-106), la agrega W14. Un video de Bunny pertenece como máximo a un tip.
 `tip_translations`: `title`, `achievement`, `keys` (text[] de 3), `common_error`, `practice`.
 
-Vista `public_tips`: solo publicados, con traducciones y el id del video. Es lo que leerá la app (FR-078, AC-034).
+Vista `public_tips`: solo publicados cuya fecha ya pasó, con traducciones y el id del video. Es lo que leerá la app (FR-078, AC-034).
+
+Las vistas se cuentan por tip y por día en una tabla propia, con una función atómica que suma una; reemplaza a la columna `views_week` que este documento traía. No guarda IP ni identificadores. La define el PRD de W4 (`docs/prd/w4-tips.md`, RF-6).
 
 ## 6. Catálogo (W5, W8, W14)
 
@@ -336,7 +338,11 @@ Los códigos de 6 dígitos y los enlaces de un solo uso los maneja Supabase Auth
 `faqs`: `id`, `sort_order`, `status` (`publish_status`). `faq_translations`: `question`, `answer`. Página de preguntas frecuentes editable desde el admin (FR-137). El sitio y el panel las ordenan por `sort_order`, `created_at` e `id`. El panel escribe con las funciones `create_faq`, `save_faq`, `set_faq_status` y `move_faq`, que solo corren para un admin. Ellas impiden publicar sin el idioma por defecto (no es una restricción de la tabla; el sitio omite una pregunta sin español). Una sesión no puede borrar preguntas: se retiran.
 
 ### `email_log`
-`id`, `template`, `to_email`, `locale`, `related_entity`, `related_id`, `status` (`email_status`), `provider_id`, `attempts`, `last_error`, `sent_at` (FR-069).
+`id`, `template`, `to_email`, `locale`, `related_entity`, `related_id`, `status` (`email_status`), `provider_id`, `attempts`, `last_error`, `sent_at` (FR-069). W11a le suma los datos de la plantilla (para reintentar; se borran a los 90 días), la llave que evita envíos duplicados, cuándo toca el siguiente intento y los estados de entrega que reporta Resend.
+
+### Conversación de un mensaje (W11a)
+
+El PRD de W11a (`docs/prd/w11a-correos-base.md`) agrega: las plantillas de respuesta (nombre, idioma, asunto, cuerpo, orden y si está activa); las respuestas y contestaciones de cada mensaje, con su dirección (saliente o entrante), autor, texto y estado; los adjuntos de cada una, guardados en un bucket privado de Supabase Storage; la dirección de respuesta única de cada mensaje; los avisos de Resend ya procesados; y las bajas de los correos de marketing. Una contestación devuelve el mensaje a `new`. Los nombres exactos de tablas y columnas los fija cada ticket y este documento se actualiza con ellos.
 
 ### Fase 2
 `galleries` y `gallery_items` quedan definidas en el PRD de W12.
@@ -408,8 +414,8 @@ Cada epic crea solo sus tablas. Las migraciones van en un solo carril a la vez (
 | W1 | `profiles`, `settings`, `audit_log`, `rate_limits`, `form_rejections`, todos los enums base |
 | W2 | `languages`, `markets`, `site_texts`, `catalog_items`, `prices` |
 | W3 | `messages`, `waitlists`, `faqs`, `faq_translations` |
-| W4 | `tips`, `tip_translations`, vista `public_tips` |
-| W11a | `email_log` |
+| W4 | `tips`, `tip_translations`, vista `public_tips`, vistas por día |
+| W11a | `email_log`, plantillas de respuesta, respuestas y contestaciones de un mensaje, sus adjuntos, avisos de Resend procesados, bajas de marketing |
 | W15 | `events`, `event_translations`, `tour_attendances` |
 | W5 | `products` y sus tablas, `shipping_zones`, `restock_alerts` |
 | W6a | `carts` |
