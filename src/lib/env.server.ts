@@ -33,6 +33,9 @@ export const SERVER_ENV_VARIABLES = [
   "CLIENT_IP_TRUSTED_HOPS",
   "IMAGE_CDN_HOST",
   "SITE_ORIGIN",
+  "BUNNY_STREAM_LIBRARY_ID",
+  "BUNNY_STREAM_API_KEY",
+  "BUNNY_STREAM_CDN_HOST",
 ] as const;
 
 /** Sin ellas el servidor arranca igual: lo que encienden queda apagado. */
@@ -65,6 +68,12 @@ export interface ServerEnv {
   /** Pinta "Continuar con Google" en la entrada del panel. Las credenciales
    * de Google viven en Supabase, no aquí. */
   readonly googleSignInEnabled: boolean;
+  /** Número de la librería de Bunny Stream de este entorno. */
+  readonly bunnyStreamLibraryId: string;
+  /** Llave de API de esa librería. Es secreta. */
+  readonly bunnyStreamApiKey: string;
+  /** Dominio de la zona de la librería, de donde salen las miniaturas. */
+  readonly bunnyStreamCdnHost: string;
 }
 
 export type EnvSource = Readonly<Record<string, string | undefined>>;
@@ -82,6 +91,10 @@ const FLAG_ON = "true";
 const HEADER_NAME = /^[A-Za-z0-9!#$%&'*+.^_`|~-]+$/;
 // Hasta tres cifras: sobra para una cadena de proxies.
 const POSITIVE_INTEGER = /^[1-9]\d{0,2}$/;
+const BUNNY_LIBRARY_ID = /^[1-9]\d*$/;
+// Signos ASCII visibles, sin espacios: lo que cabe en un encabezado HTTP.
+// Bunny no documenta la forma de sus llaves, así que no se exige más.
+const VISIBLE_ASCII = /^[\x21-\x7e]+$/;
 // Fuera de estos entornos Turnstile tiene que proteger de verdad.
 const ENVIRONMENTS_FOR_TEST_KEYS: readonly string[] = ["local", "test"];
 // Solo en la máquina de quien programa el sitio se sirve sin cifrar.
@@ -215,6 +228,31 @@ function findInvalidFlags(values: PresentValues): string[] {
   ];
 }
 
+function findInvalidBunnyStreamValues(values: PresentValues): string[] {
+  const {
+    BUNNY_STREAM_LIBRARY_ID: libraryId,
+    BUNNY_STREAM_API_KEY: apiKey,
+    BUNNY_STREAM_CDN_HOST: host,
+  } = values;
+  const invalid: string[] = [];
+  if (libraryId !== undefined && !BUNNY_LIBRARY_ID.test(libraryId)) {
+    invalid.push(
+      "BUNNY_STREAM_LIBRARY_ID debe ser el número de la librería de Bunny Stream.",
+    );
+  }
+  if (apiKey !== undefined && !VISIBLE_ASCII.test(apiKey)) {
+    invalid.push(
+      "BUNNY_STREAM_API_KEY no es una llave de API: no lleva espacios ni tildes.",
+    );
+  }
+  if (host !== undefined && !isImageCdnHost(host)) {
+    invalid.push(
+      "BUNNY_STREAM_CDN_HOST no es un dominio. Va sin protocolo ni ruta, por ejemplo nombre.b-cdn.net.",
+    );
+  }
+  return invalid;
+}
+
 function findInvalidValues(values: PresentValues): string[] {
   return [
     ...findInvalidSupabaseValues(values),
@@ -223,6 +261,7 @@ function findInvalidValues(values: PresentValues): string[] {
     ...findInvalidImageValues(values),
     ...findInvalidSiteOrigin(values),
     ...findInvalidFlags(values),
+    ...findInvalidBunnyStreamValues(values),
   ];
 }
 
@@ -262,6 +301,9 @@ function buildServerEnv(values: CompleteValues): ServerEnv | undefined {
     imageCdnHost: values.IMAGE_CDN_HOST,
     siteOrigin: values.SITE_ORIGIN,
     googleSignInEnabled: values.GOOGLE_SIGN_IN_ENABLED === FLAG_ON,
+    bunnyStreamLibraryId: values.BUNNY_STREAM_LIBRARY_ID,
+    bunnyStreamApiKey: values.BUNNY_STREAM_API_KEY,
+    bunnyStreamCdnHost: values.BUNNY_STREAM_CDN_HOST,
   };
 }
 

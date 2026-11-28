@@ -13,6 +13,11 @@ const SETTINGS = {
   apiKey: "llave-de-prueba-de-bunny",
   cdnHost: "videos-de-prueba.b-cdn.net",
 } as const;
+const SERVER_VALUES = {
+  bunnyStreamLibraryId: SETTINGS.libraryId,
+  bunnyStreamApiKey: SETTINGS.apiKey,
+  bunnyStreamCdnHost: SETTINGS.cdnHost,
+} as const;
 const UNKNOWN_ID = "00000000-0000-4000-8000-000000000000";
 const EVERYTHING = { page: 1, itemsPerPage: 100 };
 
@@ -127,7 +132,7 @@ describe("bunny stream: simulado", () => {
 describe("bunny stream: según el entorno", () => {
   it("en test entrega el simulado y nada sale a la red", async () => {
     const fetchSpy = forbidNetwork();
-    const bunny = openBunnyStream({ ...SETTINGS, appEnv: "test" });
+    const bunny = openBunnyStream({ ...SERVER_VALUES, appEnv: "test" });
 
     const { totalItems } = await listAll(bunny);
 
@@ -136,13 +141,25 @@ describe("bunny stream: según el entorno", () => {
   });
 
   it("en test conserva entre llamadas el video que se creó", async () => {
-    const settings = { ...SETTINGS, appEnv: "test" } as const;
-    const created = await openBunnyStream(settings).createVideo("Bloqueo");
+    const env = { ...SERVER_VALUES, appEnv: "test" } as const;
+    const created = await openBunnyStream(env).createVideo("Bloqueo");
     if (!created.ok) throw new Error(created.error.detail);
 
-    expect(
-      await openBunnyStream(settings).getVideo(created.value),
-    ).toMatchObject({ value: { found: true } });
+    expect(await openBunnyStream(env).getVideo(created.value)).toMatchObject({
+      value: { found: true },
+    });
+  });
+
+  it("en local llama a la librería que dicen las variables", async () => {
+    const fetchSpy = forbidNetwork();
+
+    await openBunnyStream({ ...SERVER_VALUES, appEnv: "local" }).listVideos(
+      EVERYTHING,
+    );
+
+    const [url, init] = fetchSpy.mock.calls[0] ?? [];
+    expect(url).toContain(`/library/${SETTINGS.libraryId}/videos`);
+    expect(new Headers(init?.headers).get("AccessKey")).toBe(SETTINGS.apiKey);
   });
 
   it.each(["local", "staging", "production"] as const)(
@@ -151,7 +168,7 @@ describe("bunny stream: según el entorno", () => {
       const fetchSpy = forbidNetwork();
 
       const result = await openBunnyStream({
-        ...SETTINGS,
+        ...SERVER_VALUES,
         appEnv,
       }).listVideos(EVERYTHING);
 

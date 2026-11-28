@@ -17,6 +17,9 @@ const TEST_SERVER_ENV: ServerEnv = {
   imageCdnHost: "imagenes-de-prueba.b-cdn.net",
   siteOrigin: "https://sitio-de-prueba.volleytip.test",
   googleSignInEnabled: false,
+  bunnyStreamLibraryId: "100000",
+  bunnyStreamApiKey: "llave-de-bunny-stream-falsa",
+  bunnyStreamCdnHost: "videos-de-prueba.b-cdn.net",
 };
 
 /**
