@@ -2086,6 +2086,10 @@ for (const variant of PANEL_VARIANTS) {
         await page.goto(`${APP_URL}${variant.path}`);
         if (variant.readySelector !== undefined) {
           await page.locator(variant.readySelector).first().waitFor();
+          // El foco desplaza la página hasta el elemento, y cuánto depende de
+          // la corrida. La barra inferior, que va fija, saldría cada vez en
+          // otro lugar de la captura: se vuelve arriba antes de capturar.
+          await page.evaluate(() => window.scrollTo(0, 0));
         }
         await page.evaluate(async () => {
           await document.fonts.ready;
