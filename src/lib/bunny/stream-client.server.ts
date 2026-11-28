@@ -21,7 +21,7 @@ import type {
   VideoPageRequest,
 } from "./stream";
 import { signUpload } from "./upload-signature.server";
-import { isObject, readVideo } from "./video.server";
+import { isObject, readVideo, readVideoId } from "./video.server";
 
 const API_ORIGIN = "https://video.bunnycdn.com";
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -110,10 +110,15 @@ async function callApi(
           ...(isWrite ? { "Content-Type": "application/json" } : {}),
         },
         body: isWrite ? JSON.stringify({ title }) : null,
+        // Al seguir una redirección, `fetch` repetiría el encabezado
+        // AccessKey en la dirección de destino.
+        redirect: "error",
         signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       },
     );
     if (!response.ok) {
+      // El cuerpo no se usa; soltarlo libera la conexión.
+      await response.body?.cancel();
       const detail = `Bunny Stream respondió ${String(response.status)} al ${operation}.`;
       return { ok: false, status: response.status, detail };
     }
@@ -195,10 +200,12 @@ async function createVideo(
   if (!answer.ok) {
     return fail(answer);
   }
-  const video = readVideo(answer.body, settings.cdnHost);
-  return video === null
+  // Solo se exige el id: el video ya quedó creado, y darlo por fallido
+  // dejaría uno huérfano en cada reintento.
+  const videoId = readVideoId(answer.body);
+  return videoId === null
     ? failUnreadable(operation)
-    : { ok: true, value: video.id };
+    : { ok: true, value: videoId };
 }
 
 export function createBunnyStreamClient(

@@ -39,6 +39,12 @@ async function listAll(bunny: BunnyStream): Promise<VideoPage> {
   return result.value;
 }
 
+async function addVideos(bunny: BunnyStream, count: number): Promise<void> {
+  for (let added = 0; added < count; added += 1) {
+    await bunny.createVideo("Relleno");
+  }
+}
+
 describe("bunny stream: simulado", () => {
   it("trae ejemplos de las dos orientaciones y los tres estados", async () => {
     const { videos } = await listAll(createFakeBunnyStream(SETTINGS));
@@ -53,19 +59,31 @@ describe("bunny stream: simulado", () => {
 
   it("pagina y devuelve el total", async () => {
     const bunny = createFakeBunnyStream(SETTINGS);
+    await addVideos(bunny, 12 - FAKE_BUNNY_VIDEOS.length);
+    const everything = (await listAll(bunny)).videos;
 
-    const result = await bunny.listVideos({ page: 2, itemsPerPage: 2 });
+    const result = await bunny.listVideos({ page: 2, itemsPerPage: 10 });
 
     expect(result).toEqual({
       ok: true,
-      value: {
-        totalItems: FAKE_BUNNY_VIDEOS.length,
-        videos: FAKE_BUNNY_VIDEOS.slice(2, 4).map((video) => ({
-          ...video,
-          thumbnailUrl: expect.stringContaining(SETTINGS.cdnHost) as string,
-        })),
-      },
+      value: { totalItems: 12, videos: everything.slice(10) },
     });
+  });
+
+  // Como Bunny: una pantalla probada aquí no puede contar con otro tamaño.
+  it.each([
+    [2, 10],
+    [5000, 1000],
+  ])("ajusta una página de %i videos a %i", async (requested, effective) => {
+    const bunny = createFakeBunnyStream(SETTINGS);
+    await addVideos(bunny, effective);
+
+    const result = await bunny.listVideos({
+      page: 1,
+      itemsPerPage: requested,
+    });
+
+    expect(result.ok && result.value.videos).toHaveLength(effective);
   });
 
   it("lee un video de ejemplo y dice que no existe otro", async () => {

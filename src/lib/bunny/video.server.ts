@@ -68,15 +68,24 @@ export function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
 
+/** El id (`guid`) de un video, o `null` si no trae uno. */
+export function readVideoId(body: unknown): string | null {
+  if (!isObject(body)) {
+    return null;
+  }
+  const { guid } = body;
+  return typeof guid === "string" && guid !== "" ? guid : null;
+}
+
 /** `null` si lo que llegó no es un video: sin id, título, duración o estado. */
 export function readVideo(body: unknown, cdnHost: string): BunnyVideo | null {
   if (!isObject(body)) {
     return null;
   }
-  const { guid, title, length, status } = body;
+  const id = readVideoId(body);
+  const { title, length, status } = body;
   if (
-    typeof guid !== "string" ||
-    guid === "" ||
+    id === null ||
     typeof title !== "string" ||
     typeof length !== "number" ||
     typeof status !== "number"
@@ -84,11 +93,11 @@ export function readVideo(body: unknown, cdnHost: string): BunnyVideo | null {
     return null;
   }
   return {
-    id: guid,
+    id,
     title,
     durationSeconds: length,
     orientation: readOrientation(body),
     status: readStatus(status),
-    thumbnailUrl: buildThumbnailUrl(cdnHost, guid, body.thumbnailFileName),
+    thumbnailUrl: buildThumbnailUrl(cdnHost, id, body.thumbnailFileName),
   };
 }

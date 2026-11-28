@@ -49,6 +49,17 @@ export const FAKE_BUNNY_VIDEOS: readonly SampleVideo[] = [
   },
 ];
 
+// El rango al que Bunny ajusta `itemsPerPage`.
+const MIN_ITEMS_PER_PAGE = 10;
+const MAX_ITEMS_PER_PAGE = 1000;
+
+function clampItemsPerPage(itemsPerPage: number): number {
+  return Math.min(
+    Math.max(itemsPerPage, MIN_ITEMS_PER_PAGE),
+    MAX_ITEMS_PER_PAGE,
+  );
+}
+
 function withThumbnail(video: SampleVideo, cdnHost: string): BunnyVideo {
   const thumbnailUrl = `https://${cdnHost}/${video.id}/thumbnail.jpg`;
   return { ...video, thumbnailUrl };
@@ -76,10 +87,11 @@ export function createFakeBunnyStream({
   );
   return {
     listVideos({ page, itemsPerPage }) {
-      const start = (page - 1) * itemsPerPage;
+      const pageSize = clampItemsPerPage(itemsPerPage);
+      const start = (page - 1) * pageSize;
       const value = {
         totalItems: videos.length,
-        videos: videos.slice(start, start + itemsPerPage),
+        videos: videos.slice(start, start + pageSize),
       };
       return Promise.resolve({ ok: true, value });
     },

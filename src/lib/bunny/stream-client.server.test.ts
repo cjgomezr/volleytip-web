@@ -182,6 +182,28 @@ describe("bunny stream: leer y crear", () => {
     expect(await request.json()).toEqual({ title: "Saque flotado" });
   });
 
+  // El video ya quedó creado: darlo por fallido dejaría uno huérfano en cada
+  // reintento.
+  it("al crear solo exige el id en la respuesta", async () => {
+    const { client } = answering({ guid: VIDEO_ID, title: null });
+
+    const result = await client.createVideo("Saque flotado");
+
+    expect(result).toEqual({ ok: true, value: VIDEO_ID });
+  });
+
+  it.each([{}, { guid: "" }, { guid: 7 }])(
+    "una creación sin id (%j) es fallo de Bunny",
+    async (body) => {
+      const { client } = answering(body);
+
+      await expect(client.createVideo("Saque flotado")).resolves.toMatchObject({
+        ok: false,
+        error: { kind: "bunny_failure" },
+      });
+    },
+  );
+
   it("firma la subida con la llave y la librería del cliente", () => {
     const { client, fetchSpy } = answering({});
 
@@ -288,6 +310,24 @@ describe("bunny stream: errores propios de cada operación", () => {
     await expect(client.listVideos(FIRST_PAGE)).resolves.toMatchObject(
       failureOf("bunny_failure"),
     );
+  });
+
+  // `fetch` repetiría el encabezado AccessKey en la dirección de destino.
+  it("no sigue redirecciones, para no mandar la llave a otro sitio", async () => {
+    const { client, fetchSpy } = answering({ totalItems: 0, items: [] });
+
+    await client.listVideos(FIRST_PAGE);
+
+    expect(fetchSpy.mock.calls[0]?.[1]?.redirect).toBe("error");
+  });
+
+  it("suelta el cuerpo de una respuesta de error", async () => {
+    const response = json({}, 500);
+    const { client } = openClient(() => Promise.resolve(response));
+
+    await client.listVideos(FIRST_PAGE);
+
+    expect(response.bodyUsed).toBe(true);
   });
 
   it("deja de esperar a un Bunny que no responde", async () => {
