@@ -8,11 +8,18 @@
 # resultado a mano para pasar su propio DoD antes de abrir el PR: eso no es
 # el problema que este ticket resuelve, ese sigue siendo un flujo válido.
 #
-# Compara primero (sin --update-snapshots) para que una diferencia real de
-# píxeles quede visible en el log/reporte de Playwright antes de tocar nada.
+# Sin lista, compara primero (sin --update-snapshots) para que una diferencia
+# real de píxeles quede visible en el log/reporte de Playwright antes de tocar nada.
 # Sólo si esa comparación falla se regenera. Deja los cambios en el índice de
 # git (`git add`) listos para que quien llama decida si commitea y empuja;
 # este script nunca hace commit ni push por sí mismo.
+#
+# Con `--failed-list <archivo>` (modo corto) no compara: regenera sólo las
+# pruebas de esa lista, en el formato de `--last-failed-file`. La arma
+# scripts/reviewed-run-failures.sh. Va con `--no-deps` porque, si no, una
+# prueba de un proyecto del que otros dependen no llega a correr, y una de un
+# proyecto dependiente arrastra enteros los anteriores. Si alguna sigue
+# fallando al regenerar, no deja nada en el índice.
 #
 # Sale con 0 sólo cuando la línea base ya estaba al día. Cualquier otro
 # desenlace (regenerada con cambios, o un fallo que no era de píxeles) sale
@@ -23,11 +30,41 @@
 # repartir la suite en varias máquinas cuando crezca: cada parte compara y
 # regenera sólo su tramo, por ejemplo `--shard=2/4`.
 #
-# Usage: scripts/update-visual-baselines.sh [argumentos de playwright test]
+# Usage: scripts/update-visual-baselines.sh [--failed-list <archivo>]
+#          [argumentos de playwright test]
 
 SNAPSHOTS_DIR="tests/ui.spec.ts-snapshots"
 
 set -uo pipefail
+
+regenerate_failed_only() {
+  local failed_list="$1"
+  shift
+  # Con un archivo que no puede leer, Playwright ignora --last-failed y corre
+  # todo, que con --no-deps cruza los proyectos que escriben con las capturas.
+  if [ ! -s "$failed_list" ]; then
+    echo "update-visual-baselines: no encuentro la lista de fallos: $failed_list" >&2
+    exit 1
+  fi
+  if ! npx playwright test --last-failed --last-failed-file "$failed_list" \
+    --no-deps --update-snapshots "$@"; then
+    echo "update-visual-baselines: alguna prueba sigue fallando al regenerar; no dejo nada para commitear." >&2
+    exit 1
+  fi
+  git add "$SNAPSHOTS_DIR"
+  if git diff --cached --quiet; then
+    echo "update-visual-baselines: ninguna captura cambió, la línea base ya estaba al día."
+    exit 0
+  fi
+  echo "update-visual-baselines: línea base regenerada, revisa el diff antes de aceptarlo." >&2
+  exit 1
+}
+
+if [ "${1:-}" = "--failed-list" ]; then
+  failed_list="${2:-}"
+  shift "$(($# < 2 ? $# : 2))"
+  regenerate_failed_only "$failed_list" "$@"
+fi
 
 if npx playwright test "$@"; then
   echo "update-visual-baselines: sin cambios, la línea base ya estaba al día."
