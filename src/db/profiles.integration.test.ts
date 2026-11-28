@@ -544,6 +544,12 @@ describeIntegration("enums base", () => {
       },
       { name: "price_mode", labels: ["manual"] },
       { name: "publish_status", labels: ["draft", "published", "retired"] },
+      {
+        name: "tip_fundamental",
+        labels: ["serve", "reception", "setting", "attack", "block", "defense"],
+      },
+      { name: "tip_level", labels: ["basic", "intermediate", "advanced"] },
+      { name: "tip_orientation", labels: ["vertical", "horizontal"] },
       { name: "user_role", labels: ["admin", "staff", "buyer"] },
     ]);
   });
