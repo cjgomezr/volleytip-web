@@ -6,9 +6,9 @@ import { recordAuditEntry, type AuditEntry } from "../audit-log.server";
 import type { Json } from "../database.types";
 import { reportUnrecordedChange } from "../server-error-report.server";
 import {
-  assertAdminMember,
+  panelMemberContext,
   panelSessionContext,
-  verifyPanelMember,
+  verifyAdminMember,
 } from "./panel-middleware.server";
 
 // `entidad.verbo`, en minúsculas y con guion bajo: `site_text.update`.
@@ -218,8 +218,9 @@ export function defineAdminAction<
     const { client } = args.context.get(panelSessionContext);
     // La guardia de la ruta ya corrió. Se repite aquí para que la pieza no
     // dependa de bajo qué layout quedó declarada la ruta.
-    const member = await verifyPanelMember(args.request, client);
-    assertAdminMember(member, args.request);
+    const member = await verifyAdminMember(args.request, client);
+    // `run` lee de aquí quién envía, ya comprobado.
+    args.context.set(panelMemberContext, member);
 
     const { result, change } = await runChange(definition, args);
     if (change === null) return result;

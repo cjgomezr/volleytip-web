@@ -383,6 +383,7 @@ test.describe("panel real", () => {
       "Preguntas frecuentes",
       "Idiomas y mercados",
       "Ajustes",
+      "Equipo",
       "Bitácora",
     ]);
     await expect(links.first()).toHaveAttribute("aria-current", "page");

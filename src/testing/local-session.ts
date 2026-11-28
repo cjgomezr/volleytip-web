@@ -106,15 +106,26 @@ export async function createTestSession(
   return { userId, email, cookies };
 }
 
-/** Desactiva a alguien que ya tiene la sesión abierta. */
+// Cómo nombra la base su rechazo a quedarse sin un admin activo.
+const LAST_ADMIN_RULE = "profiles_last_admin_check";
+
+/** Desactiva a alguien que ya tiene la sesión abierta. Si era el único admin
+ * activo, antes crea otro: la base no deja la tabla sin ninguno. Ese otro se
+ * queda hasta el siguiente `npm run db:reset`. */
 export async function deactivateTestUser(
   status: LocalSupabaseStatus,
   userId: string,
 ): Promise<void> {
-  const { error } = await createServiceClient(status)
-    .from("profiles")
-    .update({ is_active: false })
-    .eq("id", userId);
+  const deactivate = (): PromiseLike<{ error: { message: string } | null }> =>
+    createServiceClient(status)
+      .from("profiles")
+      .update({ is_active: false })
+      .eq("id", userId);
+  let { error } = await deactivate();
+  if (error?.message.includes(LAST_ADMIN_RULE)) {
+    await createAccount(status, { role: "admin" });
+    ({ error } = await deactivate());
+  }
   failOn(error, "desactivar al usuario de prueba");
 }
 
@@ -150,6 +161,22 @@ export async function deleteTestSessionUser(
   }
   const { error } = await service.auth.admin.deleteUser(userId);
   failOn(error, "borrar el usuario de prueba");
+}
+
+/** Borra la cuenta que una prueba creó desde el panel, si llegó a crearla. */
+export async function deleteTestAccount(
+  status: LocalSupabaseStatus,
+  email: string,
+): Promise<void> {
+  const service = createServiceClient(status);
+  const { data, error } = await service
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  failOn(error, "buscar la cuenta de prueba");
+  if (data === null) return;
+  await deleteTestSessionUser(status, data.id);
 }
 
 /** Las cookies de una sesión como la cabecera `Cookie` de una petición. */

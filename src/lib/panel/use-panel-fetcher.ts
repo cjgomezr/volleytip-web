@@ -25,7 +25,7 @@ export interface PanelFetcher<Outcome> {
 // un aviso viejo seguiría ahí cuando el guardado siguiente ya funcionó. Una
 // respuesta vence al salir de la dirección donde llegó, y no revive al volver
 // con "atrás".
-function useAnswerOfThisLocation(answer: unknown): unknown {
+export function useAnswerOfThisLocation(answer: unknown): unknown {
   const { key } = useLocation();
   const [received, setReceived] = useState({ answer, key, isExpired: false });
   if (received.answer !== answer) {

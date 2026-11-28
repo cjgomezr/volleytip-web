@@ -6,12 +6,13 @@
  *
  * Las importaciones llevan extensión porque Node corre esto sin Vite.
  */
-import { randomBytes } from "node:crypto";
-import { z } from "zod";
-
 import { recordAuditEntry } from "../src/lib/audit-log.server.ts";
 import type { Database } from "../src/lib/database.types.ts";
 import type { TypedSupabaseClient } from "../src/lib/supabase/typed-client.ts";
+import {
+  createConfirmedAccount,
+  secureAccount,
+} from "../src/lib/team-account.server.ts";
 
 type UserRole = Database["public"]["Enums"]["user_role"];
 
@@ -33,16 +34,6 @@ export interface FirstAdminOutcome {
 
 const ADMIN_STATE: ProfileState = { role: "admin", isActive: true };
 const AUDIT_ACTION = "profile.grant_admin";
-// Nadie usa esa contraseña: al panel se entra con enlace o con Google.
-const DISCARDED_PASSWORD_BYTES = 32;
-// La forma en que se guarda un correo (DR-008).
-const adminEmail = z.string().trim().toLowerCase().pipe(z.email());
-
-/** El correo normalizado, o `null` si no tiene forma de correo. */
-export function parseAdminEmail(raw: string): string | null {
-  const result = adminEmail.safeParse(raw);
-  return result.success ? result.data : null;
-}
 
 function failOn(error: { message: string } | null, what: string): void {
   if (error !== null) {
@@ -63,22 +54,6 @@ async function findProfile(
   return data === null
     ? null
     : { id: data.id, role: data.role, isActive: data.is_active };
-}
-
-/** Crea la cuenta con el correo ya confirmado. El perfil lo crea la base. */
-async function createAccount(
-  client: TypedSupabaseClient,
-  email: string,
-): Promise<string> {
-  const { data, error } = await client.auth.admin.createUser({
-    email,
-    email_confirm: true,
-  });
-  failOn(error, "crear la cuenta");
-  if (data.user === null) {
-    throw new Error("No se pudo crear la cuenta: Supabase no la devolvió");
-  }
-  return data.user.id;
 }
 
 /** Corre un paso y, si falla, le dice a quien opera en qué quedó todo. */
@@ -118,24 +93,6 @@ async function isEmailConfirmed(
   const { data, error } = await client.auth.admin.getUserById(userId);
   failOn(error, "leer la cuenta");
   return Boolean(data.user?.email_confirmed_at);
-}
-
-/**
- * Deja en la cuenta un acceso que nadie más tiene: el correo confirmado, sin
- * el que no se puede pedir el enlace, y una contraseña al azar. Con el
- * registro abierto un tercero pudo crear la cuenta con ese correo, y su
- * contraseña le abriría el panel. No cierra las sesiones que la cuenta ya
- * tenga abiertas: eso se revisa a mano (docs/entornos.md).
- */
-async function secureAccount(
-  client: TypedSupabaseClient,
-  userId: string,
-): Promise<void> {
-  const { error } = await client.auth.admin.updateUserById(userId, {
-    email_confirm: true,
-    password: randomBytes(DISCARDED_PASSWORD_BYTES).toString("base64url"),
-  });
-  failOn(error, "cambiar el acceso de la cuenta");
 }
 
 interface Grant {
@@ -205,7 +162,7 @@ export async function ensureFirstAdmin(
   if (profile === null) {
     const profileId = await explainFailure(
       "Puede que la cuenta haya quedado creada.",
-      () => createAccount(client, email),
+      () => createConfirmedAccount(client, email),
     );
     await grantAdmin(client, {
       profileId,

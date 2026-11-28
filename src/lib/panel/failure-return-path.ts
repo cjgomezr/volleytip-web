@@ -1,5 +1,6 @@
 import { NOTICE_PARAM } from "../admin/messages";
 import { SAVED_PARAM } from "../admin/settings-view";
+import { NOTICE_PARAM as TEAM_NOTICE_PARAM } from "../admin/team";
 import {
   getPanelPath,
   PANEL_PAGES,
@@ -20,6 +21,8 @@ const SCREEN_OF_SUBMISSION: Partial<Record<PanelPageId, PanelPageId>> = {
   adminFaqPublish: "adminFaqs",
   adminFaqRetire: "adminFaqs",
   adminFaqMove: "adminFaqs",
+  adminTeamRole: "adminTeam",
+  adminTeamActivate: "adminTeam",
   // El idioma se cambia y la sesión se cierra desde cualquier pantalla.
   adminLanguage: "adminHome",
   adminSignOut: "adminHome",
@@ -27,7 +30,7 @@ const SCREEN_OF_SUBMISSION: Partial<Record<PanelPageId, PanelPageId>> = {
 
 // Anuncian cómo salió el envío anterior: al volver de un fallo dirían que se
 // guardó.
-const ONE_TIME_PARAMS = [SAVED_PARAM, NOTICE_PARAM];
+const ONE_TIME_PARAMS = [SAVED_PARAM, NOTICE_PARAM, TEAM_NOTICE_PARAM];
 
 function keepScreenSearch(search: string): string {
   const params = new URLSearchParams(search);

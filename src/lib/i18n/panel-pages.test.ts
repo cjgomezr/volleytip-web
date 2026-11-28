@@ -36,6 +36,8 @@ describe("direcciones del panel", () => {
     ["adminAuditLog", "/admin/bitacora", "/en/admin/audit-log"],
     ["adminFaqs", "/admin/preguntas", "/en/admin/faqs"],
     ["adminFaqNew", "/admin/preguntas/nueva", "/en/admin/faqs/new"],
+    ["adminTeam", "/admin/equipo", "/en/admin/team"],
+    ["adminTeamInvite", "/admin/equipo/invitar", "/en/admin/team/invite"],
     [
       "adminSettingsMaintenance",
       "/admin/ajustes/mantenimiento",
@@ -82,6 +84,11 @@ describe("rutas del panel", () => {
       "admin/entrar/enlace",
       "admin/entrar/google",
       "admin/entrar/google/vuelta",
+      "admin/equipo",
+      "admin/equipo/:memberId/activar",
+      "admin/equipo/:memberId/desactivar",
+      "admin/equipo/:memberId/rol",
+      "admin/equipo/invitar",
       "admin/idioma",
       "admin/mas",
       "admin/mensajes",
@@ -134,6 +141,11 @@ describe("rutas del panel", () => {
       "en/admin/site-texts",
       "en/admin/site-texts/announcements",
       "en/admin/site-texts/figures",
+      "en/admin/team",
+      "en/admin/team/:memberId/activate",
+      "en/admin/team/:memberId/deactivate",
+      "en/admin/team/:memberId/role",
+      "en/admin/team/invite",
     ]);
   });
 
@@ -145,6 +157,11 @@ describe("rutas del panel", () => {
       "admin/ajustes/mantenimiento",
       "admin/bitacora",
       "admin/bitacora/:id",
+      "admin/equipo",
+      "admin/equipo/:memberId/activar",
+      "admin/equipo/:memberId/desactivar",
+      "admin/equipo/:memberId/rol",
+      "admin/equipo/invitar",
       "admin/idioma",
       "admin/mas",
       "admin/mensajes",
@@ -193,6 +210,11 @@ describe("rutas del panel", () => {
       "en/admin/site-texts",
       "en/admin/site-texts/announcements",
       "en/admin/site-texts/figures",
+      "en/admin/team",
+      "en/admin/team/:memberId/activate",
+      "en/admin/team/:memberId/deactivate",
+      "en/admin/team/:memberId/role",
+      "en/admin/team/invite",
     ]);
   });
 
@@ -203,6 +225,11 @@ describe("rutas del panel", () => {
       "admin/ajustes/mantenimiento",
       "admin/bitacora",
       "admin/bitacora/:id",
+      "admin/equipo",
+      "admin/equipo/:memberId/activar",
+      "admin/equipo/:memberId/desactivar",
+      "admin/equipo/:memberId/rol",
+      "admin/equipo/invitar",
       "admin/idioma",
       "admin/mas",
       "admin/mensajes",
@@ -248,6 +275,11 @@ describe("rutas del panel", () => {
       "en/admin/site-texts",
       "en/admin/site-texts/announcements",
       "en/admin/site-texts/figures",
+      "en/admin/team",
+      "en/admin/team/:memberId/activate",
+      "en/admin/team/:memberId/deactivate",
+      "en/admin/team/:memberId/role",
+      "en/admin/team/invite",
     ]);
   });
 

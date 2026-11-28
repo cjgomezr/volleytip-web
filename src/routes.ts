@@ -78,6 +78,10 @@ export default [
   route("en/dev/preguntas", "routes/dev-panel-faqs.tsx", {
     id: "dev-panel-faqs-en",
   }),
+  // Pinta el equipo del panel (lista, invitación y confirmación) en cada
+  // estado, sin sesión ni base. En producción responde 404.
+  route("dev/equipo", "routes/dev-team.tsx"),
+  route("en/dev/equipo", "routes/dev-team.tsx", { id: "dev-team-en" }),
   // Sin versión por idioma: no son páginas del sitio.
   route("healthz", "routes/healthz.ts"),
   // Los archivos con que el celular abre `/r/` en la app. Son de recurso:

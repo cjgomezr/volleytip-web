@@ -6,7 +6,12 @@ import { runAdminCreate } from "../../scripts/admin-create.ts";
 import type { Database as DatabaseSchema } from "~/lib/database.types";
 import { identifyVisitor } from "~/lib/panel/visitor.server";
 import type { TypedSupabaseClient } from "~/lib/supabase/typed-client";
-import { connectToLocalDatabase, type Database } from "~/testing/database";
+import {
+  connectToLocalDatabase,
+  createTestUser,
+  deleteTestUsers,
+  type Database,
+} from "~/testing/database";
 import { describeIntegration } from "~/testing/describe-integration";
 import {
   readLocalSupabaseStatus,
@@ -106,6 +111,7 @@ describeIntegration("primer admin contra la base local", () => {
   });
 
   afterAll(async () => {
+    await deleteTestUsers(database);
     await database.end();
   });
 
@@ -167,6 +173,8 @@ describeIntegration("primer admin contra la base local", () => {
 
   it("reactiva como admin a quien estaba desactivado", async () => {
     await runCommand();
+    // La base no deja desactivar al único admin activo.
+    await createTestUser(database, { role: "admin" });
     await database`
       update public.profiles set role = 'staff', is_active = false
       where email = ${email}

@@ -2010,6 +2010,46 @@ const PANEL_FAQ_VARIANTS: readonly PanelVariant[] = PANEL_FAQ_STATES.flatMap(
     })),
 );
 
+// El equipo del panel (#130): la lista con activos y desactivados, la
+// invitación vacía, con errores y con un correo repetido, la confirmación de
+// desactivar y el rechazo del último admin, en los dos idiomas. La muestra no
+// usa la base.
+const TEAM_STATES = [
+  "lista",
+  "invitada",
+  "rechazo",
+  "cambiada",
+  "invitar",
+  "errores",
+  "ya-esta",
+  "confirmar",
+  "sin-nombre",
+  "ultimo-admin",
+] as const;
+
+const TEAM_FOCUS_TARGETS: Partial<
+  Record<(typeof TEAM_STATES)[number], string>
+> = {
+  errores: '[aria-invalid="true"]:focus',
+  rechazo: "[data-member-feedback]:focus",
+  cambiada: "[data-member-feedback]:focus",
+};
+
+const TEAM_VARIANTS: readonly PanelVariant[] = TEAM_STATES.flatMap((state) =>
+  [
+    { suffix: "", path: "/dev/equipo" },
+    { suffix: "-en", path: "/en/dev/equipo" },
+  ].map(({ suffix, path }) => ({
+    name: `equipo-${state}${suffix}`,
+    path: `${path}?estado=${state}`,
+    role: undefined,
+    sizes: viewports,
+    // La captura espera a que el foco esté donde se queda: en el primer campo
+    // con error o en el aviso de la tarjeta.
+    readySelector: TEAM_FOCUS_TARGETS[state],
+  })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SIGN_IN_VARIANTS,
   ...SETTINGS_VARIANTS,
@@ -2017,6 +2057,7 @@ const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...AUDIT_LOG_VARIANTS,
   ...MARKETS_VARIANTS,
   ...PANEL_FAQ_VARIANTS,
+  ...TEAM_VARIANTS,
   {
     name: "staff",
     path: "/admin",
@@ -2045,6 +2086,10 @@ for (const variant of PANEL_VARIANTS) {
         await page.goto(`${APP_URL}${variant.path}`);
         if (variant.readySelector !== undefined) {
           await page.locator(variant.readySelector).first().waitFor();
+          // El foco desplaza la página hasta el elemento, y cuánto depende de
+          // la corrida. La barra inferior, que va fija, saldría cada vez en
+          // otro lugar de la captura: se vuelve arriba antes de capturar.
+          await page.evaluate(() => window.scrollTo(0, 0));
         }
         await page.evaluate(async () => {
           await document.fonts.ready;

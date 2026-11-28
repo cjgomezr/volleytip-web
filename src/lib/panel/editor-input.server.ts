@@ -29,7 +29,7 @@ export function buildDraft(
   return buildByLanguage(read);
 }
 
-type Rejection<Outcome> = ReturnType<typeof data<Outcome>>;
+export type Rejection<Outcome> = ReturnType<typeof data<Outcome>>;
 
 export type SaveOutcome<Outcome, Field extends string> = AdminActionOutcome<
   Outcome | Rejection<Outcome>,

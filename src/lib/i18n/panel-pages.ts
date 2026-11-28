@@ -193,6 +193,42 @@ export const PANEL_ADMIN_PAGES = [
     },
   },
   {
+    id: "adminTeam",
+    file: "routes/panel/team.tsx",
+    path: { es: "admin/equipo", en: "admin/team" },
+  },
+  {
+    id: "adminTeamInvite",
+    file: "routes/panel/team-invite.tsx",
+    path: { es: "admin/equipo/invitar", en: "admin/team/invite" },
+  },
+  // Cada cambio sobre un miembro tiene su ruta: una ruta, una acción. La de
+  // desactivar es además la confirmación.
+  {
+    id: "adminTeamRole",
+    file: "routes/panel/team-role.tsx",
+    path: {
+      es: "admin/equipo/:memberId/rol",
+      en: "admin/team/:memberId/role",
+    },
+  },
+  {
+    id: "adminTeamDeactivate",
+    file: "routes/panel/team-deactivate.tsx",
+    path: {
+      es: "admin/equipo/:memberId/desactivar",
+      en: "admin/team/:memberId/deactivate",
+    },
+  },
+  {
+    id: "adminTeamActivate",
+    file: "routes/panel/team-activate.tsx",
+    path: {
+      es: "admin/equipo/:memberId/activar",
+      en: "admin/team/:memberId/activate",
+    },
+  },
+  {
     id: "adminAuditLog",
     file: "routes/panel/audit-log.tsx",
     path: { es: "admin/bitacora", en: "admin/audit-log" },
