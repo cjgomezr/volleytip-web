@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { useLocation, useNavigation } from "react-router";
+import { useNavigation } from "react-router";
 
 import { LatestTip } from "~/components/tips/latest-tip";
 import { TipResults } from "~/components/tips/tip-results";
@@ -10,7 +10,7 @@ import type { Language } from "~/lib/i18n/languages";
 import { getPagePath } from "~/lib/i18n/pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import type { TipsListing } from "~/lib/tips-listing.server";
-import { hasTipFilters } from "~/lib/tips-query";
+import { buildTipsSearch } from "~/lib/tips-query";
 
 const CONTENT_STYLES = "mx-auto max-w-[1280px] px-4 md:px-6";
 
@@ -45,17 +45,9 @@ function TipsHeader({ listing, language }: TipsPageProps): ReactElement {
 
 function TipsContent({ listing, language }: TipsPageProps): ReactElement {
   const translate = useTranslate();
-  const { key } = useLocation();
   const { location: destination } = useNavigation();
   // Mientras llega otra búsqueda del listado, lo que se ve queda atenuado.
   const isSearching = destination?.pathname === getPagePath("tips", language);
-
-  function describeResults(): string {
-    if (isSearching) return translate("tips.loadMore.loading");
-    return hasTipFilters(listing.query)
-      ? translate("tips.list.results", { count: listing.total })
-      : "";
-  }
 
   return (
     <div
@@ -70,12 +62,19 @@ function TipsContent({ listing, language }: TipsPageProps): ReactElement {
       {listing.total === 0 ? (
         <NoMatchingTips />
       ) : (
-        // Otra navegación es otra lista: lo cargado antes no se arrastra.
-        <TipResults key={key} listing={listing} language={language} />
+        // Otros filtros u otra página son otra lista: lo cargado antes no se
+        // arrastra. Un salto dentro de la página la conserva.
+        <TipResults
+          key={buildTipsSearch(listing.query, language)}
+          listing={listing}
+          language={language}
+        />
       )}
       {/* Existe desde antes de la búsqueda para que se anuncie lo que trae. */}
       <p role="status" className="sr-only">
-        {describeResults()}
+        {isSearching
+          ? translate("tips.loadMore.loading")
+          : translate("tips.list.results", { count: listing.total })}
       </p>
     </div>
   );

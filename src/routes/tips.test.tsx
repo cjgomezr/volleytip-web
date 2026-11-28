@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import type { TipsListing } from "~/lib/tips-listing.server";
+import { toLoadMoreHref } from "~/lib/tips-load-more";
 import type { TipsQuery } from "~/lib/tips-query";
 
 import { loader, meta } from "./tips";
@@ -57,12 +58,11 @@ describe("listado de tips: loader", () => {
 
     await readData("/tips?fundamento=recepcion&nivel=basico");
 
-    expect(listingMock).toHaveBeenCalledWith("es", {
-      fundamental: "reception",
-      level: "basic",
-      query: "",
-      page: 1,
-    });
+    expect(listingMock).toHaveBeenCalledWith(
+      "es",
+      { fundamental: "reception", level: "basic", query: "", page: 1 },
+      { withLatest: true },
+    );
   });
 
   it("en inglés lee los nombres en inglés", async () => {
@@ -71,11 +71,11 @@ describe("listado de tips: loader", () => {
     const data = await readData("/en/tips?skill=reception&search=serve");
 
     expect(data.language).toBe("en");
-    expect(listingMock).toHaveBeenCalledWith("en", {
-      fundamental: "reception",
-      query: "serve",
-      page: 1,
-    });
+    expect(listingMock).toHaveBeenCalledWith(
+      "en",
+      { fundamental: "reception", query: "serve", page: 1 },
+      { withLatest: true },
+    );
   });
 
   it("ignora un filtro que no existe y carga la página", async () => {
@@ -83,7 +83,11 @@ describe("listado de tips: loader", () => {
 
     await readData("/tips?fundamento=magia");
 
-    expect(listingMock).toHaveBeenCalledWith("es", { query: "", page: 1 });
+    expect(listingMock).toHaveBeenCalledWith(
+      "es",
+      { query: "", page: 1 },
+      { withLatest: true },
+    );
   });
 
   it("una página más allá de la última lleva a la primera con los mismos filtros", async () => {
@@ -94,6 +98,29 @@ describe("listado de tips: loader", () => {
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).headers.get("Location")).toBe(
       "/tips?nivel=basico",
+    );
+  });
+
+  it("al volver a la primera conserva lo que no es del listado", async () => {
+    stubListing({ tips: [], total: 45, hasNextPage: false });
+
+    const result = await loadTips("/tips?utm_source=ig&pagina=9");
+
+    expect((result as Response).headers.get("Location")).toBe(
+      "/tips?utm_source=ig",
+    );
+  });
+
+  it("'Cargar más' de una página que quedó vacía no redirige ni lee el último video", async () => {
+    stubListing({ tips: [], total: 40, hasNextPage: false });
+
+    const data = await readData(toLoadMoreHref("/tips?pagina=3"));
+
+    expect(data.listing.tips).toEqual([]);
+    expect(listingMock).toHaveBeenCalledWith(
+      "es",
+      { query: "", page: 3 },
+      { withLatest: false },
     );
   });
 

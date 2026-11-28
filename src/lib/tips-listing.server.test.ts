@@ -162,6 +162,19 @@ describe("listado de tips: último video", () => {
     });
   });
 
+  it("al cargar más no lo lee", async () => {
+    stubTips();
+
+    const listing = await loadTipsListing(
+      "es",
+      { ...NO_FILTERS, page: 2 },
+      { withLatest: false },
+    );
+
+    expect(listing.latestTip).toBeNull();
+    expect(latestMock).not.toHaveBeenCalled();
+  });
+
   it.each<Partial<TipsQuery>>([
     { fundamental: "serve" },
     { level: "basic" },

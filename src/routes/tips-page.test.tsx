@@ -250,6 +250,17 @@ describe("listado de tips: último video", () => {
   });
 });
 
+describe("listado de tips: aviso de resultados", () => {
+  it.each([
+    ["sin filtros", { query: "", page: 1 }],
+    ["con filtros", { query: "mano", page: 1 }],
+  ])("%s dice cuántos hay a un lector de pantalla", (_name, query) => {
+    const html = render({ query, latestTip: null });
+
+    expect(html).toMatch(/<p role="status"[^>]*>2 resultados<\/p>/);
+  });
+});
+
 describe("listado de tips: vacíos", () => {
   it("sin resultados lo dice y ofrece quitar los filtros", () => {
     const html = render(

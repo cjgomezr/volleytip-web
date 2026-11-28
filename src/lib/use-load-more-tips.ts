@@ -3,7 +3,13 @@ import { useFetcher } from "react-router";
 
 import type { Language } from "./i18n/languages";
 import type { TipCardData, TipsListing } from "./tips-listing.server";
-import { appendTipsPage, type AppendedTips } from "./tips-load-more";
+import {
+  appendTipsPage,
+  joinTips,
+  toLoadMoreHref,
+  type AppendedTips,
+  type LoadMoreFailure,
+} from "./tips-load-more";
 import { getTipsListPath } from "./tips-path";
 
 export interface LoadMoreTips {
@@ -14,6 +20,8 @@ export interface LoadMoreTips {
   readonly hasNextPage: boolean;
   readonly nextHref: string;
   readonly isLoading: boolean;
+  /** La última carga falló. Se puede volver a pedir. */
+  readonly hasFailed: boolean;
   readonly loadMore: () => void;
 }
 
@@ -26,7 +34,9 @@ export function useLoadMoreTips(
   listing: TipsListing,
   language: Language,
 ): LoadMoreTips {
-  const fetcher = useFetcher<{ readonly listing: TipsListing }>();
+  const fetcher = useFetcher<
+    { readonly listing: TipsListing } | LoadMoreFailure
+  >();
   const [appended, setAppended] = useState<AppendedTips>(() => ({
     extra: [],
     page: listing.query.page,
@@ -35,7 +45,8 @@ export function useLoadMoreTips(
   }));
   // La página recibida se junta durante el pintado, no en un efecto: en el
   // siguiente, `appendTipsPage` ya no la reconoce como la que falta.
-  const received = fetcher.data?.listing;
+  const answer = fetcher.data;
+  const received = answer && "listing" in answer ? answer.listing : undefined;
   const next = received
     ? appendTipsPage(appended, listing.tips, received)
     : appended;
@@ -48,15 +59,16 @@ export function useLoadMoreTips(
   const isLoading = fetcher.state !== "idle";
 
   function loadMore(): void {
-    if (!isLoading) void fetcher.load(nextHref);
+    if (!isLoading) void fetcher.load(toLoadMoreHref(nextHref));
   }
 
   return {
-    tips: [...listing.tips, ...next.extra],
+    tips: joinTips(listing.tips, next.extra),
     added: next.added,
     hasNextPage: next.hasNextPage,
     nextHref,
     isLoading,
+    hasFailed: !isLoading && answer !== undefined && "hasFailed" in answer,
     loadMore,
   };
 }

@@ -38,6 +38,7 @@ export const tipsEs = {
   "tips.card.duration": "Duración {duration}",
   "tips.loadMore": "Cargar más tips",
   "tips.loadMore.loading": "Cargando tips",
+  "tips.loadMore.failed": "No pudimos cargar más tips. Intenta de nuevo.",
   "tips.loadMore.loaded": {
     one: "Se agregó {count} tip.",
     other: "Se agregaron {count} tips.",

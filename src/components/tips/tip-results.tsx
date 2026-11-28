@@ -9,6 +9,7 @@ import { hasTipFilters } from "~/lib/tips-query";
 import { useLoadMoreTips, type LoadMoreTips } from "~/lib/use-load-more-tips";
 
 import { getButtonLinkClassName } from "../button";
+import { FieldErrorIcon } from "../field-error-icon";
 
 import { TipCard } from "./tip-card";
 
@@ -45,16 +46,31 @@ function LoadMoreLink({
   );
 }
 
-function LoadMoreStatus({ isLoading, added }: LoadMoreTips): ReactElement {
+// Solo el fallo se ve: lo demás ya se nota en la lista y en el botón. La
+// región existe desde antes para que lo que diga se anuncie.
+function LoadMoreStatus({
+  isLoading,
+  hasFailed,
+  added,
+}: LoadMoreTips): ReactElement {
   const translate = useTranslate();
   function describe(): string {
     if (isLoading) return translate("tips.loadMore.loading");
+    if (hasFailed) return translate("tips.loadMore.failed");
     return added.length === 0
       ? ""
       : translate("tips.loadMore.loaded", { count: added.length });
   }
   return (
-    <p role="status" className="sr-only">
+    <p
+      role="status"
+      className={
+        hasFailed
+          ? "mt-4 mb-0 flex items-start justify-center gap-2 text-[14px] font-semibold text-brand-red"
+          : "sr-only"
+      }
+    >
+      {hasFailed ? <FieldErrorIcon /> : null}
       {describe()}
     </p>
   );
@@ -94,7 +110,10 @@ export function TipResults({
   // primer tip que llegó, y no al comienzo del documento.
   const focusId = more.hasNextPage ? undefined : more.added[0]?.id;
   useEffect(() => {
-    if (focusId !== undefined) firstAddedRef.current?.focus();
+    // Solo si el foco se quedó sin dueño: quien ya lo llevó a otro control
+    // mientras cargaba se queda ahí.
+    const isFocusLost = document.activeElement === document.body;
+    if (focusId !== undefined && isFocusLost) firstAddedRef.current?.focus();
   }, [focusId]);
 
   return (

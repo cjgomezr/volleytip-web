@@ -1,7 +1,14 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { TipCardData, TipsListing } from "./tips-listing.server";
-import { appendTipsPage, type AppendedTips } from "./tips-load-more";
+import {
+  appendTipsPage,
+  isLoadMoreRequest,
+  joinTips,
+  readReportingFailure,
+  toLoadMoreHref,
+  type AppendedTips,
+} from "./tips-load-more";
 
 function buildCard(number: number): TipCardData {
   return {
@@ -87,4 +94,75 @@ describe("listado de tips: paginación al cargar más", () => {
       expect(appendTipsPage(shown, [], buildListing(page, [9]))).toBe(shown);
     },
   );
+});
+
+describe("listado de tips: paginación sin repetidos", () => {
+  it("si la primera página cambia, no repite uno que ya se había cargado", () => {
+    const joined = joinTips(
+      [buildCard(1), buildCard(2)],
+      [buildCard(2), buildCard(3)],
+    );
+
+    expect(joined.map(({ id }) => id)).toEqual(["id-1", "id-2", "id-3"]);
+  });
+});
+
+const PAGE_URL = "http://localhost/tips?pagina=2";
+
+describe("listado de tips: paginación cuando cargar más falla", () => {
+  const request = new Request(`http://localhost${toLoadMoreHref("/tips")}`);
+
+  it.each([
+    ["/tips?pagina=2", "/tips?pagina=2&"],
+    ["/tips", "/tips?"],
+  ])("marca el pedido de %s", (href, start) => {
+    const marked = toLoadMoreHref(href);
+
+    expect(marked.startsWith(start)).toBe(true);
+    expect(isLoadMoreRequest(new Request(`http://localhost${marked}`))).toBe(
+      true,
+    );
+    expect(isLoadMoreRequest(new Request(`http://localhost${href}`))).toBe(
+      false,
+    );
+  });
+
+  it.each([
+    ["la red", new TypeError("Failed to fetch")],
+    ["el servidor", new Error("Unexpected Server Error")],
+  ])("si falla %s lo devuelve como resultado", async (_what, failure) => {
+    const report = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await readReportingFailure(request, () =>
+      Promise.reject(failure),
+    );
+
+    expect(result).toEqual({ hasFailed: true });
+    expect(report).toHaveBeenCalledWith(expect.any(String), failure);
+    report.mockRestore();
+  });
+
+  it("deja seguir una redirección", async () => {
+    const redirect = new Response(null, { status: 302 });
+
+    await expect(
+      readReportingFailure(request, () => Promise.reject(redirect)),
+    ).rejects.toBe(redirect);
+  });
+
+  it("una navegación que falla sigue hasta la página de error", async () => {
+    const failure = new Error("sin base");
+
+    await expect(
+      readReportingFailure(new Request(PAGE_URL), () =>
+        Promise.reject(failure),
+      ),
+    ).rejects.toBe(failure);
+  });
+
+  it("si todo va bien entrega lo que leyó", async () => {
+    await expect(
+      readReportingFailure(request, () => Promise.resolve("datos")),
+    ).resolves.toBe("datos");
+  });
 });

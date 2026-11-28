@@ -70,9 +70,10 @@ export const TIP_LEVEL_VALUES: Readonly<
 // Solo dígitos y sin ceros a la izquierda.
 const PAGE_PATTERN = /^[1-9]\d{0,8}$/;
 
-// El recorte es por caracteres enteros para no partir un emoji. La base
-// rechaza el carácter nulo.
-function cleanQuery(text: string): string {
+/** Deja como texto buscable lo que puede venir de la dirección. La base
+ * rechaza el carácter nulo, y el recorte es por caracteres enteros para no
+ * partir un emoji. */
+export function cleanTipQuery(text: string): string {
   const trimmed = text.replaceAll("\u0000", "").trim();
   return Array.from(trimmed).slice(0, MAX_TIP_QUERY_LENGTH).join("").trim();
 }
@@ -98,7 +99,7 @@ export function parseTipsQuery(
   return {
     ...(fundamental === undefined ? {} : { fundamental }),
     ...(level === undefined ? {} : { level }),
-    query: cleanQuery(params.get(names.query) ?? ""),
+    query: cleanTipQuery(params.get(names.query) ?? ""),
     page: parsePage(params.get(names.page)),
   };
 }

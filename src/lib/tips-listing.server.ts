@@ -35,7 +35,8 @@ export interface TipsListing {
   /** Los que cumplen los filtros y la búsqueda, en todas las páginas. */
   readonly total: number;
   readonly tips: readonly TipCardData[];
-  /** Nulo cuando hay filtros o búsqueda, o no hay ninguno publicado. */
+  /** Nulo cuando hay filtros o búsqueda, no hay ninguno publicado o solo se
+   * pidieron más tips. */
   readonly latestTip: LatestTipData | null;
   readonly hasNextPage: boolean;
 }
@@ -61,10 +62,16 @@ function toLatest(tip: Tip): LatestTipData {
   };
 }
 
+interface TipsListingOptions {
+  /** Falso para quien solo pide más tips: el último video ya está pintado. */
+  readonly withLatest?: boolean;
+}
+
 /** Una página del listado con lo que la acompaña. Si la base falla, lanza. */
 export async function loadTipsListing(
   language: Language,
   query: TipsQuery,
+  { withLatest = true }: TipsListingOptions = {},
 ): Promise<TipsListing> {
   const { page, ...filters } = query;
   const isFiltered = hasTipFilters(query);
@@ -74,7 +81,7 @@ export async function loadTipsListing(
       offset: (page - 1) * TIPS_PAGE_SIZE,
     }),
     isFiltered ? countPublishedTips(language) : null,
-    isFiltered ? null : readLatestTip(language),
+    isFiltered || !withLatest ? null : readLatestTip(language),
   ]);
   return {
     query,

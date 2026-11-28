@@ -302,6 +302,51 @@ test.describe("con tips publicados", () => {
       await expect(page.getByText("Se agregaron 5 tips.")).toBeAttached();
     });
 
+    test("lo cargado sigue ahí al saltar al contenido", async ({ page }) => {
+      await openTips(page, "/tips?nivel=intermedio");
+      await page.getByRole("link", { name: "Cargar más tips" }).click();
+      await expect(gridCards(page)).toHaveCount(SERVE_COUNT);
+
+      const skipLink = page.getByRole("link", { name: "Saltar al contenido" });
+      await skipLink.focus();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/#contenido$/);
+
+      await expect(gridCards(page)).toHaveCount(SERVE_COUNT);
+    });
+
+    for (const failure of ["la red", "el servidor"] as const) {
+      test(`si falla ${failure} al cargar más, los tips siguen y se puede reintentar`, async ({
+        page,
+      }) => {
+        await openTips(page, "/tips");
+        const dataRequests = (url: URL): boolean =>
+          url.pathname.endsWith("/tips.data");
+        await page.route(dataRequests, (route) =>
+          failure === "la red"
+            ? route.abort("internetdisconnected")
+            : route.fulfill({ status: 502, body: "sin servidor" }),
+        );
+        const loadMore = page.getByRole("link", { name: "Cargar más tips" });
+
+        await loadMore.click();
+
+        await expect(
+          page.getByText("No pudimos cargar más tips. Intenta de nuevo."),
+        ).toBeVisible();
+        await expect(gridCards(page)).toHaveCount(PAGE_SIZE);
+        await expectAccessibleWithoutOverflow(page);
+
+        await page.unroute(dataRequests);
+        await loadMore.click();
+
+        await expect(gridCards(page)).toHaveCount(TOTAL);
+        await expect(page.getByText("No pudimos cargar más tips")).toHaveCount(
+          0,
+        );
+      });
+    }
+
     test.describe("sin JavaScript", () => {
       test.use({ javaScriptEnabled: false });
 

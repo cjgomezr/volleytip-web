@@ -279,7 +279,8 @@ in Anton 36px, 56px from 768px; stacked under 768px. Cards: 9:16 thumbnail with
 the fundamental top left and the duration bottom right as `brand-night` tags,
 title 700 16px and level 14px `ink-muted`; 2 columns, 4 from 768px, 6 from
 1024px. Hover turns the title `brand-lime`. "Load more tips" is a secondary
-button.
+button; if loading fails, the cards stay and a `brand-red` message with an icon
+appears under the button.
 
 ## Mandatory component states
 

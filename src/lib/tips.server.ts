@@ -14,7 +14,7 @@ import {
   type TipOrientation,
   type TipPromo,
 } from "./tips";
-import { MAX_TIP_QUERY_LENGTH } from "./tips-query";
+import { cleanTipQuery } from "./tips-query";
 import {
   resolveTranslatedFields,
   type ResolvedFields,
@@ -180,22 +180,15 @@ function toWholeNumber(
   return Math.min(Math.floor(value), max);
 }
 
-/** Deja como texto buscable lo que puede venir de la dirección. La base
- * rechaza el carácter nulo, y el recorte es por caracteres enteros para no
- * partir un emoji. Una búsqueda sin recortar no cabe en la dirección con que se
- * cuenta y la lectura fallaría. */
-function cleanQuery(query: string): string {
-  const text = query.replaceAll("\u0000", "").trim();
-  return Array.from(text).slice(0, MAX_TIP_QUERY_LENGTH).join("");
-}
-
 function searchArguments(
   language: Language,
   { query, fundamental, level }: TipFilters,
 ): SearchArguments {
   return {
     p_locale: language,
-    p_query: query === undefined ? undefined : cleanQuery(query),
+    // Una búsqueda sin recortar no cabe en la dirección con que se cuenta y la
+    // lectura fallaría.
+    p_query: query === undefined ? undefined : cleanTipQuery(query),
     p_fundamental: fundamental,
     p_level: level,
   };
