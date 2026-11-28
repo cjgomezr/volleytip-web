@@ -26,6 +26,14 @@ const MAX_PAGE_SIZE = 1000;
 // Mucho más allá de cualquier catálogo. Un comienzo mayor se recorta aquí
 // porque la base rechaza los números que no le caben.
 const MAX_OFFSET = 1_000_000;
+// En caracteres (PRD de W4, sección 6). Una búsqueda sin recortar no cabe en la
+// dirección con que se cuenta y la lectura fallaría.
+const MAX_QUERY_LENGTH = 100;
+// La base no limita el largo de un slug. Uno mayor que esto no es de ningún tip
+// y tampoco cabe en una consulta.
+const MAX_SLUG_LENGTH = 500;
+// La misma forma que exige la base (`tips_slug_check`).
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 // Código con que la API rechaza un rango que empieza después de la última fila.
 const RANGE_NOT_SATISFIABLE = "PGRST103";
@@ -127,8 +135,9 @@ function parseTipRow(row: { readonly slug: string | null }): TipRow {
   return parsed.data;
 }
 
-/** Resuelve los textos campo por campo (FR-007). Un tip sin español no tiene
- * respaldo: se omite y queda en el registro para que alguien lo complete. */
+/** Resuelve los textos campo por campo (FR-007). La vista ya deja fuera los
+ * tips sin español, que no tienen respaldo. Si uno llegara, se omite y queda
+ * en el registro. */
 function toTip(row: TipRow, language: Language): Tip | null {
   if (row.translations[DEFAULT_LANGUAGE] === undefined) {
     console.error(`El tip "${row.slug}" no tiene textos en español.`);
@@ -173,14 +182,21 @@ function toWholeNumber(
   return Math.min(Math.floor(value), max);
 }
 
+/** Deja como texto buscable lo que puede venir de la dirección. La base
+ * rechaza el carácter nulo, y el recorte es por caracteres enteros para no
+ * partir un emoji. */
+function cleanQuery(query: string): string {
+  const text = query.replaceAll("\u0000", "").trim();
+  return Array.from(text).slice(0, MAX_QUERY_LENGTH).join("");
+}
+
 function searchArguments(
   language: Language,
   { query, fundamental, level }: TipFilters,
 ): SearchArguments {
   return {
     p_locale: language,
-    // La base rechaza el carácter nulo, que puede llegar en la dirección.
-    p_query: query?.replaceAll("\u0000", "").trim(),
+    p_query: query === undefined ? undefined : cleanQuery(query),
     p_fundamental: fundamental,
     p_level: level,
   };
@@ -260,6 +276,9 @@ export async function readTipBySlug(
   slug: string,
   { client = createAnonSupabaseClient() }: TipReadingOptions = {},
 ): Promise<Tip | null> {
+  if (slug.length > MAX_SLUG_LENGTH || !SLUG_PATTERN.test(slug)) {
+    return null;
+  }
   const { data, error } = await client
     .from("public_tips")
     .select("*")

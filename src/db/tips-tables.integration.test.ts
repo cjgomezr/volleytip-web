@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { setTimeout as delay } from "node:timers/promises";
 import { afterAll, afterEach, beforeAll, expect, it } from "vitest";
 
 import { TIP_FUNDAMENTALS, TIP_LEVELS, TIP_ORIENTATIONS } from "~/lib/tips";
@@ -17,6 +18,8 @@ import { createTipRows, type TipRows } from "~/testing/tip-rows";
 
 // El destacado es uno en toda la base: solo este archivo marca tips.
 const PREFIX = "prueba-tips-tablas";
+const MAX_LOCK_CHECKS = 200;
+const LOCK_CHECK_INTERVAL_IN_MS = 10;
 
 let database: Database;
 let tips: TipRows;
@@ -349,6 +352,23 @@ async function readFeaturedSlugs(): Promise<string[]> {
   return rows.map(({ slug }) => slug);
 }
 
+/** Vuelve cuando la conexión `pid` está esperando un candado. */
+async function waitUntilBlocked(
+  observer: Database,
+  pid: number,
+): Promise<void> {
+  for (let attempt = 0; attempt < MAX_LOCK_CHECKS; attempt += 1) {
+    const waiting = await observer`
+      select 1 from pg_locks where pid = ${pid} and not granted
+    `;
+    if (waiting.length > 0) {
+      return;
+    }
+    await delay(LOCK_CHECK_INTERVAL_IN_MS);
+  }
+  throw new Error("El segundo cambio nunca quedó esperando al primero");
+}
+
 describeIntegration("tips: destacado", () => {
   afterAll(() => deleteTestUsers(database));
 
@@ -391,28 +411,38 @@ describeIntegration("tips: destacado", () => {
     expect(await readFeaturedSlugs()).toEqual([current.slug]);
   });
 
-  it("dos a la vez dejan uno solo", async () => {
+  it("dos a la vez dejan uno solo: el segundo espera al primero", async () => {
     const first = await tips.insert();
     const second = await tips.insert();
     const admin = await signIn("admin");
-    // La conexión de las pruebas es una sola: la simultaneidad pide dos.
+    // La conexión de las pruebas es una sola: la simultaneidad pide otra para
+    // el segundo cambio y una tercera para mirar quién espera.
     const other = connectToLocalDatabase();
+    const observer = connectToLocalDatabase();
 
     try {
-      await Promise.all([
-        feature(admin, first.id),
-        runAs(
+      const { pid } = takeOnlyRow(
+        await other<{ pid: number }[]>`select pg_backend_pid() as pid`,
+        "pg_backend_pid",
+      );
+      let secondChange: Promise<unknown> = Promise.resolve();
+      // El primero no confirma hasta que el segundo esté detenido por él.
+      await runAs(database, admin, async (transaction) => {
+        await transaction`select public.set_featured_tip(${first.id})`;
+        secondChange = runAs(
           other,
           admin,
-          (transaction) =>
-            transaction`select public.set_featured_tip(${second.id})`,
-        ),
-      ]);
+          (next) => next`select public.set_featured_tip(${second.id})`,
+        );
+        await waitUntilBlocked(observer, pid);
+      });
+      await secondChange;
     } finally {
       await other.end();
+      await observer.end();
     }
 
-    expect(await readFeaturedSlugs()).toHaveLength(1);
+    expect(await readFeaturedSlugs()).toEqual([second.slug]);
   });
 
   it.each(["buyer", "staff"] as const)(

@@ -127,6 +127,14 @@ describeIntegration("tips: búsqueda", () => {
     expect(total).toBe(1);
   });
 
+  it("busca solo con los primeros 100 caracteres, sin partir un emoji", async () => {
+    newMark();
+    const kept = `${mark}${"🏐".repeat(100 - mark.length)}`;
+    await seedMarked(kept);
+
+    expect((await search(`${kept}sobra`)).total).toBe(1);
+  });
+
   it("trata los comodines como texto", async () => {
     newMark();
     await seedMarked(`${mark} cien`);
@@ -294,6 +302,32 @@ describeIntegration("tips: listar y leer", () => {
       const { slug } = await tips.insert(rest);
 
       expect(await readTipBySlug("es", slug)).toBeNull();
+    },
+  );
+
+  it.each([
+    ["larguísimo", "a".repeat(9000)],
+    ["con tilde", "ñandú"],
+    ["con barra", "con/barra"],
+    ["vacío", ""],
+  ])(
+    "un slug %s, que no puede existir, no encuentra nada",
+    async (_what, slug) => {
+      expect(await readTipBySlug("es", slug)).toBeNull();
+    },
+  );
+
+  it.each([
+    ["en ASCII", "a".repeat(9000)],
+    ["con tildes", "é".repeat(1500)],
+    ["con emojis", "🏐".repeat(800)],
+  ])(
+    "una búsqueda larguísima %s se recorta y no rompe ninguna página",
+    async (_what, query) => {
+      expect(await search(query, "es", { offset: 20 })).toMatchObject({
+        tips: [],
+        total: 0,
+      });
     },
   );
 
