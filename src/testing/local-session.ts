@@ -163,6 +163,22 @@ export async function deleteTestSessionUser(
   failOn(error, "borrar el usuario de prueba");
 }
 
+/** Borra la cuenta que una prueba creó desde el panel, si llegó a crearla. */
+export async function deleteTestAccount(
+  status: LocalSupabaseStatus,
+  email: string,
+): Promise<void> {
+  const service = createServiceClient(status);
+  const { data, error } = await service
+    .from("profiles")
+    .select("id")
+    .eq("email", email)
+    .maybeSingle();
+  failOn(error, "buscar la cuenta de prueba");
+  if (data === null) return;
+  await deleteTestSessionUser(status, data.id);
+}
+
 /** Las cookies de una sesión como la cabecera `Cookie` de una petición. */
 export function toCookieHeader(cookies: TestSession["cookies"]): string {
   return cookies

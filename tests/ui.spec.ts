@@ -2006,6 +2006,36 @@ const PANEL_FAQ_VARIANTS: readonly PanelVariant[] = PANEL_FAQ_STATES.flatMap(
     })),
 );
 
+// El equipo del panel (#130): la lista con activos y desactivados, la
+// invitación vacía, con errores y con un correo repetido, la confirmación de
+// desactivar y el rechazo del último admin, en los dos idiomas. La muestra no
+// usa la base.
+const TEAM_STATES = [
+  "lista",
+  "invitada",
+  "rechazo",
+  "invitar",
+  "errores",
+  "ya-esta",
+  "confirmar",
+  "ultimo-admin",
+] as const;
+
+const TEAM_VARIANTS: readonly PanelVariant[] = TEAM_STATES.flatMap((state) =>
+  [
+    { suffix: "", path: "/dev/equipo" },
+    { suffix: "-en", path: "/en/dev/equipo" },
+  ].map(({ suffix, path }) => ({
+    name: `equipo-${state}${suffix}`,
+    path: `${path}?estado=${state}`,
+    role: undefined,
+    sizes: viewports,
+    // Con errores, el foco salta al primer campo al hidratar.
+    readySelector:
+      state === "errores" ? '[aria-invalid="true"]:focus' : undefined,
+  })),
+);
+
 const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...SIGN_IN_VARIANTS,
   ...SETTINGS_VARIANTS,
@@ -2013,6 +2043,7 @@ const PANEL_VARIANTS: readonly PanelVariant[] = [
   ...AUDIT_LOG_VARIANTS,
   ...MARKETS_VARIANTS,
   ...PANEL_FAQ_VARIANTS,
+  ...TEAM_VARIANTS,
   {
     name: "staff",
     path: "/admin",
