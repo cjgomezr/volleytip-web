@@ -54,6 +54,13 @@ puede fiarse de la lista. El resumen dice el motivo:
 - la corrida tuvo errores fuera de las pruebas, o el reporte no trae ninguna
   prueba fallida.
 
+Si la corrida se relanzó, cuenta su último intento, aunque la dirección
+nombre uno anterior (`/attempts/N`): mira el artefacto de ese.
+
+El modo corto va con `--no-deps`. Aquí las dependencias entre proyectos sólo
+ordenan la corrida. Un proyecto que dependa de otro que prepare algo (una
+sesión guardada, por ejemplo) o que tenga `teardown` no puede usarlo tal cual.
+
 ## Confirmar
 
 El commit lo empuja `github-actions[bot]`, así que el `compare` que dispara

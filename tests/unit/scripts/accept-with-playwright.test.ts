@@ -47,6 +47,10 @@ test("captura que cambió", () => {
   ran("cambió");
   expect("imagen nueva").toMatchSnapshot("changed.txt");
 });
+test("captura nueva", () => {
+  ran("nueva");
+  expect("pantalla sin línea base").toMatchSnapshot("new.txt");
+});
 test("captura al día", () => {
   ran("al día");
   expect("imagen igual").toMatchSnapshot("same.txt");
@@ -104,7 +108,7 @@ async function createProject(): Promise<void> {
   await write(`${SNAPSHOTS}/same.txt`, "imagen igual");
   await write(
     ".gitignore",
-    "test-results/\nartifact/\nbin/\nran.log\nfailed-list.json\n",
+    "test-results/\nartifact/\nbin/\nran.log\nfailed-list.json\nsummary.md\noutput.txt\n",
   );
   bash(
     "git init -q && git config user.email t@example.com && git config user.name t && git add . && git commit -qm base",
@@ -147,12 +151,16 @@ fi
 
 describe("accept: modo corto con Playwright de verdad", () => {
   it(
-    "regenera solo la captura que falló en la comparación",
+    "deja en el índice solo las capturas que fallaron: la modificada y la nueva",
     async () => {
       await createProject();
       const compare = await compareStep();
       expect(bash(compare.run, compare.env).status).toBe(1);
-      bash("mkdir artifact && cp -r test-results artifact/ && rm ran.log");
+      // `git clean`: la comparación escribe la captura que faltaba, y `accept`
+      // parte de un checkout limpio que no la tiene.
+      bash(
+        "mkdir artifact && cp -r test-results artifact/ && rm ran.log && git clean -fq tests",
+      );
       const head = bash("git rev-parse HEAD").output.trim();
       const list = `${toBashPath(workDir)}/failed-list.json`;
       const resolved = bash(
@@ -161,6 +169,9 @@ describe("accept: modo corto con Playwright de verdad", () => {
           GH_REPO: "acme/repo",
           REVIEWED_RUN_URL: "https://github.com/acme/repo/actions/runs/1",
           FAILED_LIST_FILE: list,
+          // En CI estas dos apuntan al resumen y a las salidas del job real.
+          GITHUB_STEP_SUMMARY: "summary.md",
+          GITHUB_OUTPUT: "output.txt",
           PATH: await installFakeGh(head),
         },
       );
@@ -172,10 +183,10 @@ describe("accept: modo corto con Playwright de verdad", () => {
 
       expect(update.output).toContain("línea base regenerada");
       expect(await readFile(path.join(workDir, "ran.log"), "utf8")).toBe(
-        "cambió\n",
+        "cambió\nnueva\n",
       );
       expect(bash("git diff --cached --name-only").output.trim()).toBe(
-        `${SNAPSHOTS}/changed.txt`,
+        `${SNAPSHOTS}/changed.txt\n${SNAPSHOTS}/new.txt`,
       );
     },
     PLAYWRIGHT_TIMEOUT_MS,
