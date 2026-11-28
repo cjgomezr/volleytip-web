@@ -1,11 +1,7 @@
 import type { ReactElement } from "react";
 import { Outlet } from "react-router";
 
-import { PanelShell } from "~/components/panel/panel-shell";
-import { ADMIN_MODULES } from "~/lib/admin/modules";
 import type { PendingCounts } from "~/lib/admin/navigation";
-import { getPanelPath } from "~/lib/i18n/panel-pages";
-import { useLanguage } from "~/lib/i18n/use-language";
 import {
   panelMemberContext,
   panelSessionContext,
@@ -22,7 +18,7 @@ import type { Route } from "./+types/member-layout";
 // página del panel tiene su loader.
 export const middleware: Route.MiddlewareFunction[] = [requirePanelMember];
 
-type PanelLayout =
+export type PanelLayout =
   | { readonly view: "staff" }
   | {
       readonly view: "admin";
@@ -71,21 +67,8 @@ export async function loader({
   };
 }
 
-export default function PanelMemberLayout({
-  loaderData,
-}: Route.ComponentProps): ReactElement {
-  const language = useLanguage();
-  if (loaderData.view === "staff") return <Outlet />;
-  return (
-    <PanelShell
-      modules={ADMIN_MODULES}
-      member={loaderData.member}
-      pendingCounts={loaderData.pendingCounts}
-      isMaintenanceOn={loaderData.isMaintenanceOn}
-      morePath={getPanelPath("adminMore", language)}
-      languageAction={getPanelPath("adminLanguage", language)}
-    >
-      <Outlet />
-    </PanelShell>
-  );
+// La cáscara la pinta `shell-layout.tsx` con estos datos: así también está
+// cuando una pantalla falla.
+export default function PanelMemberLayout(): ReactElement {
+  return <Outlet />;
 }

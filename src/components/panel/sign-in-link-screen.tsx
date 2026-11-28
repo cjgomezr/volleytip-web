@@ -8,6 +8,7 @@ import { useLanguage } from "~/lib/i18n/use-language";
 import { RETURN_PARAM } from "~/lib/panel/return-path";
 
 import { SignInLayout } from "./sign-in-layout";
+import { UnsentNotice } from "./unsent-notice";
 
 /** Lo que la página necesita de un enlace. */
 export interface SignInLinkDetails {
@@ -30,6 +31,8 @@ export interface SignInLinkOutcome extends SignInLinkDetails {
 
 type SignInLinkScreenProps = SignInLinkDetails & {
   readonly outcome: SignInLinkOutcome | undefined;
+  /** El envío no llegó al servidor. */
+  readonly isUnsent?: boolean;
 };
 
 function DeadLink({
@@ -64,6 +67,7 @@ function DeadLink({
  */
 export function SignInLinkScreen({
   outcome,
+  isUnsent,
   ...loaded
 }: SignInLinkScreenProps): ReactElement {
   const { tokenHash, returnPath, signInPath } = outcome ?? loaded;
@@ -85,6 +89,11 @@ export function SignInLinkScreen({
         action={getPanelPath("adminSignInLink", language)}
         className="mt-6 flex flex-col gap-3.5"
       >
+        {isUnsent ? (
+          <div>
+            <UnsentNotice />
+          </div>
+        ) : null}
         {outcome?.status === "unavailable" ? (
           <p role="alert" className="font-semibold text-brand-red-deep">
             {translate("panel.signInLink.unavailable")}

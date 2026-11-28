@@ -10,12 +10,15 @@ import {
   readStoredFaq,
 } from "~/lib/panel/faqs-reader.server";
 import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
+import {
+  sendPanelForm,
+  withoutUnsent,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/faq-edit";
 
 const NOT_FOUND_STATUS = 404;
-
-export { FaqErrorBoundary as ErrorBoundary } from "~/components/panel/faqs/faq-error";
 
 export async function loader({
   context,
@@ -33,6 +36,15 @@ export const action = defineAdminAction({
   run: (args: Route.ActionArgs) => updateFaq(args),
 });
 
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
+
 export default function FaqEdit({
   loaderData,
   actionData,
@@ -42,7 +54,7 @@ export default function FaqEdit({
     <FaqEditorScreen
       key={loaderData.faqId}
       {...loaderData}
-      initialOutcome={actionData}
+      initialOutcome={withoutUnsent(actionData)}
     />
   );
 }

@@ -1809,6 +1809,19 @@ const PANEL_PROVISIONAL_VIEWPORTS = viewports.filter(({ name }) =>
 // no usa la base: el panel real pinta lo que haya en ella y cambiaría en cada
 // corrida.
 const PANEL_SHELL_VARIANTS = [
+  // La pantalla de fallo (#143), del servidor y sin conexión.
+  ...["servidor", "red"].flatMap((failure) => [
+    {
+      name: `fallo-${failure}`,
+      path: `/dev/panel/textos?fallo=${failure}`,
+      role: undefined,
+    },
+    {
+      name: `fallo-${failure}-en`,
+      path: `/en/dev/panel/site-texts?fallo=${failure}`,
+      role: undefined,
+    },
+  ]),
   // "Textos del sitio" (#126) en cada estado, en los dos idiomas.
   ...["datos", "errores", "confirmacion", "invalido"].flatMap((state) => [
     {

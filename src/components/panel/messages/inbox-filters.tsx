@@ -11,10 +11,12 @@ import {
 } from "~/lib/admin/messages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
+import { useOfflineGuard } from "~/lib/panel/use-offline-guard";
 
 import { Button } from "../../button";
 import { SelectField } from "../../select-field";
 import { TextField } from "../../text-field";
+import { UnsentNotice } from "../unsent-notice";
 import { TEXT_LINK_STYLES } from "./message-styles";
 
 // Los campos no son controlados. Cuando la dirección cambia sin que la
@@ -57,6 +59,7 @@ export function InboxFilters({
   inboxPath,
   canClear,
 }: InboxFiltersProps): ReactElement {
+  const offline = useOfflineGuard();
   const translate = useTranslate();
   const fields = useFieldsFromAddress(query);
 
@@ -75,12 +78,18 @@ export function InboxFilters({
 
   return (
     <Form
+      onSubmit={offline.onSubmit}
       method="get"
       action={inboxPath}
       role="search"
       aria-label={translate("panel.messages.filters.label")}
       className="mt-5 rounded-card bg-surface-light p-4 md:p-5"
     >
+      {offline.isBlocked ? (
+        <div className="mb-4">
+          <UnsentNotice />
+        </div>
+      ) : null}
       <div
         ref={fields}
         className="grid gap-4 lg:grid-cols-[2fr_1.4fr_1.2fr_auto] lg:items-end"

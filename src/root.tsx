@@ -10,20 +10,12 @@ import {
   useRouteLoaderData,
 } from "react-router";
 
-import { MaintenancePage } from "~/components/maintenance-page";
-import {
-  ErrorContent,
-  isServerError,
-  ServerErrorPage,
-} from "~/components/error-content";
-import { ErrorInShell } from "~/components/error-in-shell";
 import { LanguageAlternates } from "~/components/language-alternates";
-import { LanguageSuggestion } from "~/components/language-suggestion";
+import { RootError } from "~/components/root-error";
 import { activeLanguagesContext } from "~/lib/active-languages.server";
 import { serverEnv } from "~/lib/env.server";
 import type { ActiveLanguages } from "~/lib/i18n/active-languages";
 import { ActiveLanguagesProvider } from "~/lib/i18n/active-languages-context";
-import { findInactiveLanguageNotFound } from "~/lib/i18n/inactive-language-not-found";
 import { readDocumentLanguages } from "~/lib/i18n/document-languages";
 import { redirectFromDefaultPrefix } from "~/lib/i18n/default-language-redirect";
 import { getDocumentPath } from "~/lib/i18n/document-path";
@@ -35,17 +27,14 @@ import {
   loadLanguageSuggestion,
   type LanguageSuggestionData,
 } from "~/lib/i18n/language-suggestion.server";
-import { DEFAULT_LANGUAGE, getRequestLanguage } from "~/lib/i18n/languages";
+import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getSiteYear } from "~/lib/i18n/format";
 import { getMessages } from "~/lib/i18n/messages.server";
 import { getPageAtPath } from "~/lib/i18n/pages";
 import type { Messages } from "~/lib/i18n/translate";
 import { TranslationsProvider } from "~/lib/i18n/translations-context";
-import { useLanguage } from "~/lib/i18n/use-language";
 import { enforceSiteAvailability } from "~/lib/language-middleware.server";
 import { markAsNotIndexable } from "~/lib/indexing.server";
-import { findMaintenanceNotice } from "~/lib/maintenance-notice";
-import { findPanelNotFound } from "~/lib/panel/panel-not-found";
 
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -188,57 +177,9 @@ export default function App({
 
 // Respaldo para cuando falla la raíz o el layout del sitio, y la página del
 // 500: sin textos ni header, para que se pinte aunque lo que falló fuera leer
-// la base. El 404 y los errores controlados de una página los pinta el límite
-// de `site-layout.tsx`, con la cáscara. La excepción es el 404 del panel, que
-// trae consigo lo que la cáscara necesita: para quien no es del equipo tiene
-// que verse como cualquier página que no existe (AC-033).
+// la base.
 export function ErrorBoundary({
   error,
 }: Route.ErrorBoundaryProps): ReactElement {
-  const language = useLanguage();
-  const panelNotFound = findPanelNotFound(error);
-  if (panelNotFound !== undefined) {
-    return (
-      <TranslationsProvider
-        language={language}
-        messages={panelNotFound.messages}
-      >
-        <ErrorInShell
-          error={error}
-          announcements={panelNotFound.announcements}
-          notice={
-            panelNotFound.languageSuggestion ? (
-              <LanguageSuggestion {...panelNotFound.languageSuggestion} />
-            ) : null
-          }
-          year={panelNotFound.year}
-        />
-      </TranslationsProvider>
-    );
-  }
-  const inactiveLanguage = findInactiveLanguageNotFound(error);
-  if (inactiveLanguage !== undefined) {
-    return (
-      <TranslationsProvider
-        language={DEFAULT_LANGUAGE}
-        messages={inactiveLanguage.messages}
-      >
-        <ErrorInShell
-          error={error}
-          announcements={inactiveLanguage.announcements}
-          year={inactiveLanguage.year}
-        />
-      </TranslationsProvider>
-    );
-  }
-  const maintenance = findMaintenanceNotice(error);
-  if (maintenance !== undefined) {
-    return <MaintenancePage returnsAt={maintenance.returnsAt} />;
-  }
-  if (isServerError(error)) return <ServerErrorPage />;
-  return (
-    <main>
-      <ErrorContent error={error} />
-    </main>
-  );
+  return <RootError error={error} />;
 }

@@ -16,6 +16,12 @@ import { getRequestLanguage } from "~/lib/i18n/languages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
 import { RETURN_PARAM, resolveReturnPath } from "~/lib/panel/return-path";
+import {
+  isUnsentSubmission,
+  sendPanelForm,
+  withoutUnsent,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 import { identifyVisitor } from "~/lib/panel/visitor.server";
 
 import type { Route } from "./+types/sign-in";
@@ -56,9 +62,12 @@ export function shouldRevalidate({
 export function SignInScreen({
   protection,
   outcome,
+  isUnsent,
 }: {
   readonly protection: FormProtectionFields;
   readonly outcome: SignInOutcome | undefined;
+  /** El envío no llegó al servidor. */
+  readonly isUnsent?: boolean;
 }): ReactElement {
   const translate = useTranslate();
   const heading =
@@ -67,14 +76,33 @@ export function SignInScreen({
       : "panel.signIn.heading";
   return (
     <SignInLayout heading={translate(heading)}>
-      <SignInForm protection={protection} outcome={outcome} />
+      <SignInForm
+        protection={protection}
+        outcome={outcome}
+        isUnsent={isUnsent}
+      />
     </SignInLayout>
   );
+}
+
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
 }
 
 export default function SignIn({
   loaderData,
   actionData,
 }: Route.ComponentProps): ReactElement {
-  return <SignInScreen {...loaderData} outcome={actionData} />;
+  return (
+    <SignInScreen
+      {...loaderData}
+      outcome={withoutUnsent(actionData)}
+      isUnsent={isUnsentSubmission(actionData)}
+    />
+  );
 }

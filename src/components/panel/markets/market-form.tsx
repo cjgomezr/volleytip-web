@@ -1,5 +1,4 @@
 import { useId, useState, type ReactElement } from "react";
-import { useFetcher } from "react-router";
 
 import {
   MARKETS_FIELDS,
@@ -10,6 +9,8 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { SaveBar } from "../editor-section";
 import { MarketFields } from "./market-fields";
@@ -35,8 +36,9 @@ export function MarketForm({
   const path = getPanelPath("adminMarketsMarket", useLanguage());
   const country = useCountryName(market.countryCode);
   const headingId = useId();
-  const fetcher = useFetcher<MarketOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
+  const fetcher = usePanelFetcher<MarketOutcome>(initialOutcome);
+  usePreloadSubmission("adminMarketsMarket");
+  const { outcome } = fetcher;
   const rejection = outcome?.status === "invalid" ? outcome : undefined;
   const [isEdited, setIsEdited] = useState(false);
   return (
@@ -75,9 +77,10 @@ export function MarketForm({
           submitLabel={translate("panel.markets.market.save", {
             code: market.countryCode,
           })}
-          isSaving={fetcher.state !== "idle"}
+          isSaving={fetcher.isSending}
           isEdited={isEdited}
           status={outcome?.status}
+          isUnsent={fetcher.isUnsent}
           formError={
             rejection?.formError === "malformed"
               ? translate("panel.siteTexts.error.malformed")

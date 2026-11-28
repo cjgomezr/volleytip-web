@@ -4,6 +4,7 @@ import type { FieldError } from "~/lib/admin/site-texts";
 import { useTranslate } from "~/lib/i18n/translations-context";
 
 import { Button } from "../button";
+import { UnsentNotice } from "./unsent-notice";
 
 /** Una tarjeta de "Textos del sitio": un formulario con su título. */
 export function EditorSection({
@@ -59,6 +60,8 @@ interface SaveBarProps {
   readonly status: "saved" | "unchanged" | "invalid" | undefined;
   /** El error que no es de ningún campo. */
   readonly formError?: string;
+  /** El último envío no llegó al servidor. */
+  readonly isUnsent?: boolean;
 }
 
 /**
@@ -72,11 +75,13 @@ export function SaveBar({
   isEdited,
   status,
   formError,
+  isUnsent = false,
 }: SaveBarProps): ReactElement {
   const translate = useTranslate();
-  const result = isSaving ? undefined : status;
+  const result = isSaving || isUnsent ? undefined : status;
   return (
     <div className="mt-5 flex flex-col items-start gap-3">
+      {isUnsent && !isSaving ? <UnsentNotice /> : null}
       {result === "invalid" ? (
         <p
           role="alert"

@@ -39,9 +39,12 @@ export default [
   layout("routes/panel/session-layout.tsx", [
     ...buildLocalizedRoutes(PANEL_ENTRY_PAGES),
     layout("routes/panel/member-layout.tsx", [
-      ...buildLocalizedRoutes(PANEL_MEMBER_PAGES),
-      layout("routes/panel/admin-layout.tsx", [
-        ...buildLocalizedRoutes(PANEL_ADMIN_PAGES),
+      // Pinta la cáscara del panel y recibe los fallos de sus pantallas.
+      layout("routes/panel/shell-layout.tsx", [
+        ...buildLocalizedRoutes(PANEL_MEMBER_PAGES),
+        layout("routes/panel/admin-layout.tsx", [
+          ...buildLocalizedRoutes(PANEL_ADMIN_PAGES),
+        ]),
       ]),
     ]),
   ]),

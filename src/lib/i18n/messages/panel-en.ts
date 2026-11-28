@@ -1,5 +1,13 @@
 // Textos del panel de administración y de su entrada.
 export const panelEn = {
+  "panel.failure.title": "Something went wrong",
+  "panel.failure.details":
+    "The change could not be saved or the screen could not be loaded. The failure has been logged. Go back to the screen and check how it was left.",
+  "panel.failure.offlineTitle": "No connection",
+  "panel.failure.offlineDetails":
+    "The change could not be saved or the screen could not be loaded. Check your connection and go back to the screen.",
+  "panel.failure.back": "Back to the screen",
+  "panel.unsent": "It could not be sent. Check your connection and try again.",
   "panel.eyebrow": "VolleyTip admin",
   "panel.overview.greeting": "Hi, {name}",
   "panel.overview.card.newMessages": "Unanswered messages",
@@ -175,7 +183,7 @@ export const panelEn = {
     "Check the address or look for it in the inbox.",
   "panel.messages.failure.title": "Something went wrong",
   "panel.messages.failure.details":
-    "We could not complete your request. Go back to the message to see its status.",
+    "The change could not be saved or the message could not be loaded. Go back to the message to see its status.",
   "panel.messages.failure.retry": "Back to the message",
   "panel.settings.currentState": "Current state:",
   "panel.settings.state.on": "On",
@@ -391,10 +399,6 @@ export const panelEn = {
     "A published question needs the question and the answer in Spanish.",
   "panel.faqs.notFound.title": "That question does not exist",
   "panel.faqs.notFound.details": "The address may be mistyped.",
-  "panel.faqs.failure.title": "It could not be completed",
-  "panel.faqs.failure.details":
-    "Something failed. Check the list before repeating the change.",
-  "panel.faqs.failure.retry": "Try again",
   "panel.sample.messages": "Messages",
   "panel.sample.siteTexts": "Site texts",
   "panel.sample.faqs": "Frequently asked questions",

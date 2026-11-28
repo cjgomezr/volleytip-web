@@ -9,6 +9,11 @@ import {
   STAT_AUDITED_FIELDS,
 } from "~/lib/panel/site-stats-editor.server";
 import { readSiteTextsEditor } from "~/lib/panel/site-texts-editor.server";
+import {
+  sendPanelForm,
+  withoutUnsent,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/site-texts-stats";
 
@@ -26,11 +31,22 @@ export const action = defineAdminAction({
     ),
 });
 
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
+
 // Solo se pinta sin JavaScript: con él, el formulario envía sin salir de
 // "Textos del sitio".
 export default function SiteTextsStats({
   loaderData,
   actionData,
 }: Route.ComponentProps): ReactElement {
-  return <SiteTextsScreen {...loaderData} statsOutcome={actionData} />;
+  return (
+    <SiteTextsScreen {...loaderData} statsOutcome={withoutUnsent(actionData)} />
+  );
 }

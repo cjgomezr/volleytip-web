@@ -20,7 +20,7 @@ const NOT_FOUND_STATUS = 404;
 /**
  * Lo que pinta una ruta de un mensaje cuando falla, dentro de la cáscara: el
  * 404 de un mensaje que no existe, o un cambio que no se pudo completar (por
- * ejemplo, si la bitácora falló).
+ * ejemplo, si la bitácora falló). Lo elige el límite de `shell-layout.tsx`.
  */
 export function MessageErrorBoundary(): ReactElement {
   const translate = useTranslate();

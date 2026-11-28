@@ -1,5 +1,5 @@
 import { useId, type ReactElement } from "react";
-import { Form, useLocation, useNavigation } from "react-router";
+import { useLocation } from "react-router";
 
 import { Button } from "~/components/button";
 import { TextField } from "~/components/text-field";
@@ -12,7 +12,9 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import type { PanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
+import { UnsentNotice } from "../unsent-notice";
 import { SettingsCard } from "./settings-card";
 
 const STATUS_OPTIONS = [
@@ -102,20 +104,21 @@ function AppFields({ values, errors }: AppFieldsProps): ReactElement {
 
 export interface AppAvailabilityCardProps {
   readonly app: AppSettingsView;
-  /** El último envío, si no se guardó. */
-  readonly rejection: AppFormRejection | undefined;
+  /** El envío del formulario; responde el rechazo si no se guardó. */
+  readonly fetcher: PanelFetcher<AppFormRejection>;
 }
 
 /** El estado de la app: lista de espera o disponible, con sus direcciones. */
 export function AppAvailabilityCard({
   app,
-  rejection,
+  fetcher,
 }: AppAvailabilityCardProps): ReactElement {
   const translate = useTranslate();
   const path = getPanelPath("adminSettings", useLanguage());
-  const isSending = useNavigation().formAction === path;
+  const rejection = fetcher.outcome;
   // Los campos son no controlados: cada navegación los vuelve a montar con lo
-  // que el servidor guardó o devolvió.
+  // que el servidor guardó. Un envío rechazado, o que no llegó, no navega y
+  // deja lo escrito.
   const { key } = useLocation();
   return (
     <SettingsCard
@@ -129,7 +132,7 @@ export function AppAvailabilityCard({
             : "panel.settings.app.details",
         )}
       </p>
-      <Form
+      <fetcher.Form
         key={key}
         method="post"
         action={path}
@@ -148,18 +151,19 @@ export function AppAvailabilityCard({
           values={rejection?.values ?? app.values}
           errors={rejection?.errors ?? {}}
         />
-        <div className="flex flex-col items-start">
+        <div className="flex flex-col items-start gap-3">
+          {fetcher.isUnsent ? <UnsentNotice /> : null}
           <Button
             type="submit"
             zone="light"
             submittingLabel={
-              isSending ? translate("panel.settings.saving") : undefined
+              fetcher.isSending ? translate("panel.settings.saving") : undefined
             }
           >
             {translate("panel.settings.app.save")}
           </Button>
         </div>
-      </Form>
+      </fetcher.Form>
     </SettingsCard>
   );
 }

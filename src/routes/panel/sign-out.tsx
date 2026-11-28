@@ -4,6 +4,10 @@ import { getRequestLanguage } from "~/lib/i18n/languages";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { closeSession } from "~/lib/panel/close-session.server";
 import { panelSessionContext } from "~/lib/panel/panel-middleware.server";
+import {
+  sendPanelForm,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/sign-out";
 
@@ -18,6 +22,15 @@ export async function action({
 }: Route.ActionArgs): Promise<Response> {
   await closeSession(context.get(panelSessionContext).client);
   return redirect(getPanelPath("adminSignIn", getRequestLanguage(request)));
+}
+
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
 }
 
 // Nunca se pinta: el loader y el action siempre redirigen. Hace falta para

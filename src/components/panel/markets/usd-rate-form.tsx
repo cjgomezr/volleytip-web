@@ -1,5 +1,4 @@
 import { useState, type ReactElement } from "react";
-import { useFetcher } from "react-router";
 
 import {
   MARKETS_FIELDS,
@@ -10,6 +9,8 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { TextField } from "../../text-field";
 import { SaveBar } from "../editor-section";
@@ -49,8 +50,9 @@ export function UsdRateForm({
 }): ReactElement {
   const translate = useTranslate();
   const path = getPanelPath("adminMarketsRate", useLanguage());
-  const fetcher = useFetcher<RateOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
+  const fetcher = usePanelFetcher<RateOutcome>(initialOutcome);
+  usePreloadSubmission("adminMarketsRate");
+  const { outcome } = fetcher;
   const rejection = outcome?.status === "invalid" ? outcome : undefined;
   const [isEdited, setIsEdited] = useState(false);
   return (
@@ -76,9 +78,10 @@ export function UsdRateForm({
         </div>
         <SaveBar
           submitLabel={translate("panel.markets.rate.save")}
-          isSaving={fetcher.state !== "idle"}
+          isSaving={fetcher.isSending}
           isEdited={isEdited}
           status={outcome?.status}
+          isUnsent={fetcher.isUnsent}
         />
       </fetcher.Form>
     </>

@@ -170,6 +170,21 @@ describe("pantalla de entrada: página del enlace", () => {
     expect(html).not.toContain("<form");
   });
 
+  it("si el envío no llegó, lo avisa y deja reintentar", () => {
+    const html = render(
+      <SignInLinkScreen
+        tokenHash="token-de-prueba"
+        returnPath={null}
+        signInPath="/admin/entrar"
+        outcome={undefined}
+        isUnsent
+      />,
+    );
+
+    expect(html).toMatch(/role="alert"[^>]*>No se pudo enviar/);
+    expect(html).toContain('value="token-de-prueba"');
+  });
+
   // Sin JavaScript el `loader` corre sobre la dirección del envío, sin token.
   it("si no se pudo entrar, lo dice y deja reintentar con el mismo enlace", () => {
     const html = render(

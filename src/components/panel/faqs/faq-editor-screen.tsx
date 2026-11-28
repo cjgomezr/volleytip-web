@@ -10,6 +10,11 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import {
+  isUnsentSubmission,
+  withoutUnsent,
+  type UnsentSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import { SaveBar } from "../editor-section";
 import { TEXT_LINK_STYLES } from "../messages/message-styles";
@@ -40,8 +45,12 @@ export function FaqEditorScreen({
 }: FaqEditorScreenProps): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
-  const fetcher = useFetcher<FaqSaveOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
+  // `useFetcher` y no `usePanelFetcher`: las pestañas necesitan lo enviado
+  // (`formData`). Sus respuestas no hay que vencerlas: la pantalla se
+  // desmonta al cambiar de dirección o de pregunta.
+  const fetcher = useFetcher<FaqSaveOutcome | UnsentSubmission>();
+  const outcome =
+    fetcher.data === undefined ? initialOutcome : withoutUnsent(fetcher.data);
   const rejected = outcome?.status === "invalid" ? outcome : undefined;
   const [isEdited, setIsEdited] = useState(false);
   const formError = useFormErrorText(rejected?.formError);
@@ -90,6 +99,7 @@ export function FaqEditorScreen({
             isSaving={fetcher.state !== "idle"}
             isEdited={isEdited}
             status={outcome?.status}
+            isUnsent={isUnsentSubmission(fetcher.data)}
             formError={formError}
           />
         </fetcher.Form>

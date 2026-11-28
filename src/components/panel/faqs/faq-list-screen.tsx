@@ -5,9 +5,16 @@ import type { FaqListOutcome, FaqListView } from "~/lib/admin/faqs";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import {
+  isUnsentSubmission,
+  withoutUnsent,
+  type UnsentSubmission,
+} from "~/lib/panel/unsent-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { getButtonLinkClassName } from "../../button";
 import { PanelHeading } from "../panel-heading";
+import { UnsentNotice } from "../unsent-notice";
 import { FaqListItem } from "./faq-list-item";
 import { useFaqFocus } from "./use-faq-focus";
 
@@ -77,13 +84,24 @@ export function FaqListScreen({
   const translate = useTranslate();
   const newPath = getPanelPath("adminFaqNew", useLanguage());
   // Uno solo para todos los botones: lo último que pasó es lo que se anuncia.
-  const fetcher = useFetcher<FaqListOutcome>();
+  // `useFetcher` y no `usePanelFetcher`: los botones miran a dónde y qué se
+  // está enviando. La lista se desmonta al cambiar de dirección, así que sus
+  // respuestas no hay que vencerlas.
+  const fetcher = useFetcher<FaqListOutcome | UnsentSubmission>();
+  usePreloadSubmission("adminFaqMove");
+  usePreloadSubmission("adminFaqPublish");
+  usePreloadSubmission("adminFaqRetire");
   const isIdle = fetcher.state === "idle";
   // Mientras envía no se muestra el resultado anterior, así se vuelve a
   // anunciar el nuevo aunque diga lo mismo.
-  const outcome = isIdle ? (fetcher.data ?? initialOutcome) : undefined;
-  const listRef = useFaqFocus(isIdle ? fetcher.data : undefined);
-  const notice = useNoticeText(outcome, isIdle && createdId !== null);
+  const answer = isIdle ? fetcher.data : undefined;
+  const isUnsent = isUnsentSubmission(answer);
+  const answered = withoutUnsent(answer);
+  // Tras un envío que no llegó, lo anterior ya no es lo último que pasó.
+  const isSettled = isIdle && !isUnsent;
+  const outcome = isSettled ? (answered ?? initialOutcome) : undefined;
+  const listRef = useFaqFocus(answered);
+  const notice = useNoticeText(outcome, isSettled && createdId !== null);
   return (
     <div className="max-w-[900px]">
       <PanelHeading title={translate("panel.module.faqs")} />
@@ -103,6 +121,11 @@ export function FaqListScreen({
         </>
       )}
       <Notice text={notice} />
+      {isUnsent ? (
+        <div className="mt-4">
+          <UnsentNotice />
+        </div>
+      ) : null}
       <ol ref={listRef} className="mt-4 mb-0 flex list-none flex-col gap-3 p-0">
         {rows.map((row, index) => (
           <FaqListItem

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Form, useLocation, useNavigation } from "react-router";
+import { useLocation } from "react-router";
 
 import {
   LANGUAGE_NAMES,
@@ -8,8 +8,11 @@ import {
 } from "~/lib/i18n/languages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { TRANSITION_STYLES } from "../pressable-styles";
+import { UnsentNotice } from "./unsent-notice";
 
 // 44 px de alto y de ancho: la zona de toque mínima en celular.
 const BUTTON_STYLES = `inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-pill px-3 text-[14px] font-bold ${TRANSITION_STYLES}`;
@@ -32,7 +35,9 @@ export function PanelLanguageSwitcher({
   const currentLanguage = useLanguage();
   const { pathname, search } = useLocation();
   // Mientras viaja un cambio, un segundo clic no envía otro.
-  const isSaving = useNavigation().formAction === action;
+  const fetcher = usePanelFetcher();
+  usePreloadSubmission("adminLanguage");
+  const isSaving = fetcher.isSending;
 
   function renderLanguage(language: Language): ReactElement {
     const isCurrent = language === currentLanguage;
@@ -55,7 +60,11 @@ export function PanelLanguageSwitcher({
   }
 
   return (
-    <Form method="post" action={action} className="shrink-0">
+    <fetcher.Form
+      method="post"
+      action={action}
+      className="flex shrink-0 flex-col items-end gap-2 md:items-start"
+    >
       <input type="hidden" name="from" value={`${pathname}${search}`} />
       <div
         role="group"
@@ -64,6 +73,11 @@ export function PanelLanguageSwitcher({
       >
         {SUPPORTED_LANGUAGES.map(({ code }) => renderLanguage(code))}
       </div>
-    </Form>
+      {fetcher.isUnsent ? (
+        <div className="max-w-[200px]">
+          <UnsentNotice zone="dark" />
+        </div>
+      ) : null}
+    </fetcher.Form>
   );
 }

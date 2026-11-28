@@ -1,5 +1,13 @@
 // Textos del panel de administración y de su entrada.
 export const panelEs = {
+  "panel.failure.title": "Algo falló",
+  "panel.failure.details":
+    "El cambio no se pudo guardar o la pantalla no se pudo cargar. El fallo quedó registrado. Vuelve a la pantalla y revisa cómo quedó.",
+  "panel.failure.offlineTitle": "No hay conexión",
+  "panel.failure.offlineDetails":
+    "El cambio no se pudo guardar o la pantalla no se pudo cargar. Revisa tu conexión y vuelve a la pantalla.",
+  "panel.failure.back": "Volver a la pantalla",
+  "panel.unsent": "No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.",
   "panel.eyebrow": "Panel de VolleyTip",
   "panel.overview.greeting": "Hola, {name}",
   "panel.overview.card.newMessages": "Mensajes sin responder",
@@ -177,7 +185,7 @@ export const panelEs = {
     "Revisa la dirección o búscalo en la bandeja.",
   "panel.messages.failure.title": "Algo falló",
   "panel.messages.failure.details":
-    "No pudimos completar lo que pediste. Vuelve al mensaje para ver en qué estado quedó.",
+    "El cambio no se pudo guardar o el mensaje no se pudo cargar. Vuelve al mensaje para ver en qué estado quedó.",
   "panel.messages.failure.retry": "Volver al mensaje",
   "panel.settings.currentState": "Estado actual:",
   "panel.settings.state.on": "Encendido",
@@ -389,10 +397,6 @@ export const panelEs = {
     "Una pregunta publicada necesita la pregunta y la respuesta en español.",
   "panel.faqs.notFound.title": "Esa pregunta no existe",
   "panel.faqs.notFound.details": "Puede que la dirección esté mal escrita.",
-  "panel.faqs.failure.title": "No se pudo completar",
-  "panel.faqs.failure.details":
-    "Algo falló. Revisa la lista antes de repetir el cambio.",
-  "panel.faqs.failure.retry": "Volver a intentar",
   "panel.sample.messages": "Mensajes",
   "panel.sample.siteTexts": "Textos del sitio",
   "panel.sample.faqs": "Preguntas frecuentes",

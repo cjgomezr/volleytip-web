@@ -1,5 +1,4 @@
 import type { ReactElement } from "react";
-import { useFetcher } from "react-router";
 
 import {
   MARKETS_FIELDS,
@@ -10,8 +9,11 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { Button } from "../../button";
+import { UnsentNotice } from "../unsent-notice";
 import { StatePill } from "./state-pill";
 
 // Lo que dice el botón y lo que oye un lector de pantalla, según lo que hará.
@@ -37,9 +39,10 @@ function LanguageToggle({
 }): ReactElement {
   const translate = useTranslate();
   const path = getPanelPath("adminMarketsLanguage", useLanguage());
-  const fetcher = useFetcher<LanguageOutcome>();
-  const outcome = fetcher.data ?? initialOutcome;
-  const isSaving = fetcher.state !== "idle";
+  const fetcher = usePanelFetcher<LanguageOutcome>(initialOutcome);
+  usePreloadSubmission("adminMarketsLanguage");
+  const { outcome } = fetcher;
+  const isSaving = fetcher.isSending;
   const { code, name, isActive } = language;
   const keys = TOGGLE_KEYS[isActive ? "deactivate" : "activate"];
   return (
@@ -67,6 +70,11 @@ function LanguageToggle({
           </span>
         </Button>
       </fetcher.Form>
+      {fetcher.isUnsent ? (
+        <div className="w-full">
+          <UnsentNotice />
+        </div>
+      ) : null}
       {outcome?.status === "invalid" && !isSaving ? (
         <LanguageError error={outcome.error} />
       ) : null}

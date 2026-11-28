@@ -1,12 +1,14 @@
 import type { ReactElement } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link } from "react-router";
 
 import { Button, getButtonLinkClassName } from "~/components/button";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { PanelHeading } from "../panel-heading";
+import { UnsentNotice } from "../unsent-notice";
 
 /**
  * La confirmación para encender el mantenimiento. Es una pantalla y no un
@@ -16,7 +18,7 @@ export function MaintenanceConfirmation(): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
   const action = getPanelPath("adminSettingsMaintenance", language);
-  const isSending = useNavigation().formAction === action;
+  const fetcher = usePanelFetcher();
   return (
     <div className="max-w-[640px]">
       <PanelHeading title={translate("panel.settings.confirm.title")} />
@@ -27,20 +29,27 @@ export function MaintenanceConfirmation(): ReactElement {
         <p className="mt-3 mb-0 text-[15px] leading-[1.5] text-ink-subtle">
           {translate("panel.settings.confirm.details")}
         </p>
+        {fetcher.isUnsent ? (
+          <div className="mt-4">
+            <UnsentNotice />
+          </div>
+        ) : null}
         <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Form method="post" action={action}>
+          <fetcher.Form method="post" action={action}>
             <input type="hidden" name="enabled" value="true" />
             <input type="hidden" name="confirm" value="yes" />
             <Button
               type="submit"
               zone="light"
               submittingLabel={
-                isSending ? translate("panel.settings.saving") : undefined
+                fetcher.isSending
+                  ? translate("panel.settings.saving")
+                  : undefined
               }
             >
               {translate("panel.settings.confirm.submit")}
             </Button>
-          </Form>
+          </fetcher.Form>
           <Link
             to={getPanelPath("adminSettings", language)}
             className={getButtonLinkClassName("secondary", "light")}

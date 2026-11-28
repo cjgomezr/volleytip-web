@@ -27,6 +27,11 @@ import {
   readStoredSetting,
   replaceSetting,
 } from "~/lib/panel/stored-setting.server";
+import {
+  sendPanelForm,
+  withoutUnsent,
+  type PanelSubmission,
+} from "~/lib/panel/unsent-submission";
 
 import type { Route } from "./+types/settings";
 
@@ -94,9 +99,20 @@ export const action = defineAdminAction({
   run: changeAppAvailability,
 });
 
+// Sin red, el envío se responde en el navegador y la pantalla no cambia.
+export function clientAction({
+  serverAction,
+}: Route.ClientActionArgs): PanelSubmission<
+  Awaited<ReturnType<typeof serverAction>>
+> {
+  return sendPanelForm(() => serverAction());
+}
+
 export default function PanelSettings({
   loaderData,
   actionData,
 }: Route.ComponentProps): ReactElement {
-  return <SettingsScreen {...loaderData} rejection={actionData} />;
+  return (
+    <SettingsScreen {...loaderData} rejection={withoutUnsent(actionData)} />
+  );
 }
