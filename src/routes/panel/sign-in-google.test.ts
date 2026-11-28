@@ -96,11 +96,11 @@ async function leaveForGoogle(routes: Routes): Promise<string> {
   return cookies.map((cookie) => cookie.split(";")[0]).join("; ");
 }
 
+// Mira todas las partes de la cookie: una sesión larga viaja en varias.
 function hasLiveSession(cookies: readonly string[]): boolean {
-  const last = cookies
+  return cookies
     .filter((cookie) => /-auth-token(\.\d+)?=/.test(cookie))
-    .at(-1);
-  return last !== undefined && !last.includes("Max-Age=0");
+    .some((cookie) => !cookie.includes("Max-Age=0"));
 }
 
 async function comeBackWithCode(
@@ -360,6 +360,35 @@ describe("google: vuelta", () => {
     expect(JSON.stringify(vi.mocked(console.error).mock.calls)).not.toContain(
       VALID_AUTH_CODE,
     );
+  });
+
+  // El `error_code` llega en la dirección: lo puede escribir cualquiera.
+  it.each([
+    ["con un salto de línea", "abc%0AError%20del%20servidor%20FALSO"],
+    ["larguísimo", "a".repeat(500)],
+    ["con un correo", "persona%40ejemplo.co"],
+  ])("un error_code %s no se escribe en el registro", async (_n, code) => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    stubSupabase();
+    const routes = await loadRoutes("true");
+
+    await routes.comeBack(`${RETURN}?error=x&error_code=${code}`);
+
+    expect(warn.mock.calls).toEqual([
+      ["La entrada con Google volvió con error: no reconocido"],
+    ]);
+  });
+
+  it("un error_code con la forma de Auth sí queda en el registro", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    stubSupabase();
+    const routes = await loadRoutes("true");
+
+    await routes.comeBack(`${RETURN}?error=x&error_code=unexpected_failure`);
+
+    expect(warn.mock.calls).toEqual([
+      ["La entrada con Google volvió con error: unexpected_failure"],
+    ]);
   });
 
   it("en inglés vuelve a la entrada en inglés, con la página pedida", async () => {

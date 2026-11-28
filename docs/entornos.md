@@ -367,7 +367,7 @@ Se repite en `volleytip-dev` y en `volleytip-prod`, con el mismo cliente:
 3. Authentication → URL Configuration: comprobar que "Redirect URLs" tiene el origen del entorno seguido de `/**` (paso 2 de "El correo para entrar"). Sin eso, la vuelta de Google cae en la Site URL y no se entra.
 4. Authentication → Sign In / Providers → "Allow new users to sign up": sigue **desactivado**. Si una cuenta invitada no logra entrar con Google, no se arregla encendiéndolo: se reporta.
 
-Supabase une la identidad de Google a la cuenta que ya existe con el mismo correo, si ese correo está confirmado (el comando del primer admin lo deja así). No crea una segunda cuenta.
+Supabase une la identidad de Google a la cuenta que ya existe con el mismo correo, si ese correo está confirmado (el comando del primer admin lo deja así), sin crear una segunda cuenta. Eso es lo que describe Supabase: se da por comprobado cuando pasa la sección 4.
 
 #### 3. Encender el botón en cada entorno
 

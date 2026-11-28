@@ -27,6 +27,14 @@ describe("entorno de Playwright", () => {
     );
   });
 
+  // Sin un valor aquí, el servidor de desarrollo lo tomaría del `.env.local`
+  // de quien corre las pruebas.
+  it("fija Google apagado, diga lo que diga el entorno local", () => {
+    const env = buildPlaywrightEnv(LOCAL_STATUS);
+
+    expect(env.GOOGLE_SIGN_IN_ENABLED).toBe("false");
+  });
+
   it("conserva el resto del entorno de pruebas", () => {
     const env = buildPlaywrightEnv(LOCAL_STATUS);
 

@@ -21,8 +21,19 @@ export type GoogleReturnResult =
 
 // Con el registro apagado, así rechaza Supabase un correo que nadie invitó.
 const SIGNUP_DISABLED_CODE = "signup_disabled";
-// El código que entrega Auth es un UUID. Lo que no se le parezca no se le manda.
+// Auth entrega un UUID, pero la forma aceptada es amplia a propósito: solo
+// descarta lo que de ningún modo es un código.
 const AUTH_CODE_FORMAT = /^[A-Za-z0-9_-]{8,200}$/;
+
+// La forma de los códigos de error de Auth.
+const ERROR_CODE_FORMAT = /^[a-z0-9_]{1,64}$/;
+
+// El `error_code` llega en la dirección y lo puede escribir cualquiera: solo
+// se registra si tiene esa forma, nunca un salto de línea ni un correo.
+function describeErrorCode(code: string | null): string {
+  if (code === null) return "sin código";
+  return ERROR_CODE_FORMAT.test(code) ? code : "no reconocido";
+}
 
 interface GoogleSignInStart {
   readonly language: Language;
@@ -67,9 +78,8 @@ function readProviderRefusal(params: URLSearchParams): GoogleNotice | null {
   if (!params.has("error") && !params.has("error_code")) return null;
   const code = params.get("error_code");
   if (code === SIGNUP_DISABLED_CODE) return "denied";
-  // El código es de una lista fija de Auth; la descripción no se registra.
   console.warn(
-    `La entrada con Google volvió con error: ${code ?? "sin código"}`,
+    `La entrada con Google volvió con error: ${describeErrorCode(code)}`,
   );
   return "failed";
 }

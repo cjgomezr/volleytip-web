@@ -1,4 +1,4 @@
-import type { ReactElement } from "react";
+import { useEffect, type ReactElement } from "react";
 import { useSearchParams } from "react-router";
 
 import { Pressable } from "~/components/pressable";
@@ -9,6 +9,7 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { reloadWhenRestored } from "~/lib/panel/reload-when-restored";
 import { RETURN_PARAM } from "~/lib/panel/return-path";
 import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
@@ -44,6 +45,12 @@ export function GoogleSignIn(): ReactElement {
   const returnPath = params.get(RETURN_PARAM);
   const fetcher = usePanelFetcher();
   usePreloadSubmission("adminSignInGoogle");
+  const { isSending } = fetcher;
+  // Quien cancela con "atrás" en Google no puede quedarse con un botón muerto.
+  useEffect(() => {
+    if (!isSending) return undefined;
+    return reloadWhenRestored(window, () => window.location.reload());
+  }, [isSending]);
   return (
     <>
       <Separator />

@@ -246,6 +246,32 @@ test.describe("entrada al panel con Google", () => {
     });
   }
 
+  // Volver atrás desde Google puede devolver la página tal como quedó, con el
+  // envío en curso: sin recargarla, el botón no respondería más.
+  test("restaurada a medio enviar, la página se recarga y el botón revive", async ({
+    page,
+  }) => {
+    // El envío se queda sin respuesta, como mientras carga Google.
+    await page.route("**/admin/entrar/google*", async (route) => {
+      if (route.request().method() !== "POST") await route.continue();
+    });
+    await page.goto("/dev/entrar?estado=google");
+    await waitForHydration(page);
+    const button = page.getByRole("button", { name: "Continuar con Google" });
+    await button.click();
+    await expect(button).toHaveAttribute("aria-busy", "true");
+
+    const reload = page.waitForEvent("load");
+    await page.evaluate(() => {
+      window.dispatchEvent(
+        new PageTransitionEvent("pageshow", { persisted: true }),
+      );
+    });
+    await reload;
+
+    await expect(button).not.toHaveAttribute("aria-busy", "true");
+  });
+
   test("sin Google configurado no hay botón y queda el correo", async ({
     page,
   }) => {
