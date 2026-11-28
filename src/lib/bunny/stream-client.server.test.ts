@@ -330,6 +330,21 @@ describe("bunny stream: errores propios de cada operación", () => {
     expect(response.bodyUsed).toBe(true);
   });
 
+  it("conserva el estado si la respuesta de error se corta", async () => {
+    const cut = new ReadableStream({
+      start(controller) {
+        controller.error(new TypeError("terminated"));
+      },
+    });
+    const { client } = openClient(() =>
+      Promise.resolve(new Response(cut, { status: 401 })),
+    );
+
+    await expect(client.listVideos(FIRST_PAGE)).resolves.toMatchObject(
+      failureOf("unauthorized"),
+    );
+  });
+
   it("deja de esperar a un Bunny que no responde", async () => {
     const { client, fetchSpy } = answering({ totalItems: 0, items: [] });
 

@@ -118,7 +118,9 @@ async function callApi(
     );
     if (!response.ok) {
       // El cuerpo no se usa; soltarlo libera la conexión.
-      await response.body?.cancel();
+      // Si ya venía cortado, soltarlo falla y no hay nada que soltar: lo que
+      // importa es el estado, que ya llegó.
+      await response.body?.cancel().catch(() => undefined);
       const detail = `Bunny Stream respondió ${String(response.status)} al ${operation}.`;
       return { ok: false, status: response.status, detail };
     }
