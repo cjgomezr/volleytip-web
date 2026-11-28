@@ -3,6 +3,7 @@
  * ni desborde horizontal en los cuatro anchos, y el menú la marca como
  * actual. Las capturas están en `ui.spec.ts`.
  */
+import { waitForSettledPage } from "./support/page-ready";
 import { test, expect, waitForImages } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -75,6 +76,7 @@ test.describe("navegación a Nosotros", () => {
     page,
   }) => {
     await page.goto(APP_URL);
+    await waitForSettledPage(page);
     await page.getByRole("link", { name: "Conoce al equipo" }).click();
 
     await expect(page).toHaveURL(/\/nosotros$/);

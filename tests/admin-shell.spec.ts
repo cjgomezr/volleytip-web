@@ -8,6 +8,7 @@ import AxeBuilder from "@axe-core/playwright";
 import type { Locator, Page } from "@playwright/test";
 
 import { readProfileLocale } from "../src/testing/local-session";
+import { waitForSettledPage } from "./support/page-ready";
 import { readLocalSupabaseStatusOnce } from "./support/local-supabase-status-once";
 import { expect, test } from "./support/panel-session";
 
@@ -223,6 +224,7 @@ test.describe("cáscara en celular", () => {
     page,
   }) => {
     await page.goto("/dev/panel");
+    await waitForSettledPage(page);
 
     await bottomBar(page).getByRole("link", { name: "Más" }).click();
 
@@ -288,6 +290,7 @@ for (const javaScriptEnabled of [true, false]) {
     }) => {
       const { userId } = await signInToPanel({ role: "admin" });
       await page.goto("/admin/mas");
+      if (javaScriptEnabled) await waitForSettledPage(page);
 
       await page
         .getByRole("complementary")

@@ -3,6 +3,7 @@
  * foco atrapado, Escape y botón de cerrar que devuelven el foco, y sin el
  * botón desde 768 px. Sin JavaScript el botón es un enlace al pie.
  */
+import { waitForSettledPage } from "./support/page-ready";
 import { test, expect } from "./support/test";
 import AxeBuilder from "@axe-core/playwright";
 
@@ -128,6 +129,7 @@ test.describe("menú de celular a 360 px", () => {
     page,
   }) => {
     await page.goto(`${APP_URL}/nosotros`);
+    await waitForSettledPage(page);
     await page.getByRole("button", { name: "Abrir menú" }).click();
     const dialog = page.getByRole("dialog", { name: "Menú" });
 
@@ -193,6 +195,7 @@ for (const variant of OPEN_MENU_VARIANTS) {
       page,
     }, testInfo) => {
       await page.goto(`${APP_URL}${variant.path}`);
+      await waitForSettledPage(page);
       await page.getByRole("button", { name: variant.opener }).click();
       await expect(page.getByRole("dialog")).toBeVisible();
 

@@ -7,6 +7,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { TURNSTILE_TEST_KEYS } from "../src/lib/forms/turnstile-test-keys";
 import { TURNSTILE_FIELD } from "../src/lib/forms/turnstile.server";
 import { findLink, waitForEmail } from "../src/testing/local-mailbox";
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 import type { Page } from "./support/test";
 
@@ -157,6 +158,7 @@ test.describe("entrada al panel con el correo", () => {
     // El mismo enlace, otra vez: ya se usó.
     await context.clearCookies();
     await page.goto(`${link.pathname}${link.search}`);
+    await waitForSettledPage(page);
     await page.getByRole("button", { name: "Entrar" }).click();
     await expect(
       page.getByRole("heading", { name: "Este enlace ya no sirve" }),

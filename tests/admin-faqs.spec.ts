@@ -7,6 +7,7 @@
 import AxeBuilder from "@axe-core/playwright";
 import type { Page } from "@playwright/test";
 
+import { waitForSettledPage } from "./support/page-ready";
 import { expect, test } from "./support/panel-session";
 
 const MIN_TOUCH_TARGET = 44;
@@ -90,6 +91,7 @@ for (const viewport of VIEWPORTS) {
       await signInToPanel({ role: "admin" });
       const hasSidebar = viewport.width >= SIDEBAR_FROM_WIDTH;
       await page.goto(hasSidebar ? "/admin" : "/admin/mas");
+      await waitForSettledPage(page);
 
       await page
         .getByRole(hasSidebar ? "complementary" : "main")
