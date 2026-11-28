@@ -14,10 +14,13 @@ export function SampleTeamScreen(sample: SampleTeam): ReactElement {
         <TeamListScreen {...sample.view} initialOutcome={sample.outcome} />
       );
     case "invite":
-      return <TeamInviteScreen outcome={sample.outcome} />;
+      return <TeamInviteScreen initialOutcome={sample.outcome} />;
     case "confirmation":
       return (
-        <DeactivateConfirmation {...sample.view} outcome={sample.outcome} />
+        <DeactivateConfirmation
+          {...sample.view}
+          initialOutcome={sample.outcome}
+        />
       );
   }
 }

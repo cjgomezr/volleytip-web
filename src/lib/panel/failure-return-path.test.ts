@@ -22,6 +22,11 @@ describe("a dónde vuelve la pantalla de fallo", () => {
     [`/admin/preguntas/${ID}/retirar`, "/admin/preguntas"],
     [`/admin/preguntas/${ID}/mover`, "/admin/preguntas"],
     [`/en/admin/faqs/${ID}/move`, "/en/admin/faqs"],
+    // Los botones de la lista del equipo, y su confirmación, que es pantalla.
+    [`/admin/equipo/${ID}/rol`, "/admin/equipo"],
+    [`/admin/equipo/${ID}/activar`, "/admin/equipo"],
+    [`/admin/equipo/${ID}/desactivar`, `/admin/equipo/${ID}/desactivar`],
+    ["/admin/equipo/invitar", "/admin/equipo/invitar"],
     // El idioma y la salida no son pantallas: se vuelve al inicio.
     ["/admin/idioma", "/admin"],
     ["/admin/salir", "/admin"],
@@ -42,6 +47,7 @@ describe("a dónde vuelve la pantalla de fallo", () => {
   it.each([
     ["/admin/ajustes", "?saved=app", "/admin/ajustes"],
     ["/admin/bitacora", "?saved=x&p=2", "/admin/bitacora?p=2"],
+    ["/admin/equipo", "?aviso=invited", "/admin/equipo"],
   ])(
     "desde %s%s no repite el aviso de un envío anterior",
     (pathname, search, expected) => {

@@ -1,5 +1,5 @@
 import type { ReactElement } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link } from "react-router";
 
 import {
   CONFIRM_FIELD,
@@ -11,14 +11,16 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { Button, getButtonLinkClassName } from "../../button";
 import { PanelHeading } from "../panel-heading";
+import { UnsentNotice } from "../unsent-notice";
 import { RejectionAlert } from "./rejection-alert";
 
 export interface DeactivateConfirmationProps extends DeactivationView {
-  /** Por qué no se desactivó, si ya se intentó. */
-  readonly outcome?: MemberOutcome;
+  /** La respuesta de un envío sin JavaScript. */
+  readonly initialOutcome?: MemberOutcome;
 }
 
 /**
@@ -27,14 +29,15 @@ export interface DeactivateConfirmationProps extends DeactivationView {
  */
 export function DeactivateConfirmation({
   member,
-  outcome,
+  initialOutcome,
 }: DeactivateConfirmationProps): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
   const action = getPanelPath("adminTeamDeactivate", language, {
     memberId: member.id,
   });
-  const isSending = useNavigation().formAction === action;
+  const { Form, isSending, isUnsent, outcome } =
+    usePanelFetcher<MemberOutcome>(initialOutcome);
   const error = outcome?.status === "rejected" ? outcome.error : undefined;
   return (
     <div className="max-w-[640px]">
@@ -49,7 +52,12 @@ export function DeactivateConfirmation({
         <p className="mt-3 mb-0 text-[15px] leading-[1.5] text-ink-subtle">
           {translate("panel.team.confirm.details")}
         </p>
-        {isSending || error === undefined ? null : (
+        {isUnsent ? (
+          <div className="mt-4">
+            <UnsentNotice />
+          </div>
+        ) : null}
+        {isSending || isUnsent || error === undefined ? null : (
           <div className="mt-4">
             <RejectionAlert text={translate(MEMBER_REJECTION_KEYS[error])} />
           </div>

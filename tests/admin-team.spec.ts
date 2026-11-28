@@ -114,6 +114,47 @@ for (const viewport of VIEWPORTS) {
   });
 }
 
+test.describe("equipo sin conexión", () => {
+  test("invitar conserva lo escrito y avisa", async ({
+    page,
+    context,
+    signInToPanel,
+  }) => {
+    await signInToPanel({ role: "admin" });
+    await page.goto("/admin/equipo/invitar");
+    await page.waitForLoadState("networkidle");
+    await page.getByLabel("Correo").fill("nora@example.com");
+    await context.setOffline(true);
+
+    await page.getByRole("button", { name: "Invitar" }).click();
+
+    await expect(page.getByRole("alert")).toContainText("No se pudo enviar");
+    await expect(page.getByLabel("Correo")).toHaveValue("nora@example.com");
+    await expect(page).toHaveURL("/admin/equipo/invitar");
+  });
+
+  test("un botón de la lista deja a la persona donde estaba", async ({
+    page,
+    context,
+    signInToPanel,
+  }) => {
+    // Dos filas ajenas a quien mira: la propia no tiene botones.
+    await signInToPanel({ role: "admin", fullName: "Otra Admin" });
+    await signInToPanel({ role: "admin" });
+    await page.goto("/admin/equipo");
+    await page.waitForLoadState("networkidle");
+    await context.setOffline(true);
+
+    await page
+      .getByRole("button", { name: "Pasar a staff a Otra Admin" })
+      .first()
+      .click();
+
+    await expect(page.getByRole("alert")).toContainText("No se pudo enviar");
+    await expect(page).toHaveURL("/admin/equipo");
+  });
+});
+
 for (const javaScriptEnabled of [true, false]) {
   test.describe(`equipo ${javaScriptEnabled ? "con" : "sin"} JavaScript`, () => {
     test.use({ javaScriptEnabled });

@@ -13,11 +13,13 @@ import { MessageErrorBoundary } from "~/components/panel/messages/message-error"
 import { PanelFailure } from "~/components/panel/panel-failure";
 import { PanelShell } from "~/components/panel/panel-shell";
 import { RootError } from "~/components/root-error";
+import { TeamNotFound } from "~/components/panel/team/team-not-found";
 import { ADMIN_MODULES } from "~/lib/admin/modules";
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useLanguage } from "~/lib/i18n/use-language";
 import { isFaqPath } from "~/lib/panel/faq-path";
 import { findPanelNotFound } from "~/lib/panel/panel-not-found";
+import { isTeamPath } from "~/lib/panel/team-path";
 
 import type { loader as memberLoader } from "./member-layout";
 
@@ -60,8 +62,8 @@ export default function PanelShellLayout(): ReactElement {
 
 const NOT_FOUND_STATUS = 404;
 
-// El 404 de un mensaje o de una pregunta que no existe. El del panel (quien
-// dejó de ser del equipo) trae sus propios datos.
+// El 404 de un mensaje, de una pregunta o de un miembro que no existe. El del
+// panel (quien dejó de ser del equipo) trae sus propios datos.
 function isMissingRecord(error: unknown): boolean {
   return (
     isRouteErrorResponse(error) &&
@@ -73,6 +75,7 @@ function isMissingRecord(error: unknown): boolean {
 interface FailureScreenProps {
   readonly error: unknown;
   readonly isMessageRoute: boolean;
+  readonly isTeamScreen: boolean;
   /** El 404 de un registro que no existe, y no el del panel. */
   readonly isOwnMissing: boolean;
 }
@@ -80,11 +83,12 @@ interface FailureScreenProps {
 function FailureScreen({
   error,
   isMessageRoute,
+  isTeamScreen,
   isOwnMissing,
 }: FailureScreenProps): ReactElement {
   if (isMessageRoute) return <MessageErrorBoundary />;
-  // Fuera de los mensajes, el único 404 propio es el de una pregunta.
-  if (isOwnMissing) return <FaqNotFound />;
+  // Fuera de los mensajes, un 404 propio es de un miembro o de una pregunta.
+  if (isOwnMissing) return isTeamScreen ? <TeamNotFound /> : <FaqNotFound />;
   return <PanelFailure error={error} />;
 }
 
@@ -95,15 +99,18 @@ function FailureScreen({
  * pregunta que no existe tienen su pantalla. Hay un solo límite para todo el
  * panel: un envío hecho con `fetcher` falla en el límite de quien lo envió,
  * y uno propio en la ruta del mensaje o de la pregunta atraparía también las
- * respuestas de la guardia. Por eso mismo las preguntas se reconocen por la
- * dirección: sus botones envían desde la lista, que no trae el id.
+ * respuestas de la guardia. Por eso mismo las preguntas y el equipo se
+ * reconocen por la dirección: sus botones envían desde la lista, que no trae
+ * el id.
  */
 export function ErrorBoundary(): ReactNode {
   const error = useRouteError();
   const isMessageRoute = useParams().messageId !== undefined;
-  const isFaqScreen = isFaqPath(useLocation().pathname);
+  const { pathname } = useLocation();
+  const isTeamScreen = isTeamPath(pathname);
   const isOwnMissing =
-    (isMessageRoute || isFaqScreen) && isMissingRecord(error);
+    (isMessageRoute || isFaqPath(pathname) || isTeamScreen) &&
+    isMissingRecord(error);
   if (isRouteErrorResponse(error) && !isOwnMissing) {
     return <RootError error={error} />;
   }
@@ -111,6 +118,7 @@ export function ErrorBoundary(): ReactNode {
     <FailureScreen
       error={error}
       isMessageRoute={isMessageRoute}
+      isTeamScreen={isTeamScreen}
       isOwnMissing={isOwnMissing}
     />
   );

@@ -486,6 +486,44 @@ describe("fallos de una pregunta", () => {
   );
 });
 
+describe("fallos del equipo", () => {
+  const confirmation: Scenario = {
+    path: "/admin/equipo/11111111-1111-4111-8111-111111111111/desactivar",
+    pattern: "/admin/equipo/:memberId/desactivar",
+  };
+  const throwMissing = (): never => {
+    throw data(null, { status: 404 });
+  };
+
+  it("una persona que no está en el equipo lo dice dentro del panel", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({
+      ...confirmation,
+      loader: throwMissing,
+    });
+
+    expect(status).toBe(404);
+    expectShell(html);
+    expect(html).toContain("Esa persona no está en el equipo");
+    expect(html).toContain('href="/admin/equipo"');
+  });
+
+  it("un cambio que falló usa la pantalla de fallo del panel", async () => {
+    stubSupabase({});
+
+    const { status, html } = await visit({
+      ...confirmation,
+      method: "POST",
+      action: fail,
+    });
+
+    expect(status).toBe(500);
+    expectShell(html);
+    expect(html).toContain("El cambio no se pudo guardar");
+  });
+});
+
 describe("quien no es del equipo", () => {
   it("recibe el 404 de la guardia aunque la pantalla fuera a fallar", async () => {
     stubSupabase({ profile: { ...ADMIN_PROFILE, role: "buyer" } });

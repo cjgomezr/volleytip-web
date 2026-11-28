@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactElement, type RefObject } from "react";
-import { Form, Link, useNavigation } from "react-router";
+import { Link } from "react-router";
 
 import {
   INVITE_FIELDS,
@@ -13,12 +13,14 @@ import { getPanelPath } from "~/lib/i18n/panel-pages";
 import type { MessageKey } from "~/lib/i18n/translate";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import { usePanelFetcher } from "~/lib/panel/use-panel-fetcher";
 
 import { Button } from "../../button";
 import { SelectField } from "../../select-field";
 import { TextField } from "../../text-field";
 import { TEXT_LINK_STYLES } from "../messages/message-styles";
 import { PanelHeading } from "../panel-heading";
+import { UnsentNotice } from "../unsent-notice";
 import { RejectionAlert } from "./rejection-alert";
 
 const DEFAULT_ROLE = "staff";
@@ -120,14 +122,16 @@ function useFirstErrorFocus(
 /** El formulario para invitar a alguien al equipo. Va dentro de
  * `PanelShell`. */
 export function TeamInviteScreen({
-  outcome,
+  initialOutcome,
 }: {
-  readonly outcome?: InviteOutcome;
+  /** La respuesta de un envío sin JavaScript. */
+  readonly initialOutcome?: InviteOutcome;
 }): ReactElement {
   const translate = useTranslate();
   const language = useLanguage();
   const action = getPanelPath("adminTeamInvite", language);
-  const isSending = useNavigation().formAction === action;
+  const { Form, isSending, isUnsent, outcome } =
+    usePanelFetcher<InviteOutcome>(initialOutcome);
   const outcomeText = useOutcomeText(outcome);
   const fieldsRef = useFirstErrorFocus(outcome);
   return (
@@ -149,7 +153,8 @@ export function TeamInviteScreen({
         <Form method="post" action={action} noValidate>
           <InviteFields outcome={outcome} />
           <div className="mt-6 flex flex-col items-start gap-3">
-            {isSending || outcomeText === undefined ? null : (
+            {isUnsent ? <UnsentNotice /> : null}
+            {isSending || isUnsent || outcomeText === undefined ? null : (
               <RejectionAlert text={outcomeText} />
             )}
             <Button

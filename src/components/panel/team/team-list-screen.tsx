@@ -10,9 +10,16 @@ import {
 import { getPanelPath } from "~/lib/i18n/panel-pages";
 import { useTranslate } from "~/lib/i18n/translations-context";
 import { useLanguage } from "~/lib/i18n/use-language";
+import {
+  isUnsentSubmission,
+  withoutUnsent,
+  type UnsentSubmission,
+} from "~/lib/panel/unsent-submission";
+import { usePreloadSubmission } from "~/lib/panel/use-preload-submission";
 
 import { getButtonLinkClassName } from "../../button";
 import { PanelHeading } from "../panel-heading";
+import { UnsentNotice } from "../unsent-notice";
 import { TeamMemberCard } from "./team-member-card";
 import { useTeamFocus } from "./use-team-focus";
 
@@ -74,11 +81,21 @@ export function TeamListScreen({
   const translate = useTranslate();
   const invitePath = getPanelPath("adminTeamInvite", useLanguage());
   // Uno solo para todos los botones: lo último que pasó es lo que se anuncia.
-  const fetcher = useFetcher<MemberOutcome>();
+  // `useFetcher` y no `usePanelFetcher`: los botones miran a dónde se está
+  // enviando. La lista se desmonta al cambiar de dirección, así que sus
+  // respuestas no hay que vencerlas.
+  const fetcher = useFetcher<MemberOutcome | UnsentSubmission>();
+  usePreloadSubmission("adminTeamRole");
+  usePreloadSubmission("adminTeamActivate");
   const isIdle = fetcher.state === "idle";
-  const outcome = isIdle ? (fetcher.data ?? initialOutcome) : undefined;
-  const listRef = useTeamFocus(isIdle ? fetcher.data : undefined);
-  const noticeText = useNoticeText(outcome, isIdle ? notice : null);
+  const answer = isIdle ? fetcher.data : undefined;
+  const isUnsent = isUnsentSubmission(answer);
+  const answered = withoutUnsent(answer);
+  // Tras un envío que no llegó, lo anterior ya no es lo último que pasó.
+  const isSettled = isIdle && !isUnsent;
+  const outcome = isSettled ? (answered ?? initialOutcome) : undefined;
+  const listRef = useTeamFocus(answered);
+  const noticeText = useNoticeText(outcome, isSettled ? notice : null);
   return (
     <div className="max-w-[900px]">
       <PanelHeading title={translate("panel.module.team")} />
@@ -92,6 +109,11 @@ export function TeamListScreen({
         {translate("panel.team.invite")}
       </Link>
       <Notice text={noticeText} />
+      {isUnsent ? (
+        <div className="mt-4">
+          <UnsentNotice />
+        </div>
+      ) : null}
       <ul ref={listRef} className="mt-4 mb-0 flex list-none flex-col gap-3 p-0">
         {members.map((member) => (
           <TeamMemberCard
