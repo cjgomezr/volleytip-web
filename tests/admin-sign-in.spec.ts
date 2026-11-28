@@ -84,6 +84,7 @@ async function passTurnstile(page: Page): Promise<void> {
  * Turnstile: antes de eso un envío no pasa por el enrutador. */
 async function waitForHydration(page: Page): Promise<void> {
   await page.waitForFunction(() => "requireTurnstileInteraction" in window);
+  await waitForSettledPage(page);
 }
 
 for (const viewport of VIEWPORTS) {
