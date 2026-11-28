@@ -2023,6 +2023,14 @@ const TEAM_STATES = [
   "ultimo-admin",
 ] as const;
 
+const TEAM_FOCUS_TARGETS: Partial<
+  Record<(typeof TEAM_STATES)[number], string>
+> = {
+  errores: '[aria-invalid="true"]:focus',
+  rechazo: "[data-member-feedback]:focus",
+  cambiada: "[data-member-feedback]:focus",
+};
+
 const TEAM_VARIANTS: readonly PanelVariant[] = TEAM_STATES.flatMap((state) =>
   [
     { suffix: "", path: "/dev/equipo" },
@@ -2032,9 +2040,9 @@ const TEAM_VARIANTS: readonly PanelVariant[] = TEAM_STATES.flatMap((state) =>
     path: `${path}?estado=${state}`,
     role: undefined,
     sizes: viewports,
-    // Con errores, el foco salta al primer campo al hidratar.
-    readySelector:
-      state === "errores" ? '[aria-invalid="true"]:focus' : undefined,
+    // La captura espera a que el foco esté donde se queda: en el primer campo
+    // con error o en el aviso de la tarjeta.
+    readySelector: TEAM_FOCUS_TARGETS[state],
   })),
 );
 
