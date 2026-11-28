@@ -14,6 +14,8 @@ playwright-report/
 # Claude worktrees (obreros de la fábrica, nunca commitear)
 .claude/worktrees/
 .factory/
+# Proyecto temporal de una prueba del kit, por si una corrida se corta.
+.tmp-playwright-*/
 
 # Líneas base visuales de Playwright: sólo Linux es vinculante. El resto se
 # regenera en la máquina de cada quien y es informativo; versionarlo

@@ -17,6 +17,18 @@
 # ese momento, que es justo lo que la regresión visual existe para impedir. La
 # URL queda en el resumen del run, así que la decisión deja rastro.
 #
+# De esa corrida `accept` saca además qué falló, y en el modo corto regenera
+# sólo esas pruebas: unos minutos en vez de la suite dos veces. Cae a la suite
+# completa, y lo dice en el resumen, cuando la dirección no es de una corrida
+# de este workflow en este repositorio, cuando esa corrida no salió en rojo,
+# cuando corrió sobre otro commit que la cabeza de la rama, cuando su artefacto
+# venció o no trae el reporte, y cuando tuvo errores fuera de las pruebas o
+# ninguna prueba fallida (scripts/reviewed-run-failures.sh). En el modo corto,
+# si alguna de esas pruebas sigue fallando al regenerar (axe, por ejemplo) no
+# se commitea nada; si pasan todas sin cambiar una captura, el job termina en
+# verde sin commit y hay que volver a correr `compare`. Más detalle en
+# docs/linea-base-visual.md.
+#
 # Normalmente `--ref` es una rama de PR: ahí es donde la línea base nueva
 # tiene que aterrizar antes de mergear. La excepción es un `main` que ya
 # quedó desajustado (el incidente que abre scripts/report-visual-incident.sh):
@@ -170,8 +182,12 @@ jobs:
       # le pide la llave de servicio a Supabase CLI al arrancar.
       - name: Levanta la base local de Supabase
         run: npm run db:start
+      # El reporte JSON viaja en el artefacto: de él saca `accept` la lista de
+      # pruebas que fallaron.
       - name: Compara contra la línea base vinculante
-        run: npx playwright test
+        run: npx playwright test --reporter=dot,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_FILE: test-results/visual-report.json
       - name: Guarda el diff para que alguien lo mire
         if: failure()
         uses: actions/upload-artifact@v4
@@ -212,6 +228,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # Para consultar la corrida revisada y bajar su artefacto.
+      actions: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -228,14 +246,23 @@ jobs:
       # le pide la llave de servicio a Supabase CLI al arrancar.
       - name: Levanta la base local de Supabase
         run: npm run db:start
-      - name: Deja constancia de qué diff se revisó
-        run: |
-          echo "Línea base aceptada tras revisar:" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ inputs.reviewed_run_url }}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Deja constancia de qué diff se revisó y qué falló en él
+        id: reviewed
+        run: bash scripts/reviewed-run-failures.sh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          REVIEWED_RUN_URL: ${{ inputs.reviewed_run_url }}
+          FAILED_LIST_FILE: ${{ runner.temp }}/failed-tests.json
       - name: Regenera la línea base
         id: update
-        run: bash scripts/update-visual-baselines.sh
+        run: bash scripts/update-visual-baselines.sh ${FAILED_LIST:+--failed-list "$FAILED_LIST"}
+        env:
+          FAILED_LIST: ${{ steps.reviewed.outputs.failed_list }}
         continue-on-error: true
+      - name: Dice que no había nada que commitear
+        if: steps.update.outcome == 'success'
+        run: echo "Ninguna captura cambió, así que no hay nada que commitear." | tee -a "$GITHUB_STEP_SUMMARY"
       - name: Commitea la línea base aceptada
         id: commit
         if: steps.update.outcome == 'failure'

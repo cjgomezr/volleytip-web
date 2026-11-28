@@ -63,12 +63,15 @@ function toBashPath(nativePath: string): string {
  * regenerar, `FAKE_REGENERATE_CHANGES_FILE` decide si esa regeneración
  * produce contenido distinto (una diferencia de píxeles real) o no
  * (un fallo que no era de captura, p. ej. la app no levantó).
+ * `regenerateExit` es el código de esa corrida: distinto de cero cuando
+ * alguna prueba sigue fallando al regenerar.
  */
 async function installFakeNpx(
   workDir: string,
   options: {
     firstCompareExit: 0 | 1;
     regenerateChangesFile: boolean;
+    regenerateExit?: 0 | 1;
   },
 ): Promise<{ binDir: string; logFile: string }> {
   const binDir = path.join(workDir, "fake-bin");
@@ -83,9 +86,9 @@ async function installFakeNpx(
 
   const script = `#!/usr/bin/env bash
 echo "$@" >> "${toBashPath(logFile)}"
-if [ "$3" = "--update-snapshots" ]; then
+if [[ " $* " == *" --update-snapshots "* ]]; then
   ${options.regenerateChangesFile ? `echo "regenerated-$RANDOM" > "${toBashPath(snapshotFile)}"` : "true"}
-  exit 0
+  exit ${options.regenerateExit ?? 0}
 fi
 exit ${options.firstCompareExit}
 `;
@@ -137,7 +140,7 @@ async function stagedFiles(cwd: string): Promise<string> {
   });
 }
 
-describe("scripts/update-visual-baselines.sh", () => {
+describe("update-visual-baselines: sin lista", () => {
   let workDir = "";
 
   afterEach(async () => {
@@ -231,5 +234,107 @@ describe("scripts/update-visual-baselines.sh", () => {
       "playwright test --shard=2/4",
       "playwright test --update-snapshots --shard=2/4",
     ]);
+  });
+});
+
+const FAILED_LIST = "lista-de-fallos.json";
+const SHORT_RUN = `playwright test --last-failed --last-failed-file ${FAILED_LIST} --no-deps --update-snapshots`;
+
+describe("update-visual-baselines: solo lo que falló", () => {
+  let workDir = "";
+
+  afterEach(async () => {
+    if (workDir) {
+      await rm(workDir, REMOVE_TEMP_DIR_OPTIONS);
+      workDir = "";
+    }
+  });
+
+  async function runShortMode(
+    options: Parameters<typeof installFakeNpx>[1],
+    args: readonly string[] = ["--failed-list", FAILED_LIST],
+  ): Promise<RunResult & { invocations: string[]; staged: string }> {
+    workDir = await mkdtemp(path.join(tmpdir(), "update-baselines-"));
+    await initGitRepoWithCommittedSnapshot(workDir);
+    await writeFile(
+      path.join(workDir, FAILED_LIST),
+      '{"status":"failed","failedTests":["abc-def"]}',
+    );
+    const { binDir, logFile } = await installFakeNpx(workDir, options);
+    const result = await runScript(
+      workDir,
+      { ...process.env, PATH: `${binDir}${path.delimiter}${process.env.PATH}` },
+      args,
+    );
+    const log = (await readFile(logFile, "utf8")).trim();
+    return {
+      ...result,
+      invocations: log ? log.split("\n") : [],
+      staged: await stagedFiles(workDir),
+    };
+  }
+
+  const CHANGES_PIXELS = {
+    firstCompareExit: 1,
+    regenerateChangesFile: true,
+  } as const;
+
+  it("regenera esas pruebas y no corre la comparación completa", async () => {
+    const { invocations } = await runShortMode(CHANGES_PIXELS);
+
+    expect(invocations).toEqual([SHORT_RUN]);
+  });
+
+  it("deja en el índice las capturas regeneradas y sale con 1", async () => {
+    const { code, staged } = await runShortMode(CHANGES_PIXELS);
+
+    expect(code).toBe(1);
+    expect(staged).toBe(
+      "tests/ui.spec.ts-snapshots/home-desktop-light-chromium-linux.png",
+    );
+  });
+
+  it("no deja nada para commitear si alguna prueba sigue fallando, aunque haya capturas nuevas", async () => {
+    const { code, staged, stderr } = await runShortMode({
+      ...CHANGES_PIXELS,
+      regenerateExit: 1,
+    });
+
+    expect(code).toBe(1);
+    expect(staged).toBe("");
+    expect(stderr).toMatch(/sigue fallando/);
+  });
+
+  it("sale con 0 y lo dice cuando ninguna captura cambió", async () => {
+    const { code, staged, stdout } = await runShortMode({
+      firstCompareExit: 1,
+      regenerateChangesFile: false,
+    });
+
+    expect(code).toBe(0);
+    expect(staged).toBe("");
+    expect(stdout).toMatch(/ninguna captura cambió/);
+  });
+
+  // Con un archivo ilegible Playwright ignora `--last-failed` y corre todo, y
+  // con `--no-deps` los proyectos que escriben se cruzarían con las capturas.
+  it("no corre nada si la lista no existe", async () => {
+    const { code, invocations } = await runShortMode(CHANGES_PIXELS, [
+      "--failed-list",
+      "no-existe.json",
+    ]);
+
+    expect(code).toBe(1);
+    expect(invocations).toEqual([]);
+  });
+
+  it("pasa a Playwright el resto de los argumentos", async () => {
+    const { invocations } = await runShortMode(CHANGES_PIXELS, [
+      "--failed-list",
+      FAILED_LIST,
+      "--workers=1",
+    ]);
+
+    expect(invocations).toEqual([`${SHORT_RUN} --workers=1`]);
   });
 });

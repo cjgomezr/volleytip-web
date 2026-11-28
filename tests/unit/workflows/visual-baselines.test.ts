@@ -15,6 +15,7 @@ interface WorkflowStep {
   run?: string;
   if?: string;
   "continue-on-error"?: boolean;
+  env?: Record<string, string>;
 }
 
 interface WorkflowJob {
@@ -109,7 +110,15 @@ describe("visual-baselines.yml", () => {
     const dispatch = parseWorkflow().on.workflow_dispatch;
 
     expect(dispatch?.inputs?.reviewed_run_url?.required).toBe(true);
-    expect(runLines("accept")).toMatch(/reviewed_run_url/);
+    expect(
+      stepsOf("accept").map((step) => step.env?.REVIEWED_RUN_URL),
+    ).toContain("${{ inputs.reviewed_run_url }}");
+  });
+
+  // Lo que escribe quien lanza el workflow llega al shell como dato: pegado
+  // dentro de `run` se ejecutaría con permiso de escritura sobre el repo.
+  it("no interpola la dirección dentro de un comando", () => {
+    expect(runLines("accept")).not.toMatch(/inputs\./);
   });
 
   it("no necesita ignorar sus propios commits, porque no los hace en un PR", () => {
